@@ -5,54 +5,250 @@ import { EASE, SectionHeading } from './fx';
 import EpisodeCard from './EpisodeCard';
 import { RailButtons } from './Rail';
 
+// Chrono Time Machine Years mapped to Seasons
+const CHRONO_NODES = [
+  { year: '2022', label: 'ACADEMIC FOUNDATION', subtitle: 'Kingston University, London', seasonIndex: 0, angle: -58 },
+  { year: '2023', label: 'POST-PRODUCTION CRAFT', subtitle: 'DaVinci Resolve & Premiere', seasonIndex: 1, angle: -32 },
+  { year: '2024', label: 'BRAND & MOTION SYSTEMS', subtitle: 'After Effects & Design', seasonIndex: 1, angle: -6 },
+  { year: '2025', label: 'WEB & CLIENT ARCHITECTURE', subtitle: 'Frontend, CRM & Hosting', seasonIndex: 2, angle: 22 },
+  { year: '2026', label: 'CREATIVE & TECHNICAL LEAD', subtitle: 'Zai Labs · AI Filmmaking', seasonIndex: 3, angle: 52 },
+];
+
 export default function Seasons() {
-  const [active, setActive] = useState(seasons.length - 2);
-  const season = seasons[active];
+  const [activeNodeIndex, setActiveNodeIndex] = useState(CHRONO_NODES.length - 1); // Default to 2026 (Lead)
+  const activeNode = CHRONO_NODES[activeNodeIndex];
+  const season = seasons[activeNode.seasonIndex] ?? seasons[seasons.length - 1];
   const rail = useRef<HTMLDivElement>(null);
 
+  // Mechanical clock hand angle
+  const needleAngle = activeNode.angle;
+
+  const handleSelectNode = (idx: number) => {
+    setActiveNodeIndex(idx);
+    rail.current?.scrollTo({ left: 0, behavior: 'smooth' });
+  };
+
   return (
-    <>
+    <div className="relative overflow-hidden">
       <SectionHeading
-        kicker={`${seasons.length} Seasons`}
-        title="My Journey"
-        aside={<p className="max-w-xs text-sm text-mist">Every stage of the resume, told as a season — select one to see its episodes.</p>}
+        kicker="Interactive Chrono Dial"
+        title="My Journey Through Time"
+        aside={
+          <p className="max-w-xs text-sm text-mist">
+            Rotate the mechanical clock dial to travel across eras — from London PGD to Creative & Technical Lead at Zai Labs.
+          </p>
+        }
       />
 
-      {/* season selector */}
-      <div className="rail gutter mb-8 flex gap-2 overflow-x-auto" role="tablist" aria-label="Seasons">
-        {seasons.map((s, i) => (
-          <button
-            key={s.number}
-            role="tab"
-            aria-selected={i === active}
-            type="button"
-            onClick={() => {
-              setActive(i);
-              rail.current?.scrollTo({ left: 0, behavior: 'smooth' });
-            }}
-            className={`relative shrink-0 rounded-full px-4 py-2.5 text-left transition ${i === active ? 'text-ink' : 'text-mist hover:text-bone'}`}
+      {/* 1. GIREESH-INSPIRED CHRONO TIME MACHINE MECHANICAL CLOCK STAGE */}
+      <div className="gutter relative mb-8 flex flex-col items-center">
+        {/* Ambient Warm Golden/Amber Core Glow */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 h-[420px] w-[88vw] max-w-[900px] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(245,158,11,0.15)_0%,rgba(222,27,28,0.08)_40%,transparent_72%)] blur-3xl"
+        />
+
+        {/* The Mechanical Chrono Clock Apparatus */}
+        <div className="relative w-full max-w-4xl h-[280px] sm:h-[340px] md:h-[380px] flex items-center justify-center select-none">
+          {/* SVG Clock Face and Concentric Calibrated Rings */}
+          <svg
+            className="absolute inset-0 w-full h-full pointer-events-none"
+            viewBox="0 0 800 380"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
           >
-            {i === active && <motion.span layoutId="season-pill" className="absolute inset-0 rounded-full bg-bone" transition={{ duration: 0.5, ease: EASE }} />}
-            <span className="relative block text-[10px] font-bold tracking-[0.24em]">SEASON {String(s.number).padStart(2, '0')}</span>
-            <span className="relative block whitespace-nowrap text-sm font-semibold">{s.title}</span>
-          </button>
-        ))}
+            <defs>
+              <linearGradient id="chronoAmber" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.8" />
+                <stop offset="50%" stopColor="#ffedd5" stopOpacity="0.95" />
+                <stop offset="100%" stopColor="#de1b1c" stopOpacity="0.8" />
+              </linearGradient>
+              <radialGradient id="hubGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#ffedd5" />
+                <stop offset="40%" stopColor="#f59e0b" stopOpacity="0.7" />
+                <stop offset="100%" stopColor="#78350f" stopOpacity="0" />
+              </radialGradient>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="3.5" result="coloredBlur" />
+                <feMerge>
+                  <feMergeNode in="coloredBlur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+
+            {/* Dial Center: (400, 100) */}
+            {/* Outer Concentric Dial Ring */}
+            <circle cx="400" cy="100" r="180" stroke="#f59e0b" strokeOpacity="0.25" strokeWidth="1" strokeDasharray="3 6" />
+            <circle cx="400" cy="100" r="172" stroke="#ffffff" strokeOpacity="0.12" strokeWidth="1" />
+            <circle cx="400" cy="100" r="120" stroke="#f59e0b" strokeOpacity="0.18" strokeWidth="1" />
+
+            {/* Precision Tick Marks on Arc */}
+            {Array.from({ length: 49 }).map((_, i) => {
+              const deg = -72 + i * 3;
+              const rad = (deg * Math.PI) / 180;
+              const r1 = i % 4 === 0 ? 158 : 166;
+              const r2 = 172;
+              const x1 = 400 + Math.sin(rad) * r1;
+              const y1 = 100 + Math.cos(rad) * r1;
+              const x2 = 400 + Math.sin(rad) * r2;
+              const y2 = 100 + Math.cos(rad) * r2;
+              return (
+                <line
+                  key={i}
+                  x1={x1}
+                  y1={y1}
+                  x2={x2}
+                  y2={y2}
+                  stroke={i % 4 === 0 ? '#f59e0b' : '#ffffff'}
+                  strokeOpacity={i % 4 === 0 ? 0.6 : 0.2}
+                  strokeWidth={i % 4 === 0 ? 1.5 : 0.8}
+                />
+              );
+            })}
+
+            {/* Curved Energy Timeline Rail: connecting the nodes */}
+            <path
+              d="M 120 280 Q 250 250 400 240 Q 550 250 680 280"
+              stroke="url(#chronoAmber)"
+              strokeWidth="2.5"
+              fill="none"
+              filter="url(#glow)"
+            />
+            {/* Fine Rail Track Guides */}
+            <path
+              d="M 120 284 Q 250 254 400 244 Q 550 254 680 284"
+              stroke="#f59e0b"
+              strokeOpacity="0.3"
+              strokeWidth="1"
+              fill="none"
+              strokeDasharray="2 4"
+            />
+          </svg>
+
+          {/* Animated Mechanical Clock Needle & Pivot Hub */}
+          <div className="absolute top-[100px] left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10">
+            {/* The Rotating Arm and Volumetric Beam */}
+            <motion.div
+              animate={{ rotate: needleAngle }}
+              transition={{ type: 'spring', stiffness: 90, damping: 18 }}
+              className="relative flex items-center justify-center origin-center"
+              style={{ width: '40px', height: '40px' }}
+            >
+              {/* Additive Light Beam thrown downwards to the rail */}
+              <div
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 h-[190px] w-[50px] origin-top bg-gradient-to-b from-amber-400/35 via-amber-500/10 to-transparent blur-md"
+                style={{ transform: 'rotate(180deg)' }}
+              />
+
+              {/* The Clock Needle */}
+              <div
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 h-[155px] w-[3px] origin-top bg-gradient-to-b from-white via-amber-300 to-amber-500 shadow-[0_0_12px_#f59e0b]"
+                style={{ transform: 'rotate(180deg)' }}
+              >
+                {/* Pointer Tip Diamond */}
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rotate-45 bg-amber-200 border border-white shadow-[0_0_14px_#f59e0b]" />
+              </div>
+
+              {/* Counter-Weight Stylized Tail */}
+              <div className="absolute bottom-1/2 left-1/2 -translate-x-1/2 h-[32px] w-[2px] bg-amber-500/60" />
+            </motion.div>
+
+            {/* Dial Center Hub Brass Jewel */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-gradient-to-br from-amber-200 via-amber-500 to-neutral-900 p-[2px] shadow-[0_0_20px_rgba(245,158,11,0.8)]">
+              <div className="w-full h-full rounded-full bg-[#120a06] flex items-center justify-center border border-amber-300/40">
+                <span className="w-2 h-2 rounded-full bg-amber-200 shadow-[0_0_6px_#fff]" />
+              </div>
+            </div>
+          </div>
+
+          {/* Interactive Year Node Stations along the Rail */}
+          <div className="absolute bottom-4 sm:bottom-6 inset-x-0 flex items-center justify-around px-4 sm:px-12 md:px-20 z-20">
+            {CHRONO_NODES.map((n, i) => {
+              const isSelected = i === activeNodeIndex;
+              return (
+                <button
+                  key={n.year}
+                  type="button"
+                  onClick={() => handleSelectNode(i)}
+                  className="group relative flex flex-col items-center focus:outline-none transition-transform duration-300 hover:scale-105"
+                >
+                  {/* Glowing Energy Node Ring */}
+                  <div className="relative mb-2 flex items-center justify-center">
+                    <span
+                      className={`block rounded-full transition-all duration-300 ${
+                        isSelected
+                          ? 'h-4 w-4 bg-white shadow-[0_0_16px_#f59e0b,0_0_30px_#de1b1c] ring-4 ring-amber-500/50'
+                          : 'h-2.5 w-2.5 bg-amber-500/50 group-hover:bg-amber-300 group-hover:scale-125'
+                      }`}
+                    />
+                    {isSelected && (
+                      <motion.span
+                        layoutId="node-pulse"
+                        className="absolute -inset-2 rounded-full border border-amber-400/80 animate-ping pointer-events-none"
+                      />
+                    )}
+                  </div>
+
+                  {/* Year Tag in Bold Anton/Oswald */}
+                  <span
+                    className={`font-['Anton',Impact,sans-serif] text-xl sm:text-2xl md:text-3xl tracking-wide transition-colors duration-300 ${
+                      isSelected
+                        ? 'text-amber-300 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]'
+                        : 'text-bone/50 group-hover:text-bone/90'
+                    }`}
+                  >
+                    {n.year}
+                  </span>
+
+                  {/* Node Subtitle Tag */}
+                  <span
+                    className={`hidden sm:block text-[9px] sm:text-[10px] font-['Oswald'] uppercase tracking-[0.2em] transition-colors duration-300 ${
+                      isSelected ? 'text-bone font-bold' : 'text-smoke/60'
+                    }`}
+                  >
+                    {n.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Selected Era Status Indicator Strip */}
+        <motion.div
+          key={activeNode.year}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="mt-2 inline-flex items-center gap-3 rounded-full border border-amber-500/30 bg-black/60 px-5 py-2 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.6)]"
+        >
+          <span className="flex items-center gap-1.5 text-amber-400 text-xs font-bold font-['Oswald'] tracking-[0.2em]">
+            <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse shadow-[0_0_8px_#f59e0b]" />
+            ERA {activeNode.year}
+          </span>
+          <span className="h-3 w-px bg-white/20" />
+          <span className="text-xs font-medium text-bone/90 tracking-wide">
+            {activeNode.subtitle}
+          </span>
+        </motion.div>
       </div>
 
+      {/* 2. THE SEASON'S EPISODES & PRODUCTION NARRATIVE */}
       <AnimatePresence mode="wait">
         <motion.div
           key={season.number}
-          initial={{ opacity: 0, x: 40, filter: 'blur(8px)' }}
-          animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-          exit={{ opacity: 0, x: -40, filter: 'blur(8px)' }}
+          initial={{ opacity: 0, y: 24, filter: 'blur(8px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          exit={{ opacity: 0, y: -24, filter: 'blur(8px)' }}
           transition={{ duration: 0.55, ease: EASE }}
         >
-          <div className="gutter mb-2 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <div className="gutter mb-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
             <h3 className="font-display text-4xl tracking-wide text-bone sm:text-5xl">
-              <span className="text-outline mr-3">S{String(season.number).padStart(2, '0')}</span>
+              <span className="text-outline mr-3 text-amber-500/80">S{String(season.number).padStart(2, '0')}</span>
               {season.title}
             </h3>
-            <span className="text-sm text-mist">
+            <span className="text-sm font-['Oswald'] tracking-wider text-amber-400/90">
               {season.period} · {season.episodes.length} {season.episodes.length === 1 ? 'Episode' : 'Episodes'}
             </span>
           </div>
@@ -68,6 +264,6 @@ export default function Seasons() {
           </div>
         </motion.div>
       </AnimatePresence>
-    </>
+    </div>
   );
 }

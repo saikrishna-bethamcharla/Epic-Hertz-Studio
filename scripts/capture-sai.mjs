@@ -76,7 +76,7 @@ async function run() {
   await page.screenshot({ path: path.join(ARTIFACT_DIR, 'sai_originals.png') });
   console.log('Saved sai_originals.png');
 
-  // 3. Journey / Seasons
+  // 3. Journey / Seasons (Chrono Dial)
   await page.evaluate(() => {
     const el = document.querySelector('#journey') || document.querySelector('[data-section="journey"]');
     if (el) el.scrollIntoView();
@@ -86,7 +86,17 @@ async function run() {
   await page.screenshot({ path: path.join(ARTIFACT_DIR, 'sai_journey.png') });
   console.log('Saved sai_journey.png');
 
-  // 4. Resume Section
+  // 4. Skills (3D Creative Universe)
+  await page.evaluate(() => {
+    const el = document.querySelector('#skills') || document.querySelector('[data-section="skills"]');
+    if (el) el.scrollIntoView();
+    else window.scrollTo(0, 3800);
+  });
+  await new Promise((r) => setTimeout(r, 1500));
+  await page.screenshot({ path: path.join(ARTIFACT_DIR, 'sai_skills.png') });
+  console.log('Saved sai_skills.png');
+
+  // 5. Resume Section
   await page.evaluate(() => {
     const el = document.querySelector('#story') || document.querySelector('[data-section="story"]');
     if (el) el.scrollIntoView();
