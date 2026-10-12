@@ -24,10 +24,10 @@ export const profile = {
     linkedin: 'https://linkedin.com/in/sai-krishna-bethamcharla',
     github: 'https://github.com/saikrishnabethamcharla',
   },
-  resumePdf: '/assets/Sai_Krishna_Bethamcharla_Resume.pdf',
+  resumePdf: './assets/Sai_Krishna_Bethamcharla_Resume.pdf',
   portrait: {
-    src: '/assets/portrait-720.webp',
-    srcSet: '/assets/portrait-420.webp 420w, /assets/portrait-720.webp 720w, /assets/portrait-1100.webp 1100w',
+    src: './assets/portrait-720.webp',
+    srcSet: './assets/portrait-420.webp 420w, ./assets/portrait-720.webp 720w, ./assets/portrait-1100.webp 1100w',
     alt: 'Portrait of Sai Krishna Bethamcharla',
   },
   interests: ['Generative AI Video Pipelines', 'Bilingual AI Prompting (EN+ZH)', 'Motion Graphics & Compositing', 'Modern Web & CRM Systems'],
