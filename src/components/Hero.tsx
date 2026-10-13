@@ -9,8 +9,6 @@ export default function Hero({ onPlay: _onPlay, onResume: _onResume, profileId: 
   const fine = useFinePointer();
 
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
-  const imgY = useTransform(scrollYProgress, [0, 1], ['0%', '16%']);
-  const imgScale = useTransform(scrollYProgress, [0, 1], [1, 1.08]);
   const textY = useTransform(scrollYProgress, [0, 1], ['0%', '-24%']);
   const fade = useTransform(scrollYProgress, [0, 0.78], [1, 0]);
 
@@ -21,9 +19,6 @@ export default function Hero({ onPlay: _onPlay, onResume: _onResume, profileId: 
   const py = useSpring(my, { stiffness: 65, damping: 20 });
 
   // Multi-plane 3D depths
-  const imgRotY = useTransform(px, [-1, 1], [-5, 5]);
-  const imgRotX = useTransform(py, [-1, 1], [3, -3]);
-  const imgShiftX = useTransform(px, [-1, 1], [-14, 14]);
   const wordShiftX = useTransform(px, [-1, 1], [18, -18]);
   const chipShiftX = useTransform(px, [-1, 1], [-22, 22]);
   const chipShiftY = useTransform(py, [-1, 1], [-16, 16]);
@@ -44,7 +39,7 @@ export default function Hero({ onPlay: _onPlay, onResume: _onResume, profileId: 
     >
       {/* 1. ATMOSPHERIC VOLUMETRIC GLOW & FILM PARTICLES */}
       <motion.div aria-hidden className="absolute inset-0 pointer-events-none" style={{ x: glowX }}>
-        <div className="absolute left-1/2 top-[35%] -translate-x-1/2 -translate-y-1/2 h-[75vh] w-[92vw] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(222,27,28,0.36)_0%,rgba(140,12,24,0.18)_42%,rgba(5,5,7,0)_72%)] blur-3xl" />
+        <div className="absolute left-1/2 top-[50%] -translate-x-1/2 -translate-y-1/2 h-[75vh] w-[92vw] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(222,27,28,0.36)_0%,rgba(140,12,24,0.18)_42%,rgba(5,5,7,0)_72%)] blur-3xl" />
         <div className="absolute right-[-10%] top-[-10%] h-[70vh] w-[50vw] rounded-full bg-[radial-gradient(circle,rgba(255,42,43,0.14),transparent_65%)] blur-2xl" />
         <div className="absolute bottom-[-15%] left-[-10%] h-[60vh] w-[50vw] rounded-full bg-[radial-gradient(circle,rgba(70,10,20,0.22),transparent_65%)] blur-2xl" />
       </motion.div>
@@ -81,7 +76,7 @@ export default function Hero({ onPlay: _onPlay, onResume: _onResume, profileId: 
 
       {/* 3. THE GIANT CINEMATIC WORDMARK ("SAI KRISHNA") */}
       <motion.div
-        className="pointer-events-none absolute inset-x-0 top-[24svh] sm:top-[20svh] lg:top-[16svh] z-[2] flex flex-col items-center justify-center text-center"
+        className="pointer-events-none absolute inset-0 z-[2] flex flex-col items-center justify-center text-center px-4"
         style={{ x: wordShiftX, y: textY, opacity: fade }}
       >
         {/* "WELCOME TO MY WORLD" BANNER */}
@@ -124,39 +119,6 @@ export default function Hero({ onPlay: _onPlay, onResume: _onResume, profileId: 
         <p className="mt-2 font-['Oswald',sans-serif] text-xs sm:text-sm font-semibold tracking-[0.58em] text-bone/80 uppercase">
           {profile.seriesTag}
         </p>
-      </motion.div>
-
-      {/* 4. FOREGROUND MATTED SUBJECT WITH 3D TILT */}
-      <motion.div
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] flex h-[76svh] sm:h-[82svh] lg:h-[86svh] items-end justify-center"
-        style={{ y: imgY, scale: imgScale, opacity: fade }}
-      >
-        <motion.div
-          className="relative h-full w-auto max-w-[94vw] sm:max-w-[70vw] lg:max-w-[44vw]"
-          style={{ rotateY: imgRotY, rotateX: imgRotX, x: imgShiftX, transformPerspective: 1400 }}
-          initial={{ opacity: 0, scale: 0.94 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.2, ease: EASE, delay: 0.15 }}
-        >
-          {/* Subtle back rim light behind character */}
-          <div aria-hidden className="absolute -inset-10 -z-10 rounded-full bg-[radial-gradient(circle,rgba(222,27,28,0.32)_0%,transparent_70%)] blur-3xl" />
-
-          {/* Portrait cutout with smooth vignette blend */}
-          <img
-            src={profile.portrait.src}
-            srcSet={profile.portrait.srcSet}
-            sizes="(max-width: 768px) 94vw, (max-width: 1200px) 70vw, 44vw"
-            alt={profile.portrait.alt}
-            className="h-full w-auto max-w-none object-contain object-bottom drop-shadow-[0_25px_60px_rgba(0,0,0,0.95)]"
-            style={{
-              maskImage: 'radial-gradient(ellipse 70% 84% at 50% 50%, black 50%, rgba(0,0,0,0.85) 68%, transparent 94%)',
-              WebkitMaskImage: 'radial-gradient(ellipse 70% 84% at 50% 50%, black 50%, rgba(0,0,0,0.85) 68%, transparent 94%)',
-            }}
-          />
-
-          {/* Crimson cinematic rim wash */}
-          <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_45%_at_78%_35%,rgba(255,61,90,0.22),transparent_72%)] mix-blend-screen" />
-        </motion.div>
       </motion.div>
 
       {/* 5. GIREESH-STYLE CORNER HUD CHIPS (Interactive & 3D Floating) */}
