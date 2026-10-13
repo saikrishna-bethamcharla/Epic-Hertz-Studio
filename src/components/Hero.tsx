@@ -1,15 +1,9 @@
 import { useRef } from 'react';
 import { motion, useMotionValue, useScroll, useSpring, useTransform } from 'framer-motion';
-import { certifications, profile, projects, type ProfileId } from '../data/portfolio';
+import { profile, type ProfileId } from '../data/portfolio';
 import { useFinePointer } from '../hooks/useMedia';
 import { useSmoothScroll } from '../hooks/smoothScroll';
 import { EASE, Magnetic, Particles } from './fx';
-
-const container = { hidden: {}, show: { transition: { staggerChildren: 0.08, delayChildren: 0.2 } } };
-const item = {
-  hidden: { opacity: 0, y: 24, filter: 'blur(8px)' },
-  show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.85, ease: EASE } },
-};
 
 export default function Hero({ onPlay, onResume, profileId: _profileId }: { onPlay: () => void; onResume: () => void; profileId: ProfileId }) {
   const ref = useRef<HTMLElement>(null);
@@ -36,13 +30,6 @@ export default function Hero({ onPlay, onResume, profileId: _profileId }: { onPl
   const chipShiftX = useTransform(px, [-1, 1], [-22, 22]);
   const chipShiftY = useTransform(py, [-1, 1], [-16, 16]);
   const glowX = useTransform(px, [-1, 1], ['-8%', '8%']);
-
-  const meta = [
-    'Zai Labs · Aug 2026 – Present',
-    'Kingston PGD',
-    `${projects.length} Originals`,
-    `${certifications.length} Credentials`,
-  ];
 
   const base = (import.meta as unknown as { env?: { BASE_URL?: string } }).env?.BASE_URL ?? './';
 
@@ -192,68 +179,47 @@ export default function Hero({ onPlay, onResume, profileId: _profileId }: { onPl
         </div>
       </motion.div>
 
-      {/* 6. BOTTOM HUD & ACTION BAR */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[10] bg-gradient-to-t from-[#050507] via-[#050507]/80 to-transparent pb-8 pt-24">
+      {/* 6. CENTERED MINIMAL CINEMATIC HUD DOCK */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-6 sm:bottom-8 z-[10] flex items-center justify-center">
         <motion.div
-          className="gutter flex flex-col md:flex-row items-center justify-between gap-6"
-          variants={container}
-          initial="hidden"
-          animate="show"
+          className="pointer-events-auto flex items-center gap-3 rounded-full border border-white/15 bg-black/75 px-3.5 py-2 backdrop-blur-xl shadow-[0_15px_35px_rgba(0,0,0,0.85)] ring-1 ring-white/10"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.35, ease: EASE }}
         >
-          {/* Left Metadata & Role Description */}
-          <motion.div variants={item} className="pointer-events-auto flex flex-col gap-2 text-center md:text-left max-w-md">
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 text-[12px] font-medium text-mist">
-              <span className="rounded bg-crimson px-2 py-0.5 font-['Oswald'] text-[10px] font-bold tracking-wider text-white">
-                LEAD
-              </span>
-              {meta.map((m, i) => (
-                <span key={m} className="flex items-center gap-2">
-                  {i > 0 && <span className="h-1 w-1 rounded-full bg-smoke" />}
-                  {m}
-                </span>
-              ))}
-            </div>
-            <p className="font-sans text-xs sm:text-sm leading-relaxed text-bone/75">
-              {profile.intro}
-            </p>
-          </motion.div>
+          <Magnetic>
+            <button
+              type="button"
+              data-cursor="play"
+              onClick={onPlay}
+              className="group flex items-center gap-2 rounded-full bg-crimson px-5 py-2 font-['Oswald'] text-xs font-bold uppercase tracking-[0.2em] text-white transition-all duration-300 hover:bg-crimson-2 hover:shadow-[0_0_20px_rgba(222,27,28,0.7)]"
+            >
+              <span className="text-xs">▶</span>
+              <span>Play Reel</span>
+            </button>
+          </Magnetic>
 
-          {/* Right Action Buttons */}
-          <motion.div variants={item} className="pointer-events-auto flex items-center gap-3">
-            <Magnetic>
-              <button
-                type="button"
-                data-cursor="play"
-                onClick={onPlay}
-                className="group flex min-h-12 items-center gap-2.5 rounded bg-crimson px-6 py-3 font-['Oswald'] text-[13px] font-bold uppercase tracking-[0.22em] text-white transition-all duration-300 hover:bg-crimson-2 hover:shadow-[0_0_25px_rgba(229,19,43,0.6)]"
-              >
-                <span className="text-sm">▶</span>
-                <span>Play Reel</span>
-              </button>
-            </Magnetic>
+          <Magnetic>
+            <button
+              type="button"
+              onClick={onResume}
+              className="group flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 font-['Oswald'] text-xs font-semibold uppercase tracking-[0.18em] text-bone transition-all duration-300 hover:border-white/40 hover:bg-white/10"
+            >
+              <span>⤓</span>
+              <span>Resume</span>
+            </button>
+          </Magnetic>
 
-            <Magnetic>
-              <button
-                type="button"
-                onClick={onResume}
-                className="group flex min-h-12 items-center gap-2 rounded border border-white/20 bg-white/5 backdrop-blur-md px-5 py-3 font-['Oswald'] text-[13px] font-semibold uppercase tracking-[0.2em] text-bone transition-all duration-300 hover:border-white/40 hover:bg-white/10"
-              >
-                <span>⤓</span>
-                <span>Resume</span>
-              </button>
-            </Magnetic>
-
-            <Magnetic>
-              <button
-                type="button"
-                onClick={() => scrollTo('#originals')}
-                aria-label="Scroll to projects"
-                className="flex h-12 w-12 items-center justify-center rounded border border-white/20 bg-white/5 backdrop-blur-md text-bone transition hover:border-crimson hover:text-crimson"
-              >
-                ↓
-              </button>
-            </Magnetic>
-          </motion.div>
+          <Magnetic>
+            <button
+              type="button"
+              onClick={() => scrollTo('#skills')}
+              aria-label="Scroll to Creative Universe"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/5 text-bone transition-all duration-300 hover:border-crimson hover:text-crimson"
+            >
+              ↓
+            </button>
+          </Magnetic>
         </motion.div>
       </div>
     </section>

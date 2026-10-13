@@ -34,10 +34,11 @@ export default function ProjectCard({ project, index, onOpen }: { project: Proje
           </motion.div>
 
           <div className="absolute left-5 top-5 flex items-center gap-2 sm:left-7 sm:top-7">
-            <span className="font-display text-xl leading-none text-crimson-2">S</span>
-            <span className="text-[10px] font-bold tracking-[0.34em] text-bone/80">ORIGINAL</span>
+            <span className="font-['Oswald'] text-[11px] font-bold tracking-[0.24em] text-white bg-black/60 backdrop-blur-md px-2.5 py-1 rounded border border-white/15 uppercase">
+              •PROJECT {String(index + 1).padStart(2, '0')}•
+            </span>
           </div>
-          <span className="absolute right-5 top-5 rounded border border-white/30 px-1.5 py-px text-[10px] font-bold text-bone sm:right-7 sm:top-7">{project.year}</span>
+          <span className="absolute right-5 top-5 rounded border border-white/30 px-2 py-0.5 text-[10px] font-['Oswald'] font-bold text-bone sm:right-7 sm:top-7">{project.year}</span>
 
           <div className="absolute inset-x-0 bottom-0 p-5 sm:p-7 [transform:translateZ(40px)]">
             <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-mist">{project.genre}</p>

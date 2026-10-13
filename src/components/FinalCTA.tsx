@@ -3,9 +3,8 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { profile } from '../data/portfolio';
 import { useSmoothScroll } from '../hooks/smoothScroll';
 import { EASE, Magnetic, Particles } from './fx';
-import { SeriesMark } from './Poster';
 
-export default function FinalCTA({ onReplay }: { onReplay: () => void }) {
+export default function FinalCTA({ onReplay: _onReplay }: { onReplay?: () => void }) {
   const ref = useRef<HTMLElement>(null);
   const { scrollTo } = useSmoothScroll();
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'start 0.2'] });
@@ -80,21 +79,29 @@ export default function FinalCTA({ onReplay }: { onReplay: () => void }) {
       </motion.div>
 
       <div className="relative mt-16 flex flex-wrap justify-center gap-6 text-xs font-semibold tracking-[0.24em] text-smoke">
-        <button type="button" onClick={() => scrollTo(0, { offset: 0 })} className="hover:text-bone">
-          ↺ WATCH AGAIN
-        </button>
-        <button type="button" onClick={onReplay} className="hover:text-bone">
-          ▶ REPLAY OPENING
+        <button type="button" onClick={() => scrollTo(0, { offset: 0 })} className="font-['Oswald'] uppercase tracking-[0.2em] hover:text-white transition-colors">
+          ↑ RETURN TO TOP
         </button>
       </div>
 
-      <footer className="absolute inset-x-0 bottom-0 px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] text-center">
-        <div className="mb-2 text-base">
-          <SeriesMark />
+      <footer className="absolute inset-x-0 bottom-0 px-6 pb-6 text-center border-t border-white/5 pt-6 bg-black/40 backdrop-blur-md">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 max-w-6xl mx-auto text-[11px] font-['Oswald'] uppercase tracking-[0.22em] text-smoke">
+          <div className="flex items-center gap-3">
+            <span className="font-['Anton'] text-lg text-white">SAI KRISHNA</span>
+            <span className="text-crimson-2">✦</span>
+            <span>CREATIVE & TECHNICAL LEAD</span>
+          </div>
+
+          <nav className="flex items-center gap-6 text-mist">
+            <a href={profile.links.linkedin} target="_blank" rel="noreferrer" className="hover:text-white transition">LINKEDIN</a>
+            <a href={profile.links.github} target="_blank" rel="noreferrer" className="hover:text-white transition">GITHUB</a>
+            <a href={`mailto:${profile.email}`} className="hover:text-white transition">EMAIL</a>
+          </nav>
+
+          <small className="text-smoke/60">
+            © {new Date().getFullYear()} SAI KRISHNA — ALL RIGHTS RESERVED
+          </small>
         </div>
-        <p className="text-[11px] leading-relaxed text-smoke">
-          © {new Date().getFullYear()} {profile.displayName}. A personal, streaming-inspired portfolio — not affiliated with any streaming service.
-        </p>
       </footer>
     </section>
   );

@@ -66,37 +66,47 @@ async function run() {
   await page.screenshot({ path: path.join(ARTIFACT_DIR, 'sai_hero.png') });
   console.log('Saved sai_hero.png');
 
-  // 2. Originals / Projects
-  await page.evaluate(() => {
-    const el = document.querySelector('#originals') || document.querySelector('[data-section="originals"]');
-    if (el) el.scrollIntoView();
-    else window.scrollTo(0, 1300);
-  });
-  await new Promise((r) => setTimeout(r, 1500));
-  await page.screenshot({ path: path.join(ARTIFACT_DIR, 'sai_originals.png') });
-  console.log('Saved sai_originals.png');
-
-  // 3. Journey / Seasons (Chrono Dial)
-  await page.evaluate(() => {
-    const el = document.querySelector('#journey') || document.querySelector('[data-section="journey"]');
-    if (el) el.scrollIntoView();
-    else window.scrollTo(0, 2400);
-  });
-  await new Promise((r) => setTimeout(r, 1500));
-  await page.screenshot({ path: path.join(ARTIFACT_DIR, 'sai_journey.png') });
-  console.log('Saved sai_journey.png');
-
-  // 4. Skills (3D Creative Universe)
+  // 2. Skills (Scene 02: 3D Creative Universe)
   await page.evaluate(() => {
     const el = document.querySelector('#skills') || document.querySelector('[data-section="skills"]');
     if (el) el.scrollIntoView();
-    else window.scrollTo(0, 3800);
+    else window.scrollTo(0, 1100);
   });
   await new Promise((r) => setTimeout(r, 1500));
   await page.screenshot({ path: path.join(ARTIFACT_DIR, 'sai_skills.png') });
   console.log('Saved sai_skills.png');
 
-  // 5. Resume Section
+  // 3. Journey (Scene 03: Chrono Time Machine)
+  await page.evaluate(() => {
+    const el = document.querySelector('#journey') || document.querySelector('[data-section="journey"]');
+    if (el) el.scrollIntoView();
+    else window.scrollTo(0, 2200);
+  });
+  await new Promise((r) => setTimeout(r, 1500));
+  await page.screenshot({ path: path.join(ARTIFACT_DIR, 'sai_journey.png') });
+  console.log('Saved sai_journey.png');
+
+  // 4. Originals (Scene 04: Projects)
+  await page.evaluate(() => {
+    const el = document.querySelector('#originals') || document.querySelector('[data-section="originals"]');
+    if (el) el.scrollIntoView();
+    else window.scrollTo(0, 3200);
+  });
+  await new Promise((r) => setTimeout(r, 1500));
+  await page.screenshot({ path: path.join(ARTIFACT_DIR, 'sai_originals.png') });
+  console.log('Saved sai_originals.png');
+
+  // 5. About (Scene 05: About The Lead)
+  await page.evaluate(() => {
+    const el = document.querySelector('#about') || document.querySelector('[data-section="about"]');
+    if (el) el.scrollIntoView();
+    else window.scrollTo(0, 4200);
+  });
+  await new Promise((r) => setTimeout(r, 1500));
+  await page.screenshot({ path: path.join(ARTIFACT_DIR, 'sai_about.png') });
+  console.log('Saved sai_about.png');
+
+  // 6. Resume Section
   await page.evaluate(() => {
     const el = document.querySelector('#story') || document.querySelector('[data-section="story"]');
     if (el) el.scrollIntoView();
