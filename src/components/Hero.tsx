@@ -2,13 +2,11 @@ import { useRef } from 'react';
 import { motion, useMotionValue, useScroll, useSpring, useTransform } from 'framer-motion';
 import { profile, type ProfileId } from '../data/portfolio';
 import { useFinePointer } from '../hooks/useMedia';
-import { useSmoothScroll } from '../hooks/smoothScroll';
-import { EASE, Magnetic, Particles } from './fx';
+import { EASE, Particles } from './fx';
 
-export default function Hero({ onPlay, onResume, profileId: _profileId }: { onPlay: () => void; onResume: () => void; profileId: ProfileId }) {
+export default function Hero({ onPlay: _onPlay, onResume: _onResume, profileId: _profileId }: { onPlay?: () => void; onResume?: () => void; profileId?: ProfileId }) {
   const ref = useRef<HTMLElement>(null);
   const fine = useFinePointer();
-  const { scrollTo } = useSmoothScroll();
 
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
   const imgY = useTransform(scrollYProgress, [0, 1], ['0%', '16%']);
@@ -178,50 +176,6 @@ export default function Hero({ onPlay, onResume, profileId: _profileId }: { onPl
           </div>
         </div>
       </motion.div>
-
-      {/* 6. CENTERED MINIMAL CINEMATIC HUD DOCK */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-6 sm:bottom-8 z-[10] flex items-center justify-center">
-        <motion.div
-          className="pointer-events-auto flex items-center gap-3 rounded-full border border-white/15 bg-black/75 px-3.5 py-2 backdrop-blur-xl shadow-[0_15px_35px_rgba(0,0,0,0.85)] ring-1 ring-white/10"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.35, ease: EASE }}
-        >
-          <Magnetic>
-            <button
-              type="button"
-              data-cursor="play"
-              onClick={onPlay}
-              className="group flex items-center gap-2 rounded-full bg-crimson px-5 py-2 font-['Oswald'] text-xs font-bold uppercase tracking-[0.2em] text-white transition-all duration-300 hover:bg-crimson-2 hover:shadow-[0_0_20px_rgba(222,27,28,0.7)]"
-            >
-              <span className="text-xs">▶</span>
-              <span>Play Reel</span>
-            </button>
-          </Magnetic>
-
-          <Magnetic>
-            <button
-              type="button"
-              onClick={onResume}
-              className="group flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 font-['Oswald'] text-xs font-semibold uppercase tracking-[0.18em] text-bone transition-all duration-300 hover:border-white/40 hover:bg-white/10"
-            >
-              <span>⤓</span>
-              <span>Resume</span>
-            </button>
-          </Magnetic>
-
-          <Magnetic>
-            <button
-              type="button"
-              onClick={() => scrollTo('#skills')}
-              aria-label="Scroll to Creative Universe"
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/5 text-bone transition-all duration-300 hover:border-crimson hover:text-crimson"
-            >
-              ↓
-            </button>
-          </Magnetic>
-        </motion.div>
-      </div>
     </section>
   );
 }
