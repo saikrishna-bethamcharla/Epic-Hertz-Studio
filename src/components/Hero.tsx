@@ -14,14 +14,10 @@ export default function Hero({ onPlay: _onPlay, onResume: _onResume, profileId: 
 
   // High-precision pointer parallax
   const mx = useMotionValue(0);
-  const my = useMotionValue(0);
   const px = useSpring(mx, { stiffness: 65, damping: 20 });
-  const py = useSpring(my, { stiffness: 65, damping: 20 });
 
   // Multi-plane 3D depths
   const wordShiftX = useTransform(px, [-1, 1], [18, -18]);
-  const chipShiftX = useTransform(px, [-1, 1], [-22, 22]);
-  const chipShiftY = useTransform(py, [-1, 1], [-16, 16]);
   const glowX = useTransform(px, [-1, 1], ['-8%', '8%']);
 
   const base = (import.meta as unknown as { env?: { BASE_URL?: string } }).env?.BASE_URL ?? './';
@@ -34,7 +30,6 @@ export default function Hero({ onPlay: _onPlay, onResume: _onResume, profileId: 
       onPointerMove={(e) => {
         if (!fine) return;
         mx.set((e.clientX / window.innerWidth) * 2 - 1);
-        my.set((e.clientY / window.innerHeight) * 2 - 1);
       }}
     >
       {/* 1. ATMOSPHERIC VOLUMETRIC GLOW & FILM PARTICLES */}
@@ -59,18 +54,6 @@ export default function Hero({ onPlay: _onPlay, onResume: _onResume, profileId: 
           <span key={i} className="text-xs transition-opacity duration-300 hover:text-crimson-2" style={{ opacity: 0.25 + i * 0.15 }}>
             ▶
           </span>
-        ))}
-      </div>
-
-      {/* Bottom-Right 3x6 Dot Matrix Grid */}
-      <div aria-hidden className="pointer-events-none absolute bottom-8 right-8 z-20 hidden lg:grid grid-cols-6 gap-2">
-        {Array.from({ length: 18 }).map((_, i) => (
-          <span
-            key={i}
-            className={`h-1.5 w-1.5 rounded-full transition-colors duration-500 ${
-              i === 0 || i === 5 || i === 12 ? 'bg-crimson-2 shadow-[0_0_8px_rgba(255,61,90,0.9)]' : 'bg-white/20'
-            }`}
-          />
         ))}
       </div>
 
@@ -119,24 +102,6 @@ export default function Hero({ onPlay: _onPlay, onResume: _onResume, profileId: 
         <p className="mt-2 font-['Oswald',sans-serif] text-xs sm:text-sm font-semibold tracking-[0.58em] text-bone/80 uppercase">
           {profile.seriesTag}
         </p>
-      </motion.div>
-
-      {/* 5. GIREESH-STYLE CORNER HUD CHIPS (Interactive & 3D Floating) */}
-      <motion.div aria-hidden className="pointer-events-none absolute inset-0 z-[4] overflow-hidden" style={{ x: chipShiftX, y: chipShiftY }}>
-        {/* Bottom-Left Chip: •CREATIVE & TECHNICAL LEAD• (matching Gireesh ARTIST chip) */}
-        <div className="absolute left-[3vw] sm:left-[5vw] bottom-[20vh] sm:bottom-[23vh]">
-          <div className="inline-flex items-center gap-2 rounded bg-white px-3.5 py-1.5 font-['Oswald'] text-[11px] sm:text-xs font-bold uppercase tracking-[0.24em] text-black shadow-[0_10px_25px_rgba(0,0,0,0.6)] ring-1 ring-white/20">
-            <span className="h-1.5 w-1.5 rounded-full bg-crimson" />
-            <span>•CREATIVE & TECHNICAL LEAD•</span>
-          </div>
-        </div>
-
-        {/* Top-Right Chip: •DIRECTOR & AI FILMMAKER• (matching Gireesh LEGEND chip) */}
-        <div className="absolute right-[3vw] sm:right-[5vw] top-[18vh] sm:top-[21vh]">
-          <div className="inline-flex items-center gap-2 rounded bg-black/85 backdrop-blur-md px-4 py-1.5 font-['Oswald'] text-[11px] sm:text-xs font-bold uppercase tracking-[0.24em] text-white shadow-[0_10px_25px_rgba(0,0,0,0.7)] ring-1 ring-white/30 border-l-2 border-crimson">
-            <span>•DIRECTOR & AI FILMMAKER•</span>
-          </div>
-        </div>
       </motion.div>
     </section>
   );
