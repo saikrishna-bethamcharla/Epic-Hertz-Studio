@@ -25,10 +25,11 @@
           window.location.replace(target);
         }
       }
-      // Auto-recover if browser serves cached index.html that tries to load outdated chunk
+      // Auto-recover ONLY if browser serves cached index.html that tries to load an outdated production chunk
       window.addEventListener('error', function (e) {
-        if (e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) {
-          var key = 'chunk_reload_' + (e.target.src || e.target.href);
+        var url = e.target && (e.target.src || e.target.href);
+        if (url && url.includes('/assets/index-') && e.target.tagName === 'SCRIPT') {
+          var key = 'chunk_reload_' + url;
           if (!sessionStorage.getItem(key)) {
             sessionStorage.setItem(key, '1');
             window.location.reload();
