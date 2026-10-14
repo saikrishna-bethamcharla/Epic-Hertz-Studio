@@ -20,7 +20,7 @@ export function PosterBackdrop({ palette, image, children, className = '' }: { p
           src={image}
           alt=""
           loading="lazy"
-          className="absolute inset-0 h-full w-full object-cover object-top opacity-40 mix-blend-luminosity transition-transform duration-700 group-hover:scale-105 group-hover:opacity-65"
+          className="absolute inset-0 h-full w-full object-cover object-top opacity-30 mix-blend-luminosity transition-transform duration-700 group-hover:scale-105 group-hover:opacity-45"
         />
       )}
       <div
@@ -30,7 +30,7 @@ export function PosterBackdrop({ palette, image, children, className = '' }: { p
       />
       <div aria-hidden className="absolute inset-0 opacity-[0.18] [background-image:repeating-linear-gradient(0deg,rgba(255,255,255,0.06)_0px,rgba(255,255,255,0.06)_1px,transparent_1px,transparent_4px)]" />
       {children}
-      <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
+      <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/55 to-black/20" />
     </div>
   );
 }
