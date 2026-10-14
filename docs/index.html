@@ -17,14 +17,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <script>
-      // If GitHub Pages is serving this unbuilt root index.html, redirect immediately to /docs/
-      if (window.location.hostname.includes('github.io')) {
-        var p = window.location.pathname;
-        if (!p.includes('/docs')) {
-          var target = p.replace(/\/+$/, '') + '/docs/' + window.location.search + window.location.hash;
-          window.location.replace(target);
-        }
-      }
       // Auto-recover ONLY if browser serves cached index.html that tries to load an outdated production chunk
       window.addEventListener('error', function (e) {
         var url = e.target && (e.target.src || e.target.href);
