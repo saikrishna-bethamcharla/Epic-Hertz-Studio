@@ -35,9 +35,9 @@ export const profile = {
   interests: [
     'Generative AI Video Pipelines (Seedance, Kling, Higgsfield)',
     'Bilingual Structured Prompt Bibles (EN+ZH)',
-    'Client-Side GPU Motion Graphics (MotionForge)',
     'Beat-Synced Editorial & Color Grading (DaVinci Resolve)',
     'Modern Web & CRM Infrastructure',
+    'Interactive Media & Mobile Showcase Platforms',
   ],
 };
 
@@ -85,35 +85,6 @@ export type Project = {
 };
 
 export const projects: Project[] = [
-  {
-    id: 'motionforge-studio',
-    title: 'MotionForge Studio',
-    year: '2026',
-    genre: 'Motion Graphics Engine • WebCodecs • Alpha Video',
-    logline: 'Free, client-side motion graphics & animation studio for video editors, exporting WebM with alpha transparency directly to DaVinci Resolve & Premiere Pro.',
-    stack: ['TypeScript', 'React', 'HTML5 Canvas API', 'WebCodecs', 'Tailwind CSS', 'DaVinci Resolve', 'Premiere Pro'],
-    build: [
-      'Engineered a client-side video graphics synthesis engine executing 100% on the browser GPU with zero server encoding overhead.',
-      'Built real-time customizable animated data charts (rising bar graphs, bezier curve graphs, 3D isometric pie charts) and rolling odometer counters.',
-      'Implemented native WebM video export with Alpha Transparency (drag-and-drop overlay for DaVinci Resolve & Premiere Pro) and Green Screen (#00FF00) modes for mobile pipelines.',
-    ],
-    features: [
-      'WebM with Alpha Transparency & Green Screen export',
-      'Dynamic 3D isometric pie charts & bezier curve graphs',
-      'Odometer numeric counters with customizable metrics',
-      'Cinematic lower thirds & broadcast title wipe reveals',
-      'Timeline scrub, loop, and multi-aspect ratio rendering (16:9, 9:16, 1:1)',
-    ],
-    metrics: [
-      { value: 'GPU Accelerated', label: '100% client-side WebCodecs encoding' },
-      { value: 'Alpha Channel', label: 'transparent video overlay for NLEs' },
-      { value: '60 FPS', label: 'smooth real-time canvas animation' },
-      { value: 'Multi-Format', label: '16:9, 9:16 Shorts & 1:1 export' },
-    ],
-    github: 'https://github.com/saikrishna-bethamcharla/motionforge',
-    palette: { from: '#1a0d02', via: '#8a4a07', to: '#0a0806', accent: '#ffb547' },
-    motif: 'flow',
-  },
   {
     id: 'streamhub-qr-bridge',
     title: 'StreamHub Video & QR Bridge',
@@ -279,13 +250,6 @@ export const achievements: Achievement[] = [
     laurel: 'Kingston Alum',
   },
   {
-    id: 'motionforge-launch',
-    title: 'MotionForge Studio Launch',
-    org: 'Video Editor Tooling',
-    detail: 'Engineered a client-side motion graphics animation studio exporting alpha WebM overlays directly for NLE timelines.',
-    laurel: 'Tool Creator',
-  },
-  {
     id: 'ai-filmmaking-direction',
     title: 'Multi-Shot AI Filmmaking',
     org: 'Seedance 2.0 • Kling 3.0 • Higgsfield',
@@ -320,11 +284,11 @@ export type Certification = { issuer: string; name: string; link: string };
 export const certifications: Certification[] = [
   { issuer: 'Kingston University', name: 'Postgraduate Diploma (PGD) • London', link: '#' },
   { issuer: 'Zai Labs', name: 'Creative & Technical Leadership', link: '#' },
-  { issuer: 'Video Editor Tooling', name: 'MotionForge Motion Graphics Engine', link: 'https://github.com/saikrishna-bethamcharla/motionforge' },
+  { issuer: 'Web & Video', name: 'StreamHub Video Platform & QR Bridge', link: '#' },
   { issuer: 'AI Cinema', name: 'Seedance 2.0 & Kling 3.0 Generative Video', link: '#' },
   { issuer: 'Post-Production', name: 'DaVinci Resolve & Premiere Pro Editorial', link: '#' },
   { issuer: 'Adobe CC', name: 'After Effects Motion Graphics & Compositing', link: '#' },
-  { issuer: 'Web Dev', name: 'TypeScript, Modern JavaScript & Canvas API', link: '#' },
+  { issuer: 'Web Dev', name: 'Modern JavaScript, Responsive Web & APIs', link: '#' },
   { issuer: 'Client Delivery', name: 'Client Scoping, Work Orders & CRM Architecture', link: '#' },
 ];
 
@@ -428,11 +392,11 @@ export const skillEvidence: Record<string, string[]> = {
   CapCut: ['Short-Form Beat-Synced Edits'],
   'Adobe Audition': ['Audio Mastering', 'Sound Design'],
   Python: ['Automation Scripts', 'Batch Media Processors'],
-  'JavaScript (ES6+)': ['Frontend Client Platforms', 'MotionForge Engine'],
-  TypeScript: ['Component Architecture', 'Canvas Rendering'],
-  'HTML5 / Canvas': ['Real-Time Graphics', 'MotionForge Studio'],
+  'JavaScript (ES6+)': ['Frontend Client Platforms', 'StreamHub Engine'],
+  TypeScript: ['Component Architecture', 'Interactive Web Apps'],
+  'HTML5 / Canvas': ['Real-Time Graphics', 'StreamHub Showcase'],
   'CSS3 / Tailwind': ['Responsive Layouts & Motion'],
-  'WebCodecs API': ['Alpha Channel Video Export'],
+  'WebCodecs API': ['Video & Media Processing'],
   'CRM Integration': ['Zai Labs Client Delivery', 'Lead Automation'],
   'Hosting & DNS': ['Client Web Engagements', 'Cloud Deployment'],
   'Adobe Illustrator': ['Vector Assets', 'Brand Systems'],
@@ -565,25 +529,25 @@ export const seasons: Season[] = [
   },
   {
     number: 5,
-    title: 'Next-Gen Tooling & Products',
+    title: 'Next-Gen Platforms & Cinema',
     period: 'Now Streaming',
-    synopsis: 'Building MotionForge Studio, interactive StreamHub mobile QR platforms, and pushing autonomous AI filmmaking pipelines.',
+    synopsis: 'Building interactive StreamHub mobile QR platforms and advancing multi-shot generative AI filmmaking pipelines.',
     episodes: [
       {
         code: 'S05 E01',
-        title: 'MotionForge Studio Launch',
-        description: 'Engineering a free, client-side motion graphics engine with WebCodecs alpha video export for video editors.',
-        tags: ['MotionForge', 'WebCodecs', 'Canvas API'],
-        runtime: 'Tool Creation',
-        palette: amber,
-      },
-      {
-        code: 'S05 E02',
         title: 'StreamHub & QR Ecosystem',
         description: 'Creating frictionless mobile testing and live video showcase platforms with real-time QR generation.',
         tags: ['StreamHub', 'QR Bridge', 'Video Theater'],
         runtime: 'Interactive Platform',
-        palette: violet,
+        palette: ocean,
+      },
+      {
+        code: 'S05 E02',
+        title: 'Autonomous AI Cinema Pipelines',
+        description: 'Directing multi-scene continuous narratives with Seedance 2.0, Kling 3.0, and bilingual character bibles.',
+        tags: ['AI Cinema', 'Bilingual Bibles', 'Multi-Shot'],
+        runtime: 'Generative Cinema',
+        palette: crimson,
       },
     ],
   },
@@ -593,15 +557,15 @@ export type TopPick = { label: string; title: string; detail: string; palette: P
 
 export const topPicks: TopPick[] = [
   { label: 'Primary Role', title: 'Creative & Tech Lead', detail: 'Zai Labs Private Limited • August 2026 – Present', palette: crimson },
-  { label: 'Featured Product', title: 'MotionForge Studio', detail: 'Client-side motion graphics & alpha WebM export for video editors', palette: amber },
   { label: 'AI Video Engine', title: 'Seedance 2.0 & Kling 3.0', detail: 'Multi-shot AI filmmaking with structured shot bibles', palette: crimson },
   { label: 'Academic Credential', title: 'Kingston University', detail: 'Postgraduate Diploma (PGD) • London', palette: violet },
   { label: 'Prompt Mastery', title: 'Bilingual (EN+ZH)', detail: 'Structured prompts for character & environment consistency', palette: ocean },
-  { label: 'Post-Production', title: 'DaVinci Resolve', detail: 'Beat-synced editorial & cinematic color grading', palette: crimson },
   { label: 'Interactive Platform', title: 'StreamHub & QR Bridge', detail: 'HD video showcase with live mobile camera handoff', palette: ocean },
+  { label: 'Post-Production', title: 'DaVinci Resolve', detail: 'Beat-synced editorial & cinematic color grading', palette: crimson },
   { label: 'Motion Graphics', title: 'After Effects', detail: 'Compositing, visual effects & title animations', palette: violet },
   { label: 'Full Delivery', title: 'Web • CRM • Hosting', detail: 'Coordinated end-to-end client engagement at Zai Labs', palette: jade },
   { label: 'Visual Design', title: 'Adobe Illustrator & Photoshop', detail: 'Branded visual assets & typography systems', palette: amber },
+  { label: 'Team Leadership', title: 'Production SOPs', detail: 'Standardized work orders, quotations & client documentation', palette: jade },
 ];
 
 export type IntroSlide = { kicker: string; title: string; lines: string[]; chips?: string[] };
@@ -618,12 +582,6 @@ export const introSlides: IntroSlide[] = [
     title: 'Kingston University',
     lines: ['Postgraduate Diploma (PGD)', 'London, United Kingdom · 2022'],
     chips: ['Kingston PGD'],
-  },
-  {
-    kicker: 'Featured Tool',
-    title: 'MotionForge Studio',
-    lines: ['Free, client-side motion graphics engine for video editors', 'Exports WebM with alpha transparency for DaVinci Resolve & Premiere Pro', 'Real-time animated charts, odometer counters & broadcast lower thirds'],
-    chips: ['MotionForge', 'WebCodecs', 'Canvas API'],
   },
   {
     kicker: 'AI Direction',
@@ -678,7 +636,7 @@ export const viewerProfiles: {
   {
     id: 'technical',
     name: 'Technical / Web',
-    blurb: 'MotionForge, web development, CRM & pipelines first',
+    blurb: 'Web development, CRM integration & pipelines first',
     color: '#4cc9ff',
     order: ['originals', 'skills', 'journey', 'moments', 'about', 'picks', 'story'],
   },
