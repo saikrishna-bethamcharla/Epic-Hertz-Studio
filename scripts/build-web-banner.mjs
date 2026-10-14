@@ -14,9 +14,9 @@ const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
   const page = await browser.newPage();
   await page.setViewport({ width: 1600, height: 1000, deviceScaleFactor: 1 });
   
-  const img1 = fs.readFileSync('public/assets/projects/vasudha-pharma-site.jpg').toString('base64');
-  const img2 = fs.readFileSync('public/assets/projects/dip-diet-hub.jpg').toString('base64');
-  const img3 = fs.readFileSync('public/assets/projects/vasudha-pharma-green.jpg').toString('base64');
+  const imgVasudha = fs.readFileSync('public/assets/projects/vasudha-pharma-site.jpg').toString('base64');
+  const imgZaiLabs = fs.readFileSync('public/assets/projects/zailabs-site.png').toString('base64');
+  const imgPranic = fs.readFileSync('public/assets/projects/pranic-healing-site.jpg').toString('base64');
   
   const html = `
   <!DOCTYPE html>
@@ -87,7 +87,7 @@ const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
         top: 220px;
         transform: perspective(1200px) rotateY(14deg) rotateX(2deg) scale(0.9);
         z-index: 1;
-        filter: brightness(0.82) contrast(1.05);
+        filter: brightness(0.85) contrast(1.05);
       }
       /* Right Card */
       .card-3 {
@@ -95,7 +95,7 @@ const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
         top: 220px;
         transform: perspective(1200px) rotateY(-14deg) rotateX(2deg) scale(0.9);
         z-index: 1;
-        filter: brightness(0.82) contrast(1.05);
+        filter: brightness(0.85) contrast(1.05);
       }
       /* Center Card */
       .card-2 {
@@ -124,26 +124,26 @@ const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
   </head>
   <body>
     <div class="container">
-      <div class="badge">Production Web Platforms · 3 Deployed Ecosystems</div>
+      <div class="badge">Production Web Platforms · 3 Live Deployments</div>
       <div class="card card-1">
-        <img src="data:image/jpeg;base64,${img3}" />
+        <img src="data:image/jpeg;base64,${imgPranic}" />
         <div class="card-tag">
-          <span class="dot" style="background: #46e3a8;"></span>
-          Vasudha Pharma · Green Chemistry
+          <span class="dot" style="background: #e2a046;"></span>
+          Pranic Healing · AP & Telangana Chapter
         </div>
       </div>
       <div class="card card-2">
-        <img src="data:image/jpeg;base64,${img1}" />
+        <img src="data:image/jpeg;base64,${imgVasudha}" />
         <div class="card-tag">
           <span class="dot" style="background: #4cc9ff;"></span>
-          Vasudha Pharma · Global Enterprise Portal (80+ Nations)
+          Vasudha Pharma · Global Enterprise Portal
         </div>
       </div>
       <div class="card card-3">
-        <img src="data:image/jpeg;base64,${img2}" />
+        <img src="data:image/png;base64,${imgZaiLabs}" />
         <div class="card-tag">
-          <span class="dot" style="background: #3ddc97;"></span>
-          DIP Diet · Health & Video Hub
+          <span class="dot" style="background: #a855f7;"></span>
+          Zai Labs · AI & Creative Agency Portal
         </div>
       </div>
     </div>

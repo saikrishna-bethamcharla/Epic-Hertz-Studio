@@ -76,7 +76,7 @@ server.listen(4829, async () => {
   // Scroll down within the modal scroller to capture the websites section
   await page.evaluate(() => {
     const modalScroller = document.querySelector('[data-lenis-prevent]');
-    if (modalScroller) modalScroller.scrollTop = 350;
+    if (modalScroller) modalScroller.scrollTop = 750;
   });
   await new Promise(r => setTimeout(r, 600));
 

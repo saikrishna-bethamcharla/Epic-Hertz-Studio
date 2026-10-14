@@ -47,10 +47,10 @@ export default function ProjectCard({ project, index, onOpen }: { project: Proje
             {project.websites && (
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="rounded border border-[#4cc9ff]/40 bg-[#4cc9ff]/15 px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#4cc9ff] uppercase">
-                  3 Websites Included
+                  {project.websites.length} Websites Included
                 </span>
                 <span className="text-[11px] text-bone/70">
-                  Vasudha Global · Vasudha Green · DIP Diet Hub
+                  {project.websites.map((w) => w.name.replace(' Chem Limited', '').replace(' — AP & Telangana Chapter', '')).join(' · ')}
                 </span>
               </div>
             )}
@@ -63,7 +63,7 @@ export default function ProjectCard({ project, index, onOpen }: { project: Proje
             </div>
             <div className="mt-5 flex flex-wrap items-center gap-3">
               <span className="flex min-h-11 items-center gap-2 rounded-md bg-bone px-5 text-sm font-bold text-ink transition group-hover:bg-white">
-                {project.websites ? '▶ View Websites (3)' : '▶ View Project'}
+                {project.websites ? `▶ View Websites (${project.websites.length})` : '▶ View Project'}
               </span>
               {project.liveUrl && (
                 <a
