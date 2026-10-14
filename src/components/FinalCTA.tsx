@@ -3,7 +3,6 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { profile } from '../data/portfolio';
 import { useSmoothScroll } from '../hooks/smoothScroll';
 import { EASE, Magnetic, Particles } from './fx';
-import { SeriesMark } from './Poster';
 
 export default function FinalCTA({ onReplay }: { onReplay: () => void }) {
   const ref = useRef<HTMLElement>(null);
@@ -17,6 +16,7 @@ export default function FinalCTA({ onReplay }: { onReplay: () => void }) {
     { label: "Let's Build", href: `mailto:${profile.email}?subject=${encodeURIComponent("Let's build something")}`, primary: true, cursor: 'play' },
     { label: 'LinkedIn', href: profile.links.linkedin, cursor: 'link' },
     { label: 'GitHub', href: profile.links.github, cursor: 'link' },
+    { label: 'Instagram', href: profile.links.instagram, cursor: 'link' },
     { label: 'Email', href: `mailto:${profile.email}`, cursor: 'link' },
   ];
 
@@ -89,11 +89,9 @@ export default function FinalCTA({ onReplay }: { onReplay: () => void }) {
       </div>
 
       <footer className="absolute inset-x-0 bottom-0 px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] text-center">
-        <div className="mb-2 text-base">
-          <SeriesMark />
-        </div>
+        <p className="mb-1 font-display text-lg tracking-wider text-bone">{profile.displayName}</p>
         <p className="text-[11px] leading-relaxed text-smoke">
-          © {new Date().getFullYear()} {profile.displayName}. A personal, streaming-inspired portfolio — not affiliated with any streaming service.
+          © {new Date().getFullYear()} {profile.fullName} · Creative &amp; Technical Lead · Hyderabad, India
         </p>
       </footer>
     </section>
