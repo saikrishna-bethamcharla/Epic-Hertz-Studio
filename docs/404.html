@@ -1,14 +1,16 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en" style="background-color: #050507; color: #f4f1ec;">
   <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="refresh" content="0; url=./" />
-    <title>Redirecting — Sai Krishna</title>
+    <meta charset="utf-8">
+    <title>Sai Krishna — Redirecting</title>
     <script>
-      window.location.replace(window.location.pathname.split('/').slice(0, 2).join('/') + '/');
+      var path = window.location.pathname;
+      if (!path.includes('/docs')) {
+        window.location.replace('/Portfolio/docs/' + window.location.search + window.location.hash);
+      } else {
+        window.location.replace('/Portfolio/docs/');
+      }
     </script>
   </head>
-  <body style="background-color: #050507; color: #f4f1ec; margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; font-family: sans-serif;">
-    <p style="color: #ff3d5a; letter-spacing: 0.2em; font-weight: bold; text-transform: uppercase;">Redirecting...</p>
-  </body>
+  <body style="background-color: #050507; color: #f4f1ec; margin: 0;"></body>
 </html>
