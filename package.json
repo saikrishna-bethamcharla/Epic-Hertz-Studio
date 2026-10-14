@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build && node scripts/sync-docs.mjs",
+    "dev": "node scripts/pre-build.mjs && vite",
+    "build": "node scripts/pre-build.mjs && tsc -b && vite build && node scripts/sync-all.mjs",
     "preview": "vite preview",
     "images": "node scripts/build-images.mjs"
   },

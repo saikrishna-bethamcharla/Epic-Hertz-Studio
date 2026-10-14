@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en" style="background-color: #050507; color: #f4f1ec;">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>Sai Krishna — The Series</title>
+    <meta name="description" content="Sai Krishna Bethamcharla — Creative & Technical Lead at Zai Labs. AI Filmmaking, Web Development, and Post-Production." />
+    <meta name="theme-color" content="#07070a" />
+    <meta property="og:title" content="Sai Krishna — Creative & Technical Lead" />
+    <meta property="og:description" content="Creative & Technical Lead at Zai Labs. AI Filmmaking, Web Development, and Post-Production." />
+    <meta property="og:image" content="./assets/og-image.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <script>
+      // Auto-recover ONLY if browser serves cached index.html that tries to load an outdated production chunk
+      window.addEventListener('error', function (e) {
+        var url = e.target && (e.target.src || e.target.href);
+        if (url && url.includes('/assets/index-') && e.target.tagName === 'SCRIPT') {
+          var key = 'chunk_reload_' + url;
+          if (!sessionStorage.getItem(key)) {
+            sessionStorage.setItem(key, '1');
+            window.location.reload();
+          }
+        }
+      }, true);
+    </script>
+  </head>
+  <body style="background-color: #050507; color: #f4f1ec; margin: 0; min-height: 100vh;">
+    <div id="root"></div>
+    <noscript>Sai Krishna Bethamcharla — Creative & Technical Lead. Please enable JavaScript to watch the series.</noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
