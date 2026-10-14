@@ -75,6 +75,8 @@ export type Project = {
   year: string;
   genre: string;
   logline: string;
+  image?: string;
+  liveUrl?: string;
   stack: string[];
   build: string[];
   features: string[];
@@ -86,32 +88,98 @@ export type Project = {
 
 export const projects: Project[] = [
   {
-    id: 'streamhub-qr-bridge',
-    title: 'StreamHub Video & QR Bridge',
+    id: 'vasudha-pharma-portal',
+    title: 'Vasudha Pharma Global Portal',
     year: '2026',
-    genre: 'Streaming Showcase • Real-Time QR Mobile Handoff',
-    logline: 'High-definition cinematic video showcase platform with modal playback theater and instant QR code generation for frictionless mobile scanning.',
-    stack: ['JavaScript (ES6+)', 'HTML5/CSS3', 'Python Local Server', 'QR Canvas Engine', 'YouTube API', 'Responsive UI'],
+    genre: 'Global Pharma Architecture • Multilingual • Zoho CRM',
+    logline: 'Global enterprise pharmaceutical web platform for Vasudha Pharma Chem Limited, exporting cGMP APIs to 80+ nations with 3D interactive global footprint, Zoho CRM web-to-lead automation, and 6-language localization.',
+    image: './assets/projects/vasudha-pharma-site.jpg',
+    liveUrl: 'https://saikrishna-bethamcharla.github.io/vasudhapharma/',
+    github: 'https://github.com/saikrishna-bethamcharla/vasudhapharma',
+    stack: ['HTML5', 'Modern CSS & JS', 'Zoho CRM Web-to-Lead', 'Interactive 3D Globe', 'Multilingual (6 Langs)', 'Cloud Hosting'],
     build: [
-      'Developed a responsive video theater featuring multi-video showcase cards with instant modal theater playback and fallback resolution caching.',
-      'Created an auto-detecting QR code generator that parses local network IPs and live domains for instant on-set or client mobile handoff.',
-      'Engineered downloadable high-res vector/PNG QR asset export for marketing collateral, print posters, and live presentations.',
+      'Engineered an enterprise pharmaceutical digital portal showcasing world-class cGMP APIs, intermediates, pellets, and piperidone derivatives.',
+      'Configured automated customer lead capture funnels integrating Zoho CRM web-to-lead scripts, SalesIQ live chat, and FAQ knowledge bases.',
+      'Implemented full multilingual localization across English, Hindi, Arabic, German, Spanish, and Japanese with regional regulatory dossier links.',
+      'Built interactive regulatory market displays featuring US FDA, EDQM, and PMDA compliance matrices across North America, Europe, and Asia.',
     ],
     features: [
-      'High-resolution video showcase with cinema theater modal',
-      'Live network auto-detecting QR code generator',
-      'Frictionless mobile phone camera scan-and-play handoff',
-      '1-click high-resolution PNG QR code asset download',
-      'Dynamic project metrics and milestones dashboard',
+      'Interactive 3D global market footprint with regional filters',
+      'Multilingual localization across 6 global languages',
+      'Zoho CRM web-to-lead funnel & automated customer routing',
+      'Comprehensive cGMP API, intermediate & pellet catalogs',
+      'Interactive careers portal with applicant submission pathways',
     ],
     metrics: [
-      { value: 'Instant QR', label: 'real-time mobile device handoff' },
-      { value: 'HD Modal', label: 'cinema-grade playback theater' },
-      { value: 'Zero Latency', label: 'local network & live web sync' },
-      { value: '100%', label: 'responsive across mobile & desktop' },
+      { value: '80+ Nations', label: 'global export market footprint' },
+      { value: '6 Languages', label: 'multilingual localization' },
+      { value: 'Zoho CRM', label: 'automated lead capture funnels' },
+      { value: 'cGMP APIs', label: 'technical regulatory dossiers' },
     ],
     palette: { from: '#04121f', via: '#0f4c6e', to: '#05080d', accent: '#4cc9ff' },
+    motif: 'flow',
+  },
+  {
+    id: 'dip-diet-healthhub',
+    title: 'DIP Diet Health & Video Hub',
+    year: '2026',
+    genre: 'Clinical Health Platform • Video Theater • QR Code Mobile Bridge',
+    logline: 'Comprehensive wellness & natural disease reversal web platform based on Dr. Biswaroop Roy Chowdhury’s DIP diet protocols, featuring modal theater playback, lifestyle guides, and real-time QR code mobile handoff.',
+    image: './assets/projects/dip-diet-hub.jpg',
+    github: 'https://github.com/saikrishna-bethamcharla/Dr.-Biswaroop-Roy',
+    stack: ['JavaScript (ES6+)', 'HTML5 / Modern CSS', 'Python Server', 'QR Canvas Engine', 'Video Modal Theater', 'Print System'],
+    build: [
+      'Architected a responsive wellness hub detailing dietary protocols, 3-step heat emergency procedures, and disease reversal methodologies.',
+      'Developed a custom cinema modal theater playing curated educational video masterclasses with zero UI clutter and instant launch.',
+      'Engineered a dynamic, zero-dependency client-side QR code generator that auto-detects local IPs and live domains for frictionless mobile device handoff.',
+      'Built a dedicated one-click print engine for physical clinical guide handoffs and direct consultant communication bridges for Hyderabad wellness centers.',
+    ],
+    features: [
+      'Interactive cinema theater modal for curated health masterclasses',
+      'Instant auto-detecting QR code generator for smartphone handoff',
+      'Downloadable high-resolution QR PNG assets for clinic displays',
+      'Printer-optimized dietary tables & emergency protocol guides',
+      'Direct WhatsApp and phone consultation bridges for Hyderabad centers',
+    ],
+    metrics: [
+      { value: '6 Videos', label: 'curated clinical masterclasses' },
+      { value: 'Instant QR', label: 'real-time mobile device handoff' },
+      { value: 'Print Engine', label: 'one-click clinical guide export' },
+      { value: '100%', label: 'client-side responsive & offline ready' },
+    ],
+    palette: { from: '#021810', via: '#0d5a38', to: '#040b07', accent: '#3ddc97' },
     motif: 'shield',
+  },
+  {
+    id: 'vasudha-pharma-green',
+    title: 'Vasudha Pharma Green Chemistry',
+    year: '2026',
+    genre: 'Sustainable Pharma Portal • EHS & R&D • Career Tracks',
+    logline: 'Sustainable green chemistry and corporate governance portal for Vasudha Pharma Chem Limited, highlighting zero liquid discharge (ZLD), R&D facilities, and dedicated student/professional career pathways.',
+    image: './assets/projects/vasudha-pharma-green.jpg',
+    liveUrl: 'https://saikrishna-bethamcharla.github.io/vasudhapharma-green/',
+    github: 'https://github.com/saikrishna-bethamcharla/vasudhapharma-green',
+    stack: ['HTML5', 'CSS3 / Modern Layouts', 'Zero Liquid Discharge SOPs', 'Zoho Lead Automation', 'R&D Virtual Showcase'],
+    build: [
+      'Engineered a dedicated sustainable corporate web platform highlighting green chemistry principles, solvent recovery, and environmental safety.',
+      'Crafted interactive career track layouts tailored for university students, experienced scientists, and manufacturing engineers.',
+      'Integrated formal sustainability reports, statutory corporate governance disclosures, and vigilance mechanisms.',
+    ],
+    features: [
+      'Zero Liquid Discharge (ZLD) and safety culture showcase',
+      'Dedicated R&D laboratory and cleanroom facility walkthroughs',
+      'Specialized student opportunities and talent community portals',
+      'Statutory regulations, POSH policy & CSR governance transparency',
+      'Seamless multi-page navigation with dedicated contact desk',
+    ],
+    metrics: [
+      { value: 'Zero Liquid', label: 'ZLD green chemistry compliance' },
+      { value: '4+ Tracks', label: 'dedicated career talent pathways' },
+      { value: 'ESG Ready', label: 'sustainability & statutory disclosures' },
+      { value: 'Production', label: 'fully responsive cloud deployment' },
+    ],
+    palette: { from: '#0a1912', via: '#165b37', to: '#050c08', accent: '#46e3a8' },
+    motif: 'tenants',
   },
   {
     id: 'ai-cinematic-pipeline',
@@ -140,34 +208,6 @@ export const projects: Project[] = [
     ],
     palette: { from: '#2a0610', via: '#7a0f24', to: '#0b0710', accent: '#ff3d5a' },
     motif: 'shield',
-  },
-  {
-    id: 'web-crm-delivery-platform',
-    title: 'Client Web & CRM Architecture',
-    year: '2026',
-    genre: 'Frontend • Modern JS • CRM Integration • Managed Cloud',
-    logline: 'Production-ready responsive web applications with integrated CRM workflows, domain management, and cloud hosting infrastructure.',
-    stack: ['HTML5', 'CSS3 / Tailwind', 'JavaScript', 'Modern JS Frameworks', 'CRM Integration', 'Cloud Hosting'],
-    build: [
-      'Led technical front-end development with HTML, CSS, and modern JavaScript frameworks, engineering responsive, performant, and high-converting web applications.',
-      'Coordinated complete client website builds, managed hosting setups, DNS configuration, and end-to-end CRM integration as part of client delivery scopes at Zai Labs.',
-      'Established standardized brand business documentation templates across work orders, quotations, and invoices.',
-    ],
-    features: [
-      'Responsive multi-device interface architecture',
-      'CRM integration & automated customer lead flows',
-      'Client hosting configuration and DNS setup',
-      'Standardized formal client business documentation',
-      'Brand-consistent typography and design systems',
-    ],
-    metrics: [
-      { value: 'Full-Scope', label: 'website, CRM & hosting engagement' },
-      { value: '100%', label: 'responsive across mobile & desktop' },
-      { value: 'Automated', label: 'CRM pipeline configuration' },
-      { value: 'Production', label: 'reliable client hosting setup' },
-    ],
-    palette: { from: '#04121f', via: '#0f4c6e', to: '#05080d', accent: '#4cc9ff' },
-    motif: 'flow',
   },
   {
     id: 'post-production-motion',
@@ -257,18 +297,20 @@ export const achievements: Achievement[] = [
     laurel: 'AI Direction',
   },
   {
-    id: 'streamhub-bridge',
-    title: 'StreamHub & QR Bridge',
-    org: 'Mobile Testing Hub',
-    detail: 'Built an interactive video showcase and local/web QR bridge for frictionless mobile device handoff.',
-    laurel: 'Web Platform',
+    id: 'vasudha-pharma-deployment',
+    title: 'Vasudha Pharma Enterprise Portal',
+    org: 'Vasudha Pharma Chem Limited',
+    detail: 'Architected global enterprise pharma platform with Zoho CRM integration, 6-language localization, and 80+ export market footprint.',
+    laurel: 'Enterprise Web',
+    link: 'https://saikrishna-bethamcharla.github.io/vasudhapharma/',
   },
   {
-    id: 'full-scope-delivery',
-    title: 'Full-Scope Client Delivery',
-    org: 'Website • CRM • Hosting',
-    detail: 'Coordinated an end-to-end client engagement delivering responsive web, automated CRM integration, and production hosting.',
-    laurel: 'Client Delivery',
+    id: 'dip-diet-platform',
+    title: 'DIP Diet Health & Video Hub',
+    org: 'Dr. Biswaroop Roy Chowdhury Protocols',
+    detail: 'Built clinical wellness platform with cinema modal theater, printable lifestyle guides, and real-time QR mobile bridge.',
+    laurel: 'Health Platform',
+    link: 'https://github.com/saikrishna-bethamcharla/Dr.-Biswaroop-Roy',
   },
   {
     id: 'brand-standardization',
@@ -284,12 +326,12 @@ export type Certification = { issuer: string; name: string; link: string };
 export const certifications: Certification[] = [
   { issuer: 'Kingston University', name: 'Postgraduate Diploma (PGD) • London', link: '#' },
   { issuer: 'Zai Labs', name: 'Creative & Technical Leadership', link: '#' },
-  { issuer: 'Web & Video', name: 'StreamHub Video Platform & QR Bridge', link: '#' },
+  { issuer: 'Enterprise Web', name: 'Vasudha Pharma Global Architecture & Zoho CRM', link: 'https://saikrishna-bethamcharla.github.io/vasudhapharma/' },
+  { issuer: 'Clinical Tech', name: 'DIP Diet Health Platform & QR Mobile Bridge', link: 'https://github.com/saikrishna-bethamcharla/Dr.-Biswaroop-Roy' },
   { issuer: 'AI Cinema', name: 'Seedance 2.0 & Kling 3.0 Generative Video', link: '#' },
   { issuer: 'Post-Production', name: 'DaVinci Resolve & Premiere Pro Editorial', link: '#' },
   { issuer: 'Adobe CC', name: 'After Effects Motion Graphics & Compositing', link: '#' },
-  { issuer: 'Web Dev', name: 'Modern JavaScript, Responsive Web & APIs', link: '#' },
-  { issuer: 'Client Delivery', name: 'Client Scoping, Work Orders & CRM Architecture', link: '#' },
+  { issuer: 'Client Delivery', name: 'Client Scoping, Work Orders & Cloud Architecture', link: '#' },
 ];
 
 export type Skill = { name: string; mono: string; note?: string };
@@ -560,12 +602,13 @@ export const topPicks: TopPick[] = [
   { label: 'AI Video Engine', title: 'Seedance 2.0 & Kling 3.0', detail: 'Multi-shot AI filmmaking with structured shot bibles', palette: crimson },
   { label: 'Academic Credential', title: 'Kingston University', detail: 'Postgraduate Diploma (PGD) • London', palette: violet },
   { label: 'Prompt Mastery', title: 'Bilingual (EN+ZH)', detail: 'Structured prompts for character & environment consistency', palette: ocean },
-  { label: 'Interactive Platform', title: 'StreamHub & QR Bridge', detail: 'HD video showcase with live mobile camera handoff', palette: ocean },
+  { label: 'Enterprise Web', title: 'Vasudha Pharma Portal', detail: 'Global pharma platform with Zoho CRM, 3D globe & 6 languages', palette: ocean },
+  { label: 'Clinical Tech', title: 'DIP Diet Health & Video Hub', detail: 'Dr. Biswaroop Roy Chowdhury protocols & real-time QR bridge', palette: jade },
   { label: 'Post-Production', title: 'DaVinci Resolve', detail: 'Beat-synced editorial & cinematic color grading', palette: crimson },
   { label: 'Motion Graphics', title: 'After Effects', detail: 'Compositing, visual effects & title animations', palette: violet },
-  { label: 'Full Delivery', title: 'Web • CRM • Hosting', detail: 'Coordinated end-to-end client engagement at Zai Labs', palette: jade },
+  { label: 'Green Architecture', title: 'Vasudha Green Chemistry', detail: 'Sustainable ZLD manufacturing, R&D & career tracks', palette: jade },
   { label: 'Visual Design', title: 'Adobe Illustrator & Photoshop', detail: 'Branded visual assets & typography systems', palette: amber },
-  { label: 'Team Leadership', title: 'Production SOPs', detail: 'Standardized work orders, quotations & client documentation', palette: jade },
+  { label: 'Team Leadership', title: 'Production SOPs', detail: 'Standardized work orders, quotations & client documentation', palette: crimson },
 ];
 
 export type IntroSlide = { kicker: string; title: string; lines: string[]; chips?: string[] };

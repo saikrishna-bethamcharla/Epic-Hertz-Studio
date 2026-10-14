@@ -5,7 +5,7 @@ import type { Palette, Project } from '../data/portfolio';
  * Generated "key art" for thumbnails — layered gradients, light falloff and a motif.
  * No stock imagery: every card is art-directed from its palette.
  */
-export function PosterBackdrop({ palette, children, className = '' }: { palette: Palette; children?: ReactNode; className?: string }) {
+export function PosterBackdrop({ palette, image, children, className = '' }: { palette: Palette; image?: string; children?: ReactNode; className?: string }) {
   return (
     <div
       className={`absolute inset-0 overflow-hidden ${className}`}
@@ -15,6 +15,14 @@ export function PosterBackdrop({ palette, children, className = '' }: { palette:
           linear-gradient(160deg, ${palette.from} 0%, ${palette.to} 100%)`,
       }}
     >
+      {image && (
+        <img
+          src={image}
+          alt=""
+          loading="lazy"
+          className="absolute inset-0 h-full w-full object-cover object-top opacity-40 mix-blend-luminosity transition-transform duration-700 group-hover:scale-105 group-hover:opacity-65"
+        />
+      )}
       <div
         aria-hidden
         className="absolute -right-1/4 -top-1/3 h-[140%] w-[70%] rotate-[18deg] opacity-40 blur-2xl"
@@ -31,7 +39,7 @@ export function PosterBackdrop({ palette, children, className = '' }: { palette:
 export function ProjectArt({ project, className = '' }: { project: Project; className?: string }) {
   const a = project.palette.accent;
   return (
-    <PosterBackdrop palette={project.palette} className={className}>
+    <PosterBackdrop palette={project.palette} image={project.image} className={className}>
       <svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full" aria-hidden>
         <defs>
           <radialGradient id={`g-${project.id}`} cx="50%" cy="50%" r="50%">
