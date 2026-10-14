@@ -36,7 +36,6 @@ function Outro() {
       href={profile.links.github}
       target="_blank"
       rel="noreferrer"
-      data-cursor="link"
       className="group flex aspect-[3/4] w-[70vw] shrink-0 snap-start flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-white/15 text-center transition hover:border-crimson-2/60 sm:w-[44vw] lg:aspect-auto lg:h-[66vh] lg:w-[24vw]"
     >
       <span className="flex h-16 w-16 items-center justify-center rounded-full border border-white/25 text-2xl text-bone transition group-hover:scale-110 group-hover:border-crimson-2 group-hover:text-crimson-2">↗</span>
@@ -78,7 +77,7 @@ function PinnedOriginals({ onOpen }: { onOpen: (p: Project) => void }) {
     <div ref={wrap} style={{ height: `calc(100vh + ${dist}px)` }} className="relative">
       <div className="sticky top-0 flex h-screen flex-col justify-center overflow-hidden">
         <div aria-hidden className="absolute inset-0 bg-[radial-gradient(50%_60%_at_70%_50%,rgba(229,19,43,0.10),transparent_70%)]" />
-        <motion.div ref={track} style={{ x }} className="gutter relative flex items-center gap-8 pr-[12vw]" data-cursor="drag">
+        <motion.div ref={track} style={{ x }} className="gutter relative flex items-center gap-8 pr-[12vw]">
           <Intro />
           {projects.map((p, i) => (
             <ProjectCard key={p.id} project={p} index={i} onOpen={() => onOpen(p)} />

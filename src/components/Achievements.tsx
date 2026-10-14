@@ -51,7 +51,6 @@ export default function Achievements() {
                     href={a.link}
                     target="_blank"
                     rel="noreferrer"
-                    data-cursor="link"
                     className="relative mt-auto inline-flex min-h-10 items-center gap-1 pt-5 text-xs font-semibold tracking-wide text-bone underline decoration-[#d9b46a]/60 underline-offset-4 hover:decoration-[#d9b46a]"
                   >
                     View certificate ↗
@@ -79,7 +78,6 @@ export default function Achievements() {
                 href={c.link}
                 target="_blank"
                 rel="noreferrer"
-                data-cursor="link"
                 className="group relative flex w-[230px] shrink-0 snap-start flex-col justify-between rounded-xl bg-ink-2 p-4 ring-1 ring-white/10 transition hover:-translate-y-1 hover:ring-white/30"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}

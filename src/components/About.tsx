@@ -16,12 +16,12 @@ export default function About() {
       <div className="gutter grid items-center gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-16">
         <motion.div
           className="mx-auto w-full max-w-md lg:max-w-none"
-          initial={{ opacity: 0, scale: 0.88, filter: 'blur(12px)' }}
-          whileInView={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true, margin: '-10% 0px' }}
-          transition={{ duration: 1.2, ease: EASE }}
+          transition={{ duration: 0.8, ease: EASE }}
         >
-        <Tilt max={5} className="rounded-2xl">
+        <Tilt max={4} glare={false} className="rounded-2xl">
           <div className="relative aspect-[4/5] overflow-hidden rounded-2xl ring-1 ring-white/10">
             <div className="absolute inset-0 bg-[radial-gradient(80%_60%_at_50%_30%,#5a0b1b,#14060a_60%,#07070a)]" />
             <div className="absolute inset-0 opacity-50 [background-image:repeating-linear-gradient(90deg,rgba(255,255,255,0.03)_0px,rgba(255,255,255,0.03)_1px,transparent_1px,transparent_28px)]" />
@@ -48,10 +48,10 @@ export default function About() {
         <div>
           <motion.p
             className="font-serif text-[clamp(1.6rem,3.2vw,2.6rem)] italic leading-[1.15] text-bone"
-            initial={{ opacity: 0, y: 24, filter: 'blur(8px)' }}
-            whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 1, ease: EASE }}
+            transition={{ duration: 0.8, ease: EASE }}
           >
             “{profile.intro}”
           </motion.p>

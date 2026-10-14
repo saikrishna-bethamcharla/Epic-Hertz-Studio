@@ -17,7 +17,12 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (reduced) return;
-    const lenis = new Lenis({ duration: 1.15, smoothWheel: true, easing: (t) => 1 - Math.pow(1 - t, 4) });
+    const lenis = new Lenis({
+      duration: 0.85,
+      smoothWheel: true,
+      wheelMultiplier: 1.0,
+      easing: (t) => 1 - Math.pow(1 - t, 3),
+    });
     lenisRef.current = lenis;
     let raf = 0;
     const loop = (time: number) => {

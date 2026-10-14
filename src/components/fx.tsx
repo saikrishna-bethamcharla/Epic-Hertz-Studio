@@ -91,8 +91,8 @@ export function RevealText({ text, className = '', delay = 0, as = 'span' }: { t
           <motion.span
             className="inline-block"
             variants={{
-              hidden: { y: '105%', opacity: 0, filter: 'blur(8px)' },
-              show: { y: '0%', opacity: 1, filter: 'blur(0px)', transition: { duration: 0.9, ease: EASE } },
+              hidden: { y: '105%', opacity: 0 },
+              show: { y: '0%', opacity: 1, transition: { duration: 0.75, ease: EASE } },
             }}
           >
             {w}

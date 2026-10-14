@@ -7,16 +7,15 @@ export default function ProjectCard({ project, index, onOpen }: { project: Proje
   return (
     <motion.article
       className="w-[84vw] shrink-0 snap-start sm:w-[62vw] lg:w-[46vw] xl:w-[42vw]"
-      initial={{ opacity: 0, y: 40, filter: 'blur(10px)' }}
-      whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '0px -10% 0px 0px' }}
-      transition={{ duration: 0.9, delay: index * 0.08, ease: EASE }}
+      transition={{ duration: 0.7, delay: index * 0.08, ease: EASE }}
     >
-      <Tilt max={5} className="group rounded-2xl">
+      <Tilt max={4} glare={false} className="group rounded-2xl">
         <div
           role="button"
           tabIndex={0}
-          data-cursor="view"
           onClick={onOpen}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -45,6 +44,16 @@ export default function ProjectCard({ project, index, onOpen }: { project: Proje
               {project.title}
             </motion.h3>
             <p className="mt-3 max-w-md text-sm leading-relaxed text-bone/75 sm:text-[15px]">{project.logline}</p>
+            {project.websites && (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="rounded border border-[#4cc9ff]/40 bg-[#4cc9ff]/15 px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#4cc9ff] uppercase">
+                  3 Websites Included
+                </span>
+                <span className="text-[11px] text-bone/70">
+                  Vasudha Global · Vasudha Green · DIP Diet Hub
+                </span>
+              </div>
+            )}
             <div className="mt-4 flex flex-wrap gap-1.5">
               {project.stack.map((t) => (
                 <span key={t} className="rounded-full bg-black/35 px-2.5 py-1 text-[11px] font-medium text-bone/90 backdrop-blur">
@@ -53,13 +62,14 @@ export default function ProjectCard({ project, index, onOpen }: { project: Proje
               ))}
             </div>
             <div className="mt-5 flex flex-wrap items-center gap-3">
-              <span className="flex min-h-11 items-center gap-2 rounded-md bg-bone px-5 text-sm font-bold text-ink transition group-hover:bg-white">▶ View Project</span>
+              <span className="flex min-h-11 items-center gap-2 rounded-md bg-bone px-5 text-sm font-bold text-ink transition group-hover:bg-white">
+                {project.websites ? '▶ View Websites (3)' : '▶ View Project'}
+              </span>
               {project.liveUrl && (
                 <a
                   href={project.liveUrl}
                   target="_blank"
                   rel="noreferrer"
-                  data-cursor="link"
                   onClick={(e) => e.stopPropagation()}
                   className="flex min-h-11 items-center gap-2 rounded-md border border-crimson-2/40 bg-crimson-2/20 px-4 text-sm font-semibold text-bone backdrop-blur transition hover:border-crimson-2 hover:bg-crimson-2/30"
                 >
@@ -71,7 +81,6 @@ export default function ProjectCard({ project, index, onOpen }: { project: Proje
                   href={project.github}
                   target="_blank"
                   rel="noreferrer"
-                  data-cursor="link"
                   onClick={(e) => e.stopPropagation()}
                   className="flex min-h-11 items-center gap-2 rounded-md border border-white/25 bg-black/30 px-4 text-sm font-semibold text-bone backdrop-blur transition hover:border-bone"
                 >

@@ -59,7 +59,6 @@ export default function ProjectModal({ project, onClose, onSwitch }: { project: 
               ref={closeBtn}
               type="button"
               onClick={onClose}
-              data-cursor="close"
               aria-label="Close project"
               className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-10 flex h-11 w-11 items-center justify-center rounded-full bg-black/60 text-lg text-bone backdrop-blur transition hover:bg-black"
             >
@@ -99,7 +98,6 @@ export default function ProjectModal({ project, onClose, onSwitch }: { project: 
                       href={project.liveUrl}
                       target="_blank"
                       rel="noreferrer"
-                      data-cursor="link"
                       className="flex min-h-12 items-center gap-2 rounded-md bg-crimson px-6 text-[15px] font-bold text-white transition hover:bg-crimson-2"
                     >
                       Visit Live Site ↗
@@ -112,7 +110,6 @@ export default function ProjectModal({ project, onClose, onSwitch }: { project: 
                       href={project.github}
                       target="_blank"
                       rel="noreferrer"
-                      data-cursor="link"
                       className="flex min-h-12 items-center gap-2 rounded-md border border-white/25 bg-black/40 px-6 text-[15px] font-bold text-bone backdrop-blur transition hover:border-bone hover:bg-black/60"
                     >
                       GitHub Repository ↗
@@ -120,6 +117,78 @@ export default function ProjectModal({ project, onClose, onSwitch }: { project: 
                   </Magnetic>
                 )}
               </motion.div>
+            )}
+
+            {/* Featured Sub-Websites if present */}
+            {project.websites && project.websites.length > 0 && (
+              <motion.section variants={block} className="mt-10 rounded-2xl border border-white/10 bg-black/40 p-5 sm:p-7 backdrop-blur-sm">
+                <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
+                  <div>
+                    <h3 className="text-xs font-bold uppercase tracking-[0.3em] text-[#4cc9ff]">All Production Websites</h3>
+                    <p className="mt-1 text-sm text-mist">Complete digital platforms engineered from architecture through cloud launch.</p>
+                  </div>
+                  <span className="rounded-full border border-[#4cc9ff]/40 bg-[#4cc9ff]/15 px-3 py-1 text-xs font-bold text-[#4cc9ff]">
+                    {project.websites.length} Deployed Platforms
+                  </span>
+                </div>
+
+                <div className="space-y-6">
+                  {project.websites.map((site) => (
+                    <div
+                      key={site.id}
+                      className="group relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] p-4 transition duration-300 hover:border-[#4cc9ff]/40 hover:bg-white/[0.06] sm:p-5"
+                    >
+                      <div className="grid gap-5 md:grid-cols-[240px_1fr]">
+                        <div className="relative aspect-[16/10] overflow-hidden rounded-lg border border-white/10 bg-black/60">
+                          <img
+                            src={site.image}
+                            alt={site.name}
+                            className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-105"
+                          />
+                        </div>
+                        <div className="flex flex-col justify-between">
+                          <div>
+                            <h4 className="font-display text-2xl tracking-wide text-bone sm:text-3xl">{site.name}</h4>
+                            <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-[#4cc9ff]">{site.category}</p>
+                            <p className="mt-2 text-sm leading-relaxed text-bone/85">{site.logline}</p>
+                            
+                            <div className="mt-3.5 flex flex-wrap gap-1.5">
+                              {site.tags.map((t) => (
+                                <span key={t} className="rounded-full border border-white/10 bg-black/40 px-2.5 py-0.5 text-[11px] font-medium text-bone/80">
+                                  {t}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="mt-5 flex flex-wrap items-center gap-3 pt-2">
+                            {site.liveUrl && (
+                              <a
+                                href={site.liveUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex min-h-9 items-center gap-2 rounded-md bg-crimson px-4 text-xs font-bold text-white transition hover:bg-crimson-2"
+                              >
+                                Visit Live Site ↗
+                              </a>
+                            )}
+                            {site.github && (
+                              <a
+                                href={site.github}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex min-h-9 items-center gap-2 rounded-md border border-white/20 bg-black/40 px-4 text-xs font-semibold text-bone transition hover:border-bone hover:bg-black/70"
+                              >
+                                GitHub Repo ↗
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.section>
             )}
 
             {/* impact */}
@@ -188,7 +257,6 @@ export default function ProjectModal({ project, onClose, onSwitch }: { project: 
                   <button
                     key={p.id}
                     type="button"
-                    data-cursor="view"
                     onClick={() => onSwitch(p)}
                     className="group relative aspect-video overflow-hidden rounded-xl text-left ring-1 ring-white/10 transition hover:ring-white/30"
                   >

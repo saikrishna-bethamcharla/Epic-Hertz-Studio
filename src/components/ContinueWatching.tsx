@@ -24,7 +24,7 @@ export default function ContinueWatching({ order }: { order: SectionId[] }) {
         <span className="hidden text-xs text-smoke sm:block">Progress shows what you&apos;ve watched so far</span>
       </div>
       <div className="group/rail relative">
-        <div ref={rail} className="rail gutter flex snap-x snap-mandatory gap-3 overflow-x-auto py-8 sm:gap-4" data-cursor={fine ? undefined : 'drag'}>
+        <div ref={rail} className="rail gutter flex snap-x snap-mandatory gap-3 overflow-x-auto py-8 sm:gap-4">
           {order.map((id, i) => {
             const meta = sectionMeta[id];
             const p = progress[id] ?? 0;
@@ -33,18 +33,17 @@ export default function ContinueWatching({ order }: { order: SectionId[] }) {
               <motion.button
                 key={id}
                 type="button"
-                data-cursor="play"
                 onClick={() => scrollTo(`#${id}`)}
                 onHoverStart={() => setHovered(i)}
                 onHoverEnd={() => setHovered(null)}
                 onFocus={() => setHovered(i)}
                 onBlur={() => setHovered(null)}
                 className="group relative aspect-video w-[72vw] shrink-0 snap-start overflow-visible text-left sm:w-[42vw] md:w-[30vw] lg:w-[22vw]"
-                initial={{ opacity: 0, y: 40, filter: 'blur(8px)' }}
-                whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                initial={{ opacity: 0, y: 25 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-5% 0px' }}
-                animate={{ x: shift, scale: fine && hovered === i ? 1.08 : 1, zIndex: hovered === i ? 10 : 1 }}
-                transition={{ duration: 0.5, ease: EASE, delay: 0 }}
+                animate={{ x: shift, scale: fine && hovered === i ? 1.05 : 1, zIndex: hovered === i ? 10 : 1 }}
+                transition={{ duration: 0.35, ease: EASE }}
               >
                 <div className="relative h-full w-full overflow-hidden rounded-lg ring-1 ring-white/10 transition duration-500 group-hover:shadow-[0_20px_60px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,61,90,0.6)]">
                   <motion.div className="absolute inset-0" animate={{ scale: hovered === i ? 1.12 : 1 }} transition={{ duration: 0.8, ease: EASE }}>

@@ -185,7 +185,7 @@ export default function PlayIntro({ onClose }: { onClose: () => void }) {
       {phase === 'reel' && (
         <>
           <button type="button" aria-label="Previous highlight" className="absolute inset-y-0 left-0 z-[5] w-1/4" onClick={prev} />
-          <button type="button" aria-label="Next highlight" data-cursor="play" className="absolute inset-y-0 right-0 z-[5] w-1/4" onClick={next} />
+          <button type="button" aria-label="Next highlight" className="absolute inset-y-0 right-0 z-[5] w-1/4" onClick={next} />
         </>
       )}
 
@@ -207,7 +207,6 @@ export default function PlayIntro({ onClose }: { onClose: () => void }) {
         <button
           type="button"
           onClick={onClose}
-          data-cursor="close"
           className="rounded-full bg-bone px-5 py-2.5 text-xs font-bold tracking-[0.18em] text-ink transition hover:bg-white"
         >
           BACK TO BROWSE

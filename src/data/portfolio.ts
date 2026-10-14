@@ -69,6 +69,18 @@ export const experience = [
 
 export type Metric = { value: string; label: string };
 
+export type SubWebsite = {
+  id: string;
+  name: string;
+  category: string;
+  logline: string;
+  image: string;
+  liveUrl?: string;
+  github?: string;
+  tags: string[];
+  metrics: string[];
+};
+
 export type Project = {
   id: string;
   title: string;
@@ -77,6 +89,7 @@ export type Project = {
   logline: string;
   image?: string;
   liveUrl?: string;
+  websites?: SubWebsite[];
   stack: string[];
   build: string[];
   features: string[];
@@ -88,98 +101,71 @@ export type Project = {
 
 export const projects: Project[] = [
   {
-    id: 'vasudha-pharma-portal',
-    title: 'Vasudha Pharma Global Portal',
+    id: 'website-development',
+    title: 'Website Development',
     year: '2026',
-    genre: 'Global Pharma Architecture • Multilingual • Zoho CRM',
-    logline: 'Global enterprise pharmaceutical web platform for Vasudha Pharma Chem Limited, exporting cGMP APIs to 80+ nations with 3D interactive global footprint, Zoho CRM web-to-lead automation, and 6-language localization.',
-    image: './assets/projects/vasudha-pharma-site.jpg',
+    genre: 'Production Web Systems • Enterprise Pharma & Clinical Health',
+    logline: 'Full-scope architecture, engineering, and deployment of production web applications — including the Vasudha Pharma Chem Limited Global Portal (80+ export nations, Zoho CRM), Vasudha Sustainable Green Chemistry Edition, and the DIP Diet Health & Video Hub with real-time QR mobile bridge.',
+    image: './assets/projects/website-development-suite.jpg',
     liveUrl: 'https://saikrishna-bethamcharla.github.io/vasudhapharma/',
     github: 'https://github.com/saikrishna-bethamcharla/vasudhapharma',
-    stack: ['HTML5', 'Modern CSS & JS', 'Zoho CRM Web-to-Lead', 'Interactive 3D Globe', 'Multilingual (6 Langs)', 'Cloud Hosting'],
+    websites: [
+      {
+        id: 'vasudha-pharma-global',
+        name: 'Vasudha Pharma Chem Limited',
+        category: 'Global Enterprise Portal • 80+ Export Nations • Zoho CRM',
+        logline: 'World-class corporate pharmaceutical portal exporting cGMP APIs, intermediates, and pellets to 80+ countries with interactive 3D global market footprint, automated Zoho CRM web-to-lead funnels, and 6-language localization.',
+        image: './assets/projects/vasudha-pharma-site.jpg',
+        liveUrl: 'https://saikrishna-bethamcharla.github.io/vasudhapharma/',
+        github: 'https://github.com/saikrishna-bethamcharla/vasudhapharma',
+        tags: ['Zoho CRM Lead Routing', '3D Interactive Globe', '6 Languages', 'cGMP API Catalog', 'SalesIQ Live Chat'],
+        metrics: ['80+ Nations', '6 Languages', 'Zoho CRM Automated', 'cGMP Compliant'],
+      },
+      {
+        id: 'vasudha-pharma-green',
+        name: 'Vasudha Pharma — Green Chemistry Edition',
+        category: 'Sustainable Pharma Platform • Zero Liquid Discharge • Careers',
+        logline: 'Dedicated corporate sustainability and talent acquisition portal highlighting green chemistry practices, solvent recovery, Zero Liquid Discharge (ZLD), R&D cleanrooms, and structured career talent tracks.',
+        image: './assets/projects/vasudha-pharma-green.jpg',
+        liveUrl: 'https://saikrishna-bethamcharla.github.io/vasudhapharma-green/',
+        github: 'https://github.com/saikrishna-bethamcharla/vasudhapharma-green',
+        tags: ['Zero Liquid Discharge', 'R&D Virtual Labs', 'University Career Tracks', 'ESG Governance', 'Cloud Hosting'],
+        metrics: ['Zero Liquid Discharge', '4+ Career Tracks', 'ESG Disclosures', 'Production Live'],
+      },
+      {
+        id: 'dip-diet-healthhub',
+        name: 'DIP Diet Health & Video Hub',
+        category: 'Clinical Wellness Platform • Cinema Video Theater • QR Bridge',
+        logline: 'Comprehensive clinical wellness platform based on Dr. Biswaroop Roy Chowdhury’s dietary protocols, featuring a custom distraction-free cinema video theater, printer-friendly lifestyle guides, and real-time auto-detecting QR mobile device bridge.',
+        image: './assets/projects/dip-diet-hub.jpg',
+        github: 'https://github.com/saikrishna-bethamcharla/Dr.-Biswaroop-Roy',
+        tags: ['Cinema Modal Theater', 'Real-Time QR Bridge', 'Clinical Print Engine', 'Dr. Biswaroop Protocols'],
+        metrics: ['6 Curated Masterclasses', 'Auto-Detect QR Bridge', '1-Click Print Engine', '100% Offline-Ready'],
+      },
+    ],
+    stack: ['HTML5', 'Modern JavaScript (ES6+)', 'TypeScript', 'CSS3 / Tailwind', 'Zoho CRM Web-to-Lead', 'Interactive 3D / Canvas', 'Cloud Deployment'],
     build: [
-      'Engineered an enterprise pharmaceutical digital portal showcasing world-class cGMP APIs, intermediates, pellets, and piperidone derivatives.',
-      'Configured automated customer lead capture funnels integrating Zoho CRM web-to-lead scripts, SalesIQ live chat, and FAQ knowledge bases.',
-      'Implemented full multilingual localization across English, Hindi, Arabic, German, Spanish, and Japanese with regional regulatory dossier links.',
-      'Built interactive regulatory market displays featuring US FDA, EDQM, and PMDA compliance matrices across North America, Europe, and Asia.',
+      'Engineered and launched 3 complete production web platforms spanning global corporate pharmaceuticals, environmental sustainability, and clinical healthcare wellness.',
+      'Configured automated customer acquisition funnels incorporating Zoho CRM web-to-lead scripts, SalesIQ chat, and multi-language routing for international markets.',
+      'Developed real-time client-side QR mobile bridges that auto-detect network domains to seamlessly transfer desktop viewers onto smartphone experiences.',
+      'Managed full-scope client deliverables covering responsive frontends, managed cloud hosting, DNS configuration, and standardized brand documentation across work orders, quotes, and invoices.',
     ],
     features: [
-      'Interactive 3D global market footprint with regional filters',
-      'Multilingual localization across 6 global languages',
-      'Zoho CRM web-to-lead funnel & automated customer routing',
-      'Comprehensive cGMP API, intermediate & pellet catalogs',
-      'Interactive careers portal with applicant submission pathways',
+      'Vasudha Global: Interactive 3D export globe & 6-language localization',
+      'Vasudha Green: Zero Liquid Discharge (ZLD) showcase & career tracks',
+      'DIP Diet Hub: Cinema modal theater & zero-dependency QR code bridge',
+      'Zoho CRM automation, SalesIQ live chat & regulatory compliance displays',
+      'Fully responsive, mobile-first performance architecture with sub-second loads',
     ],
     metrics: [
+      { value: '3 Platforms', label: 'production web platforms deployed' },
       { value: '80+ Nations', label: 'global export market footprint' },
-      { value: '6 Languages', label: 'multilingual localization' },
+      { value: '6 Languages', label: 'multilingual enterprise localization' },
       { value: 'Zoho CRM', label: 'automated lead capture funnels' },
-      { value: 'cGMP APIs', label: 'technical regulatory dossiers' },
+      { value: 'Full-Scope', label: 'architecture, CRM, hosting & brand' },
     ],
     palette: { from: '#04121f', via: '#0f4c6e', to: '#05080d', accent: '#4cc9ff' },
     motif: 'flow',
-  },
-  {
-    id: 'dip-diet-healthhub',
-    title: 'DIP Diet Health & Video Hub',
-    year: '2026',
-    genre: 'Clinical Health Platform • Video Theater • QR Code Mobile Bridge',
-    logline: 'Comprehensive wellness & natural disease reversal web platform based on Dr. Biswaroop Roy Chowdhury’s DIP diet protocols, featuring modal theater playback, lifestyle guides, and real-time QR code mobile handoff.',
-    image: './assets/projects/dip-diet-hub.jpg',
-    github: 'https://github.com/saikrishna-bethamcharla/Dr.-Biswaroop-Roy',
-    stack: ['JavaScript (ES6+)', 'HTML5 / Modern CSS', 'Python Server', 'QR Canvas Engine', 'Video Modal Theater', 'Print System'],
-    build: [
-      'Architected a responsive wellness hub detailing dietary protocols, 3-step heat emergency procedures, and disease reversal methodologies.',
-      'Developed a custom cinema modal theater playing curated educational video masterclasses with zero UI clutter and instant launch.',
-      'Engineered a dynamic, zero-dependency client-side QR code generator that auto-detects local IPs and live domains for frictionless mobile device handoff.',
-      'Built a dedicated one-click print engine for physical clinical guide handoffs and direct consultant communication bridges for Hyderabad wellness centers.',
-    ],
-    features: [
-      'Interactive cinema theater modal for curated health masterclasses',
-      'Instant auto-detecting QR code generator for smartphone handoff',
-      'Downloadable high-resolution QR PNG assets for clinic displays',
-      'Printer-optimized dietary tables & emergency protocol guides',
-      'Direct WhatsApp and phone consultation bridges for Hyderabad centers',
-    ],
-    metrics: [
-      { value: '6 Videos', label: 'curated clinical masterclasses' },
-      { value: 'Instant QR', label: 'real-time mobile device handoff' },
-      { value: 'Print Engine', label: 'one-click clinical guide export' },
-      { value: '100%', label: 'client-side responsive & offline ready' },
-    ],
-    palette: { from: '#021810', via: '#0d5a38', to: '#040b07', accent: '#3ddc97' },
-    motif: 'shield',
-  },
-  {
-    id: 'vasudha-pharma-green',
-    title: 'Vasudha Pharma Green Chemistry',
-    year: '2026',
-    genre: 'Sustainable Pharma Portal • EHS & R&D • Career Tracks',
-    logline: 'Sustainable green chemistry and corporate governance portal for Vasudha Pharma Chem Limited, highlighting zero liquid discharge (ZLD), R&D facilities, and dedicated student/professional career pathways.',
-    image: './assets/projects/vasudha-pharma-green.jpg',
-    liveUrl: 'https://saikrishna-bethamcharla.github.io/vasudhapharma-green/',
-    github: 'https://github.com/saikrishna-bethamcharla/vasudhapharma-green',
-    stack: ['HTML5', 'CSS3 / Modern Layouts', 'Zero Liquid Discharge SOPs', 'Zoho Lead Automation', 'R&D Virtual Showcase'],
-    build: [
-      'Engineered a dedicated sustainable corporate web platform highlighting green chemistry principles, solvent recovery, and environmental safety.',
-      'Crafted interactive career track layouts tailored for university students, experienced scientists, and manufacturing engineers.',
-      'Integrated formal sustainability reports, statutory corporate governance disclosures, and vigilance mechanisms.',
-    ],
-    features: [
-      'Zero Liquid Discharge (ZLD) and safety culture showcase',
-      'Dedicated R&D laboratory and cleanroom facility walkthroughs',
-      'Specialized student opportunities and talent community portals',
-      'Statutory regulations, POSH policy & CSR governance transparency',
-      'Seamless multi-page navigation with dedicated contact desk',
-    ],
-    metrics: [
-      { value: 'Zero Liquid', label: 'ZLD green chemistry compliance' },
-      { value: '4+ Tracks', label: 'dedicated career talent pathways' },
-      { value: 'ESG Ready', label: 'sustainability & statutory disclosures' },
-      { value: 'Production', label: 'fully responsive cloud deployment' },
-    ],
-    palette: { from: '#0a1912', via: '#165b37', to: '#050c08', accent: '#46e3a8' },
-    motif: 'tenants',
   },
   {
     id: 'ai-cinematic-pipeline',
@@ -297,11 +283,11 @@ export const achievements: Achievement[] = [
     laurel: 'AI Direction',
   },
   {
-    id: 'vasudha-pharma-deployment',
-    title: 'Vasudha Pharma Enterprise Portal',
-    org: 'Vasudha Pharma Chem Limited',
-    detail: 'Architected global enterprise pharma platform with Zoho CRM integration, 6-language localization, and 80+ export market footprint.',
-    laurel: 'Enterprise Web',
+    id: 'website-development-platforms',
+    title: 'Website Development & Platforms',
+    org: 'Vasudha Pharma & Clinical Portals',
+    detail: 'Architected production web platforms across corporate pharma (80+ export nations, Zoho CRM, Green Chemistry) and DIP Diet Health Hub.',
+    laurel: 'Web Platforms',
     link: 'https://saikrishna-bethamcharla.github.io/vasudhapharma/',
   },
   {
@@ -326,7 +312,7 @@ export type Certification = { issuer: string; name: string; link: string };
 export const certifications: Certification[] = [
   { issuer: 'Kingston University', name: 'Postgraduate Diploma (PGD) • London', link: '#' },
   { issuer: 'Zai Labs', name: 'Creative & Technical Leadership', link: '#' },
-  { issuer: 'Enterprise Web', name: 'Vasudha Pharma Global Architecture & Zoho CRM', link: 'https://saikrishna-bethamcharla.github.io/vasudhapharma/' },
+  { issuer: 'Web Architecture', name: 'Website Development & Zoho CRM Infrastructure', link: 'https://saikrishna-bethamcharla.github.io/vasudhapharma/' },
   { issuer: 'Clinical Tech', name: 'DIP Diet Health Platform & QR Mobile Bridge', link: 'https://github.com/saikrishna-bethamcharla/Dr.-Biswaroop-Roy' },
   { issuer: 'AI Cinema', name: 'Seedance 2.0 & Kling 3.0 Generative Video', link: '#' },
   { issuer: 'Post-Production', name: 'DaVinci Resolve & Premiere Pro Editorial', link: '#' },
@@ -602,11 +588,10 @@ export const topPicks: TopPick[] = [
   { label: 'AI Video Engine', title: 'Seedance 2.0 & Kling 3.0', detail: 'Multi-shot AI filmmaking with structured shot bibles', palette: crimson },
   { label: 'Academic Credential', title: 'Kingston University', detail: 'Postgraduate Diploma (PGD) • London', palette: violet },
   { label: 'Prompt Mastery', title: 'Bilingual (EN+ZH)', detail: 'Structured prompts for character & environment consistency', palette: ocean },
-  { label: 'Enterprise Web', title: 'Vasudha Pharma Portal', detail: 'Global pharma platform with Zoho CRM, 3D globe & 6 languages', palette: ocean },
+  { label: 'Website Development', title: 'Production Web Platforms', detail: 'Vasudha Pharma (80+ nations, Zoho CRM, Green Chemistry) & DIP Diet Hub', palette: ocean },
   { label: 'Clinical Tech', title: 'DIP Diet Health & Video Hub', detail: 'Dr. Biswaroop Roy Chowdhury protocols & real-time QR bridge', palette: jade },
   { label: 'Post-Production', title: 'DaVinci Resolve', detail: 'Beat-synced editorial & cinematic color grading', palette: crimson },
   { label: 'Motion Graphics', title: 'After Effects', detail: 'Compositing, visual effects & title animations', palette: violet },
-  { label: 'Green Architecture', title: 'Vasudha Green Chemistry', detail: 'Sustainable ZLD manufacturing, R&D & career tracks', palette: jade },
   { label: 'Visual Design', title: 'Adobe Illustrator & Photoshop', detail: 'Branded visual assets & typography systems', palette: amber },
   { label: 'Team Leadership', title: 'Production SOPs', detail: 'Standardized work orders, quotations & client documentation', palette: crimson },
 ];
@@ -640,9 +625,9 @@ export const introSlides: IntroSlide[] = [
   },
   {
     kicker: 'Web Platform',
-    title: 'StreamHub & Client Delivery',
-    lines: ['Frontend development with TypeScript, JavaScript, HTML5 & Tailwind', 'End-to-end CRM integration, managed hosting & QR bridge', 'Standardized formal business documentation'],
-    chips: ['JavaScript', 'TypeScript', 'CRM', 'Hosting'],
+    title: 'Website Development & Delivery',
+    lines: ['Full-scope architecture across corporate pharma & clinical platforms', 'Vasudha Pharma (80+ nations, Zoho CRM) & DIP Diet Health Hub', 'Frontend development with TypeScript, JavaScript, HTML5 & Tailwind'],
+    chips: ['Website Development', 'Zoho CRM', 'JavaScript', 'TypeScript'],
   },
   {
     kicker: 'Creative Operations',

@@ -28,7 +28,6 @@ export default function ResumeSection({ onView }: { onView: () => void }) {
             <Magnetic className="w-full">
               <button
                 type="button"
-                data-cursor="view"
                 onClick={onView}
                 className="flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-bone px-6 text-[15px] font-bold text-ink transition hover:bg-white"
               >
@@ -39,7 +38,6 @@ export default function ResumeSection({ onView }: { onView: () => void }) {
               <a
                 href={profile.resumePdf}
                 download="Sai_Krishna_Bethamcharla_Resume.pdf"
-                data-cursor="link"
                 className="glass flex min-h-12 w-full items-center justify-center gap-2 rounded-md px-6 text-[15px] font-semibold text-bone transition hover:bg-white/15"
               >
                 ⤓ Download Resume

@@ -5,10 +5,11 @@ const dist = path.resolve('dist');
 const docs = path.resolve('docs');
 const root = path.resolve('.');
 
-// Ensure docs exists
-if (!fs.existsSync(docs)) {
-  fs.mkdirSync(docs, { recursive: true });
+// Ensure docs exists and is clean
+if (fs.existsSync(docs)) {
+  fs.rmSync(docs, { recursive: true, force: true });
 }
+fs.mkdirSync(docs, { recursive: true });
 
 // 1. Sync dist -> docs
 fs.cpSync(dist, docs, { recursive: true });
@@ -18,7 +19,17 @@ fs.writeFileSync(path.join(docs, '.nojekyll'), '');
 const distAssets = path.join(dist, 'assets');
 const rootAssets = path.join(root, 'assets');
 if (fs.existsSync(distAssets)) {
-  if (!fs.existsSync(rootAssets)) fs.mkdirSync(rootAssets, { recursive: true });
+  if (fs.existsSync(rootAssets)) {
+    // remove stale JS/CSS chunks in root assets
+    const files = fs.readdirSync(rootAssets);
+    for (const f of files) {
+      if ((f.endsWith('.js') || f.endsWith('.css') || f.endsWith('.map')) && !fs.existsSync(path.join(distAssets, f))) {
+        fs.rmSync(path.join(rootAssets, f), { force: true });
+      }
+    }
+  } else {
+    fs.mkdirSync(rootAssets, { recursive: true });
+  }
   fs.cpSync(distAssets, rootAssets, { recursive: true });
 }
 

@@ -20,7 +20,7 @@ export function PosterBackdrop({ palette, image, children, className = '' }: { p
           src={image}
           alt=""
           loading="lazy"
-          className="absolute inset-0 h-full w-full object-cover object-top opacity-30 mix-blend-luminosity transition-transform duration-700 group-hover:scale-105 group-hover:opacity-45"
+          className="absolute inset-0 h-full w-full object-cover object-center opacity-35 mix-blend-luminosity transition-transform duration-700 group-hover:scale-105 group-hover:opacity-50"
         />
       )}
       <div

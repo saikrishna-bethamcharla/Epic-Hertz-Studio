@@ -89,12 +89,12 @@ body {
   display: none;
 }
 
-/* Custom cursor: hide the native one only when ours is active */
-.has-custom-cursor,
-.has-custom-cursor a,
-.has-custom-cursor button,
-.has-custom-cursor [role='button'] {
-  cursor: none;
+/* Interactive elements have responsive pointer cursor */
+button,
+a,
+[role='button'],
+.cursor-pointer {
+  cursor: pointer;
 }
 
 .text-outline {
