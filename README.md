@@ -27,13 +27,13 @@ The static site is written to `dist/` and can be deployed as-is to Vercel, Netli
 
 ## Updating the content
 
-**All content lives in one file: [`src/data/portfolio.ts`](src/data/portfolio.ts).** Every component reads from it.
+**Portfolio content lives in [`src/data/portfolio.ts`](src/data/portfolio.ts).** Update the central data first so project cards, detail modals, and the resume stay consistent.
 
 | To change… | Edit |
 | --- | --- |
 | Name, intro, email, LinkedIn, GitHub | `profile` |
 | Projects & Originals | `projects` |
-| Achievements & credentials | `achievements`, `certifications` |
+| Awards & professional highlights | `achievements`, `professionalHighlights` |
 | Skills & categories | `skillCategories`, `skillEvidence` |
 | Seasons and episodes (My Journey) | `seasons` |
 | Top 10 row | `topPicks` |
@@ -60,7 +60,7 @@ src/
     ProjectModal           ← full-screen project overlay with a shared-element transition
     TopPicks               ← Top 10-style row
     Skills                 ← skill genres; each card shows where the skill appears
-    Achievements           ← award-poster cards + credentials rail
+    Achievements           ← award-poster cards + professional highlights rail
     ResumeViewer/ResumeModal ← designed resume sheet, PDF viewer, download
     FinalCTA               ← TO BE CONTINUED… + contact links
     CustomCursor, fx.tsx   ← cursor states, magnetic buttons, 3D tilt, text reveals, particles
