@@ -81,6 +81,19 @@ export type SubWebsite = {
   metrics: string[];
 };
 
+export type SubVideo = {
+  id: string;
+  title: string;
+  category: string;
+  logline: string;
+  youtubeId: string;
+  youtubeUrl: string;
+  thumbnail?: string;
+  author?: string;
+  tags: string[];
+  metrics: string[];
+};
+
 export type Project = {
   id: string;
   title: string;
@@ -90,6 +103,7 @@ export type Project = {
   image?: string;
   liveUrl?: string;
   websites?: SubWebsite[];
+  videos?: SubVideo[];
   stack: string[];
   build: string[];
   features: string[];
@@ -170,26 +184,42 @@ export const projects: Project[] = [
     id: 'ai-cinematic-pipeline',
     title: 'Multi-Shot AI Film Direction',
     year: '2026',
-    genre: 'AI Cinema • Seedance 2.0 • Kling 3.0 • Higgsfield',
-    logline: 'End-to-end multi-shot AI filmmaking pipeline with structured bilingual prompt engineering, shot bibles, and character consistency.',
-    stack: ['Seedance 2.0', 'Kling 3.0', 'Higgsfield', 'ComfyUI', 'Bilingual Prompt Bibles (EN+ZH)', 'DaVinci Resolve'],
+    genre: 'AI Cinema • Seedance 2.0 • Kling 3.0 • Theatrical Trailer',
+    logline: 'End-to-end multi-shot AI filmmaking pipeline with structured bilingual prompt engineering, shot bibles, character continuity, and commercial theatrical trailer editing.',
+    liveUrl: 'https://youtu.be/r9kHcvYWZ4c',
+    videos: [
+      {
+        id: 'the-door-at-11-47',
+        title: 'The Door at 11:47 — Official Movie Trailer',
+        category: 'Original AI Feature Trailer • 100% AI Generated • Custom SFX & Pacing',
+        logline: 'Complete cinematic movie trailer generated 100% with generative AI and edited with commercial theatrical trailer pacing, beat-synced match cuts, and custom cinematic Foley sound effects.',
+        youtubeId: 'r9kHcvYWZ4c',
+        youtubeUrl: 'https://youtu.be/r9kHcvYWZ4c',
+        thumbnail: 'https://i.ytimg.com/vi/r9kHcvYWZ4c/hqdefault.jpg',
+        author: 'Zai Labs Media',
+        tags: ['100% AI Generated', 'Theatrical Movie Trailer', 'Trailer Style Cuts', 'Custom SFX & Sound Design', 'Zai Labs Media'],
+        metrics: ['100% AI Generated', 'Beat-Synced Cuts', 'Custom SFX', 'Cinematic Grade'],
+      },
+    ],
+    stack: ['Seedance 2.0', 'Kling 3.0', 'Higgsfield', 'ComfyUI', 'Bilingual Prompt Bibles (EN+ZH)', 'DaVinci Resolve', 'Custom Foley SFX'],
     build: [
-      'Architected and directed end-to-end multi-shot AI filmmaking projects from concept, storyboard, and shot planning through post-production finishing.',
-      'Engineered structured bilingual (EN+ZH) prompts, comprehensive shot bibles, and reference-image consistency strategies ensuring character, wardrobe, and environment continuity.',
-      'Combined generative video generation with DaVinci Resolve color grading and beat-synced rhythm cutting for commercial and narrative campaigns.',
+      'Directed and generated 100% AI-generated cinematic movie trailer "The Door at 11:47", creating shot bibles and reference consistency pipelines.',
+      'Cut and assembled the trailer with industry-standard movie trailer pacing, high-impact tension builds, and rhythmic beat synchronization in post-production.',
+      'Engineered custom Foley sound effects, atmospheric risers, impact hits, and cinematic sound design to complement the AI visuals.',
+      'Developed structured bilingual (EN+ZH) prompts ensuring photorealistic lighting, character continuity, and atmospheric depth across every cut.',
     ],
     features: [
-      'Multi-shot shot planning and cinematic camera choreography',
+      'Official Movie Trailer: "The Door at 11:47" (100% AI Generated)',
+      'Theatrical trailer editorial style with rapid cuts and dynamic pacing',
+      'Custom Foley SFX, sound design, and beat-synced audio rhythm',
       'Structured bilingual (EN+ZH) prompt engineering architecture',
-      'Reference-image consistency for characters and environments',
-      'AI generation with Seedance 2.0, Kling 3.0, and Higgsfield',
-      'Multi-scene commercial and narrative assembly',
+      'Reference-image consistency for characters, wardrobe, and environments',
     ],
     metrics: [
-      { value: 'End-to-End', label: 'concept to post-production pipeline' },
+      { value: '100% AI', label: 'fully AI-generated movie trailer' },
+      { value: 'Trailer Cuts', label: 'theatrical pacing & match-cutting' },
+      { value: 'Custom SFX', label: 'cinematic sound design & Foley' },
       { value: 'Multi-Shot', label: 'character & environment continuity' },
-      { value: 'Bilingual', label: 'EN + ZH structured prompt bibles' },
-      { value: '3 Engines', label: 'Seedance 2.0, Kling 3.0, Higgsfield' },
     ],
     palette: { from: '#2a0610', via: '#7a0f24', to: '#0b0710', accent: '#ff3d5a' },
     motif: 'shield',
@@ -198,26 +228,42 @@ export const projects: Project[] = [
     id: 'post-production-motion',
     title: 'Cinematic Post & Motion Graphics',
     year: '2025 – 2026',
-    genre: 'DaVinci Resolve • Premiere Pro • After Effects • Audition',
-    logline: 'Beat-synced editorial assembly, visual effects compositing, match-cutting, narrative color grading, and sound design.',
-    stack: ['DaVinci Resolve', 'Adobe Premiere Pro', 'Adobe After Effects', 'Adobe Audition', 'CapCut'],
+    genre: 'DaVinci Resolve • Premiere Pro • Pencil-Sketch Animation • Documentary',
+    logline: 'Beat-synced editorial assembly, visual effects compositing, narrative color grading, sound design, and full-length documentary film production.',
+    liveUrl: 'https://youtu.be/v4IFsHmIQDE',
+    videos: [
+      {
+        id: 'gmcks-legacy-documentary',
+        title: 'Grandmaster Choa Kok Sui | The Man Behind a Legacy of Pranic Healing',
+        category: 'Artistic Tribute Documentary • Pencil Sketch Style Animation • Narrative Pacing',
+        logline: 'Biographical documentary tribute exploring the life, spiritual teachings, and global legacy of Grandmaster Choa Kok Sui (GMCKS), rendered completely in an expressive pencil-sketch visual art style with documentary narrative editing and sound design.',
+        youtubeId: 'v4IFsHmIQDE',
+        youtubeUrl: 'https://youtu.be/v4IFsHmIQDE',
+        thumbnail: 'https://i.ytimg.com/vi/v4IFsHmIQDE/hqdefault.jpg',
+        author: 'Zai Labs Media',
+        tags: ['Pencil-Sketch Animation Style', 'GMCKS Documentary', 'Narrative Editing', 'Documentary Sound Design', 'Pranic Healing Tribute'],
+        metrics: ['Pencil-Sketch Style', 'Biographical Documentary', 'Narrative Pacing', 'Tribute Film'],
+      },
+    ],
+    stack: ['DaVinci Resolve', 'Adobe Premiere Pro', 'Adobe After Effects', 'Adobe Audition', 'Pencil-Sketch Style Animation', 'CapCut'],
     build: [
+      'Produced and directed biographical documentary film honoring Grandmaster Choa Kok Sui (GMCKS), executed entirely in a distinctive hand-drawn pencil-sketch artistic style.',
+      'Designed documentary narrative rhythm, archival transitions, and emotional pacing paired with atmospheric sound design in Adobe Audition.',
       'Executed high-precision post-production workflows with DaVinci Resolve and Adobe Premiere Pro, creating beat-synced cuts and cinematic rhythm for commercial campaigns.',
       'Designed custom motion graphics and visual compositing in Adobe After Effects with match-cutting and montage assembly for narrative storytelling.',
-      'Implemented industry-standard color science and mood grading in DaVinci Resolve and sound design in Adobe Audition.',
     ],
     features: [
-      'Beat-synced precision editing & montage cutting',
+      'Documentary Film: "GMCKS — The Man Behind a Legacy of Pranic Healing"',
+      'Unique complete pencil-sketch visual art and animation aesthetic',
+      'Beat-synced precision editing & montage cutting in DaVinci & Premiere',
       'Motion graphics & visual compositing in After Effects',
-      'Cinematic color grading & LUT workflows in DaVinci Resolve',
-      'Sound design, pacing, and audio finishing in Audition',
-      'Short-form and long-form video pipeline assembly',
+      'Documentary narrative pacing, sound design, and audio finishing in Audition',
     ],
     metrics: [
-      { value: 'Beat-Synced', label: 'rhythmic editorial pacing' },
-      { value: '4 Suites', label: 'DaVinci, Premiere, AE & Audition' },
-      { value: 'Motion FX', label: 'After Effects compositing' },
-      { value: 'Finishing', label: 'color grade & sound design' },
+      { value: 'Sketch Art', label: 'full pencil-sketch visual style' },
+      { value: 'Documentary', label: 'biographical tribute film direction' },
+      { value: 'Beat-Synced', label: 'rhythmic editorial pacing & cuts' },
+      { value: 'Sound Design', label: 'audio finishing & mood grading' },
     ],
     palette: { from: '#120822', via: '#3d1a6e', to: '#07060c', accent: '#b98bff' },
     motif: 'flow',
@@ -585,12 +631,12 @@ export type TopPick = { label: string; title: string; detail: string; palette: P
 
 export const topPicks: TopPick[] = [
   { label: 'Primary Role', title: 'Creative & Tech Lead', detail: 'Zai Labs Private Limited • August 2026 – Present', palette: crimson, image: './assets/picks/pick-1.webp' },
-  { label: 'AI Video Engine', title: 'Seedance 2.0 & Kling 3.0', detail: 'Multi-shot AI filmmaking with structured shot bibles', palette: crimson, image: './assets/picks/pick-2.webp' },
+  { label: 'AI Video Engine', title: 'Seedance 2.0 & Kling 3.0', detail: "'The Door at 11:47' Trailer • Multi-shot AI filmmaking", palette: crimson, image: './assets/picks/pick-2.webp' },
   { label: 'Academic Credential', title: 'Kingston University', detail: 'Postgraduate Diploma (PGD) • London', palette: violet, image: './assets/picks/pick-3.webp' },
   { label: 'Prompt Mastery', title: 'Bilingual (EN+ZH)', detail: 'Structured prompts for character & environment consistency', palette: ocean, image: './assets/picks/pick-4.webp' },
   { label: 'Website Development', title: 'Production Web Platforms', detail: 'Vasudha Pharma (80+ nations, Zoho CRM), Zai Labs & Pranic Healing', palette: ocean, image: './assets/picks/pick-5.webp' },
   { label: 'Energy Healing Web', title: 'Pranic Healing Portal', detail: 'AP & Telangana chapter, dynamic aura visualizer & 8:40 PM Twin Hearts RSVP', palette: jade, image: './assets/picks/pick-6.webp' },
-  { label: 'Post-Production', title: 'DaVinci Resolve', detail: 'Beat-synced editorial & cinematic color grading', palette: crimson, image: './assets/picks/pick-7.webp' },
+  { label: 'Post-Production', title: 'DaVinci Resolve', detail: 'GMCKS pencil-sketch documentary & beat-synced editorial', palette: crimson, image: './assets/picks/pick-7.webp' },
   { label: 'Motion Graphics', title: 'After Effects', detail: 'Compositing, visual effects & title animations', palette: violet, image: './assets/picks/pick-8.webp' },
   { label: 'Visual Design', title: 'Adobe Illustrator & Photoshop', detail: 'Branded visual assets & typography systems', palette: amber, image: './assets/picks/pick-9.webp' },
   { label: 'Team Leadership', title: 'Production SOPs', detail: 'Standardized work orders, quotations & client documentation', palette: crimson, image: './assets/picks/pick-10.webp' },

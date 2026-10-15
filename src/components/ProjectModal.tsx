@@ -100,7 +100,7 @@ export default function ProjectModal({ project, onClose, onSwitch }: { project: 
                       rel="noreferrer"
                       className="flex min-h-12 items-center gap-2 rounded-md bg-crimson px-6 text-[15px] font-bold text-white transition hover:bg-crimson-2"
                     >
-                      Visit Live Site ↗
+                      {project.liveUrl.includes('youtu') ? 'Watch on YouTube ↗' : 'Visit Live Site ↗'}
                     </a>
                   </Magnetic>
                 )}
@@ -117,6 +117,79 @@ export default function ProjectModal({ project, onClose, onSwitch }: { project: 
                   </Magnetic>
                 )}
               </motion.div>
+            )}
+
+            {/* Embedded Videos / Film Trailers */}
+            {project.videos && project.videos.length > 0 && (
+              <motion.section variants={block} className="mt-10 rounded-2xl border border-white/10 bg-black/40 p-5 sm:p-7 backdrop-blur-sm">
+                <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
+                  <div>
+                    <h3 className="text-xs font-bold uppercase tracking-[0.3em] text-crimson-2 flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-crimson-2 animate-ping" />
+                      Cinema Screening Room
+                    </h3>
+                    <p className="mt-1 text-sm text-mist">Embedded video production & original film showcase streaming below.</p>
+                  </div>
+                  <span className="rounded-full border border-crimson-2/40 bg-crimson-2/15 px-3 py-1 text-xs font-bold text-crimson-2">
+                    {project.videos.length} {project.videos.length === 1 ? 'Production Video' : 'Production Videos'}
+                  </span>
+                </div>
+
+                <div className="space-y-8">
+                  {project.videos.map((vid) => (
+                    <div
+                      key={vid.id}
+                      className="group relative overflow-hidden rounded-xl border border-white/15 bg-white/[0.03] p-4 transition duration-300 hover:border-crimson-2/40 hover:bg-white/[0.05] sm:p-6"
+                    >
+                      {/* Responsive 16:9 YouTube Iframe */}
+                      <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-white/10 bg-black shadow-2xl">
+                        <iframe
+                          src={`https://www.youtube-nocookie.com/embed/${vid.youtubeId}?rel=0&modestbranding=1`}
+                          title={vid.title}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen
+                          className="absolute inset-0 h-full w-full"
+                          loading="lazy"
+                        />
+                      </div>
+
+                      <div className="mt-5 flex flex-col justify-between">
+                        <div>
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <h4 className="font-display text-2xl tracking-wide text-bone sm:text-3xl">{vid.title}</h4>
+                            {vid.author && (
+                              <span className="rounded border border-white/20 bg-black/50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-mist">
+                                {vid.author}
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-crimson-2">{vid.category}</p>
+                          <p className="mt-2 text-sm leading-relaxed text-bone/85 sm:text-base">{vid.logline}</p>
+
+                          <div className="mt-4 flex flex-wrap gap-1.5">
+                            {vid.tags.map((t) => (
+                              <span key={t} className="rounded-full border border-white/10 bg-black/40 px-2.5 py-0.5 text-[11px] font-medium text-bone/80">
+                                {t}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="mt-5 flex flex-wrap items-center gap-3 pt-2">
+                          <a
+                            href={vid.youtubeUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="flex min-h-10 items-center gap-2 rounded-md bg-crimson px-5 text-xs font-bold text-white transition hover:bg-crimson-2"
+                          >
+                            Watch on YouTube ↗
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.section>
             )}
 
             {/* Featured Sub-Websites if present */}

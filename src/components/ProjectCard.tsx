@@ -64,6 +64,17 @@ export default function ProjectCard({ project, index, onOpen }: { project: Proje
                 </span>
               </div>
             )}
+            {project.videos && (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="flex items-center gap-1.5 rounded border border-[#ff3d5a]/40 bg-[#ff3d5a]/15 px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#ff3d5a] uppercase">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#ff3d5a] animate-pulse" />
+                  {project.videos.length} {project.videos.length === 1 ? 'Video Included' : 'Videos Included'}
+                </span>
+                <span className="text-[11px] text-bone/70 truncate max-w-xs">
+                  {project.videos.map((v) => v.title).join(' · ')}
+                </span>
+              </div>
+            )}
             <div className="mt-4 flex flex-wrap gap-1.5">
               {project.stack.map((t) => (
                 <span key={t} className="rounded-full bg-black/35 px-2.5 py-1 text-[11px] font-medium text-bone/90 backdrop-blur">
@@ -73,7 +84,7 @@ export default function ProjectCard({ project, index, onOpen }: { project: Proje
             </div>
             <div className="mt-5 flex flex-wrap items-center gap-3">
               <span className="flex min-h-11 items-center gap-2 rounded-md bg-bone px-5 text-sm font-bold text-ink transition group-hover:bg-white">
-                {project.websites ? `▶ View Websites (${project.websites.length})` : '▶ View Project'}
+                {project.videos ? '▶ Watch Video / Project' : (project.websites ? `▶ View Websites (${project.websites.length})` : '▶ View Project')}
               </span>
               {project.liveUrl && (
                 <a
@@ -83,7 +94,7 @@ export default function ProjectCard({ project, index, onOpen }: { project: Proje
                   onClick={(e) => e.stopPropagation()}
                   className="flex min-h-11 items-center gap-2 rounded-md border border-crimson-2/40 bg-crimson-2/20 px-4 text-sm font-semibold text-bone backdrop-blur transition hover:border-crimson-2 hover:bg-crimson-2/30"
                 >
-                  Live Site ↗
+                  {project.liveUrl.includes('youtu') ? 'Watch on YouTube ↗' : 'Live Site ↗'}
                 </a>
               )}
               {project.github && !project.liveUrl && (
