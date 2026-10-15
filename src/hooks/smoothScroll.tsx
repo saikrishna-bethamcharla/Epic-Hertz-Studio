@@ -16,6 +16,11 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
   const locks = useRef(0);
 
   useEffect(() => {
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+    window.scrollTo(0, 0);
+
     if (reduced) return;
     const lenis = new Lenis({
       duration: 1.15,
@@ -27,13 +32,32 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
       gestureOrientation: 'vertical',
     });
     lenisRef.current = lenis;
+
+    // Immediately snap Lenis to the top on mount
+    lenis.scrollTo(0, { immediate: true });
+
     let raf = 0;
     const loop = (time: number) => {
       lenis.raf(time);
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
+
+    const handleBeforeUnload = () => {
+      window.scrollTo(0, 0);
+    };
+
+    const handlePageShow = () => {
+      window.scrollTo(0, 0);
+      lenis.scrollTo(0, { immediate: true });
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pageshow', handlePageShow);
+
     return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pageshow', handlePageShow);
       cancelAnimationFrame(raf);
       lenis.destroy();
       lenisRef.current = null;

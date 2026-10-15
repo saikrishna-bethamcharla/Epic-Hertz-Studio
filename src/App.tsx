@@ -58,6 +58,12 @@ function Series() {
   const order = viewerProfiles.find((p) => p.id === profileId)!.order;
 
   useEffect(() => {
+    // Guarantee scroll opens at top hero section on load / refresh
+    window.scrollTo(0, 0);
+    scrollTo(0, { immediate: true, offset: 0 });
+  }, [scrollTo]);
+
+  useEffect(() => {
     if (stage === 'home') return;
     lock();
     return unlock;

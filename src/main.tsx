@@ -4,6 +4,13 @@ import { MotionConfig } from 'framer-motion';
 import App from './App';
 import './index.css';
 
+if (typeof window !== 'undefined') {
+  if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+  }
+  window.scrollTo(0, 0);
+}
+
 interface ErrorBoundaryProps {
   children: ReactNode;
 }
