@@ -7,7 +7,7 @@ Every section is an episode, every project is an Original, and the entire portfo
 
 ## Run it locally
 
-Requires **Node.js 18+**.
+Requires **Node.js 22.12+**.
 
 ```bash
 npm install
