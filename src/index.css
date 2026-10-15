@@ -144,6 +144,23 @@ a:focus-visible {
   animation: shimmer 6s linear infinite;
 }
 
+@keyframes chrono-flow {
+  from { stroke-dashoffset: 400; }
+  to { stroke-dashoffset: 0; }
+}
+.chrono-flow {
+  stroke-dasharray: 14 26;
+  animation: chrono-flow 12s linear infinite;
+}
+
+@keyframes chrono-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 0.65; transform: scale(1.04); }
+}
+.chrono-pulse {
+  animation: chrono-pulse 3.5s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .grain,
   .light-streak,

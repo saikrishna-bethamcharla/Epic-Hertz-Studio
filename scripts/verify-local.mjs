@@ -71,6 +71,25 @@ server.listen(4829, async () => {
   await page.screenshot({ path: 'C:\\Users\\saikr\\.gemini\\antigravity\\brain\\350321f0-4bd7-4d55-a1eb-c8453df40187\\screenshots\\test_skills_clean.png' });
   console.log('Saved test_skills_clean.png');
 
+  // scroll to journey (chrono dial)
+  await page.evaluate(() => {
+    const el = document.getElementById('journey');
+    if (el) el.scrollIntoView();
+  });
+  await new Promise(r => setTimeout(r, 1200));
+  await page.screenshot({ path: 'C:\\Users\\saikr\\.gemini\\antigravity\\brain\\350321f0-4bd7-4d55-a1eb-c8453df40187\\screenshots\\test_chrono_animated.png' });
+  console.log('Saved test_chrono_animated.png');
+
+  // Test clicking 2023 node
+  await page.evaluate(() => {
+    const btns = Array.from(document.querySelectorAll('button'));
+    const btn2023 = btns.find(b => b.textContent && b.textContent.includes('2023'));
+    if (btn2023) btn2023.click();
+  });
+  await new Promise(r => setTimeout(r, 800));
+  await page.screenshot({ path: 'C:\\Users\\saikr\\.gemini\\antigravity\\brain\\350321f0-4bd7-4d55-a1eb-c8453df40187\\screenshots\\test_chrono_2023_needle.png' });
+  console.log('Saved test_chrono_2023_needle.png');
+
   // scroll to originals
   await page.evaluate(() => {
     const el = document.getElementById('originals');

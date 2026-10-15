@@ -5,7 +5,7 @@ import { useSmoothScroll } from '../hooks/smoothScroll';
 import { EASE } from './fx';
 
 export default function Navbar({ order, profileId: _profileId, onSwitch: _onSwitch }: { order: SectionId[]; profileId?: ProfileId; onSwitch?: (id: ProfileId) => void }) {
-  const { scrollY } = useScroll();
+  const { scrollY, scrollYProgress } = useScroll();
   const [solid, setSolid] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
@@ -44,6 +44,11 @@ export default function Navbar({ order, profileId: _profileId, onSwitch: _onSwit
       animate={{ y: hidden ? '-100%' : '0%' }}
       transition={{ duration: 0.45, ease: EASE }}
     >
+      {/* Top Global Scroll Progress Laser */}
+      <motion.div
+        className="h-[2px] w-full origin-left bg-gradient-to-r from-crimson via-amber-400 to-crimson-2 shadow-[0_0_10px_#ff3d5a]"
+        style={{ scaleX: scrollYProgress }}
+      />
       <div
         className={`gutter flex h-16 items-center justify-between gap-6 transition-[background,backdrop-filter] duration-500 md:h-[72px] ${
           solid || mobileNav ? 'bg-ink/80 backdrop-blur-xl' : 'bg-gradient-to-b from-black/80 to-transparent'

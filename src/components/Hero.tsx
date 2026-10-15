@@ -102,6 +102,25 @@ export default function Hero({ onPlay: _onPlay, onResume: _onResume, profileId: 
         <p className="mt-2 font-['Oswald',sans-serif] text-xs sm:text-sm font-semibold tracking-[0.58em] text-bone/80 uppercase">
           {profile.seriesTag}
         </p>
+
+        {/* Animated Scroll Indicator Cue */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.2, duration: 0.8 }}
+          className="absolute bottom-6 flex flex-col items-center gap-2 pointer-events-none"
+        >
+          <span className="font-['Oswald'] text-[10px] tracking-[0.35em] uppercase text-bone/50">
+            Scroll To Explore
+          </span>
+          <motion.div
+            animate={{ y: [0, 6, 0], opacity: [0.3, 1, 0.3] }}
+            transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
+            className="flex flex-col items-center text-crimson-2 text-xs"
+          >
+            ▼
+          </motion.div>
+        </motion.div>
       </motion.div>
     </section>
   );
