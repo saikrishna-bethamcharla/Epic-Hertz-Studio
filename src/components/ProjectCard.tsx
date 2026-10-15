@@ -44,6 +44,16 @@ export default function ProjectCard({ project, index, onOpen }: { project: Proje
               {project.title}
             </motion.h3>
             <p className="mt-3 max-w-md text-sm leading-relaxed text-bone/75 sm:text-[15px]">{project.logline}</p>
+            <div className="mt-3 grid max-w-md grid-cols-2 gap-2" aria-label="Project highlights">
+              {project.metrics.slice(0, 2).map((metric) => (
+                <div key={metric.label} className="min-w-0 rounded-md border border-white/10 bg-black/35 px-3 py-2 backdrop-blur-sm">
+                  <p className="truncate font-display text-lg leading-tight text-bone sm:text-xl" style={{ color: project.palette.accent }}>
+                    {metric.value}
+                  </p>
+                  <p className="mt-1 line-clamp-2 text-[10px] leading-snug text-mist sm:text-[11px]">{metric.label}</p>
+                </div>
+              ))}
+            </div>
             {project.websites && (
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="rounded border border-[#4cc9ff]/40 bg-[#4cc9ff]/15 px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#4cc9ff] uppercase">
