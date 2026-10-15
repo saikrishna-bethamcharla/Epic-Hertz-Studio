@@ -306,18 +306,18 @@ export const achievements: Achievement[] = [
   },
 ];
 
-export type Certification = { issuer: string; name: string; link: string };
+export type ProfessionalHighlight = { issuer: string; name: string; link?: string };
 
-export const certifications: Certification[] = [
-  { issuer: 'Kingston University', name: 'Postgraduate Diploma (PGD) • London', link: '#' },
-  { issuer: 'Zai Labs', name: 'Creative & Technical Leadership', link: '#' },
+export const professionalHighlights: ProfessionalHighlight[] = [
+  { issuer: 'Education', name: 'Postgraduate Diploma (PGD) • Kingston University, London' },
+  { issuer: 'Professional Experience', name: 'Creative & Technical Lead • Zai Labs' },
   { issuer: 'Web Architecture', name: 'Website Development & Zoho CRM Infrastructure', link: 'https://saikrishna-bethamcharla.github.io/vasudhapharma/' },
   { issuer: 'Zai Labs Platform', name: 'Corporate AI Agency Portal & 3D Interactive UX', link: 'https://zailabs.co.in/' },
   { issuer: 'Pranic Healing', name: 'AP & Telangana Chapter Web Portal & RSVP Bridge', link: 'https://www.pranichealingaptelangana.com/' },
-  { issuer: 'AI Cinema', name: 'Seedance 2.0 & Kling 3.0 Generative Video', link: '#' },
-  { issuer: 'Post-Production', name: 'DaVinci Resolve & Premiere Pro Editorial', link: '#' },
-  { issuer: 'Adobe CC', name: 'After Effects Motion Graphics & Compositing', link: '#' },
-  { issuer: 'Client Delivery', name: 'Client Scoping, Work Orders & Cloud Architecture', link: '#' },
+  { issuer: 'AI Video', name: 'Generative video workflows and multi-shot direction' },
+  { issuer: 'Post-Production', name: 'Editing, colour grading, and motion graphics' },
+  { issuer: 'Creative Design', name: 'Branding, visual design, and compositing' },
+  { issuer: 'Client Delivery', name: 'Project scoping, documentation, and web deployment' },
 ];
 
 export type Skill = { name: string; mono: string; note?: string };
