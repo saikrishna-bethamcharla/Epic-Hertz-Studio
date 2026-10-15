@@ -56,7 +56,7 @@ server.listen(4829, async () => {
   // scroll to about
   await page.evaluate(() => {
     const el = document.getElementById('about');
-    if (el) el.scrollIntoView();
+    if (el) el.scrollIntoView({ block: 'center' });
   });
   await new Promise(r => setTimeout(r, 1000));
   await page.screenshot({ path: 'C:\\Users\\saikr\\.gemini\\antigravity\\brain\\350321f0-4bd7-4d55-a1eb-c8453df40187\\screenshots\\test_about_portrait.png' });

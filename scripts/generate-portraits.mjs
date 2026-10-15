@@ -1,8 +1,8 @@
 import puppeteer from 'puppeteer-core';
 import fs from 'fs';
-import path from 'path';
 
 const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+const srcImagePath = 'C:/Users/saikr/.gemini/antigravity/brain/350321f0-4bd7-4d55-a1eb-c8453df40187/.user_uploaded/media_1792059420940_0891e4ab.jpg';
 
 (async () => {
   const browser = await puppeteer.launch({
@@ -12,61 +12,43 @@ const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
   });
 
   const page = await browser.newPage();
-  const srcImage = fs.readFileSync('C:/Users/saikr/.gemini/antigravity/brain/350321f0-4bd7-4d55-a1eb-c8453df40187/portrait_cinematic_1792000299522.jpg').toString('base64');
+  const fileData = fs.readFileSync(srcImagePath).toString('base64');
 
-  // 1. Process responsive portraits (420, 720, 1100)
+  const crop = {
+    sx: 28,
+    sy: 39,
+    sWidth: 726,
+    sHeight: 907.5
+  };
+
   for (const targetWidth of [420, 720, 1100]) {
-    const scale = targetWidth / 768;
-    const targetHeight = Math.round(1376 * scale);
-
+    const targetHeight = Math.round(targetWidth * 1.25);
     await page.setViewport({ width: targetWidth, height: targetHeight, deviceScaleFactor: 1 });
 
-    const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-          width: ${targetWidth}px;
-          height: ${targetHeight}px;
-          background: #05070c;
-          overflow: hidden;
-          position: relative;
-        }
-        img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          display: block;
-        }
-        .vignette {
-          position: absolute;
-          inset: 0;
-          pointer-events: none;
-          background: radial-gradient(circle at 50% 40%, transparent 60%, rgba(5,7,12,0.4) 85%, #05070c 100%),
-                      linear-gradient(to bottom, transparent 80%, rgba(5,7,12,0.8) 95%, #05070c 100%);
-        }
-      </style>
-    </head>
-    <body>
-      <img src="data:image/jpeg;base64,${srcImage}" />
-      <div class="vignette"></div>
-    </body>
-    </html>
-    `;
+    await page.setContent(`<!DOCTYPE html><html><body style="margin:0;background:#05070c;overflow:hidden;"></body></html>`);
 
-    await page.setContent(html);
+    await page.evaluate(async (b64, c, w, h) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      canvas.style.display = 'block';
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      img.src = 'data:image/jpeg;base64,' + b64;
+      await img.decode();
+      ctx.drawImage(img, c.sx, c.sy, c.sWidth, c.sHeight, 0, 0, w, h);
+      document.body.appendChild(canvas);
+    }, fileData, crop, targetWidth, targetHeight);
+
     await page.screenshot({
       path: `public/assets/portrait-${targetWidth}.webp`,
       type: 'webp',
-      quality: 92
+      quality: 94
     });
-    console.log(`Generated public/assets/portrait-${targetWidth}.webp`);
+    console.log(`Generated public/assets/portrait-${targetWidth}.webp (${targetWidth}x${targetHeight})`);
   }
 
-  // 2. Generate og-image.jpg (1200 x 630)
+  // 2. Generate og-image.jpg
   await page.setViewport({ width: 1200, height: 630, deviceScaleFactor: 1 });
   const ogHtml = `
   <!DOCTYPE html>
@@ -87,11 +69,11 @@ const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
       }
       .bg-glow {
         position: absolute;
-        width: 700px;
+        width: 750px;
         height: 630px;
         right: 0;
         top: 0;
-        background: radial-gradient(circle at 65% 45%, rgba(229, 19, 43, 0.35) 0%, rgba(140, 12, 24, 0.15) 45%, transparent 75%);
+        background: radial-gradient(circle at 65% 45%, rgba(229, 19, 43, 0.4) 0%, rgba(140, 12, 24, 0.18) 45%, transparent 75%);
         pointer-events: none;
       }
       .bg-grid {
@@ -106,7 +88,7 @@ const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
         position: relative;
         z-index: 10;
         padding-left: 80px;
-        max-width: 680px;
+        max-width: 660px;
       }
       .kicker {
         display: inline-flex;
@@ -153,23 +135,22 @@ const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
       .portrait-box {
         position: absolute;
         right: 40px;
-        bottom: 0;
-        height: 630px;
-        width: 480px;
+        bottom: 20px;
+        height: 590px;
+        width: 472px;
         z-index: 5;
         display: flex;
         align-items: flex-end;
         justify-content: center;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 40px rgba(229,19,43,0.2);
+        border: 1px solid rgba(255,255,255,0.15);
       }
-      .portrait-box img {
-        height: 100%;
+      .portrait-box canvas {
         width: 100%;
-        object-fit: cover;
-        object-position: top center;
-        mask-image: linear-gradient(to right, transparent 0%, black 20%, black 100%),
-                    linear-gradient(to bottom, black 85%, transparent 100%);
-        -webkit-mask-image: linear-gradient(to right, transparent 0%, black 20%, black 100%),
-                            linear-gradient(to bottom, black 85%, transparent 100%);
+        height: 100%;
+        display: block;
       }
       .badge-series {
         position: absolute;
@@ -200,17 +181,26 @@ const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
       <p class="desc">AI Filmmaking (Seedance 2.0, Kling 3.0), Production Web Architecture (Vasudha Pharma, Zai Labs, Pranic Healing), and Cinematic Editorial.</p>
     </div>
     <div class="portrait-box">
-      <img src="data:image/jpeg;base64,${srcImage}" />
+      <canvas id="og-c" width="472" height="590"></canvas>
     </div>
   </body>
   </html>
   `;
 
   await page.setContent(ogHtml);
+  await page.evaluate(async (b64, c) => {
+    const ogCanvas = document.getElementById('og-c');
+    const ogCtx = ogCanvas.getContext('2d');
+    const ogImg = new Image();
+    ogImg.src = 'data:image/jpeg;base64,' + b64;
+    await ogImg.decode();
+    ogCtx.drawImage(ogImg, c.sx, c.sy, c.sWidth, c.sHeight, 0, 0, 472, 590);
+  }, fileData, crop);
+
   await page.screenshot({
     path: 'public/assets/og-image.jpg',
     type: 'jpeg',
-    quality: 90
+    quality: 92
   });
   console.log('Generated public/assets/og-image.jpg');
 
