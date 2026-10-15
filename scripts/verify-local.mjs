@@ -95,8 +95,24 @@ server.listen(4829, async () => {
     const el = document.getElementById('originals');
     if (el) el.scrollIntoView();
   });
+  // scroll to top picks
+  await page.evaluate(() => {
+    const el = document.getElementById('picks');
+    if (el) el.scrollIntoView({ block: 'center' });
+  });
   await new Promise(r => setTimeout(r, 1000));
-  
+  await page.screenshot({ path: 'C:\\Users\\saikr\\.gemini\\antigravity\\brain\\350321f0-4bd7-4d55-a1eb-c8453df40187\\screenshots\\test_picks_cinematic.png' });
+  console.log('Saved test_picks_cinematic.png');
+
+  // scroll rail right
+  await page.evaluate(() => {
+    const rail = document.querySelector('#picks .rail');
+    if (rail) rail.scrollLeft = 9999;
+  });
+  await new Promise(r => setTimeout(r, 800));
+  await page.screenshot({ path: 'C:\\Users\\saikr\\.gemini\\antigravity\\brain\\350321f0-4bd7-4d55-a1eb-c8453df40187\\screenshots\\test_picks_right_scrolled.png' });
+  console.log('Saved test_picks_right_scrolled.png');
+
   await page.screenshot({ path: 'C:\\Users\\saikr\\.gemini\\antigravity\\brain\\350321f0-4bd7-4d55-a1eb-c8453df40187\\screenshots\\test_originals_consolidated.png' });
   console.log('Saved test_originals_consolidated.png');
   

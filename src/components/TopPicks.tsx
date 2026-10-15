@@ -29,14 +29,30 @@ export default function TopPicks() {
                 {i + 1}
               </span>
               <div className="relative z-10 h-[85%] w-[150px] overflow-hidden rounded-lg shadow-[-12px_0_30px_rgba(0,0,0,0.7)] ring-1 ring-white/10 transition duration-500 group-hover:-translate-y-2 group-hover:ring-white/30 sm:w-[180px]">
-                <div className="absolute inset-0 transition-transform duration-700 group-hover:scale-110">
-                  <PosterBackdrop palette={pick.palette} />
+                <div className="absolute inset-0 transition-transform duration-700 group-hover:scale-105">
+                  {pick.image ? (
+                    <img
+                      src={pick.image}
+                      alt={pick.title}
+                      loading="lazy"
+                      className="absolute inset-0 h-full w-full object-cover object-top"
+                    />
+                  ) : (
+                    <PosterBackdrop palette={pick.palette} />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 via-45% to-transparent to-75% pointer-events-none" />
                 </div>
-                <div className="absolute inset-0 flex flex-col justify-between p-3.5">
-                  <span className="text-[9px] font-bold uppercase tracking-[0.26em] text-bone/70">{pick.label}</span>
+                <div className="relative z-10 flex h-full flex-col justify-between p-3.5">
+                  <span className="text-[9px] font-bold uppercase tracking-[0.26em] text-bone/80 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                    {pick.label}
+                  </span>
                   <div>
-                    <p className="font-display text-[1.75rem] leading-[0.92] tracking-wide text-bone">{pick.title}</p>
-                    <p className="mt-1.5 text-[11px] leading-snug text-mist">{pick.detail}</p>
+                    <p className="font-display text-[1.75rem] leading-[0.92] tracking-wide text-bone drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]">
+                      {pick.title}
+                    </p>
+                    <p className="mt-1.5 text-[11px] leading-snug text-mist drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
+                      {pick.detail}
+                    </p>
                   </div>
                 </div>
               </div>

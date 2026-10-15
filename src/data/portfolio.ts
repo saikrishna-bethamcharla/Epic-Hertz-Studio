@@ -581,19 +581,19 @@ export const seasons: Season[] = [
   },
 ];
 
-export type TopPick = { label: string; title: string; detail: string; palette: Palette };
+export type TopPick = { label: string; title: string; detail: string; palette: Palette; image: string };
 
 export const topPicks: TopPick[] = [
-  { label: 'Primary Role', title: 'Creative & Tech Lead', detail: 'Zai Labs Private Limited • August 2026 – Present', palette: crimson },
-  { label: 'AI Video Engine', title: 'Seedance 2.0 & Kling 3.0', detail: 'Multi-shot AI filmmaking with structured shot bibles', palette: crimson },
-  { label: 'Academic Credential', title: 'Kingston University', detail: 'Postgraduate Diploma (PGD) • London', palette: violet },
-  { label: 'Prompt Mastery', title: 'Bilingual (EN+ZH)', detail: 'Structured prompts for character & environment consistency', palette: ocean },
-  { label: 'Website Development', title: 'Production Web Platforms', detail: 'Vasudha Pharma (80+ nations, Zoho CRM), Zai Labs & Pranic Healing', palette: ocean },
-  { label: 'Energy Healing Web', title: 'Pranic Healing Portal', detail: 'AP & Telangana chapter, dynamic aura visualizer & 8:40 PM Twin Hearts RSVP', palette: jade },
-  { label: 'Post-Production', title: 'DaVinci Resolve', detail: 'Beat-synced editorial & cinematic color grading', palette: crimson },
-  { label: 'Motion Graphics', title: 'After Effects', detail: 'Compositing, visual effects & title animations', palette: violet },
-  { label: 'Visual Design', title: 'Adobe Illustrator & Photoshop', detail: 'Branded visual assets & typography systems', palette: amber },
-  { label: 'Team Leadership', title: 'Production SOPs', detail: 'Standardized work orders, quotations & client documentation', palette: crimson },
+  { label: 'Primary Role', title: 'Creative & Tech Lead', detail: 'Zai Labs Private Limited • August 2026 – Present', palette: crimson, image: './assets/picks/pick-1.webp' },
+  { label: 'AI Video Engine', title: 'Seedance 2.0 & Kling 3.0', detail: 'Multi-shot AI filmmaking with structured shot bibles', palette: crimson, image: './assets/picks/pick-2.webp' },
+  { label: 'Academic Credential', title: 'Kingston University', detail: 'Postgraduate Diploma (PGD) • London', palette: violet, image: './assets/picks/pick-3.webp' },
+  { label: 'Prompt Mastery', title: 'Bilingual (EN+ZH)', detail: 'Structured prompts for character & environment consistency', palette: ocean, image: './assets/picks/pick-4.webp' },
+  { label: 'Website Development', title: 'Production Web Platforms', detail: 'Vasudha Pharma (80+ nations, Zoho CRM), Zai Labs & Pranic Healing', palette: ocean, image: './assets/picks/pick-5.webp' },
+  { label: 'Energy Healing Web', title: 'Pranic Healing Portal', detail: 'AP & Telangana chapter, dynamic aura visualizer & 8:40 PM Twin Hearts RSVP', palette: jade, image: './assets/picks/pick-6.webp' },
+  { label: 'Post-Production', title: 'DaVinci Resolve', detail: 'Beat-synced editorial & cinematic color grading', palette: crimson, image: './assets/picks/pick-7.webp' },
+  { label: 'Motion Graphics', title: 'After Effects', detail: 'Compositing, visual effects & title animations', palette: violet, image: './assets/picks/pick-8.webp' },
+  { label: 'Visual Design', title: 'Adobe Illustrator & Photoshop', detail: 'Branded visual assets & typography systems', palette: amber, image: './assets/picks/pick-9.webp' },
+  { label: 'Team Leadership', title: 'Production SOPs', detail: 'Standardized work orders, quotations & client documentation', palette: crimson, image: './assets/picks/pick-10.webp' },
 ];
 
 export type IntroSlide = { kicker: string; title: string; lines: string[]; chips?: string[] };
