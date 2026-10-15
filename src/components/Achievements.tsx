@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { motion } from 'framer-motion';
-import { achievements, certifications } from '../data/portfolio';
+import { achievements, professionalHighlights } from '../data/portfolio';
 import { EASE, SectionHeading, Tilt } from './fx';
 import { RailButtons } from './Rail';
 
@@ -17,7 +17,7 @@ function Laurel({ side }: { side: 'l' | 'r' }) {
 
 export default function Achievements() {
   const rail = useRef<HTMLDivElement>(null);
-  const issuers = Array.from(new Set(certifications.map((c) => c.issuer)));
+  const issuers = Array.from(new Set(professionalHighlights.map((c) => c.issuer)));
 
   return (
     <>
@@ -53,7 +53,7 @@ export default function Achievements() {
                     rel="noreferrer"
                     className="relative mt-auto inline-flex min-h-10 items-center gap-1 pt-5 text-xs font-semibold tracking-wide text-bone underline decoration-[#d9b46a]/60 underline-offset-4 hover:decoration-[#d9b46a]"
                   >
-                    View certificate ↗
+                    View project ↗
                   </a>
                 )}
               </article>
@@ -62,23 +62,20 @@ export default function Achievements() {
         ))}
       </div>
 
-      {/* certifications rail */}
+      {/* professional highlights rail */}
       <div className="mt-16">
         <div className="gutter mb-2 flex flex-wrap items-end justify-between gap-2">
           <h3 className="font-sans text-lg font-semibold text-bone sm:text-2xl">
-            Certified <span className="text-mist">· {certifications.length} credentials</span>
+            Professional Highlights <span className="text-mist">· {professionalHighlights.length} areas</span>
           </h3>
           <p className="text-xs text-smoke">{issuers.join(' · ')}</p>
         </div>
         <div className="group/rail relative">
           <div ref={rail} className="rail gutter flex snap-x gap-3 overflow-x-auto py-5">
-            {certifications.map((c, i) => (
-              <motion.a
+            {professionalHighlights.map((c, i) => (
+              <motion.div
                 key={c.name}
-                href={c.link}
-                target="_blank"
-                rel="noreferrer"
-                className="group relative flex w-[230px] shrink-0 snap-start flex-col justify-between rounded-xl bg-ink-2 p-4 ring-1 ring-white/10 transition hover:-translate-y-1 hover:ring-white/30"
+                className="group relative flex w-[230px] shrink-0 snap-start flex-col justify-between rounded-xl bg-ink-2 p-4 ring-1 ring-white/10"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -86,10 +83,10 @@ export default function Achievements() {
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-crimson-2">{c.issuer}</span>
-                  <span className="text-sm text-smoke transition group-hover:text-bone">↗</span>
+                  {c.link ? <a href={c.link} target="_blank" rel="noreferrer" aria-label={`Open ${c.name}`} className="text-sm text-smoke transition hover:text-bone">↗</a> : <span aria-hidden="true" className="text-sm text-smoke">•</span>}
                 </div>
                 <p className="mt-6 text-sm font-medium leading-snug text-bone">{c.name}</p>
-              </motion.a>
+              </motion.div>
             ))}
           </div>
           <RailButtons rail={rail} />
