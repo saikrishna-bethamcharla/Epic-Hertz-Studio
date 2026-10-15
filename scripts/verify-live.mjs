@@ -39,6 +39,29 @@ const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
       });
       console.log('App state:', appState);
       console.log('Errors:', logs.filter(l => l.includes('ERROR') || l.includes('error')));
+
+      if (url.endsWith('/Portfolio/')) {
+        await page.evaluate(() => {
+          const el = document.getElementById('originals');
+          if (el) el.scrollIntoView();
+        });
+        await new Promise(r => setTimeout(r, 1200));
+        await page.screenshot({ path: 'C:\\Users\\saikr\\.gemini\\antigravity\\brain\\350321f0-4bd7-4d55-a1eb-c8453df40187\\screenshots\\live_originals_verified.png' });
+        console.log('Saved live_originals_verified.png');
+
+        await page.evaluate(() => {
+          const btn = document.querySelector('[aria-label="Open Website Development"]');
+          if (btn) btn.click();
+        });
+        await new Promise(r => setTimeout(r, 1000));
+        await page.evaluate(() => {
+          const modalScroller = document.querySelector('[data-lenis-prevent]');
+          if (modalScroller) modalScroller.scrollTop = 700;
+        });
+        await new Promise(r => setTimeout(r, 600));
+        await page.screenshot({ path: 'C:\\Users\\saikr\\.gemini\\antigravity\\brain\\350321f0-4bd7-4d55-a1eb-c8453df40187\\screenshots\\live_modal_websites_verified.png' });
+        console.log('Saved live_modal_websites_verified.png');
+      }
     } catch (e) {
       console.error('Error on ' + url + ':', e.message);
     }

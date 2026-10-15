@@ -53,6 +53,24 @@ server.listen(4829, async () => {
   
   await page.goto('http://localhost:4829/Portfolio/', { waitUntil: 'networkidle2' });
   
+  // scroll to about
+  await page.evaluate(() => {
+    const el = document.getElementById('about');
+    if (el) el.scrollIntoView();
+  });
+  await new Promise(r => setTimeout(r, 1000));
+  await page.screenshot({ path: 'C:\\Users\\saikr\\.gemini\\antigravity\\brain\\350321f0-4bd7-4d55-a1eb-c8453df40187\\screenshots\\test_about_portrait.png' });
+  console.log('Saved test_about_portrait.png');
+
+  // scroll to skills
+  await page.evaluate(() => {
+    const el = document.getElementById('skills');
+    if (el) el.scrollIntoView();
+  });
+  await new Promise(r => setTimeout(r, 1000));
+  await page.screenshot({ path: 'C:\\Users\\saikr\\.gemini\\antigravity\\brain\\350321f0-4bd7-4d55-a1eb-c8453df40187\\screenshots\\test_skills_clean.png' });
+  console.log('Saved test_skills_clean.png');
+
   // scroll to originals
   await page.evaluate(() => {
     const el = document.getElementById('originals');

@@ -31,10 +31,10 @@ export default function About() {
               sizes="(max-width: 1024px) 90vw, 40vw"
               alt={profile.portrait.alt}
               loading="lazy"
-              className="absolute bottom-0 left-1/2 h-[92%] w-auto max-w-none -translate-x-1/2 object-contain object-bottom"
+              className="absolute inset-0 h-full w-full object-cover object-top"
             />
-            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/90 to-transparent" />
-            <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between">
+            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black via-black/50 to-transparent pointer-events-none" />
+            <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between z-10">
               <div>
                 <p className="text-[10px] font-bold tracking-[0.3em] text-crimson-2">STARRING</p>
                 <p className="font-display text-3xl leading-none text-bone">{profile.displayName}</p>

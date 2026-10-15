@@ -192,11 +192,6 @@ export default function Skills() {
       <SectionHeading
         kicker="Scene 02"
         title="The Creative Universe"
-        aside={
-          <p className="max-w-xs text-sm text-mist">
-            Floating 3D tool ecosystem — hover or tap any instrument to inspect its role in Sai Krishna&apos;s production pipeline.
-          </p>
-        }
       />
 
       {/* Filter Tabs */}
