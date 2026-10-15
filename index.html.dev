@@ -11,7 +11,43 @@
     <meta name="theme-color" content="#07070a" />
     <meta property="og:title" content="Sai Krishna | AI Video, Web Development & Creative Design" />
     <meta property="og:description" content="Explore Sai Krishna Bethamcharla’s work in AI-assisted video production, web development, creative design, and post-production." />
-    <meta property="og:image" content="./assets/og-image.jpg" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://saikrishna-bethamcharla.github.io/Portfolio/assets/og-image.jpg" />
+    <meta name="twitter:title" content="Sai Krishna | AI Video, Web Development & Creative Design" />
+    <meta name="twitter:description" content="Explore Sai Krishna Bethamcharla’s work in AI-assisted video production, web development, creative design, and post-production." />
+    <link rel="canonical" href="https://saikrishna-bethamcharla.github.io/Portfolio/" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "name": "Sai Krishna Bethamcharla",
+        "jobTitle": "Creative & Technical Lead",
+        "url": "https://saikrishna-bethamcharla.github.io/Portfolio/",
+        "email": "saikrishnabethamcharla@gmail.com",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Hyderabad",
+          "addressRegion": "Telangana",
+          "addressCountry": "IN"
+        },
+        "worksFor": {
+          "@type": "Organization",
+          "name": "Zai Labs Private Limited",
+          "url": "https://zailabs.co.in/"
+        },
+        "sameAs": [
+          "https://linkedin.com/in/sai-krishna-bethamcharla",
+          "https://github.com/saikrishna-bethamcharla",
+          "https://www.instagram.com/saikrishna_bethamcharla"
+        ],
+        "knowsAbout": [
+          "AI-assisted video production",
+          "Web development",
+          "Post-production",
+          "Creative design"
+        ]
+      }
+    </script>
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
