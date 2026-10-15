@@ -16,10 +16,10 @@ export default function TopPicks() {
             <motion.div
               key={pick.title}
               className="group relative flex h-[260px] shrink-0 snap-start items-end sm:h-[300px]"
-              initial={{ opacity: 0, x: 50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: '0px -5% 0px 0px' }}
-              transition={{ duration: 0.7, delay: Math.min(i, 5) * 0.06, ease: EASE }}
+              initial={{ opacity: 0, y: 36, scale: 0.96 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              viewport={{ once: true, margin: '-4% 0px' }}
+              transition={{ duration: 0.75, delay: Math.min(i, 5) * 0.07, ease: EASE }}
             >
               <span
                 aria-hidden

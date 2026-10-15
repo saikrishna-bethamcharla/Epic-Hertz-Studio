@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
+import { motion, useMotionValue, useScroll, useSpring, useTransform, AnimatePresence } from 'framer-motion';
 import { EASE, SectionHeading } from './fx';
 import { useFinePointer } from '../hooks/useMedia';
 
@@ -179,9 +179,18 @@ export default function Skills() {
   const springX = useSpring(mouseX, { stiffness: 60, damping: 20 });
   const springY = useSpring(mouseY, { stiffness: 60, damping: 20 });
 
+  // Scroll-driven energy ribbon flow
+  const { scrollYProgress: skillsScroll } = useScroll({
+    target: containerRef,
+    offset: ['start end', 'end start'],
+  });
+  const scrollRibbonX = useTransform(skillsScroll, [0, 1], [-80, 80]);
+  const ribbonSpring = useSpring(scrollRibbonX, { stiffness: 70, damping: 22 });
+  const combinedRibbonX = useTransform([springX, ribbonSpring], ([sX, rX]: number[]) => (sX * 25) + rX);
+
   const stageRotateX = useTransform(springY, [-1, 1], [6, -6]);
   const stageRotateY = useTransform(springX, [-1, 1], [-8, 8]);
-  const ribbonShiftX = useTransform(springX, [-1, 1], [-25, 25]);
+  const ribbonShiftX = combinedRibbonX;
 
   const base = (import.meta as unknown as { env?: { BASE_URL?: string } }).env?.BASE_URL ?? './';
 
