@@ -52,6 +52,9 @@ server.listen(4829, async () => {
   page.on('pageerror', err => errors.push(err.message));
   
   await page.goto('http://localhost:4829/Portfolio/', { waitUntil: 'networkidle2' });
+  await new Promise(r => setTimeout(r, 600));
+  await page.screenshot({ path: 'C:\\Users\\saikr\\.gemini\\antigravity\\brain\\350321f0-4bd7-4d55-a1eb-c8453df40187\\screenshots\\test_hero_clean.png' });
+  console.log('Saved test_hero_clean.png');
   
   // scroll to about
   await page.evaluate(() => {

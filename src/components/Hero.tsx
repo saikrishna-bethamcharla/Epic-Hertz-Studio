@@ -3,11 +3,8 @@ import { motion, useMotionValue, useScroll, useSpring, useTransform } from 'fram
 import { profile, type ProfileId } from '../data/portfolio';
 import { useFinePointer } from '../hooks/useMedia';
 import { EASE, Particles } from './fx';
-import { useSmoothScroll } from '../hooks/smoothScroll';
-
-export default function Hero({ onPlay, onResume, profileId: _profileId }: { onPlay?: () => void; onResume?: () => void; profileId?: ProfileId }) {
+export default function Hero({ onPlay: _onPlay, onResume: _onResume, profileId: _profileId }: { onPlay?: () => void; onResume?: () => void; profileId?: ProfileId }) {
   const ref = useRef<HTMLElement>(null);
-  const { scrollTo } = useSmoothScroll();
   const fine = useFinePointer();
 
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
@@ -107,29 +104,6 @@ export default function Hero({ onPlay, onResume, profileId: _profileId }: { onPl
           {profile.seriesTag}
         </p>
 
-        <div className="pointer-events-auto relative z-10 mt-7 flex flex-wrap items-center justify-center gap-3 sm:mt-9">
-          <button
-            type="button"
-            onClick={() => scrollTo('#originals', { offset: -64 })}
-            className="inline-flex min-h-12 items-center justify-center rounded-md bg-crimson px-6 text-xs font-bold uppercase tracking-[0.18em] text-white shadow-[0_0_30px_rgba(222,27,28,0.24)] transition hover:bg-crimson-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
-          >
-            Explore My Work <span aria-hidden="true" className="ml-2">↘</span>
-          </button>
-          <button
-            type="button"
-            onClick={onResume}
-            className="inline-flex min-h-12 items-center justify-center rounded-md border border-white/25 bg-black/35 px-6 text-xs font-bold uppercase tracking-[0.18em] text-bone backdrop-blur-sm transition hover:border-white/60 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
-          >
-            View Resume
-          </button>
-          <button
-            type="button"
-            onClick={onPlay}
-            className="inline-flex min-h-12 items-center justify-center rounded-md px-4 text-xs font-semibold uppercase tracking-[0.16em] text-bone/75 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
-          >
-            <span aria-hidden="true" className="mr-2 text-crimson-2">▶</span> Play Intro
-          </button>
-        </div>
 
         {/* Animated Scroll Indicator Cue */}
         <motion.div
