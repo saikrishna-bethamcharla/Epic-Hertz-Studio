@@ -683,6 +683,6 @@ export const sectionMeta: Record<SectionId, { nav: string; card: string; meta: s
   journey: { nav: 'Journey', card: 'My Journey', meta: `${seasons.length} Seasons • ${seasons.reduce((n, s) => n + s.episodes.length, 0)} Episodes`, palette: amber },
   picks: { nav: 'Top Picks', card: 'Top Picks', meta: 'Top 10 from the resume', palette: jade },
   skills: { nav: 'Skills', card: 'My Skills', meta: `${skillCategories.length} Categories`, palette: ocean },
-  moments: { nav: 'Moments', card: 'Experience & Credentials', meta: `${achievements.length} Moments • ${certifications.length} Credentials`, palette: crimson },
+  moments: { nav: 'Moments', card: 'Experience & Credentials', meta: `${achievements.length} Moments • ${professionalHighlights.length} Highlights`, palette: crimson },
   story: { nav: 'Resume', card: 'The Full Story', meta: 'Resume • View & download', palette: violet },
 };
