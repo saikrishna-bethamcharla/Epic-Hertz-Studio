@@ -45,7 +45,8 @@ const srcImagePath = 'C:/Users/saikr/.gemini/antigravity/brain/350321f0-4bd7-4d5
       type: 'webp',
       quality: 94
     });
-    console.log(`Generated public/assets/portrait-${targetWidth}.webp (${targetWidth}x${targetHeight})`);
+    fs.copyFileSync(`public/assets/portrait-${targetWidth}.webp`, `public/assets/portrait-v2-${targetWidth}.webp`);
+    console.log(`Generated public/assets/portrait-v2-${targetWidth}.webp and portrait-${targetWidth}.webp (${targetWidth}x${targetHeight})`);
   }
 
   // 2. Generate og-image.jpg

@@ -28,8 +28,8 @@ export const profile = {
   },
   resumePdf: './assets/Sai_Krishna_Bethamcharla_Resume.pdf',
   portrait: {
-    src: './assets/portrait-720.webp',
-    srcSet: './assets/portrait-420.webp 420w, ./assets/portrait-720.webp 720w, ./assets/portrait-1100.webp 1100w',
+    src: './assets/portrait-v2-720.webp',
+    srcSet: './assets/portrait-v2-420.webp 420w, ./assets/portrait-v2-720.webp 720w, ./assets/portrait-v2-1100.webp 1100w',
     alt: 'Portrait of Sai Krishna Bethamcharla',
   },
   interests: [
