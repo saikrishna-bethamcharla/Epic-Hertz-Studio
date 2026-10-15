@@ -141,8 +141,14 @@ export default function ProjectModal({ project, onClose, onSwitch }: { project: 
                       key={vid.id}
                       className="group relative overflow-hidden rounded-xl border border-white/15 bg-white/[0.03] p-4 transition duration-300 hover:border-crimson-2/40 hover:bg-white/[0.05] sm:p-6"
                     >
-                      {/* Responsive 16:9 YouTube Iframe */}
-                      <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-white/10 bg-black shadow-2xl">
+                      {/* Responsive YouTube Iframe (Widescreen 16:9 or Vertical 9:16 Short) */}
+                      <div
+                        className={`relative overflow-hidden rounded-lg border border-white/10 bg-black shadow-2xl ${
+                          vid.aspect === '9/16'
+                            ? 'mx-auto aspect-[9/16] w-full max-w-[340px]'
+                            : 'aspect-video w-full'
+                        }`}
+                      >
                         <iframe
                           src={`https://www.youtube-nocookie.com/embed/${vid.youtubeId}?rel=0&modestbranding=1`}
                           title={vid.title}
