@@ -36,14 +36,10 @@ const cards = [
     renderHtml: () => `
       <div class="card bg-zai">
         <div class="glow zai-glow"></div>
-        <div class="grid-mesh"></div>
-
-        <div class="centerpiece flex-col">
-          <div class="zai-official-wrap">
-            <img src="data:image/jpeg;base64,${zaiOfficialB64}" class="zai-official-img" alt="Zai Labs Official 3D Logo" />
-          </div>
-          <div class="zai-pill-badge">CREATIVE & TECH LEADERSHIP</div>
+        <div class="hero-bg">
+          <img src="data:image/jpeg;base64,${zaiOfficialB64}" class="hero-img" alt="Zai Labs" />
         </div>
+        <div class="scrim-top"></div>
         <div class="bottom-gradient"></div>
       </div>
     `
@@ -83,14 +79,8 @@ const cards = [
         <div class="glow kingston-glow"></div>
         <div class="centerpiece flex-col">
           <div class="ku-official-wrap">
-            <img src="data:image/png;base64,${kingstonOfficialB64}" class="ku-official-img" alt="Kingston University London Official Logo" />
+            <img src="data:image/png;base64,${kingstonOfficialB64}" class="ku-official-img" alt="Kingston University London" />
           </div>
-          <div class="ku-prestige-badge">
-            <span class="ku-prestige-star">✦</span>
-            <span class="ku-prestige-text">POSTGRADUATE DIPLOMA</span>
-            <span class="ku-prestige-star">✦</span>
-          </div>
-          <div class="ku-year-badge">EST. 1899 • CLASS OF 2022 • LONDON</div>
         </div>
         <div class="bottom-gradient"></div>
       </div>
@@ -334,42 +324,45 @@ const styles = `
   }
 
   /* 1. Zai Labs */
-  .bg-zai { background: radial-gradient(circle at 50% 30%, #0d1e30, #050811 85%); }
-  .zai-glow { background: rgba(0, 229, 255, 0.35); top: 15%; left: 15%; }
-  .grid-mesh {
+  .bg-zai { background: #04070e; position: relative; }
+  .zai-glow {
     position: absolute;
-    inset: 0;
-    background-image: linear-gradient(rgba(0, 229, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 229, 255, 0.05) 1px, transparent 1px);
-    background-size: 24px 24px;
-    opacity: 0.5;
+    width: 280px;
+    height: 280px;
+    top: 10%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0, 229, 255, 0.28) 0%, rgba(0, 255, 136, 0.12) 40%, transparent 70%);
+    filter: blur(45px);
+    pointer-events: none;
+    z-index: 1;
   }
-  .zai-official-wrap {
-    width: 210px;
-    height: 210px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 18px;
+  .hero-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 385px;
     overflow: hidden;
-    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.85), 0 0 35px rgba(0, 229, 255, 0.25);
-    border: 1px solid rgba(0, 229, 255, 0.3);
+    z-index: 2;
   }
-  .zai-official-img {
+  .hero-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center 26%;
+    filter: contrast(1.08) brightness(1.02);
   }
-  .zai-pill-badge {
-    font-size: 8px;
-    font-weight: 800;
-    letter-spacing: 0.24em;
-    color: #00e5ff;
-    background: rgba(0, 229, 255, 0.12);
-    border: 1px solid rgba(0, 229, 255, 0.35);
-    padding: 4px 12px;
-    border-radius: 9999px;
-    margin-top: 12px;
-    text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+  .scrim-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 70px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%);
+    z-index: 3;
+    pointer-events: none;
   }
 
   /* 2. Cinema Engine */
@@ -405,7 +398,7 @@ const styles = `
   .kingston-glow { background: rgba(90, 130, 255, 0.4); top: 10%; left: 15%; }
   .ku-official-wrap {
     width: 220px;
-    height: 150px;
+    height: 170px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -414,29 +407,7 @@ const styles = `
     width: 195px;
     height: auto;
     object-fit: contain;
-    filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 30px rgba(120, 160, 255, 0.5));
-  }
-  .ku-prestige-badge {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 8.5px;
-    font-weight: 800;
-    letter-spacing: 0.24em;
-    color: #fed053;
-    margin-top: 14px;
-    text-shadow: 0 0 12px rgba(254, 208, 83, 0.5);
-  }
-  .ku-prestige-star {
-    color: #fed053;
-    font-size: 8px;
-  }
-  .ku-year-badge {
-    font-size: 8px;
-    letter-spacing: 0.2em;
-    font-weight: 700;
-    color: rgba(244, 241, 236, 0.65);
-    margin-top: 4px;
+    filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 35px rgba(120, 160, 255, 0.5));
   }
 
   /* 4. Prompt */
