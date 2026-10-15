@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { achievements, certifications, education, experience, profile, projects, skillCategories } from '../data/portfolio';
+import { achievements, professionalHighlights, education, experience, profile, projects, skillCategories } from '../data/portfolio';
 import { EASE, Magnetic, SectionHeading } from './fx';
 
 /** THE FULL STORY — a designed resume preview plus view / download actions. */
@@ -22,7 +22,7 @@ export default function ResumeSection({ onView }: { onView: () => void }) {
         <div className="lg:sticky lg:top-28 lg:self-start">
           <p className="font-serif text-3xl italic leading-tight text-bone">Every episode, on one page.</p>
           <p className="mt-3 text-sm leading-relaxed text-mist">
-            Education, training, projects, achievements and {certifications.length} certifications — view it here or take a copy with you.
+            Education, projects, professional experience, and highlights — view it here or take a copy with you.
           </p>
           <div className="mt-6 flex flex-col gap-3">
             <Magnetic className="w-full">
@@ -48,7 +48,7 @@ export default function ResumeSection({ onView }: { onView: () => void }) {
             {[
               { v: education[0].score, k: 'Degree' },
               { v: String(projects.length), k: 'Originals' },
-              { v: String(certifications.length), k: 'Credentials' },
+              { v: String(professionalHighlights.length), k: 'Highlights' },
             ].map((s) => (
               <div key={s.k} className="bg-ink-2 px-2 py-4">
                 <dd className="font-display text-3xl leading-none text-bone">{s.v}</dd>
@@ -180,10 +180,10 @@ export function ResumeSheet() {
             ))}
           </ul>
 
-          <H>Certifications</H>
+          <H>Professional Highlights</H>
           <p className="text-xs leading-relaxed text-mist">
-            {Array.from(new Set(certifications.map((c) => c.issuer)))
-              .map((iss) => `${iss}: ${certifications.filter((c) => c.issuer === iss).map((c) => c.name).join(', ')}`)
+            {Array.from(new Set(professionalHighlights.map((c) => c.issuer)))
+              .map((iss) => `${iss}: ${professionalHighlights.filter((c) => c.issuer === iss).map((c) => c.name).join(', ')}`)
               .join(' · ')}
           </p>
         </div>
