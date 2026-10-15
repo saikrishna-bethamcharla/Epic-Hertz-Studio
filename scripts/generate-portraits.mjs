@@ -2,7 +2,7 @@ import puppeteer from 'puppeteer-core';
 import fs from 'fs';
 
 const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-const srcImagePath = 'C:/Users/saikr/.gemini/antigravity/brain/350321f0-4bd7-4d55-a1eb-c8453df40187/.user_uploaded/media_1792059420940_0891e4ab.jpg';
+const srcImagePath = 'C:/Users/saikr/.gemini/antigravity/brain/350321f0-4bd7-4d55-a1eb-c8453df40187/portrait_cinematic_1792000299522.jpg';
 
 (async () => {
   const browser = await puppeteer.launch({
@@ -14,11 +14,13 @@ const srcImagePath = 'C:/Users/saikr/.gemini/antigravity/brain/350321f0-4bd7-4d5
   const page = await browser.newPage();
   const fileData = fs.readFileSync(srcImagePath).toString('base64');
 
+  // Exact 4:5 ratio crop focusing on face, black suit, black tie, luxury watch, and volumetric studio lighting
+  // Source is 768x1376. 4:5 ratio is width: 768, height: 960.
   const crop = {
-    sx: 28,
-    sy: 39,
-    sWidth: 726,
-    sHeight: 907.5
+    sx: 0,
+    sy: 15,
+    sWidth: 768,
+    sHeight: 960
   };
 
   for (const targetWidth of [420, 720, 1100]) {
@@ -40,16 +42,18 @@ const srcImagePath = 'C:/Users/saikr/.gemini/antigravity/brain/350321f0-4bd7-4d5
       document.body.appendChild(canvas);
     }, fileData, crop, targetWidth, targetHeight);
 
-    await page.screenshot({
-      path: `public/assets/portrait-${targetWidth}.webp`,
-      type: 'webp',
-      quality: 94
-    });
-    fs.copyFileSync(`public/assets/portrait-${targetWidth}.webp`, `public/assets/portrait-v2-${targetWidth}.webp`);
-    console.log(`Generated public/assets/portrait-v2-${targetWidth}.webp and portrait-${targetWidth}.webp (${targetWidth}x${targetHeight})`);
+    // Save to portrait-v3, portrait-v2, and portrait
+    for (const prefix of ['portrait-v3', 'portrait-v2', 'portrait']) {
+      await page.screenshot({
+        path: `public/assets/${prefix}-${targetWidth}.webp`,
+        type: 'webp',
+        quality: 94
+      });
+      console.log(`Generated public/assets/${prefix}-${targetWidth}.webp (${targetWidth}x${targetHeight})`);
+    }
   }
 
-  // 2. Generate og-image.jpg
+  // 2. Generate og-image.jpg with black suit portrait
   await page.setViewport({ width: 1200, height: 630, deviceScaleFactor: 1 });
   const ogHtml = `
   <!DOCTYPE html>
