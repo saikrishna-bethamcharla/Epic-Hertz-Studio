@@ -10,6 +10,12 @@ if (!fs.existsSync(OUT_DIR)) {
 }
 
 // Read assets
+const zaiOfficialB64 = fs.existsSync('public/assets/zailabs-official-logo.jpg')
+  ? fs.readFileSync('public/assets/zailabs-official-logo.jpg').toString('base64') : '';
+const kingstonOfficialB64 = fs.existsSync('public/assets/kingston-official-logo-transparent.png')
+  ? fs.readFileSync('public/assets/kingston-official-logo-transparent.png').toString('base64')
+  : (fs.existsSync('public/assets/kingston-official-logo.png')
+    ? fs.readFileSync('public/assets/kingston-official-logo.png').toString('base64') : '');
 const zaiIconB64 = fs.existsSync('public/assets/zailabs-icon-clean.png')
   ? fs.readFileSync('public/assets/zailabs-icon-clean.png').toString('base64') : '';
 const kingstonShieldB64 = fs.existsSync('public/assets/kingston-shield.svg')
@@ -33,25 +39,10 @@ const cards = [
         <div class="grid-mesh"></div>
 
         <div class="centerpiece flex-col">
-          <div class="zai-symbol-wrap">
-            <svg width="110" height="110" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="zaiGrad" x1="0%" y1="20%" x2="100%" y2="80%">
-                  <stop offset="0%" stop-color="#00aaff" />
-                  <stop offset="45%" stop-color="#00e5ff" />
-                  <stop offset="100%" stop-color="#00ff88" />
-                </linearGradient>
-                <filter id="zaiGlow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feGaussianBlur stdDeviation="4" result="blur" />
-                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                </filter>
-              </defs>
-              <path d="M 52 14 C 31.5 14 15 30.5 15 51 C 15 71.5 31.5 88 52 88 C 63.8 88 74.2 82.5 81 74 L 81 83 C 81 85.5 83 87.5 85.5 87.5 L 87.5 87.5 C 90 87.5 92 85.5 92 83 L 92 38 C 92 24.7 81.3 14 68 14 L 52 14 Z M 52 28 C 64.7 28 75 38.3 75 51 C 75 63.7 64.7 74 52 74 C 39.3 74 29 63.7 29 51 C 29 38.3 39.3 28 52 28 Z" fill="url(#zaiGrad)" filter="url(#zaiGlow)" />
-              <path d="M 43 38.5 C 43 36.8 44.8 35.8 46.2 36.7 L 66.8 49.2 C 68.2 50 68.2 52 66.8 52.8 L 46.2 65.3 C 44.8 66.2 43 65.2 43 63.5 Z" fill="#00d4ff" />
-            </svg>
+          <div class="zai-official-wrap">
+            <img src="data:image/jpeg;base64,${zaiOfficialB64}" class="zai-official-img" alt="Zai Labs Official 3D Logo" />
           </div>
-          <div class="zai-wordmark">ZAI LABS</div>
-          <div class="zai-tagline">AI • TECHNOLOGY • CREATIVITY</div>
+          <div class="zai-pill-badge">CREATIVE & TECH LEADERSHIP</div>
         </div>
         <div class="bottom-gradient"></div>
       </div>
@@ -91,11 +82,15 @@ const cards = [
       <div class="card bg-kingston">
         <div class="glow kingston-glow"></div>
         <div class="centerpiece flex-col">
-          <div class="ku-crest-wrap">
-            <img src="data:image/svg+xml;base64,${kingstonShieldB64}" class="ku-crest" />
+          <div class="ku-official-wrap">
+            <img src="data:image/png;base64,${kingstonOfficialB64}" class="ku-official-img" alt="Kingston University London Official Logo" />
           </div>
-          <div class="ku-city">LONDON • UNITED KINGDOM</div>
-          <div class="ku-year">EST. 1899 • CLASS OF 2022</div>
+          <div class="ku-prestige-badge">
+            <span class="ku-prestige-star">✦</span>
+            <span class="ku-prestige-text">POSTGRADUATE DIPLOMA</span>
+            <span class="ku-prestige-star">✦</span>
+          </div>
+          <div class="ku-year-badge">EST. 1899 • CLASS OF 2022 • LONDON</div>
         </div>
         <div class="bottom-gradient"></div>
       </div>
@@ -348,36 +343,33 @@ const styles = `
     background-size: 24px 24px;
     opacity: 0.5;
   }
-  .zai-symbol-wrap {
-    width: 105px;
-    height: 105px;
+  .zai-official-wrap {
+    width: 210px;
+    height: 210px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(circle, rgba(0, 229, 255, 0.2) 0%, transparent 70%);
-    border-radius: 50%;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.85), 0 0 35px rgba(0, 229, 255, 0.25);
+    border: 1px solid rgba(0, 229, 255, 0.3);
   }
-  .zai-icon {
-    width: 90px;
-    height: 90px;
-    object-fit: contain;
-    filter: drop-shadow(0 0 25px rgba(0, 229, 255, 0.6));
-    mix-blend-mode: lighten;
+  .zai-official-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
-  .zai-wordmark {
-    font-size: 22px;
-    font-weight: 900;
-    letter-spacing: 0.18em;
-    color: #f4f1ec;
-    margin-top: 8px;
-    text-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
-  }
-  .zai-tagline {
+  .zai-pill-badge {
     font-size: 8px;
-    letter-spacing: 0.3em;
-    font-weight: 700;
-    color: rgba(0, 229, 255, 0.85);
-    margin-top: 4px;
+    font-weight: 800;
+    letter-spacing: 0.24em;
+    color: #00e5ff;
+    background: rgba(0, 229, 255, 0.12);
+    border: 1px solid rgba(0, 229, 255, 0.35);
+    padding: 4px 12px;
+    border-radius: 9999px;
+    margin-top: 12px;
+    text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
   }
 
   /* 2. Cinema Engine */
@@ -409,26 +401,43 @@ const styles = `
   .aperture-sub { font-size: 9px; letter-spacing: 0.24em; font-weight: 700; color: rgba(255,255,255,0.65); margin-top: 12px; }
 
   /* 3. Kingston */
-  .bg-kingston { background: radial-gradient(circle at 50% 30%, #0d122e, #050611 85%); }
-  .kingston-glow { background: rgba(80, 110, 240, 0.35); top: 12%; left: 15%; }
-  .ku-crest-wrap {
-    height: 120px;
+  .bg-kingston { background: radial-gradient(circle at 50% 28%, #141d4a, #050714 85%); }
+  .kingston-glow { background: rgba(90, 130, 255, 0.4); top: 10%; left: 15%; }
+  .ku-official-wrap {
+    width: 220px;
+    height: 150px;
     display: flex;
     align-items: center;
     justify-content: center;
-    filter: drop-shadow(0 10px 25px rgba(0,0,0,0.85)) drop-shadow(0 0 25px rgba(212, 175, 55, 0.4));
   }
-  .ku-crest { height: 115px; width: auto; }
-  .ku-title {
-    font-size: 21px;
+  .ku-official-img {
+    width: 195px;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 30px rgba(120, 160, 255, 0.5));
+  }
+  .ku-prestige-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 8.5px;
     font-weight: 800;
-    letter-spacing: 0.08em;
-    color: #f4f1ec;
-    margin-top: 12px;
-    text-shadow: 0 4px 15px rgba(0,0,0,0.8);
+    letter-spacing: 0.24em;
+    color: #fed053;
+    margin-top: 14px;
+    text-shadow: 0 0 12px rgba(254, 208, 83, 0.5);
   }
-  .ku-city { font-size: 10px; font-weight: 800; letter-spacing: 0.28em; color: #fed053; margin-top: 4px; }
-  .ku-year { font-size: 9px; letter-spacing: 0.2em; color: rgba(244,241,236,0.6); margin-top: 4px; }
+  .ku-prestige-star {
+    color: #fed053;
+    font-size: 8px;
+  }
+  .ku-year-badge {
+    font-size: 8px;
+    letter-spacing: 0.2em;
+    font-weight: 700;
+    color: rgba(244, 241, 236, 0.65);
+    margin-top: 4px;
+  }
 
   /* 4. Prompt */
   .bg-prompt { background: radial-gradient(circle at 50% 30%, #062230, #04080e 85%); }
