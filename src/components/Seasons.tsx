@@ -116,11 +116,6 @@ export default function Seasons() {
       <SectionHeading
         kicker="Interactive Chrono Dial"
         title="My Journey Through Time"
-        aside={
-          <p className="max-w-xs text-sm text-mist">
-            Rotate the mechanical clock dial to travel across eras — from London PGD to Creative &amp; Technical Lead at Zai Labs.
-          </p>
-        }
       />
 
       {/* 1. MECHANICAL CHRONO TIME MACHINE STAGE */}
