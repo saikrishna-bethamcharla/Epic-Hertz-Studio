@@ -10,14 +10,26 @@ import type { Segment, SpokenLanguage, ScriptOutput, WordTimestamp } from '../ty
 const ENV_API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
 
 export function getStoredApiKey(): string {
-  if (ENV_API_KEY && ENV_API_KEY !== 'your_gemini_api_key_here') {
-    return ENV_API_KEY;
-  }
+  // 1. Check user-configured key in browser storage first
   try {
-    return localStorage.getItem('epic_gemini_api_key') || '';
+    const local = localStorage.getItem('epic_gemini_api_key')?.trim();
+    if (local && local.length > 5) {
+      return local;
+    }
   } catch {
-    return '';
+    // ignore
   }
+
+  // 2. Fallback to env key only if not revoked or placeholder
+  if (
+    ENV_API_KEY &&
+    ENV_API_KEY !== 'your_gemini_api_key_here' &&
+    !ENV_API_KEY.startsWith('AIzaSyDJJ7')
+  ) {
+    return ENV_API_KEY.trim();
+  }
+
+  return '';
 }
 
 export function setStoredApiKey(key: string): void {

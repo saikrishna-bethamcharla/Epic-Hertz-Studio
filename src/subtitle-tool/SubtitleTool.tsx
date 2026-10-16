@@ -15,10 +15,11 @@ import TemplateDrawer from './TemplateDrawer';
 import Timeline from './Timeline';
 import PrepareMediaModal from './PrepareMediaModal';
 import ExportModal from './ExportModal';
+import ApiKeyModal from './ApiKeyModal';
 import ProgressOverlay from './ProgressOverlay';
 
 import { extractAudio } from './utils/extractAudio';
-import { transcribeAudio, getStoredApiKey, setStoredApiKey } from './api/transcribe';
+import { transcribeAudio } from './api/transcribe';
 import { toSRT, downloadText } from './utils/srt';
 
 import type {
@@ -47,6 +48,7 @@ export default function SubtitleTool() {
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
 
   // Subtitle styling state
   const [style, setStyle] = useState<SubtitleStyle>(() => ({
@@ -195,6 +197,12 @@ export default function SubtitleTool() {
         />
       )}
 
+      {/* ── API Key Configuration Modal ─────────────────────────────────── */}
+      <ApiKeyModal
+        isOpen={isApiKeyModalOpen}
+        onClose={() => setIsApiKeyModalOpen(false)}
+      />
+
       {/* ── Top Header Navigation Bar ───────────────────────────────────── */}
       <header className="h-14 shrink-0 flex items-center justify-between px-5 border-b border-white/10 bg-[#141413]/90 backdrop-blur-md z-30">
         <div className="flex items-center gap-3">
@@ -247,17 +255,7 @@ export default function SubtitleTool() {
 
           {/* Gemini API Key settings button */}
           <button
-            onClick={() => {
-              const current = getStoredApiKey();
-              const input = window.prompt(
-                'Enter Gemini API Key (stored privately in your local browser):',
-                current,
-              );
-              if (input !== null) {
-                setStoredApiKey(input);
-                alert('API Key updated successfully!');
-              }
-            }}
+            onClick={() => setIsApiKeyModalOpen(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 text-xs text-mist hover:text-bone hover:border-white/25 transition-colors bg-white/[0.02]"
             title="Configure Gemini API Key"
           >
@@ -273,18 +271,35 @@ export default function SubtitleTool() {
           {/* Error Banner */}
           {error && stage === 'idle' && (
             <motion.div
-              className="m-6 rounded-xl border border-crimson/40 bg-crimson/10 px-5 py-3 text-crimson-2 text-xs flex items-center justify-between"
+              className="m-6 rounded-xl border border-crimson/40 bg-crimson/10 px-5 py-3 text-crimson-2 text-xs flex flex-wrap items-center justify-between gap-2"
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
             >
-              <span><strong>Error:</strong> {error}</span>
-              <button
-                className="text-mist hover:text-bone underline ml-4"
-                onClick={() => setError(null)}
-              >
-                Dismiss
-              </button>
+              <div className="flex-1 min-w-[200px]">
+                <strong>Error:</strong> {error}
+              </div>
+
+              <div className="flex items-center gap-3">
+                {(error.toLowerCase().includes('leaked') ||
+                  error.toLowerCase().includes('key') ||
+                  error.toLowerCase().includes('403') ||
+                  error.toLowerCase().includes('invalid')) && (
+                  <button
+                    onClick={() => setIsApiKeyModalOpen(true)}
+                    className="px-3 py-1 rounded-md bg-amber-400 hover:bg-amber-300 text-black font-semibold text-[11px] transition-colors shadow-sm"
+                  >
+                    Enter New API Key
+                  </button>
+                )}
+
+                <button
+                  className="text-mist hover:text-bone underline text-[11px]"
+                  onClick={() => setError(null)}
+                >
+                  Dismiss
+                </button>
+              </div>
             </motion.div>
           )}
 
