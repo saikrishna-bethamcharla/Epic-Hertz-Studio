@@ -41,20 +41,20 @@ function readStoredProfile(): ProfileId | null {
 }
 
 export default function App() {
-  // Route: ?tool=subtitles → show the subtitle tool, otherwise show the portfolio
+  // If ?view=portfolio is passed, show portfolio; otherwise show Subtitle Studio directly!
   const params = new URLSearchParams(window.location.search);
-  if (params.get('tool') === 'subtitles') {
+  if (params.get('view') === 'portfolio') {
     return (
-      <Suspense fallback={<div className="min-h-screen bg-ink" />}>
-        <SubtitleTool />
-      </Suspense>
+      <SmoothScrollProvider>
+        <Series />
+      </SmoothScrollProvider>
     );
   }
 
   return (
-    <SmoothScrollProvider>
-      <Series />
-    </SmoothScrollProvider>
+    <Suspense fallback={<div className="min-h-screen bg-ink" />}>
+      <SubtitleTool />
+    </Suspense>
   );
 }
 
