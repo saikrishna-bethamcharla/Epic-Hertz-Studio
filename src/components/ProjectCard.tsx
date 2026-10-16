@@ -6,7 +6,7 @@ import { ProjectArt } from './Poster';
 export default function ProjectCard({ project, index, onOpen }: { project: Project; index: number; onOpen: () => void }) {
   return (
     <motion.article
-      className="w-[84vw] shrink-0 snap-start sm:w-[62vw] lg:w-[46vw] xl:w-[42vw]"
+      className="w-[86vw] shrink-0 snap-start sm:w-[64vw] lg:w-[46vw] xl:w-[41vw] max-w-[620px]"
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '0px -10% 0px 0px' }}
@@ -24,90 +24,125 @@ export default function ProjectCard({ project, index, onOpen }: { project: Proje
             }
           }}
           aria-label={`Open ${project.title}`}
-          className="focus-ring relative aspect-[4/5] overflow-hidden rounded-2xl ring-1 ring-white/10 transition duration-500 group-hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.8)] group-hover:ring-white/25 sm:aspect-[16/12] lg:aspect-auto lg:h-[66vh]"
+          className="focus-ring relative aspect-[4/5] overflow-hidden rounded-2xl ring-1 ring-white/10 transition duration-500 group-hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.8)] group-hover:ring-white/25 sm:aspect-[16/12] lg:aspect-auto lg:h-[70vh] lg:min-h-[580px] lg:max-h-[720px]"
         >
+          {/* BACKGROUND POSTER ART */}
           <motion.div layoutId={`art-${project.id}`} className="absolute inset-0 overflow-hidden rounded-2xl">
-            <div className="absolute inset-0 transition-transform duration-[1.4s] ease-[var(--ease-cine)] group-hover:scale-[1.07]">
+            <div className="absolute inset-0 transition-transform duration-[1.4s] ease-[var(--ease-cine)] group-hover:scale-[1.05]">
               <ProjectArt project={project} />
             </div>
           </motion.div>
 
-          <div className="absolute left-5 top-5 flex items-center gap-2 sm:left-7 sm:top-7">
-            <span className="font-display text-xl leading-none text-crimson-2">S</span>
-            <span className="text-[10px] font-bold tracking-[0.34em] text-bone/80">ORIGINAL</span>
-          </div>
-          <span className="absolute right-5 top-5 rounded border border-white/30 px-1.5 py-px text-[10px] font-bold text-bone sm:right-7 sm:top-7">{project.year}</span>
-
-          <div className="absolute inset-x-0 bottom-0 p-5 sm:p-7 [transform:translateZ(40px)]">
-            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-mist">{project.genre}</p>
-            <motion.h3 layoutId={`title-${project.id}`} className="font-display text-[clamp(2.4rem,5vw,4.6rem)] leading-[0.88] tracking-wide text-bone">
-              {project.title}
-            </motion.h3>
-            <p className="mt-3 max-w-md text-sm leading-relaxed text-bone/75 sm:text-[15px]">{project.logline}</p>
-            <div className="mt-3 grid max-w-md grid-cols-2 gap-2" aria-label="Project highlights">
-              {project.metrics.slice(0, 2).map((metric) => (
-                <div key={metric.label} className="min-w-0 rounded-md border border-white/10 bg-black/35 px-3 py-2 backdrop-blur-sm">
-                  <p className="truncate font-display text-lg leading-tight text-bone sm:text-xl" style={{ color: project.palette.accent }}>
-                    {metric.value}
-                  </p>
-                  <p className="mt-1 line-clamp-2 text-[10px] leading-snug text-mist sm:text-[11px]">{metric.label}</p>
-                </div>
-              ))}
-            </div>
-            {project.websites && (
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="rounded border border-[#4cc9ff]/40 bg-[#4cc9ff]/15 px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#4cc9ff] uppercase">
-                  {project.websites.length} Websites Included
-                </span>
-                <span className="text-[11px] text-bone/70">
-                  {project.websites.map((w) => w.name.replace(' Chem Limited', '').replace(' — AP & Telangana Chapter', '')).join(' · ')}
-                </span>
+          {/* SINGLE ROBUST FLEX CONTAINER — SEPARATES TOP BAR FROM CONTENT STACK */}
+          <div className="relative z-10 flex h-full flex-col justify-between p-5 sm:p-7 xl:p-8">
+            {/* TOP HEADER ROW */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="font-display text-xl leading-none text-crimson-2">S</span>
+                <span className="text-[10px] font-bold tracking-[0.34em] text-bone/85">ORIGINAL</span>
               </div>
-            )}
-            {project.videos && (
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="flex items-center gap-1.5 rounded border border-[#ff3d5a]/40 bg-[#ff3d5a]/15 px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#ff3d5a] uppercase">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#ff3d5a] animate-pulse" />
-                  {project.videos.length} {project.videos.length === 1 ? 'Video Included' : 'Videos Included'}
-                </span>
-                <span className="text-[11px] text-bone/70 truncate max-w-xs">
-                  {project.videos.map((v) => v.title).join(' · ')}
-                </span>
-              </div>
-            )}
-            <div className="mt-4 flex flex-wrap gap-1.5">
-              {project.stack.map((t) => (
-                <span key={t} className="rounded-full bg-black/35 px-2.5 py-1 text-[11px] font-medium text-bone/90 backdrop-blur">
-                  {t}
-                </span>
-              ))}
-            </div>
-            <div className="mt-5 flex flex-wrap items-center gap-3">
-              <span className="flex min-h-11 items-center gap-2 rounded-md bg-bone px-5 text-sm font-bold text-ink transition group-hover:bg-white">
-                {project.videos ? '▶ Watch Video / Project' : (project.websites ? `▶ View Websites (${project.websites.length})` : '▶ View Project')}
+              <span className="rounded border border-white/20 bg-black/40 px-2 py-0.5 text-[10px] font-bold text-bone backdrop-blur-sm">
+                {project.year}
               </span>
-              {project.liveUrl && (
-                <a
-                  href={project.liveUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="flex min-h-11 items-center gap-2 rounded-md border border-crimson-2/40 bg-crimson-2/20 px-4 text-sm font-semibold text-bone backdrop-blur transition hover:border-crimson-2 hover:bg-crimson-2/30"
-                >
-                  {project.liveUrl.includes('youtu') ? 'Watch on YouTube ↗' : 'Live Site ↗'}
-                </a>
+            </div>
+
+            {/* BOTTOM CONTENT DATA STACK */}
+            <div className="flex flex-col [transform:translateZ(30px)]">
+              {/* Category / Genre Tagline */}
+              <p className="mb-1.5 line-clamp-1 text-[10.5px] sm:text-[11px] font-semibold uppercase tracking-[0.22em] text-mist/90">
+                {project.genre}
+              </p>
+
+              {/* Cinematic Title */}
+              <motion.h3
+                layoutId={`title-${project.id}`}
+                className="font-display text-3xl sm:text-4xl lg:text-[2.6rem] xl:text-[3rem] leading-[0.92] tracking-wide text-bone"
+              >
+                {project.title}
+              </motion.h3>
+
+              {/* Logline — 2 lines max with comfortable leading */}
+              <p className="mt-2.5 line-clamp-2 max-w-lg text-xs sm:text-[13.5px] leading-relaxed text-bone/75">
+                {project.logline}
+              </p>
+
+              {/* 2 Highlight Metric Badges */}
+              <div className="mt-3 grid max-w-md grid-cols-2 gap-2" aria-label="Project highlights">
+                {project.metrics.slice(0, 2).map((metric) => (
+                  <div key={metric.label} className="min-w-0 rounded-md border border-white/10 bg-black/40 px-3 py-1.5 backdrop-blur-sm">
+                    <p className="truncate font-display text-base sm:text-lg leading-tight" style={{ color: project.palette.accent }}>
+                      {metric.value}
+                    </p>
+                    <p className="mt-0.5 line-clamp-1 text-[10px] leading-tight text-mist">{metric.label}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Included Websites or Videos Indicator */}
+              {project.websites && (
+                <div className="mt-2.5 flex items-center gap-2 overflow-hidden text-xs">
+                  <span className="shrink-0 rounded border border-[#4cc9ff]/40 bg-[#4cc9ff]/15 px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#4cc9ff] uppercase">
+                    {project.websites.length} Websites Included
+                  </span>
+                  <span className="truncate text-[11px] text-bone/70">
+                    {project.websites.map((w) => w.name.replace(' Chem Limited', '').replace(' — AP & Telangana Chapter', '').replace(' Private Limited', '')).join('  •  ')}
+                  </span>
+                </div>
               )}
-              {project.github && !project.liveUrl && (
-                <a
-                  href={project.github}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="flex min-h-11 items-center gap-2 rounded-md border border-white/25 bg-black/30 px-4 text-sm font-semibold text-bone backdrop-blur transition hover:border-bone"
-                >
-                  GitHub ↗
-                </a>
+              {project.videos && (
+                <div className="mt-2.5 flex items-center gap-2 overflow-hidden text-xs">
+                  <span className="shrink-0 flex items-center gap-1.5 rounded border border-[#ff3d5a]/40 bg-[#ff3d5a]/15 px-2 py-0.5 text-[10px] font-bold tracking-wider text-[#ff3d5a] uppercase">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#ff3d5a] animate-pulse" />
+                    {project.videos.length} {project.videos.length === 1 ? 'Video Included' : 'Videos Included'}
+                  </span>
+                  <span className="truncate text-[11px] text-bone/70">
+                    {project.videos.map((v) => v.title.split('—')[0].split('|')[0].trim()).join('  •  ')}
+                  </span>
+                </div>
               )}
+
+              {/* Curated Tech Stack Pills (Clean Single Row) */}
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                {project.stack.slice(0, 4).map((t) => (
+                  <span key={t} className="rounded-full border border-white/5 bg-black/40 px-2.5 py-0.5 text-[10.5px] font-medium text-bone/90 backdrop-blur">
+                    {t}
+                  </span>
+                ))}
+                {project.stack.length > 4 && (
+                  <span className="rounded-full border border-white/5 bg-black/25 px-2 py-0.5 text-[10px] font-medium text-mist/70">
+                    +{project.stack.length - 4} more
+                  </span>
+                )}
+              </div>
+
+              {/* Call-to-Action Buttons */}
+              <div className="mt-4 flex flex-wrap items-center gap-2.5">
+                <span className="flex h-10 items-center gap-2 rounded-md bg-bone px-4 text-xs sm:text-sm font-bold text-ink transition group-hover:bg-white cursor-pointer">
+                  {project.videos ? '▶ Watch Video / Project' : (project.websites ? `▶ View Websites (${project.websites.length})` : '▶ View Project')}
+                </span>
+                {project.liveUrl && (
+                  <a
+                    href={project.liveUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex h-10 items-center gap-1.5 rounded-md border border-crimson-2/40 bg-crimson-2/20 px-3.5 text-xs sm:text-sm font-semibold text-bone backdrop-blur transition hover:border-crimson-2 hover:bg-crimson-2/30"
+                  >
+                    {project.liveUrl.includes('youtu') ? 'Watch on YouTube ↗' : 'Live Site ↗'}
+                  </a>
+                )}
+                {project.github && !project.liveUrl && (
+                  <a
+                    href={project.github}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex h-10 items-center gap-1.5 rounded-md border border-white/25 bg-black/30 px-3.5 text-xs sm:text-sm font-semibold text-bone backdrop-blur transition hover:border-bone"
+                  >
+                    GitHub ↗
+                  </a>
+                )}
+              </div>
             </div>
           </div>
         </div>

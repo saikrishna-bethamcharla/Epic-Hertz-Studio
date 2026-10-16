@@ -119,7 +119,7 @@ export const projects: Project[] = [
     id: 'website-development',
     title: 'Website Development',
     year: '2026',
-    genre: 'Production Web Systems • Enterprise Pharma • Agency Portal • Energy Healing',
+    genre: 'Enterprise Web Systems • AI Agency & Pharma Portals',
     logline: 'Full-scope architecture, engineering, and deployment of production web applications — including the Vasudha Pharma Chem Limited Global Portal (80+ export nations, Zoho CRM), the Zai Labs Corporate AI Agency Platform, and the Pranic Healing AP & Telangana Chapter Web Portal.',
     image: './assets/projects/website-development-suite.jpg',
     liveUrl: 'https://saikrishna-bethamcharla.github.io/vasudhapharma/',
@@ -185,7 +185,7 @@ export const projects: Project[] = [
     id: 'ai-cinematic-pipeline',
     title: 'Multi-Shot AI Film Direction',
     year: '2026',
-    genre: 'AI Cinema • Seedance 2.0 • Kling 3.0 • Character Continuity',
+    genre: 'AI Cinema • Generative Filmmaking • Character Continuity',
     logline: 'End-to-end multi-shot AI filmmaking pipeline with structured bilingual prompt engineering, shot bibles, character continuity, and commercial theatrical trailer editing.',
     liveUrl: 'https://youtu.be/r9kHcvYWZ4c',
     videos: [
@@ -243,7 +243,7 @@ export const projects: Project[] = [
     id: 'post-production-motion',
     title: 'Cinematic Post & Motion Graphics',
     year: '2025 – 2026',
-    genre: 'DaVinci Resolve • Premiere Pro • Pencil-Sketch Animation • Commercial Promo',
+    genre: 'DaVinci Resolve • Documentary & Commercial Film',
     logline: 'Beat-synced editorial assembly, visual effects compositing, narrative color grading, sound design, and full commercial & documentary film productions.',
     liveUrl: 'https://youtu.be/yajmIsC6Pno',
     videos: [
@@ -301,7 +301,7 @@ export const projects: Project[] = [
     id: 'brand-identity-operations',
     title: 'Brand Systems & Client Delivery',
     year: '2026',
-    genre: 'Design Systems • Typography • Brand Operations',
+    genre: 'Design Systems • Brand Operations • Vector Identity',
     logline: 'Standardized client documentation frameworks, typography systems, and vector brand asset systems.',
     stack: ['Adobe Illustrator', 'Adobe Photoshop', 'Design Systems', 'Typography', 'Client Scoping'],
     build: [
