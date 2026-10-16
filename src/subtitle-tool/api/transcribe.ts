@@ -145,8 +145,8 @@ Output valid JSON only. Do not include markdown code block formatting or explana
   // Multi-model resilience: if gemini-3.8-flash has a temporary 503 capacity spike,
   // automatically failover to gemini-3.5-flash-lite or gemini-3.5-transcribe
   const candidateModels = [
-    'gemini-3.8-flash',
     'gemini-3.5-flash-lite',
+    'gemini-3.8-flash',
     'gemini-3.1-flash-lite',
   ];
 

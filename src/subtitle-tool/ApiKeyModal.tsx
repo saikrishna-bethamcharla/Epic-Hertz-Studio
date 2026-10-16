@@ -33,15 +33,7 @@ export default function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalPro
       return;
     }
 
-    // Google AI Studio API Keys start with AIzaSy
-    if (!trimmed.startsWith('AIzaSy')) {
-      setWarning(
-        "Notice: Google AI Studio Gemini API keys start with 'AIzaSy' (39 characters). If you copied a token from elsewhere, it may fail with 400 or 403."
-      );
-    } else {
-      setWarning(null);
-    }
-
+    setWarning(null);
     setStoredApiKey(trimmed);
     onSaved?.();
     onClose();
@@ -89,7 +81,7 @@ export default function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalPro
             >
               Google AI Studio ↗
             </a>
-            . It must start with <code className="bg-black/40 px-1 py-0.5 rounded text-amber-200">AIzaSy...</code>
+            . (Starts with <code className="bg-black/40 px-1 py-0.5 rounded text-amber-200">AQ...</code> or <code className="bg-black/40 px-1 py-0.5 rounded text-amber-200">AIzaSy...</code>)
           </p>
         </div>
 
