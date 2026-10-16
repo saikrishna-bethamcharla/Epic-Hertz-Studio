@@ -5,7 +5,7 @@
 
 import { GoogleGenAI } from '@google/genai';
 import { buildSegments } from '../utils/srt';
-import type { Segment } from '../types';
+import type { Segment, SpokenLanguage, ScriptOutput, WordTimestamp } from '../types';
 
 const ENV_API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
 
@@ -46,16 +46,32 @@ function parseTime(value: unknown): number {
   return 0;
 }
 
+const LANGUAGE_LABELS: Record<SpokenLanguage, string> = {
+  auto: 'any spoken language',
+  te: 'Telugu',
+  hi: 'Hindi',
+  en: 'English',
+  ta: 'Tamil',
+  kn: 'Kannada',
+  ml: 'Malayalam',
+  mr: 'Marathi',
+  bn: 'Bengali',
+  es: 'Spanish',
+  fr: 'French',
+};
+
 // ─── Main transcribe function ────────────────────────────────────────────────
 
 export interface TranscribeOptions {
-  languageCode?: string; // BCP-47 e.g. "en-US". Leave undefined for auto-detect.
+  spokenLanguage?: SpokenLanguage;
+  scriptOutput?: ScriptOutput;
+  languageCode?: string; // BCP-47 fallback
   onStatus?: (msg: string) => void;
 }
 
 export async function transcribeAudio(
   audioBlob: Blob,
-  { onStatus }: TranscribeOptions = {},
+  { spokenLanguage = 'auto', scriptOutput = 'romanized', onStatus }: TranscribeOptions = {},
 ): Promise<Segment[]> {
   const client = getClient();
 
@@ -77,18 +93,42 @@ export async function transcribeAudio(
     throw new Error('Gemini Files API: file processing failed.');
   }
 
-  onStatus?.('Transcribing…');
+  onStatus?.('Transcribing speech…');
+
+  const langName = LANGUAGE_LABELS[spokenLanguage] || 'spoken language';
+  const isRomanized = scriptOutput === 'romanized';
+
+  const scriptDirective = isRomanized
+    ? `CRITICAL SCRIPT INSTRUCTION:
+- Transcribe the spoken audio using ROMANIZED SCRIPT / ENGLISH ALPHABET ONLY.
+- For Indian languages (e.g. Telugu, Hindi, Tamil), produce natural colloquial Romanized script (e.g. Tanglish: "Godavari Desi Ghee. Inti ruchiki mana ghee.", Hinglish: "Aapka swagat hai", etc.).
+- Do NOT output native Telugu/Devanagari/Tamil characters. Use standard conversational English transliteration readable by social media audiences.`
+    : `CRITICAL SCRIPT INSTRUCTION:
+- Transcribe the spoken audio strictly in its authentic NATIVE SCRIPT (e.g., Telugu script 'తెలుగు లిపి', Hindi Devanagari 'हिन्दी', Tamil 'தமிழ்', etc.).
+- Preserve correct native spelling, conjuncts, and punctuation.`;
 
   const prompt = `Analyze this audio carefully and generate accurate timestamped dialogue subtitles.
-Break the speech down into natural, short spoken dialogue segments (2 to 5 words or 1.5 to 3 seconds each).
+Language: Spoken in ${langName}.
+${scriptDirective}
+
+Break the speech down into natural, short spoken dialogue segments (2 to 5 words or 1.5 to 3.0 seconds maximum each).
 Do NOT return one single long block for the entire speech. Every short phrase or pause must be its own segment with its exact start_time and end_time.
+Also include an optional "words" array with start and end times for each individual word inside the segment for word-level karaoke sync.
 
 Return ONLY a JSON array with this exact structure:
 [
-  { "start_time": 0.0, "end_time": 1.8, "text": "గోదావరి దేశీ గీ" },
-  { "start_time": 1.9, "end_time": 3.4, "text": "ఇంటి రుచికి మన గీ" }
+  {
+    "start_time": 0.0,
+    "end_time": 1.8,
+    "text": "${isRomanized ? 'Godavari Desi Ghee.' : 'గోదావరి దేశీ గీ'}",
+    "words": [
+      { "word": "${isRomanized ? 'Godavari' : 'గోదావరి'}", "start": 0.0, "end": 0.7 },
+      { "word": "${isRomanized ? 'Desi' : 'దేశీ'}", "start": 0.7, "end": 1.2 },
+      { "word": "${isRomanized ? 'Ghee.' : 'గీ'}", "start": 1.2, "end": 1.8 }
+    ]
+  }
 ]
-Output valid JSON only. Do not include markdown or explanations.`;
+Output valid JSON only. Do not include markdown code block formatting or explanations.`;
 
   // Multi-model resilience: if gemini-3.8-flash has a temporary 503 capacity spike,
   // automatically failover to gemini-3.5-flash-lite or gemini-3.5-transcribe
@@ -170,13 +210,25 @@ function parseSegmentsFromResponse(rawText: string): Segment[] {
     const data = JSON.parse(cleaned);
     const list = Array.isArray(data) ? data : data.segments || data.subtitles || [];
     if (Array.isArray(list) && list.length > 0) {
-      return list.map((item: Record<string, unknown>, i: number) => ({
-        id: `seg-${i + 1}-${Date.now()}`,
-        index: i + 1,
-        start: parseTime(item.start_time ?? item.start ?? item.startTime ?? 0),
-        end: parseTime(item.end_time ?? item.end ?? item.endTime ?? 0),
-        text: String(item.text ?? item.dialogue ?? item.caption ?? '').trim(),
-      })).filter((s) => s.text.length > 0);
+      return list.map((item: Record<string, unknown>, i: number) => {
+        let words: WordTimestamp[] | undefined = undefined;
+        if (Array.isArray(item.words)) {
+          words = (item.words as Record<string, unknown>[]).map((w) => ({
+            word: String(w.word ?? ''),
+            start: parseTime(w.start ?? w.start_time ?? 0),
+            end: parseTime(w.end ?? w.end_time ?? 0),
+          })).filter((w) => w.word.length > 0);
+        }
+
+        return {
+          id: `seg-${i + 1}-${Date.now()}`,
+          index: i + 1,
+          start: parseTime(item.start_time ?? item.start ?? item.startTime ?? 0),
+          end: parseTime(item.end_time ?? item.end ?? item.endTime ?? 0),
+          text: String(item.text ?? item.dialogue ?? item.caption ?? '').trim(),
+          words: words && words.length > 0 ? words : undefined,
+        };
+      }).filter((s) => s.text.length > 0);
     }
   } catch (err) {
     console.warn('JSON parse fallback for subtitles:', err);

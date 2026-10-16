@@ -8,7 +8,7 @@ interface StyleToolbarProps {
   onChange: (newStyle: SubtitleStyle) => void;
 }
 
-export const PRESET_CONFIGS: Record<SubtitlePreset, Partial<SubtitleStyle>> = {
+export const PRESET_CONFIGS: Partial<Record<SubtitlePreset, Partial<SubtitleStyle>>> = {
   'reel-bold': {
     preset: 'reel-bold',
     fontSize: 24,
