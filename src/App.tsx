@@ -95,7 +95,7 @@ function Series() {
         setStage('home');
       } else {
         const p = viewerProfiles.find((v) => v.id === id)!;
-        setToast(`Now watching as ${p.name} — ${p.blurb.toLowerCase()}`);
+        setToast(`Now watching as ${p.name} · ${p.blurb.toLowerCase()}`);
         scrollTo(0, { offset: 0 });
       }
     },
