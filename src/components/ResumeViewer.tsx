@@ -22,7 +22,7 @@ export default function ResumeSection({ onView }: { onView: () => void }) {
         <div className="lg:sticky lg:top-28 lg:self-start">
           <p className="font-serif text-3xl italic leading-tight text-bone">Every episode, on one page.</p>
           <p className="mt-3 text-sm leading-relaxed text-mist">
-            Education, projects, professional experience, and highlights — view it here or take a copy with you.
+            Education, projects, professional experience, and highlights: view it here or take a copy with you.
           </p>
           <div className="mt-6 flex flex-col gap-3">
             <Magnetic className="w-full">
@@ -130,7 +130,7 @@ export function ResumeSheet() {
             <div key={x.company}>
               <div className="flex flex-wrap justify-between gap-x-3">
                 <p className="text-sm font-semibold text-bone">
-                  {x.company} — {x.role}
+                  {x.company} · {x.role}
                 </p>
                 <p className="text-xs text-smoke">{x.period}</p>
               </div>
@@ -173,7 +173,7 @@ export function ResumeSheet() {
             {achievements.map((a) => (
               <li key={a.id} className="text-xs leading-relaxed text-mist">
                 <span className="font-semibold text-bone">
-                  {a.title} — {a.org}.
+                  {a.title} · {a.org}.
                 </span>{' '}
                 {a.detail}
               </li>

@@ -46,6 +46,7 @@ export default function Navbar({ order, profileId: _profileId, onSwitch: _onSwit
     >
       {/* Top Global Scroll Progress Laser */}
       <motion.div
+        aria-hidden="true"
         className="h-[2px] w-full origin-left bg-gradient-to-r from-crimson via-amber-400 to-crimson-2 shadow-[0_0_10px_#ff3d5a]"
         style={{ scaleX: scrollYProgress }}
       />

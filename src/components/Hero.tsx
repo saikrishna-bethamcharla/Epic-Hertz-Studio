@@ -105,23 +105,17 @@ export default function Hero({ onPlay: _onPlay, onResume: _onResume, profileId: 
         </p>
 
 
-        {/* Animated Scroll Indicator Cue */}
+        {/* Professional Telemetry Status Pill (Replaces generic bouncy arrow) */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.2, duration: 0.8 }}
-          className="absolute bottom-6 flex flex-col items-center gap-2 pointer-events-none"
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1, duration: 0.8 }}
+          className="absolute bottom-8 flex items-center gap-3 rounded-full border border-white/10 bg-black/45 px-4 py-1.5 backdrop-blur-md"
         >
-          <span className="font-['Oswald'] text-[10px] tracking-[0.35em] uppercase text-bone/50">
-            Scroll To Explore
+          <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981] animate-pulse" />
+          <span className="font-['Oswald'] text-[10.5px] font-semibold tracking-[0.26em] text-bone/80 uppercase">
+            Available For High-End Video & Web Direction
           </span>
-          <motion.div
-            animate={{ y: [0, 6, 0], opacity: [0.3, 1, 0.3] }}
-            transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
-            className="flex flex-col items-center text-crimson-2 text-xs"
-          >
-            ▼
-          </motion.div>
         </motion.div>
       </motion.div>
     </section>

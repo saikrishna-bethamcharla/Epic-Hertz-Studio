@@ -2,4 +2,13 @@ node_modules
 dist
 .DS_Store
 *.local
+.env
+.env.*
+!.env.example
 /.claude
+.agents
+clean.png
+input.png
+pic.png
+pic1.jpeg
+scrollcraft
