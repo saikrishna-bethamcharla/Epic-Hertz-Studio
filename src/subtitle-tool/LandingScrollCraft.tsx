@@ -14,12 +14,10 @@ import type { SubtitlePreset, ScriptOutput, SpokenLanguage } from './types';
 
 interface LandingScrollCraftProps {
   onFileSelect: (file: File) => void;
-  onOpenApiKeyModal: () => void;
 }
 
 export default function LandingScrollCraft({
   onFileSelect,
-  onOpenApiKeyModal,
 }: LandingScrollCraftProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -630,17 +628,9 @@ export default function LandingScrollCraft({
             </button>
           </div>
 
-          {/* API Key prompt & status */}
+          {/* Cloud AI engine badge */}
           <div className="flex items-center justify-center gap-3 pt-4 text-xs text-smoke">
-            <span>Powered by Google Gemini API</span>
-            <span>·</span>
-            <button
-              type="button"
-              onClick={onOpenApiKeyModal}
-              className="text-amber-300 hover:underline font-semibold"
-            >
-              ⚙ Configure API Key
-            </button>
+            <span>Powered by Epic Hertz Cloud AI</span>
           </div>
         </div>
       </section>

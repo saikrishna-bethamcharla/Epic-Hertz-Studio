@@ -153,8 +153,7 @@ export default async function handler(req, res) {
 
   if (!apiKey || apiKey === 'your_gemini_api_key_here') {
     res.status(500).json({
-      error:
-        'Serverless transcription is not yet configured with a master key. Please configure GEMINI_API_KEY in Vercel project environment variables, or enter your personal Gemini API key in Settings (⚙).',
+      error: 'Transcription service is temporarily unavailable. Please try again shortly.',
     });
     return;
   }
