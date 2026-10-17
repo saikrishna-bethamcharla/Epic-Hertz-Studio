@@ -4,6 +4,7 @@
 
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
+import { getAssetUrl } from './assetUrl';
 import type { SubtitleStyle } from '../types';
 
 let ffmpegBurnInstance: FFmpeg | null = null;
@@ -12,11 +13,22 @@ async function getFFmpeg(): Promise<FFmpeg> {
   if (ffmpegBurnInstance?.loaded) return ffmpegBurnInstance;
 
   const ffmpeg = new FFmpeg();
-  const baseURL = window.location.origin + '/ffmpeg';
-  await ffmpeg.load({
-    coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-    wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-  });
+  try {
+    const localCore = getAssetUrl('ffmpeg/ffmpeg-core.js');
+    const localWasm = getAssetUrl('ffmpeg/ffmpeg-core.wasm');
+
+    await ffmpeg.load({
+      coreURL: await toBlobURL(localCore, 'text/javascript'),
+      wasmURL: await toBlobURL(localWasm, 'application/wasm'),
+    });
+  } catch (err) {
+    console.warn('Local ffmpeg load failed, attempting CDN fallback...', err);
+    const cdnBase = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm';
+    await ffmpeg.load({
+      coreURL: await toBlobURL(`${cdnBase}/ffmpeg-core.js`, 'text/javascript'),
+      wasmURL: await toBlobURL(`${cdnBase}/ffmpeg-core.wasm`, 'application/wasm'),
+    });
+  }
 
   ffmpegBurnInstance = ffmpeg;
   return ffmpeg;
@@ -50,7 +62,8 @@ export async function burnCaptions(
   });
 
   // Load font file
-  const fontRes = await fetch(`${window.location.origin}/fonts/${fontName}`);
+  const fontUrl = getAssetUrl(`fonts/${fontName}`);
+  const fontRes = await fetch(fontUrl);
   const fontBytes = new Uint8Array(await fontRes.arrayBuffer());
 
   await ffmpeg.writeFile(inputName, await fetchFile(videoFile));
