@@ -14,10 +14,12 @@ import type { SubtitlePreset, ScriptOutput, SpokenLanguage } from './types';
 
 interface LandingScrollCraftProps {
   onFileSelect: (file: File) => void;
+  onTryDemo?: () => void;
 }
 
 export default function LandingScrollCraft({
   onFileSelect,
+  onTryDemo,
 }: LandingScrollCraftProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -91,6 +93,11 @@ export default function LandingScrollCraft({
 
   // 1-Click synthetic demo video generator so users can try immediately
   const handleTryDemoVideo = () => {
+    if (onTryDemo) {
+      onTryDemo();
+      return;
+    }
+
     try {
       const canvas = document.createElement('canvas');
       canvas.width = 720;

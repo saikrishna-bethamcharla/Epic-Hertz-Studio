@@ -20,6 +20,7 @@ import ProgressOverlay from './ProgressOverlay';
 import { extractAudio } from './utils/extractAudio';
 import { transcribeAudio } from './api/transcribe';
 import { toSRT, downloadText } from './utils/srt';
+import { createDemoVideo } from './utils/createDemoVideo';
 
 import type {
   AppStage,
@@ -131,6 +132,62 @@ export default function SubtitleTool() {
     },
     [videoFile],
   );
+
+  const handleTryDemo = useCallback(async () => {
+    try {
+      setError(null);
+      const file = await createDemoVideo();
+      setVideoFile(file);
+      setSpokenLanguage('te');
+      setScriptOutput('romanized');
+      setSegments([
+        {
+          id: 'demo-1',
+          index: 1,
+          start: 0.1,
+          end: 1.4,
+          text: 'Prathi frame lo oka katha',
+          words: [
+            { word: 'Prathi', start: 0.1, end: 0.4 },
+            { word: 'frame', start: 0.4, end: 0.7 },
+            { word: 'lo', start: 0.7, end: 0.9 },
+            { word: 'oka', start: 0.9, end: 1.1 },
+            { word: 'katha', start: 1.1, end: 1.4 },
+          ],
+        },
+        {
+          id: 'demo-2',
+          index: 2,
+          start: 1.5,
+          end: 2.7,
+          text: 'Mana cinema mana passion',
+          words: [
+            { word: 'Mana', start: 1.5, end: 1.8 },
+            { word: 'cinema', start: 1.8, end: 2.1 },
+            { word: 'mana', start: 2.1, end: 2.4 },
+            { word: 'passion', start: 2.4, end: 2.7 },
+          ],
+        },
+        {
+          id: 'demo-3',
+          index: 3,
+          start: 2.8,
+          end: 3.9,
+          text: 'Epic Hertz AI auto captions',
+          words: [
+            { word: 'Epic', start: 2.8, end: 3.1 },
+            { word: 'Hertz', start: 3.1, end: 3.4 },
+            { word: 'AI', start: 3.4, end: 3.6 },
+            { word: 'auto', start: 3.6, end: 3.8 },
+            { word: 'captions', start: 3.8, end: 3.9 },
+          ],
+        },
+      ]);
+      setStage('editing');
+    } catch (err) {
+      console.warn('Demo video generation failed:', err);
+    }
+  }, []);
 
   const handleReset = useCallback(() => {
     setStage('idle');
@@ -296,6 +353,7 @@ export default function SubtitleTool() {
             >
               <LandingScrollCraft
                 onFileSelect={handleFileDrop}
+                onTryDemo={handleTryDemo}
               />
             </motion.div>
           )}
