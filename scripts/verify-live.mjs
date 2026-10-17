@@ -14,8 +14,9 @@ const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
   await page.setViewport({ width: 1440, height: 900 });
   
   const urls = [
-    'https://saikrishna-bethamcharla.github.io/Portfolio/',
-    'https://saikrishna-bethamcharla.github.io/Portfolio/docs/'
+    'https://epic-hertz-studio.vercel.app',
+    'https://saikrishna-bethamcharla.github.io/Epic-Hertz-Studio/',
+    'https://saikrishna-bethamcharla.github.io/Portfolio/'
   ];
   
   for (const url of urls) {
