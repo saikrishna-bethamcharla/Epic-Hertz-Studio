@@ -66,33 +66,53 @@ export async function burnCaptions(
   const fontRes = await fetch(fontUrl);
   const fontBytes = new Uint8Array(await fontRes.arrayBuffer());
 
-  await ffmpeg.writeFile(inputName, await fetchFile(videoFile));
-  await ffmpeg.writeFile(srtName, srtContent);
-  await ffmpeg.writeFile(fontName, fontBytes);
-
   // Alignment: 2 = bottom-center, 5 = center-center, 8 = top-center
   const align = style?.position === 'top' ? '8' : style?.position === 'middle' ? '5' : '2';
   const marginV = style?.position === 'top' ? '25' : style?.position === 'middle' ? '0' : '30';
 
   // Map hex color #RRGGBB → ASS color &H00BBGGRR
-  const hex = (style?.textColor || '#ffffff').replace('#', '');
-  const r = hex.substring(0, 2) || 'FF';
-  const g = hex.substring(2, 4) || 'FF';
-  const b = hex.substring(4, 6) || 'FF';
-  const assColor = `&H00${b}${g}${r}`;
+  const toAssColor = (hexStr?: string, defaultColor = '&H00FFFFFF'): string => {
+    if (!hexStr) return defaultColor;
+    const hex = hexStr.replace('#', '').trim();
+    if (hex.length === 6) {
+      const r = hex.substring(0, 2);
+      const g = hex.substring(2, 4);
+      const b = hex.substring(4, 6);
+      return `&H00${b}${g}${r}`;
+    }
+    return defaultColor;
+  };
+
+  const primaryAss = toAssColor(style?.textColor, '&H00FFFFFF');
+  const outlineAss = toAssColor(style?.outlineColor, '&H00000000');
+  const outlineSize = Math.max(2, style?.outlineWidth ?? 3);
+  const fontSize = style?.fontSize ? Math.round(style.fontSize * 1.1) : 26;
+
+  // Process uppercase SRT if requested
+  const processedSrt = style?.uppercase
+    ? srtContent
+        .split('\n')
+        .map((line) => (/^\d+$/.test(line.trim()) || line.includes('-->') ? line : line.toUpperCase()))
+        .join('\n')
+    : srtContent;
 
   const styleStr = [
     'FontName=Gautami',
-    `FontSize=${style?.fontSize ?? 22}`,
-    `PrimaryColour=${assColor}`,
-    'OutlineColour=&H00000000',
-    'BackColour=&H60000000',
+    `FontSize=${fontSize}`,
+    `PrimaryColour=${primaryAss}`,
+    `OutlineColour=${outlineAss}`,
+    'BackColour=&H80000000',
     'BorderStyle=1',
-    'Outline=2',
-    'Shadow=1',
+    `Outline=${outlineSize}`,
+    'Shadow=2',
+    'Bold=1',
     `Alignment=${align}`,
     `MarginV=${marginV}`,
   ].join(',');
+
+  await ffmpeg.writeFile(inputName, await fetchFile(videoFile));
+  await ffmpeg.writeFile(srtName, processedSrt);
+  await ffmpeg.writeFile(fontName, fontBytes);
 
   await ffmpeg.exec([
     '-i', inputName,

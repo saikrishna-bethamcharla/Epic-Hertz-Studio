@@ -11,7 +11,7 @@ import {
   useState,
   useMemo,
 } from 'react';
-import type { Segment, SubtitleStyle, VideoAspectRatio } from './types';
+import type { Segment, SubtitleStyle, VideoAspectRatio, CaptionAnimationEffect, WordTimestamp } from './types';
 
 interface VideoPreviewProps {
   videoFile: File;
@@ -30,6 +30,191 @@ export interface VideoPreviewHandle {
   pause: () => void;
   togglePlay: () => void;
   getCurrentTime: () => number;
+}
+
+function getWordStyles(
+  isSpoken: boolean,
+  effect: CaptionAnimationEffect,
+  style: SubtitleStyle,
+): React.CSSProperties {
+  const baseHighlight = style.highlightColor || '#FFE600';
+  const baseText = style.textColor || '#FFFFFF';
+  const strokeColor = style.outlineColor || '#000000';
+  const strokeW = style.outlineWidth ?? 2.5;
+
+  switch (effect) {
+    case 'capcut-bounce':
+      return isSpoken
+        ? {
+            color: baseHighlight,
+            transform: 'scale(1.22) translateY(-2px) rotate(-1.5deg)',
+            WebkitTextStroke: `${Math.max(2.5, strokeW)}px #000000`,
+            textShadow: `0 0 16px ${baseHighlight}bb, 0 4px 10px rgba(0,0,0,0.95)`,
+            fontWeight: 900,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.1s ease',
+            zIndex: 10,
+          }
+        : {
+            color: baseText,
+            transform: 'scale(1.0)',
+            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
+            textShadow: '0 2px 8px rgba(0,0,0,0.95)',
+            fontWeight: 800,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s ease, color 0.1s ease',
+          };
+
+    case 'hormozi-box':
+      return isSpoken
+        ? {
+            backgroundColor: baseHighlight,
+            color: '#000000',
+            WebkitTextStroke: '0px transparent',
+            padding: '2px 8px',
+            borderRadius: '6px',
+            transform: 'scale(1.15) rotate(-1deg)',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.8)',
+            fontWeight: 900,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.08s ease',
+            zIndex: 10,
+          }
+        : {
+            backgroundColor: 'transparent',
+            color: baseText,
+            padding: '2px 4px',
+            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
+            textShadow: '0 2px 8px rgba(0,0,0,0.95)',
+            transform: 'scale(1.0)',
+            fontWeight: 800,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s ease, background-color 0.08s ease',
+          };
+
+    case 'premiere-glow':
+      return isSpoken
+        ? {
+            color: '#FFFFFF',
+            transform: 'scale(1.18)',
+            WebkitTextStroke: '1.5px #00F0FF',
+            textShadow: '0 0 12px #00F0FF, 0 0 24px #00F0FF, 0 0 36px #00F0FF, 0 2px 4px #000',
+            fontWeight: 900,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s ease, text-shadow 0.12s ease',
+            zIndex: 10,
+          }
+        : {
+            color: 'rgba(255,255,255,0.7)',
+            transform: 'scale(1.0)',
+            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
+            textShadow: '0 2px 8px rgba(0,0,0,0.9)',
+            fontWeight: 700,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s ease',
+          };
+
+    case 'comic-pop':
+      return isSpoken
+        ? {
+            color: '#00FF66',
+            transform: 'scale(1.24) rotate(2deg)',
+            WebkitTextStroke: '3.5px #000000',
+            filter: 'drop-shadow(0 4px 0 #000000)',
+            fontWeight: 900,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.1s ease',
+            zIndex: 10,
+          }
+        : {
+            color: baseText,
+            transform: 'scale(1.0)',
+            WebkitTextStroke: '3px #000000',
+            filter: 'drop-shadow(0 3px 0 #000000)',
+            fontWeight: 900,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s ease',
+          };
+
+    case 'fire-flame':
+      return isSpoken
+        ? {
+            color: '#FF4500',
+            transform: 'scale(1.2) translateY(-3px)',
+            WebkitTextStroke: '2.5px #000000',
+            textShadow: '0 0 16px #FF4500, 0 0 30px #FFA500, 0 4px 8px #000',
+            fontWeight: 900,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s ease, text-shadow 0.1s ease',
+            zIndex: 10,
+          }
+        : {
+            color: baseText,
+            transform: 'scale(1.0)',
+            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
+            textShadow: '0 2px 8px rgba(0,0,0,0.9)',
+            fontWeight: 800,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s ease',
+          };
+
+    case 'cinematic-clean':
+      return isSpoken
+        ? {
+            color: '#FFD700',
+            transform: 'scale(1.08)',
+            WebkitTextStroke: '1px rgba(0,0,0,0.5)',
+            textShadow: '0 2px 8px rgba(0,0,0,0.95)',
+            fontWeight: 800,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s ease, color 0.1s ease',
+            zIndex: 10,
+          }
+        : {
+            color: 'rgba(255,255,255,0.85)',
+            transform: 'scale(1.0)',
+            WebkitTextStroke: '1px rgba(0,0,0,0.5)',
+            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
+            fontWeight: 700,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s ease',
+          };
+
+    default: // none / static
+      return isSpoken && style.highlightCurrentWord
+        ? {
+            color: baseHighlight,
+            transform: 'scale(1.08)',
+            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
+            textShadow: '0 2px 8px rgba(0,0,0,0.95)',
+            fontWeight: 800,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s ease, color 0.1s ease',
+          }
+        : {
+            color: baseText,
+            transform: 'scale(1.0)',
+            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
+            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
+            fontWeight: 700,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s ease',
+          };
+  }
 }
 
 const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
@@ -181,6 +366,23 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       return segments.find((s) => currentTime >= s.start && currentTime <= s.end);
     }, [segments, currentTime]);
 
+    // Words with timings (interpolated if model did not return per-word timings)
+    const displayWords: WordTimestamp[] = useMemo(() => {
+      if (!activeSegment) return [];
+      if (activeSegment.words && activeSegment.words.length > 0) {
+        return activeSegment.words;
+      }
+      const rawWords = activeSegment.text.trim().split(/\s+/).filter(Boolean);
+      if (rawWords.length === 0) return [];
+      const segDur = Math.max(0.1, activeSegment.end - activeSegment.start);
+      const wordDur = segDur / rawWords.length;
+      return rawWords.map((word, i) => ({
+        word,
+        start: activeSegment.start + i * wordDur,
+        end: activeSegment.start + (i + 1) * wordDur,
+      }));
+    }, [activeSegment]);
+
     // Subtitle position class
     const posClass =
       style.position === 'top'
@@ -282,52 +484,63 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             </button>
           )}
 
-          {/* Live Subtitle Overlay with Word-Level Karaoke Sync */}
+          {/* Live Subtitle Overlay with CapCut & Premiere Pro Animations */}
           {activeSegment && (
             <div
               className={`pointer-events-none absolute inset-x-0 z-30 flex justify-center px-4 transition-all duration-150 ${posClass}`}
             >
-              <span
-                className="max-w-[94%] text-center font-bold px-4 py-1.5 rounded-xl shadow-2xl leading-relaxed tracking-wide transition-all duration-150 inline-block"
+              <div
+                className="max-w-[94%] text-center inline-block leading-relaxed tracking-wide transition-all duration-150"
                 style={{
                   fontSize: `${style.fontSize}px`,
-                  color: style.textColor,
-                  backgroundColor: style.backgroundColor,
-                  fontFamily: 'Gautami, "Nirmala UI", Inter, sans-serif',
-                  WebkitTextStroke: style.outlineWidth
-                    ? `${style.outlineWidth}px ${style.outlineColor}`
-                    : undefined,
-                  textShadow: '0 2px 6px rgba(0,0,0,0.9)',
+                  fontFamily: style.fontFamily || 'Montserrat, Inter, sans-serif',
+                  backgroundColor:
+                    style.backgroundColor && style.backgroundColor !== 'transparent'
+                      ? style.backgroundColor
+                      : undefined,
+                  padding:
+                    style.backgroundColor && style.backgroundColor !== 'transparent'
+                      ? '6px 14px'
+                      : '2px 4px',
+                  borderRadius:
+                    style.backgroundColor && style.backgroundColor !== 'transparent'
+                      ? '12px'
+                      : undefined,
+                  backdropFilter:
+                    style.backgroundColor &&
+                    style.backgroundColor !== 'transparent' &&
+                    style.backgroundColor.startsWith('rgba')
+                      ? 'blur(8px)'
+                      : undefined,
+                  letterSpacing: style.uppercase ? '0.04em' : 'normal',
                 }}
               >
-                {/* Check if word-level timestamps exist and karaoke is active */}
-                {style.highlightCurrentWord && activeSegment.words && activeSegment.words.length > 0 ? (
-                  activeSegment.words.map((w, idx) => {
+                {displayWords.length > 0 ? (
+                  displayWords.map((w, idx) => {
                     const isSpoken = currentTime >= w.start && currentTime <= w.end;
                     const wordText = style.uppercase ? w.word.toUpperCase() : w.word;
+                    const animEffect = style.animationEffect || 'capcut-bounce';
+                    const wordStyle = getWordStyles(isSpoken, animEffect, style);
+
                     return (
-                      <span
-                        key={idx}
-                        className="transition-colors duration-100"
-                        style={{
-                          color: isSpoken ? style.highlightColor || '#FFD700' : undefined,
-                          transform: isSpoken ? 'scale(1.05)' : undefined,
-                          display: 'inline-block',
-                          marginRight: '0.28em',
-                        }}
-                      >
+                      <span key={idx} style={wordStyle}>
                         {wordText}
                       </span>
                     );
                   })
                 ) : (
-                  <span>
-                    {style.uppercase
-                      ? activeSegment.text.toUpperCase()
-                      : activeSegment.text}
+                  <span
+                    style={{
+                      color: style.textColor,
+                      WebkitTextStroke: `${style.outlineWidth}px ${style.outlineColor}`,
+                      textShadow: '0 2px 8px rgba(0,0,0,0.95)',
+                      fontWeight: 800,
+                    }}
+                  >
+                    {style.uppercase ? activeSegment.text.toUpperCase() : activeSegment.text}
                   </span>
                 )}
-              </span>
+              </div>
             </div>
           )}
         </div>

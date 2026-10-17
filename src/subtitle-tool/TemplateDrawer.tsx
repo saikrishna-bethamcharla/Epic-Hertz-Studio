@@ -1,10 +1,11 @@
 // ─── TemplateDrawer ──────────────────────────────────────────────────────────
-// Right-hand visual preset gallery matching ReplixCaptions reference:
-// Visual style cards (Classic, Yellow, Minimal, Punch, Spotlight, Noir, Gold Luxe, etc.)
-// plus fine-tuning controls (font size, position, uppercase, outline).
+// Right-hand visual preset gallery matching CapCut & Premiere Pro reference:
+// - High-visibility presets (CapCut Bounce, Hormozi Box, Cyber Glow, MrBeast Comic, Fire Hype, Cinema Gold)
+// - Animation Effect Selector (Bounce, Box Highlight, Neon Glow, 3D Comic, Flame, Clean)
+// - Fine-tuning controls: Typography, Size, Vibrant Swatches, Outline Stroke, and Background.
 
 import { useState, memo } from 'react';
-import type { SubtitleStyle, SubtitlePreset, SubtitlePosition } from './types';
+import type { SubtitleStyle, SubtitlePreset, SubtitlePosition, CaptionAnimationEffect } from './types';
 
 interface TemplateDrawerProps {
   style: SubtitleStyle;
@@ -15,7 +16,7 @@ interface PresetItem {
   id: SubtitlePreset;
   title: string;
   badge?: string;
-  category: 'templates' | 'animated';
+  category: 'capcut' | 'cinematic';
   previewTextColor: string;
   previewBg: string;
   previewOutline?: string;
@@ -24,206 +25,265 @@ interface PresetItem {
 }
 
 export const PRESET_LIBRARY: PresetItem[] = [
-  // ── Standard Templates ──
+  // ── CapCut & Viral Social Presets ──
   {
-    id: 'cinema-yellow',
-    title: 'Yellow',
-    category: 'templates',
-    previewTextColor: '#FFE600',
-    previewBg: '#181816',
-    previewOutline: '2px #000',
+    id: 'capcut-viral',
+    title: 'CapCut Bounce',
+    badge: 'VIRAL',
+    category: 'capcut',
+    previewTextColor: '#FFFFFF',
+    previewBg: '#1c1b18',
+    previewHighlight: '#FFE600',
+    previewOutline: '3px #000',
     config: {
-      preset: 'cinema-yellow',
-      fontSize: 24,
-      textColor: '#FFE600',
-      backgroundColor: 'rgba(0, 0, 0, 0.45)',
+      preset: 'capcut-viral',
+      animationEffect: 'capcut-bounce',
+      fontSize: 26,
+      textColor: '#FFFFFF',
+      backgroundColor: 'transparent',
       outlineColor: '#000000',
-      outlineWidth: 2,
+      outlineWidth: 3,
       position: 'bottom',
-      uppercase: false,
-      highlightCurrentWord: false,
+      fontFamily: 'Montserrat, Inter, sans-serif',
+      uppercase: true,
+      highlightCurrentWord: true,
+      highlightColor: '#FFE600',
+      shadowEffect: true,
     },
   },
   {
-    id: 'clean-minimal',
-    title: 'Minimal',
-    category: 'templates',
+    id: 'hormozi-yellow',
+    title: 'Hormozi Box',
+    badge: 'HOT',
+    category: 'capcut',
     previewTextColor: '#FFFFFF',
-    previewBg: '#1f1f1d',
+    previewBg: '#1f1e14',
+    previewHighlight: '#FFE600',
     config: {
-      preset: 'clean-minimal',
-      fontSize: 22,
+      preset: 'hormozi-yellow',
+      animationEffect: 'hormozi-box',
+      fontSize: 26,
+      textColor: '#FFFFFF',
+      backgroundColor: 'transparent',
+      outlineColor: '#000000',
+      outlineWidth: 2.5,
+      position: 'bottom',
+      fontFamily: 'Rubik, Montserrat, sans-serif',
+      uppercase: true,
+      highlightCurrentWord: true,
+      highlightColor: '#FFE600',
+      shadowEffect: true,
+    },
+  },
+  {
+    id: 'premiere-glow',
+    title: 'Cyber Glow',
+    badge: 'PREMIERE',
+    category: 'capcut',
+    previewTextColor: '#00F0FF',
+    previewBg: '#091520',
+    previewHighlight: '#00F0FF',
+    config: {
+      preset: 'premiere-glow',
+      animationEffect: 'premiere-glow',
+      fontSize: 26,
+      textColor: '#FFFFFF',
+      backgroundColor: 'transparent',
+      outlineColor: '#002B4D',
+      outlineWidth: 2,
+      position: 'bottom',
+      fontFamily: 'Inter, sans-serif',
+      uppercase: true,
+      highlightCurrentWord: true,
+      highlightColor: '#00F0FF',
+      shadowEffect: true,
+    },
+  },
+  {
+    id: 'mrbeast-comic',
+    title: 'MrBeast 3D',
+    badge: 'YOUTUBE',
+    category: 'capcut',
+    previewTextColor: '#00FF66',
+    previewBg: '#0c2012',
+    previewOutline: '4px #000',
+    config: {
+      preset: 'mrbeast-comic',
+      animationEffect: 'comic-pop',
+      fontSize: 28,
+      textColor: '#FFFFFF',
+      backgroundColor: 'transparent',
+      outlineColor: '#000000',
+      outlineWidth: 3.5,
+      position: 'bottom',
+      fontFamily: 'Impact, Rubik, sans-serif',
+      uppercase: true,
+      highlightCurrentWord: true,
+      highlightColor: '#00FF66',
+      shadowEffect: true,
+    },
+  },
+  {
+    id: 'fire-hype',
+    title: 'Flame Hype',
+    badge: 'HYPE',
+    category: 'capcut',
+    previewTextColor: '#FF4500',
+    previewBg: '#2a0e08',
+    previewHighlight: '#FFD700',
+    config: {
+      preset: 'fire-hype',
+      animationEffect: 'fire-flame',
+      fontSize: 26,
+      textColor: '#FFFFFF',
+      backgroundColor: 'transparent',
+      outlineColor: '#000000',
+      outlineWidth: 3,
+      position: 'bottom',
+      fontFamily: 'Montserrat, sans-serif',
+      uppercase: true,
+      highlightCurrentWord: true,
+      highlightColor: '#FF4500',
+      shadowEffect: true,
+    },
+  },
+  {
+    id: 'neon-tokyo',
+    title: 'Neon Tokyo',
+    badge: 'STUDIO',
+    category: 'capcut',
+    previewTextColor: '#FF007F',
+    previewBg: '#220c1a',
+    previewHighlight: '#00F0FF',
+    config: {
+      preset: 'neon-tokyo',
+      animationEffect: 'premiere-glow',
+      fontSize: 26,
+      textColor: '#FFFFFF',
+      backgroundColor: 'transparent',
+      outlineColor: '#3d0024',
+      outlineWidth: 2,
+      position: 'bottom',
+      fontFamily: 'Montserrat, sans-serif',
+      uppercase: true,
+      highlightCurrentWord: true,
+      highlightColor: '#FF007F',
+      shadowEffect: true,
+    },
+  },
+
+  // ── Cinematic & Film Templates ──
+  {
+    id: 'cinema-gold',
+    title: 'Cinema Gold',
+    badge: '4K FILM',
+    category: 'cinematic',
+    previewTextColor: '#FFD700',
+    previewBg: '#1f1b10',
+    config: {
+      preset: 'cinema-gold',
+      animationEffect: 'cinematic-clean',
+      fontSize: 24,
       textColor: '#FFFFFF',
       backgroundColor: 'transparent',
       outlineColor: '#000000',
       outlineWidth: 2,
       position: 'bottom',
-      uppercase: false,
-      highlightCurrentWord: false,
-    },
-  },
-
-  // ── Animated & Social Presets ──
-  {
-    id: 'reel-bold',
-    title: 'Classic',
-    badge: 'STUDIO',
-    category: 'animated',
-    previewTextColor: '#FFFFFF',
-    previewBg: '#2a221b',
-    previewHighlight: '#FFD700',
-    config: {
-      preset: 'reel-bold',
-      fontSize: 26,
-      textColor: '#FFFFFF',
-      backgroundColor: 'rgba(0, 0, 0, 0.7)',
-      outlineColor: '#000000',
-      outlineWidth: 3,
-      position: 'bottom',
+      fontFamily: 'Inter, sans-serif',
       uppercase: false,
       highlightCurrentWord: true,
       highlightColor: '#FFD700',
+      shadowEffect: true,
     },
   },
   {
-    id: 'dark',
-    title: 'Dark',
-    category: 'animated',
-    previewTextColor: '#F0F0EE',
-    previewBg: '#141413',
-    config: {
-      preset: 'dark',
-      fontSize: 24,
-      textColor: '#F0F0EE',
-      backgroundColor: 'rgba(15, 15, 15, 0.85)',
-      outlineColor: '#000000',
-      outlineWidth: 0,
-      position: 'bottom',
-      uppercase: false,
-      highlightCurrentWord: false,
-    },
-  },
-  {
-    id: 'punch',
-    title: 'Punch',
-    badge: 'CREATOR',
-    category: 'animated',
+    id: 'clean-minimal',
+    title: 'Pristine White',
+    badge: 'NETFLIX',
+    category: 'cinematic',
     previewTextColor: '#FFFFFF',
-    previewBg: '#3B1812',
-    previewOutline: '2px #E5132B',
+    previewBg: '#181816',
+    previewOutline: '2px #000',
     config: {
-      preset: 'punch',
-      fontSize: 28,
+      preset: 'clean-minimal',
+      animationEffect: 'none',
+      fontSize: 24,
       textColor: '#FFFFFF',
-      backgroundColor: '#E5132B',
+      backgroundColor: 'transparent',
       outlineColor: '#000000',
-      outlineWidth: 2,
-      position: 'middle',
-      uppercase: true,
-      highlightCurrentWord: false,
-    },
-  },
-  {
-    id: 'spotlight',
-    title: 'Spotlight',
-    badge: 'CREATOR',
-    category: 'animated',
-    previewTextColor: '#FFEE55',
-    previewBg: '#1e201a',
-    previewHighlight: '#FFEE55',
-    config: {
-      preset: 'spotlight',
-      fontSize: 26,
-      textColor: '#FFFFFF',
-      backgroundColor: 'rgba(0, 0, 0, 0.75)',
-      outlineColor: '#000000',
-      outlineWidth: 2,
+      outlineWidth: 2.5,
       position: 'bottom',
+      fontFamily: 'Inter, sans-serif',
       uppercase: false,
-      highlightCurrentWord: true,
-      highlightColor: '#FFDF00',
+      highlightCurrentWord: false,
+      shadowEffect: true,
     },
   },
   {
     id: 'boxed',
-    title: 'Reel',
-    badge: 'CREATOR',
-    category: 'animated',
+    title: 'Brand Crimson',
+    badge: 'BADGE',
+    category: 'cinematic',
     previewTextColor: '#FFFFFF',
-    previewBg: '#181b24',
-    previewOutline: '3px #000',
+    previewBg: '#590a14',
     config: {
       preset: 'boxed',
-      fontSize: 28,
+      animationEffect: 'capcut-bounce',
+      fontSize: 24,
       textColor: '#FFFFFF',
-      backgroundColor: '#000000',
-      outlineColor: '#000000',
-      outlineWidth: 3,
+      backgroundColor: '#E5132B',
+      outlineColor: 'transparent',
+      outlineWidth: 0,
       position: 'bottom',
-      uppercase: true,
-      highlightCurrentWord: false,
-    },
-  },
-  {
-    id: 'neon-pop',
-    title: 'Neon Pop',
-    badge: 'STUDIO',
-    category: 'animated',
-    previewTextColor: '#00F0FF',
-    previewBg: '#121720',
-    config: {
-      preset: 'neon-pop',
-      fontSize: 26,
-      textColor: '#00F0FF',
-      backgroundColor: 'rgba(0, 10, 20, 0.85)',
-      outlineColor: '#003366',
-      outlineWidth: 2,
-      position: 'bottom',
+      fontFamily: 'Montserrat, sans-serif',
       uppercase: true,
       highlightCurrentWord: true,
-      highlightColor: '#FF007F',
+      highlightColor: '#FFE600',
+      shadowEffect: true,
     },
   },
   {
-    id: 'noir',
-    title: 'Noir',
-    badge: 'CREATOR',
-    category: 'animated',
-    previewTextColor: '#EAEAEA',
-    previewBg: '#101010',
-    previewOutline: '1px #444',
+    id: 'spotlight',
+    title: 'Spotlight Box',
+    badge: 'CLASSIC',
+    category: 'cinematic',
+    previewTextColor: '#FFEE55',
+    previewBg: '#201f18',
     config: {
-      preset: 'noir',
-      fontSize: 22,
-      textColor: '#F5F5F7',
-      backgroundColor: '#000000',
-      outlineColor: '#222222',
-      outlineWidth: 1,
-      position: 'bottom',
-      uppercase: false,
-      highlightCurrentWord: false,
-    },
-  },
-  {
-    id: 'gold-luxe',
-    title: 'Gold Luxe',
-    badge: 'STUDIO',
-    category: 'animated',
-    previewTextColor: '#E6C687',
-    previewBg: '#211c14',
-    config: {
-      preset: 'gold-luxe',
+      preset: 'spotlight',
+      animationEffect: 'capcut-bounce',
       fontSize: 25,
-      textColor: '#F3E5AB',
-      backgroundColor: 'rgba(25, 20, 10, 0.85)',
-      outlineColor: '#5C4018',
+      textColor: '#FFFFFF',
+      backgroundColor: 'rgba(0, 0, 0, 0.65)',
+      outlineColor: '#000000',
       outlineWidth: 2,
       position: 'bottom',
+      fontFamily: 'Inter, sans-serif',
       uppercase: false,
       highlightCurrentWord: true,
-      highlightColor: '#FFD700',
+      highlightColor: '#FFE600',
+      shadowEffect: true,
     },
   },
+];
+
+const ANIMATION_OPTIONS: { id: CaptionAnimationEffect; label: string; desc: string; icon: string }[] = [
+  { id: 'capcut-bounce', label: 'CapCut Bounce', desc: 'Elastic spring pop & active tilt', icon: '⚡' },
+  { id: 'hormozi-box', label: 'Hormozi Box', desc: 'Jumping high-contrast word badge', icon: '🟨' },
+  { id: 'premiere-glow', label: 'Premiere Glow', desc: 'Electric neon aura & pulse', icon: '🔮' },
+  { id: 'comic-pop', label: 'MrBeast 3D', desc: 'Bold 3D comic shadow & jump', icon: '💥' },
+  { id: 'fire-flame', label: 'Flame Hype', desc: 'Fiery color pop & vertical jump', icon: '🔥' },
+  { id: 'cinematic-clean', label: 'Cinematic', desc: 'Subtle warm gold word sync', icon: '🎬' },
+  { id: 'none', label: 'Static', desc: 'No animation, clean subtitles', icon: '⏹' },
+];
+
+const QUICK_COLORS = [
+  { label: 'White', color: '#FFFFFF' },
+  { label: 'Yellow', color: '#FFE600' },
+  { label: 'Lime', color: '#00FF66' },
+  { label: 'Cyan', color: '#00F0FF' },
+  { label: 'Orange', color: '#FF4500' },
+  { label: 'Magenta', color: '#FF007F' },
 ];
 
 function TemplateDrawer({ style, onChange }: TemplateDrawerProps) {
@@ -236,38 +296,39 @@ function TemplateDrawer({ style, onChange }: TemplateDrawerProps) {
     });
   };
 
-  const templatesList = PRESET_LIBRARY.filter((p) => p.category === 'templates');
-  const animatedList = PRESET_LIBRARY.filter((p) => p.category === 'animated');
+  const capcutList = PRESET_LIBRARY.filter((p) => p.category === 'capcut');
+  const cinematicList = PRESET_LIBRARY.filter((p) => p.category === 'cinematic');
 
   return (
     <div className="flex flex-col h-full bg-[#141413] border-l border-white/10 w-full overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3.5 border-b border-white/10">
-        <h2 className="text-xs font-bold text-mist uppercase tracking-widest">
-          Templates
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+        <h2 className="text-xs font-bold text-mist uppercase tracking-widest flex items-center gap-2">
+          <span>✨</span>
+          <span>Caption Styles</span>
         </h2>
 
-        {/* Tab switcher: Presets vs Customize */}
+        {/* Tab switcher: Gallery vs Customize */}
         <div className="flex bg-[#1d1d1b] p-0.5 rounded-lg border border-white/10">
           <button
             onClick={() => setActiveTab('presets')}
-            className={`px-2.5 py-1 text-[11px] font-semibold rounded-md transition-colors ${
+            className={`px-3 py-1 text-[11px] font-semibold rounded-md transition-colors ${
               activeTab === 'presets'
                 ? 'bg-[#292826] text-amber-300 shadow-sm'
                 : 'text-smoke hover:text-bone'
             }`}
           >
-            Gallery
+            Presets
           </button>
           <button
             onClick={() => setActiveTab('customize')}
-            className={`px-2.5 py-1 text-[11px] font-semibold rounded-md transition-colors ${
+            className={`px-3 py-1 text-[11px] font-semibold rounded-md transition-colors ${
               activeTab === 'customize'
                 ? 'bg-[#292826] text-amber-300 shadow-sm'
                 : 'text-smoke hover:text-bone'
             }`}
           >
-            Customize
+            Effects
           </button>
         </div>
       </div>
@@ -276,13 +337,16 @@ function TemplateDrawer({ style, onChange }: TemplateDrawerProps) {
       <div className="flex-1 overflow-y-auto p-4 space-y-6" data-lenis-prevent>
         {activeTab === 'presets' ? (
           <>
-            {/* Standard templates section */}
+            {/* CapCut & Viral Presets */}
             <div>
-              <div className="text-[10px] font-semibold tracking-wider text-smoke uppercase mb-2.5">
-                Templates
+              <div className="flex items-center justify-between mb-2.5">
+                <div className="text-[10px] font-bold tracking-wider text-amber-400 uppercase">
+                  ⚡ CapCut & Viral Reels
+                </div>
+                <span className="text-[9px] text-smoke">High-Engagement</span>
               </div>
               <div className="grid grid-cols-2 gap-2.5">
-                {templatesList.map((item) => (
+                {capcutList.map((item) => (
                   <PresetCard
                     key={item.id}
                     item={item}
@@ -293,13 +357,16 @@ function TemplateDrawer({ style, onChange }: TemplateDrawerProps) {
               </div>
             </div>
 
-            {/* Animated templates section */}
+            {/* Cinematic & Film Templates */}
             <div>
-              <div className="text-[10px] font-semibold tracking-wider text-smoke uppercase mb-2.5">
-                Animated
+              <div className="flex items-center justify-between mb-2.5">
+                <div className="text-[10px] font-bold tracking-wider text-mist uppercase">
+                  🎬 Cinematic & Film
+                </div>
+                <span className="text-[9px] text-smoke">Ultra Contrast</span>
               </div>
               <div className="grid grid-cols-2 gap-2.5">
-                {animatedList.map((item) => (
+                {cinematicList.map((item) => (
                   <PresetCard
                     key={item.id}
                     item={item}
@@ -311,27 +378,102 @@ function TemplateDrawer({ style, onChange }: TemplateDrawerProps) {
             </div>
           </>
         ) : (
-          /* Fine-tune customize controls */
+          /* Fine-tune customize & animation controls */
           <div className="space-y-5 text-xs text-mist">
+            {/* Animation Effect Selector */}
+            <div>
+              <label className="font-semibold text-bone block mb-1.5 flex items-center justify-between">
+                <span>Animation Effect</span>
+                <span className="text-[10px] text-amber-300 uppercase tracking-wider font-mono">
+                  {style.animationEffect || 'capcut-bounce'}
+                </span>
+              </label>
+              <div className="grid grid-cols-1 gap-1.5">
+                {ANIMATION_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => onChange({ ...style, animationEffect: opt.id })}
+                    className={`flex items-center justify-between p-2.5 rounded-xl border transition-all text-left ${
+                      style.animationEffect === opt.id
+                        ? 'bg-[#282622] border-amber-400 text-bone shadow-md'
+                        : 'bg-[#1a1a18] border-white/10 text-smoke hover:text-bone hover:border-white/20'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-base">{opt.icon}</span>
+                      <div>
+                        <div className="font-bold text-xs text-bone">{opt.label}</div>
+                        <div className="text-[10px] text-smoke">{opt.desc}</div>
+                      </div>
+                    </div>
+                    {style.animationEffect === opt.id && (
+                      <span className="w-2 h-2 rounded-full bg-amber-400" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Highlight Color (Spoken Word Color) */}
+            <div>
+              <label className="font-semibold text-bone block mb-1.5">
+                Spoken Word Highlight Color
+              </label>
+              <div className="flex items-center gap-2 mb-2">
+                {QUICK_COLORS.map((qc) => (
+                  <button
+                    key={qc.color}
+                    type="button"
+                    title={qc.label}
+                    onClick={() => onChange({ ...style, highlightColor: qc.color })}
+                    className="w-7 h-7 rounded-full border border-white/20 transition-transform hover:scale-110 active:scale-95 flex items-center justify-center relative shadow-sm"
+                    style={{ backgroundColor: qc.color }}
+                  >
+                    {style.highlightColor?.toLowerCase() === qc.color.toLowerCase() && (
+                      <span className="w-2 h-2 rounded-full bg-black" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Font Size */}
             <div>
               <div className="flex justify-between items-center mb-1.5">
-                <label className="font-medium text-bone">Font Size</label>
+                <label className="font-semibold text-bone">Font Size</label>
                 <span className="font-mono text-amber-300 text-xs">{style.fontSize}px</span>
               </div>
               <input
                 type="range"
-                min={16}
-                max={44}
+                min={18}
+                max={48}
                 value={style.fontSize}
                 onChange={(e) => onChange({ ...style, fontSize: Number(e.target.value) })}
                 className="w-full accent-amber-400 cursor-pointer"
               />
             </div>
 
+            {/* Outline Stroke Width */}
+            <div>
+              <div className="flex justify-between items-center mb-1.5">
+                <label className="font-semibold text-bone">Black Contrast Outline</label>
+                <span className="font-mono text-amber-300 text-xs">{style.outlineWidth}px</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={6}
+                step={0.5}
+                value={style.outlineWidth}
+                onChange={(e) => onChange({ ...style, outlineWidth: Number(e.target.value) })}
+                className="w-full accent-amber-400 cursor-pointer"
+              />
+            </div>
+
             {/* Position */}
             <div>
-              <label className="font-medium text-bone block mb-2">Screen Position</label>
+              <label className="font-semibold text-bone block mb-2">Screen Position</label>
               <div className="grid grid-cols-3 gap-1 bg-[#1c1c1a] p-1 rounded-xl border border-white/10">
                 {(['top', 'middle', 'bottom'] as SubtitlePosition[]).map((pos) => (
                   <button
@@ -350,63 +492,51 @@ function TemplateDrawer({ style, onChange }: TemplateDrawerProps) {
               </div>
             </div>
 
-            {/* Colors */}
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <div>
-                <label className="block text-smoke text-[11px] mb-1.5">Text Color</label>
-                <div className="flex items-center gap-2 bg-[#1c1c1a] p-2 rounded-xl border border-white/10">
-                  <input
-                    type="color"
-                    value={style.textColor.startsWith('#') ? style.textColor : '#ffffff'}
-                    onChange={(e) => onChange({ ...style, textColor: e.target.value })}
-                    className="w-6 h-6 rounded cursor-pointer border-0 bg-transparent"
-                  />
-                  <span className="font-mono text-[11px] text-bone uppercase">{style.textColor}</span>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-smoke text-[11px] mb-1.5">Background</label>
-                <div className="flex items-center gap-2 bg-[#1c1c1a] p-2 rounded-xl border border-white/10">
-                  <input
-                    type="color"
-                    value={style.backgroundColor.startsWith('#') ? style.backgroundColor : '#000000'}
-                    onChange={(e) => onChange({ ...style, backgroundColor: e.target.value })}
-                    className="w-6 h-6 rounded cursor-pointer border-0 bg-transparent"
-                  />
-                  <span className="font-mono text-[11px] text-bone uppercase">Badge</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Karaoke Word-Highlighting Toggle */}
-            <div className="flex items-center justify-between p-3 rounded-xl bg-[#1c1c1a] border border-white/10 mt-3">
-              <div>
-                <div className="text-bone font-medium">Word Karaoke Glow</div>
-                <div className="text-smoke text-[11px]">Highlights the spoken word in real-time</div>
-              </div>
-              <button
-                type="button"
-                onClick={() =>
-                  onChange({ ...style, highlightCurrentWord: !style.highlightCurrentWord })
-                }
-                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                  style.highlightCurrentWord ? 'bg-amber-400' : 'bg-white/20'
-                }`}
-              >
-                <span
-                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-black transition-transform ${
-                    style.highlightCurrentWord ? 'translate-x-4.5' : 'translate-x-1'
+            {/* Background Style Toggle */}
+            <div>
+              <label className="font-semibold text-bone block mb-2">Background Style</label>
+              <div className="grid grid-cols-3 gap-1.5 bg-[#1c1c1a] p-1.5 rounded-xl border border-white/10">
+                <button
+                  type="button"
+                  onClick={() => onChange({ ...style, backgroundColor: 'transparent' })}
+                  className={`py-1.5 px-2 text-[11px] font-semibold rounded-lg transition-all ${
+                    style.backgroundColor === 'transparent'
+                      ? 'bg-[#2b2a28] text-amber-300 border border-amber-300/30'
+                      : 'text-smoke hover:text-bone'
                   }`}
-                />
-              </button>
+                >
+                  Float (Clean)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onChange({ ...style, backgroundColor: 'rgba(0,0,0,0.65)' })}
+                  className={`py-1.5 px-2 text-[11px] font-semibold rounded-lg transition-all ${
+                    style.backgroundColor.includes('rgba')
+                      ? 'bg-[#2b2a28] text-amber-300 border border-amber-300/30'
+                      : 'text-smoke hover:text-bone'
+                  }`}
+                >
+                  Dark Glass
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onChange({ ...style, backgroundColor: '#E5132B' })}
+                  className={`py-1.5 px-2 text-[11px] font-semibold rounded-lg transition-all ${
+                    style.backgroundColor === '#E5132B'
+                      ? 'bg-[#2b2a28] text-amber-300 border border-amber-300/30'
+                      : 'text-smoke hover:text-bone'
+                  }`}
+                >
+                  Red Box
+                </button>
+              </div>
             </div>
 
             {/* Uppercase toggle */}
             <div className="flex items-center justify-between p-3 rounded-xl bg-[#1c1c1a] border border-white/10">
               <div>
                 <div className="text-bone font-medium">All Caps (UPPERCASE)</div>
-                <div className="text-smoke text-[11px]">Great for bold commercial reel hooks</div>
+                <div className="text-smoke text-[11px]">CapCut / Reels signature typography</div>
               </div>
               <button
                 type="button"
@@ -444,7 +574,7 @@ function PresetCard({
     <button
       type="button"
       onClick={onSelect}
-      className={`relative text-left p-2.5 rounded-xl transition-all duration-150 flex flex-col justify-between group ${
+      className={`relative text-left p-2.5 rounded-xl transition-all duration-150 flex flex-col justify-between group cursor-pointer ${
         isSelected
           ? 'bg-[#242320] border-2 border-amber-400 shadow-md ring-1 ring-amber-400/40'
           : 'bg-[#1b1b19] border border-white/10 hover:border-white/25 hover:bg-[#20201e]'
@@ -452,33 +582,34 @@ function PresetCard({
     >
       {/* Visual Subtitle Preview Badge */}
       <div
-        className="w-full h-14 rounded-lg flex items-center justify-center p-2 mb-2 relative overflow-hidden"
+        className="w-full h-14 rounded-lg flex items-center justify-center p-2 mb-2 relative overflow-hidden shadow-inner"
         style={{ backgroundColor: item.previewBg }}
       >
         <span
-          className="font-bold text-xs truncate max-w-[95%] tracking-wide"
+          className="font-black text-xs truncate max-w-[95%] tracking-wide uppercase"
           style={{
             color: item.previewTextColor,
-            textShadow: item.previewOutline ? '0 1px 3px rgba(0,0,0,0.9)' : undefined,
+            WebkitTextStroke: item.previewOutline || '2px #000',
+            textShadow: '0 2px 4px rgba(0,0,0,0.95)',
           }}
         >
           {item.previewHighlight ? (
             <>
-              sy ga <span style={{ color: item.previewHighlight }}>chesukovad</span>
+              CAPCUT <span style={{ color: item.previewHighlight }}>BOUNCE</span>
             </>
           ) : (
-            'sy ga chesukovac'
+            'CAPTION STYLE'
           )}
         </span>
       </div>
 
       {/* Label and Badge */}
       <div className="flex items-center justify-between w-full mt-0.5">
-        <span className="text-xs font-semibold text-bone group-hover:text-amber-300 transition-colors">
+        <span className="text-xs font-bold text-bone group-hover:text-amber-300 transition-colors">
           {item.title}
         </span>
         {item.badge && (
-          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-mist tracking-wider">
+          <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-400/10 text-amber-300 border border-amber-400/20 tracking-wider">
             {item.badge}
           </span>
         )}

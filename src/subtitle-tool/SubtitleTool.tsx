@@ -56,19 +56,21 @@ export default function SubtitleTool() {
     } catch {}
   }, []);
 
-  // Subtitle styling state
+  // Subtitle styling state — Defaults to CapCut Viral bouncy pop
   const [style, setStyle] = useState<SubtitleStyle>(() => ({
-    preset: 'reel-bold',
+    preset: 'capcut-viral',
+    animationEffect: 'capcut-bounce',
     fontSize: 26,
     textColor: '#FFFFFF',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'transparent',
     outlineColor: '#000000',
     outlineWidth: 3,
     position: 'bottom',
-    fontFamily: 'Inter',
-    uppercase: false,
+    fontFamily: 'Montserrat, Inter, sans-serif',
+    uppercase: true,
     highlightCurrentWord: true,
-    highlightColor: '#FFD700',
+    highlightColor: '#FFE600',
+    shadowEffect: true,
   }));
 
   const videoRef = useRef<VideoPreviewHandle>(null);

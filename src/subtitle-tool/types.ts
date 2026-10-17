@@ -27,10 +27,26 @@ export type SpokenLanguage =
   | 'es'
   | 'fr';
 
+export type CaptionAnimationEffect =
+  | 'capcut-bounce'   // CapCut signature bounce pop & tilt
+  | 'hormozi-box'     // Alex Hormozi jumping word highlight badge
+  | 'premiere-glow'   // Premiere Pro electric neon glow & scale
+  | 'comic-pop'       // MrBeast 3D comic shadow & energetic pop
+  | 'fire-flame'      // Flame gradient & hype jump
+  | 'cinematic-clean' // Netflix / Premiere pristine film look
+  | 'none';
+
 export type SubtitlePreset =
+  | 'capcut-viral'
+  | 'hormozi-yellow'
+  | 'premiere-glow'
+  | 'mrbeast-comic'
+  | 'cinema-gold'
+  | 'neon-tokyo'
+  | 'fire-hype'
+  | 'clean-minimal'
   | 'reel-bold'
   | 'cinema-yellow'
-  | 'clean-minimal'
   | 'boxed'
   | 'spotlight'
   | 'neon-pop'
@@ -45,7 +61,8 @@ export type VideoAspectRatio = 'original' | '9:16' | '16:9' | '1:1';
 
 export interface SubtitleStyle {
   preset: SubtitlePreset;
-  fontSize: number;          // in pixels or scale
+  animationEffect: CaptionAnimationEffect;
+  fontSize: number;          // in pixels
   textColor: string;        // hex
   backgroundColor: string;  // rgba or hex
   outlineColor: string;     // hex
@@ -55,6 +72,7 @@ export interface SubtitleStyle {
   uppercase: boolean;
   highlightCurrentWord?: boolean;
   highlightColor?: string;
+  shadowEffect?: boolean;
 }
 
 export type AppStage =
@@ -63,7 +81,6 @@ export type AppStage =
   | 'extracting'   // pulling audio out of the video
   | 'uploading'    // uploading audio to Gemini Files API
   | 'transcribing' // waiting for speech-to-text
-  | 'editing'      // live professional editor
-  | 'burning'      // exporting final video
-  | 'done';        // complete
-
+  | 'editing'      // 3-column Replix editor layout
+  | 'burning'      // burning subtitles into MP4
+  | 'done';        // export finished

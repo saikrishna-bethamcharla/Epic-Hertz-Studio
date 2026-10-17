@@ -6,7 +6,7 @@
 // 2. ffmpeg.wasm lacks HarfBuzz in standard builds, which causes broken/overlapping Indic glyphs.
 // 3. We record the video canvas + audio track directly to MP4 / WebM with zero server latency.
 
-import type { Segment } from '../types';
+import type { Segment, SubtitleStyle } from '../types';
 
 /**
  * Burns subtitles directly into video frames using HTML5 Canvas & MediaRecorder.
@@ -15,6 +15,7 @@ import type { Segment } from '../types';
 export async function burnCaptionsCanvas(
   videoFile: File,
   segments: Segment[],
+  style?: SubtitleStyle,
   onProgress?: (pct: number) => void,
 ): Promise<Blob> {
   return new Promise((resolve, reject) => {
@@ -131,41 +132,63 @@ export async function burnCaptionsCanvas(
 
         if (activeSub && activeSub.text) {
           ctx.save();
-          // Font stack: Gautami, Nirmala UI, sans-serif
-          ctx.font = `bold ${fontSize}px Gautami, "Nirmala UI", sans-serif`;
+          const rawText = style?.uppercase ? activeSub.text.toUpperCase() : activeSub.text;
+          const fontFamily = style?.fontFamily || 'Montserrat, Inter, "Nirmala UI", sans-serif';
+          ctx.font = `900 ${fontSize}px ${fontFamily}`;
           ctx.textAlign = 'center';
-          ctx.textBaseline = 'bottom';
+          ctx.textBaseline = 'middle';
 
           const x = width / 2;
-          const y = height - Math.round(height * 0.08); // 8% from bottom
+          let y = height - Math.round(height * 0.12); // bottom default
+          if (style?.position === 'top') {
+            y = Math.round(height * 0.14);
+          } else if (style?.position === 'middle') {
+            y = Math.round(height * 0.5);
+          }
 
-          // Background pill for contrast
-          const metrics = ctx.measureText(activeSub.text);
-          const padX = fontSize * 0.6;
-          const padY = fontSize * 0.35;
+          const metrics = ctx.measureText(rawText);
           const textWidth = metrics.width;
-          const textHeight = fontSize * 1.2;
+          const textHeight = fontSize * 1.25;
 
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
-          const rx = x - textWidth / 2 - padX;
-          const ry = y - textHeight - padY / 2;
-          const rw = textWidth + padX * 2;
-          const rh = textHeight + padY;
-          const radius = fontSize * 0.25;
+          // Background box (only if configured and not transparent)
+          if (style?.backgroundColor && style.backgroundColor !== 'transparent') {
+            const padX = fontSize * 0.5;
+            const padY = fontSize * 0.25;
+            const rx = x - textWidth / 2 - padX;
+            const ry = y - textHeight / 2 - padY;
+            const rw = textWidth + padX * 2;
+            const rh = textHeight + padY * 2;
+            const radius = fontSize * 0.25;
 
-          // Draw rounded rectangle pill
-          ctx.beginPath();
-          ctx.roundRect ? ctx.roundRect(rx, ry, rw, rh, radius) : ctx.rect(rx, ry, rw, rh);
-          ctx.fill();
+            ctx.fillStyle = style.backgroundColor;
+            ctx.beginPath();
+            if (ctx.roundRect) {
+              ctx.roundRect(rx, ry, rw, rh, radius);
+            } else {
+              ctx.rect(rx, ry, rw, rh);
+            }
+            ctx.fill();
+          }
+
+          // Drop shadow for crisp readability
+          if (style?.shadowEffect !== false) {
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+            ctx.shadowBlur = Math.round(fontSize * 0.3);
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = Math.round(fontSize * 0.1);
+          }
 
           // Stroke / outline
-          ctx.lineWidth = Math.max(3, Math.round(fontSize * 0.08));
-          ctx.strokeStyle = '#000000';
-          ctx.strokeText(activeSub.text, x, y);
+          const strokeWidth = Math.max(3, Math.round(fontSize * ((style?.outlineWidth ?? 3) * 0.04)));
+          ctx.lineWidth = strokeWidth;
+          ctx.strokeStyle = style?.outlineColor || '#000000';
+          ctx.lineJoin = 'round';
+          ctx.miterLimit = 2;
+          ctx.strokeText(rawText, x, y);
 
-          // White text
-          ctx.fillStyle = '#FFFFFF';
-          ctx.fillText(activeSub.text, x, y);
+          // Fill text
+          ctx.fillStyle = style?.textColor || '#FFFFFF';
+          ctx.fillText(rawText, x, y);
 
           ctx.restore();
         }
