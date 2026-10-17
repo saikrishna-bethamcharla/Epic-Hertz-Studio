@@ -185,8 +185,7 @@ export default function Skills() {
     offset: ['start end', 'end start'],
   });
   const scrollRibbonX = useTransform(skillsScroll, [0, 1], [-80, 80]);
-  const ribbonSpring = useSpring(scrollRibbonX, { stiffness: 70, damping: 22 });
-  const combinedRibbonX = useTransform([springX, ribbonSpring], ([sX, rX]: number[]) => (sX * 25) + rX);
+  const combinedRibbonX = useTransform([springX, scrollRibbonX], ([sX, rX]: number[]) => (sX * 25) + rX);
 
   const stageRotateX = useTransform(springY, [-1, 1], [6, -6]);
   const stageRotateY = useTransform(springX, [-1, 1], [-8, 8]);

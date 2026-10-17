@@ -23,11 +23,11 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
 
     if (reduced) return;
     const lenis = new Lenis({
-      duration: 1.15,
+      lerp: 0.1,
       smoothWheel: true,
       wheelMultiplier: 1.0,
-      touchMultiplier: 1.5,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      touchMultiplier: 1.0,
+      syncTouch: false,
       orientation: 'vertical',
       gestureOrientation: 'vertical',
     });

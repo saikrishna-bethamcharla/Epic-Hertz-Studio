@@ -50,9 +50,7 @@ export default function Seasons() {
     const interpolated = startAngle + clamped * (endAngle - startAngle);
 
     springAngle.set(interpolated);
-    if (targetIdx !== activeNodeIndex) {
-      setActiveNodeIndex(targetIdx);
-    }
+    setActiveNodeIndex((curr) => (curr !== targetIdx ? targetIdx : curr));
   });
 
   // Rotate mechanical gear rings on scroll
@@ -213,7 +211,7 @@ export default function Seasons() {
               stroke="url(#chronoAmber)"
               strokeWidth="2.8"
               fill="none"
-              filter="url(#chronoGlow)"
+              className="drop-shadow-[0_0_8px_rgba(245,158,11,0.65)]"
             />
             
             {/* 4. Flowing Energy Pulse current that streams along the rail */}
@@ -222,8 +220,7 @@ export default function Seasons() {
               stroke="#fff275"
               strokeWidth="2.2"
               fill="none"
-              className="chrono-flow"
-              filter="url(#chronoGlow)"
+              className="chrono-flow drop-shadow-[0_0_10px_rgba(255,242,117,0.75)]"
             />
 
             {/* Fine Rail Track Guides */}

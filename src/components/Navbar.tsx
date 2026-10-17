@@ -14,8 +14,10 @@ export default function Navbar({ order, profileId: _profileId, onSwitch: _onSwit
 
   useMotionValueEvent(scrollY, 'change', (y) => {
     const prev = scrollY.getPrevious() ?? 0;
-    setSolid(y > 40);
-    setHidden(y > 400 && y > prev && !mobileNav);
+    const shouldSolid = y > 40;
+    const shouldHidden = y > 400 && y > prev && !mobileNav;
+    setSolid((curr) => (curr !== shouldSolid ? shouldSolid : curr));
+    setHidden((curr) => (curr !== shouldHidden ? shouldHidden : curr));
   });
 
   useEffect(() => {

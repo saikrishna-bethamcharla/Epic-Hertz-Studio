@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import { motion, useMotionValue, useScroll, useSpring, useTransform } from 'framer-motion';
+import { motion, useMotionValue, useScroll, useTransform } from 'framer-motion';
 import { profile, projects, type Project } from '../data/portfolio';
 import { useDesktop, useReducedMotionPref } from '../hooks/useMedia';
 import { EASE, RevealText } from './fx';
@@ -69,15 +69,14 @@ function PinnedOriginals({ onOpen }: { onOpen: (p: Project) => void }) {
   }, [distMV]);
 
   const { scrollYProgress } = useScroll({ target: wrap, offset: ['start start', 'end end'] });
-  const raw = useTransform([scrollYProgress, distMV], ([p, d]: number[]) => -p * d);
-  const x = useSpring(raw, { stiffness: 120, damping: 30, mass: 0.4 });
+  const x = useTransform([scrollYProgress, distMV], ([p, d]: number[]) => -p * d);
   const bar = useTransform(scrollYProgress, [0, 1], [0, 1]);
 
   return (
     <div ref={wrap} style={{ height: `calc(100vh + ${dist}px)` }} className="relative">
       <div className="sticky top-0 flex h-screen flex-col justify-center overflow-hidden">
         <div aria-hidden className="absolute inset-0 bg-[radial-gradient(50%_60%_at_70%_50%,rgba(229,19,43,0.10),transparent_70%)]" />
-        <motion.div ref={track} style={{ x }} className="gutter relative flex items-center gap-8 pr-[12vw]">
+        <motion.div ref={track} style={{ x }} className="gutter relative flex items-center gap-8 pr-[12vw] will-change-transform [transform:translateZ(0)]">
           <Intro />
           {projects.map((p, i) => (
             <ProjectCard key={p.id} project={p} index={i} onOpen={() => onOpen(p)} />
