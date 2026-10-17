@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 import { viewerProfiles, type ProfileId, type Project, type SectionId } from './data/portfolio';
-import { useSmoothScroll } from './hooks/smoothScroll';
+import { SmoothScrollProvider, useSmoothScroll } from './hooks/smoothScroll';
 import CustomCursor from './components/CustomCursor';
 import OpeningSequence from './components/OpeningSequence';
 import ProfileSelector from './components/ProfileSelector';
@@ -18,12 +18,12 @@ import Achievements from './components/Achievements';
 import ResumeSection from './components/ResumeViewer';
 import FinalCTA from './components/FinalCTA';
 import { EASE } from './components/fx';
+import SubtitleTool from './subtitle-tool/SubtitleTool';
 
 // Overlays are only needed on demand — split them out of the first load.
 const PlayIntro = lazy(() => import('./components/PlayIntro'));
 const ProjectModal = lazy(() => import('./components/ProjectModal'));
 const ResumeModal = lazy(() => import('./components/ResumeModal'));
-import SubtitleTool from './subtitle-tool/SubtitleTool';
 
 type Stage = 'opening' | 'profiles' | 'home';
 
@@ -38,8 +38,78 @@ function readStoredProfile(): ProfileId | null {
   }
 }
 
+/**
+ * Strict Environment & Route Isolation:
+ * - Portfolio (saikrishna-bethamcharla.github.io/Portfolio/): Strictly renders Sai Krishna Portfolio
+ * - Epic Hertz Studio (epic-hertz-studio.vercel.app OR /Epic-Hertz-Studio/): Strictly renders Epic Hertz Studio
+ */
+export function isStudioApp(): boolean {
+  if (typeof window === 'undefined') return false;
+
+  const hostname = (window.location.hostname || '').toLowerCase();
+  const pathname = (window.location.pathname || '').toLowerCase();
+  const search = (window.location.search || '').toLowerCase();
+  const hash = (window.location.hash || '').toLowerCase();
+
+  // 1. Explicit query or hash overrides
+  if (
+    search.includes('view=studio') ||
+    search.includes('app=studio') ||
+    search.includes('tool=subtitles') ||
+    search.includes('app=epic-hertz') ||
+    hash.includes('#studio') ||
+    hash.includes('#subtitles')
+  ) {
+    return true;
+  }
+
+  if (
+    search.includes('view=portfolio') ||
+    search.includes('app=portfolio') ||
+    hash.includes('#portfolio')
+  ) {
+    return false;
+  }
+
+  // 2. Strict isolation for Portfolio repository on GitHub Pages
+  // e.g. saikrishna-bethamcharla.github.io/Portfolio/
+  if (pathname.startsWith('/portfolio') || pathname.includes('/portfolio/')) {
+    return false;
+  }
+
+  // 3. Strict isolation for Epic Hertz Studio repository on GitHub Pages
+  // e.g. saikrishna-bethamcharla.github.io/Epic-Hertz-Studio/
+  if (pathname.startsWith('/epic-hertz-studio') || pathname.includes('/epic-hertz-studio/')) {
+    return true;
+  }
+
+  // 4. Strict isolation for Epic Hertz Studio on Vercel
+  // e.g. epic-hertz-studio.vercel.app
+  if (hostname.includes('epic-hertz-studio') || hostname.includes('epic-hertz')) {
+    return true;
+  }
+
+  // 5. Standalone Vercel deployment of this project
+  if (hostname.includes('vercel.app')) {
+    return true;
+  }
+
+  // Localhost or standard domain default: Portfolio
+  return false;
+}
+
 export default function App() {
-  return <SubtitleTool />;
+  const [isStudio] = useState(() => isStudioApp());
+
+  if (isStudio) {
+    return <SubtitleTool />;
+  }
+
+  return (
+    <SmoothScrollProvider>
+      <Series />
+    </SmoothScrollProvider>
+  );
 }
 
 export function Series() {
@@ -53,6 +123,10 @@ export function Series() {
   const { scrollTo, lock, unlock } = useSmoothScroll();
 
   const order = viewerProfiles.find((p) => p.id === profileId)!.order;
+
+  useEffect(() => {
+    document.title = 'Sai Krishna | AI Video, Web Development & Creative Design';
+  }, []);
 
   useEffect(() => {
     // Guarantee scroll opens at top hero section on load / refresh

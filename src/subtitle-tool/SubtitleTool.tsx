@@ -5,7 +5,7 @@
 // - Bottom multi-track audio waveform timeline with split/merge/delete/undo/redo/dictionary
 // - Export modal with lossless stream-copy MP4, hardsubbed burn MP4, SRT, VTT & TXT
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import LandingScrollCraft from './LandingScrollCraft';
@@ -50,6 +50,10 @@ export default function SubtitleTool() {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(() => Boolean(getStoredApiKey()));
+
+  useEffect(() => {
+    document.title = 'Epic Hertz | Auto-Subtitle Studio';
+  }, []);
 
   // Subtitle styling state
   const [style, setStyle] = useState<SubtitleStyle>(() => ({
