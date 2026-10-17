@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 import { viewerProfiles, type ProfileId, type Project, type SectionId } from './data/portfolio';
-import { useSmoothScroll } from './hooks/smoothScroll';
+import { SmoothScrollProvider, useSmoothScroll } from './hooks/smoothScroll';
 import CustomCursor from './components/CustomCursor';
 import OpeningSequence from './components/OpeningSequence';
 import ProfileSelector from './components/ProfileSelector';
@@ -23,7 +23,6 @@ import { EASE } from './components/fx';
 const PlayIntro = lazy(() => import('./components/PlayIntro'));
 const ProjectModal = lazy(() => import('./components/ProjectModal'));
 const ResumeModal = lazy(() => import('./components/ResumeModal'));
-import SubtitleTool from './subtitle-tool/SubtitleTool';
 
 type Stage = 'opening' | 'profiles' | 'home';
 
@@ -39,7 +38,11 @@ function readStoredProfile(): ProfileId | null {
 }
 
 export default function App() {
-  return <SubtitleTool />;
+  return (
+    <SmoothScrollProvider>
+      <Series />
+    </SmoothScrollProvider>
+  );
 }
 
 export function Series() {
