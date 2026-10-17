@@ -577,30 +577,58 @@ function PresetCard({
       className={`relative text-left p-2.5 rounded-xl transition-all duration-150 flex flex-col justify-between group cursor-pointer ${
         isSelected
           ? 'bg-[#242320] border-2 border-amber-400 shadow-md ring-1 ring-amber-400/40'
-          : 'bg-[#1b1b19] border border-white/10 hover:border-white/25 hover:bg-[#20201e]'
+          : 'bg-[#181816] border border-white/10 hover:border-white/25 hover:bg-[#20201e]'
       }`}
     >
       {/* Visual Subtitle Preview Badge */}
       <div
-        className="w-full h-14 rounded-lg flex items-center justify-center p-2 mb-2 relative overflow-hidden shadow-inner"
-        style={{ backgroundColor: item.previewBg }}
+        className="w-full h-14 rounded-lg flex items-center justify-center p-2 mb-2 relative overflow-hidden border border-white/5"
+        style={{
+          backgroundColor: item.previewBg || '#141412',
+          backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.06) 0%, transparent 80%)',
+        }}
       >
-        <span
-          className="font-black text-xs truncate max-w-[95%] tracking-wide uppercase"
-          style={{
-            color: item.previewTextColor,
-            WebkitTextStroke: item.previewOutline || '2px #000',
-            textShadow: '0 2px 4px rgba(0,0,0,0.95)',
-          }}
-        >
-          {item.previewHighlight ? (
-            <>
-              CAPCUT <span style={{ color: item.previewHighlight }}>BOUNCE</span>
-            </>
-          ) : (
-            'CAPTION STYLE'
-          )}
-        </span>
+        {item.id === 'hormozi-yellow' ? (
+          <span className="text-[11px] font-black tracking-wide text-white drop-shadow-[0_2px_4px_#000]">
+            WATCH <span className="bg-[#FFE600] text-black px-1.5 py-0.5 rounded font-black text-[10px]">THIS</span>
+          </span>
+        ) : item.id === 'premiere-glow' ? (
+          <span className="text-[11px] font-black tracking-wider text-white drop-shadow-[0_0_10px_#00F0FF]">
+            CYBER <span className="text-[#00F0FF]">GLOW</span>
+          </span>
+        ) : item.id === 'mrbeast-comic' ? (
+          <span className="text-[12px] font-black tracking-wide text-white drop-shadow-[0_2px_0_#000]">
+            MR<span className="text-[#00FF66]">BEAST</span>
+          </span>
+        ) : item.id === 'fire-hype' ? (
+          <span className="text-[11px] font-black tracking-wide text-white drop-shadow-[0_0_8px_#FF4500]">
+            FLAME <span className="text-[#FFD700]">HYPE</span>
+          </span>
+        ) : item.id === 'neon-tokyo' ? (
+          <span className="text-[11px] font-black tracking-wider text-white drop-shadow-[0_0_8px_#EC4899]">
+            NEON <span className="text-[#EC4899]">TOKYO</span>
+          </span>
+        ) : item.id === 'cinema-gold' ? (
+          <span className="text-[11px] font-bold tracking-wide text-[#FFE600] drop-shadow-[0_2px_4px_#000]">
+            CINEMA GOLD
+          </span>
+        ) : item.id === 'clean-minimal' ? (
+          <span className="text-[11px] font-medium tracking-wide text-white drop-shadow-[0_1px_3px_#000]">
+            Pristine White
+          </span>
+        ) : item.id === 'boxed' ? (
+          <span className="text-[10px] font-black tracking-wide bg-[#E5132B] text-white px-2 py-0.5 rounded shadow">
+            CRIMSON BOX
+          </span>
+        ) : item.id === 'spotlight' ? (
+          <span className="text-[10px] font-bold tracking-wide bg-black/80 text-white px-2 py-0.5 rounded border border-white/20">
+            SPOT<span className="text-[#FFE600]">LIGHT</span>
+          </span>
+        ) : (
+          <span className="text-[11px] font-black tracking-wide text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+            CAPCUT <span className="text-[#FFE600]">BOUNCE</span>
+          </span>
+        )}
       </div>
 
       {/* Label and Badge */}
