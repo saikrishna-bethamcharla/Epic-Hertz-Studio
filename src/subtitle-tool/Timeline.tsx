@@ -458,7 +458,7 @@ export default function Timeline({
             {segments.map((seg) => {
               const left = seg.start * zoom;
               const width = Math.max(30, (seg.end - seg.start) * zoom);
-              const isActive = seg.id === activeId || (currentTime >= seg.start && currentTime <= seg.end);
+              const isActive = seg.id === activeId;
 
               return (
                 <div
@@ -468,7 +468,7 @@ export default function Timeline({
                     onSeek(seg.start);
                     onSelectSegment?.(seg.id);
                   }}
-                  className={`absolute top-0.5 h-11 rounded-lg px-2 py-1 text-xs font-medium cursor-pointer transition-all border flex flex-col justify-center overflow-hidden group shadow-md ${
+                  className={`absolute top-0.5 h-11 rounded-lg px-2 py-1 text-xs font-medium cursor-pointer transition-colors border flex flex-col justify-center overflow-hidden group shadow-md ${
                     isActive
                       ? 'bg-[#2b2a26] border-amber-400 text-amber-200 ring-1 ring-amber-400/50'
                       : 'bg-[#1c1c1a] border-white/15 text-bone hover:border-white/35 hover:bg-[#222220]'
@@ -500,10 +500,10 @@ export default function Timeline({
 
           {/* 4. Playhead Cursor (Red/White vertical line with pointer top) */}
           <div
-            className="absolute top-0 bottom-0 pointer-events-none z-30 transition-transform duration-75"
+            className="absolute top-0 bottom-0 pointer-events-none z-30 will-change-transform"
             style={{
-              left: `${currentTime * zoom}px`,
-              transform: 'translateX(-50%)',
+              left: 0,
+              transform: `translate3d(${currentTime * zoom}px, 0, 0) translateX(-50%)`,
             }}
           >
             {/* Playhead marker pin */}

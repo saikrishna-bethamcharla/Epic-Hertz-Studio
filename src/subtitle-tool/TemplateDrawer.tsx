@@ -3,7 +3,7 @@
 // Visual style cards (Classic, Yellow, Minimal, Punch, Spotlight, Noir, Gold Luxe, etc.)
 // plus fine-tuning controls (font size, position, uppercase, outline).
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import type { SubtitleStyle, SubtitlePreset, SubtitlePosition } from './types';
 
 interface TemplateDrawerProps {
@@ -226,7 +226,7 @@ export const PRESET_LIBRARY: PresetItem[] = [
   },
 ];
 
-export default function TemplateDrawer({ style, onChange }: TemplateDrawerProps) {
+function TemplateDrawer({ style, onChange }: TemplateDrawerProps) {
   const [activeTab, setActiveTab] = useState<'presets' | 'customize'>('presets');
 
   const applyPreset = (preset: PresetItem) => {
@@ -486,3 +486,5 @@ function PresetCard({
     </button>
   );
 }
+
+export default memo(TemplateDrawer);

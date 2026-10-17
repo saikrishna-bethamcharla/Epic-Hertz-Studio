@@ -47,7 +47,6 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
     ref,
   ) => {
     const videoRef = useRef<HTMLVideoElement>(null);
-    const bgVideoRef = useRef<HTMLVideoElement>(null);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -55,6 +54,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
     const [isMuted, setIsMuted] = useState(false);
     const [playbackRate, setPlaybackRate] = useState(1);
     const containerRef = useRef<HTMLDivElement>(null);
+    const playPromiseRef = useRef<Promise<void> | null>(null);
 
     // Create stable Blob URL for the video file
     const videoURL = useMemo(() => URL.createObjectURL(videoFile), [videoFile]);
@@ -65,69 +65,84 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       };
     }, [videoURL]);
 
-    // Keep background blur video in sync with main video
-    const syncBgVideo = useCallback(() => {
-      if (videoRef.current && bgVideoRef.current) {
-        if (Math.abs(bgVideoRef.current.currentTime - videoRef.current.currentTime) > 0.15) {
-          bgVideoRef.current.currentTime = videoRef.current.currentTime;
+    // Robust play that handles user click interruption gracefully
+    const safePlay = useCallback(async () => {
+      if (!videoRef.current) return;
+      try {
+        playPromiseRef.current = videoRef.current.play();
+        await playPromiseRef.current;
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name === 'AbortError') {
+          // Play interrupted by pause or seek — normal browser behavior
+          return;
         }
-        if (videoRef.current.paused !== bgVideoRef.current.paused) {
-          if (videoRef.current.paused) bgVideoRef.current.pause();
-          else bgVideoRef.current.play().catch(() => {});
-        }
+        console.warn('Video play error:', err);
+      } finally {
+        playPromiseRef.current = null;
       }
     }, []);
+
+    // Robust pause that waits for pending play promise to settle
+    const safePause = useCallback(async () => {
+      if (!videoRef.current) return;
+      if (playPromiseRef.current) {
+        try {
+          await playPromiseRef.current;
+        } catch {
+          // ignore
+        }
+      }
+      videoRef.current.pause();
+    }, []);
+
+    const togglePlay = useCallback(() => {
+      if (!videoRef.current) return;
+      if (videoRef.current.paused) {
+        safePlay();
+      } else {
+        safePause();
+      }
+    }, [safePlay, safePause]);
 
     // Expose methods to parent (Timeline & Caption editor clicks)
     useImperativeHandle(ref, () => ({
       seekTo(time: number) {
         if (videoRef.current) {
-          videoRef.current.currentTime = time;
-          if (bgVideoRef.current) bgVideoRef.current.currentTime = time;
+          const maxDur = videoRef.current.duration || duration || time;
+          const target = Math.max(0, Math.min(maxDur, time));
+          videoRef.current.currentTime = target;
+          setCurrentTime(target);
         }
       },
       play() {
-        videoRef.current?.play().catch(() => {});
+        safePlay();
       },
       pause() {
-        videoRef.current?.pause();
+        safePause();
       },
       togglePlay() {
-        if (videoRef.current) {
-          if (videoRef.current.paused) videoRef.current.play().catch(() => {});
-          else videoRef.current.pause();
-        }
+        togglePlay();
       },
       getCurrentTime() {
         return videoRef.current?.currentTime || 0;
       },
-    }));
+    }), [safePlay, safePause, togglePlay, duration]);
 
     const handleTimeUpdate = useCallback(() => {
       if (videoRef.current) {
         const t = videoRef.current.currentTime;
         setCurrentTime(t);
         onTimeUpdate(t);
-        syncBgVideo();
       }
-    }, [onTimeUpdate, syncBgVideo]);
+    }, [onTimeUpdate]);
 
     const handleLoadedMetadata = useCallback(() => {
       if (videoRef.current) {
-        const d = videoRef.current.duration;
+        const d = videoRef.current.duration || 0;
         setDuration(d);
         onDurationChange?.(d);
       }
     }, [onDurationChange]);
-
-    const togglePlay = () => {
-      if (!videoRef.current) return;
-      if (videoRef.current.paused) {
-        videoRef.current.play().catch(() => {});
-      } else {
-        videoRef.current.pause();
-      }
-    };
 
     const toggleMute = () => {
       if (!videoRef.current) return;
@@ -150,7 +165,6 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       const next = rates[(rates.indexOf(playbackRate) + 1) % rates.length];
       setPlaybackRate(next);
       if (videoRef.current) videoRef.current.playbackRate = next;
-      if (bgVideoRef.current) bgVideoRef.current.playbackRate = next;
     };
 
     const toggleFullscreen = () => {
@@ -221,14 +235,13 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           ref={containerRef}
           className={`relative rounded-2xl overflow-hidden bg-black flex items-center justify-center shadow-2xl border border-white/10 ${aspectContainerClass}`}
         >
-          {/* Ambient Blurred Video Background for 9:16 Reels (Replix-style) */}
+          {/* Ambient Glow for 9:16 Reels */}
           {aspectRatio === '9:16' && (
-            <video
-              ref={bgVideoRef}
-              src={videoURL}
-              className="absolute inset-0 w-full h-full object-cover filter blur-2xl opacity-50 scale-125 pointer-events-none"
-              muted
-              playsInline
+            <div
+              className="absolute inset-0 pointer-events-none opacity-40 blur-2xl scale-110"
+              style={{
+                background: 'radial-gradient(ellipse at center, rgba(217, 167, 74, 0.22) 0%, rgba(20, 20, 19, 0.85) 75%, transparent 100%)',
+              }}
               aria-hidden="true"
             />
           )}
@@ -246,12 +259,13 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             onPlay={() => {
               setIsPlaying(true);
               onPlayStateChange?.(true);
-              bgVideoRef.current?.play().catch(() => {});
             }}
             onPause={() => {
               setIsPlaying(false);
               onPlayStateChange?.(false);
-              bgVideoRef.current?.pause();
+            }}
+            onError={(e) => {
+              console.warn('Video element error:', e);
             }}
           />
 

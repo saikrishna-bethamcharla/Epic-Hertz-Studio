@@ -4,7 +4,7 @@
 // - Segment rows with timestamp pill, inline editable text, and edit icon
 // - Playhead active sync, seek on click, plus add/split/delete actions
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Segment, ScriptOutput, SpokenLanguage } from './types';
 
@@ -26,6 +26,15 @@ export default function CaptionEditor({
   onSeek,
 }: CaptionEditorProps) {
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Auto-scroll to active caption row when playing
+  useEffect(() => {
+    if (!activeId) return;
+    const el = document.getElementById(`caption-${activeId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [activeId]);
 
   const updateSegment = useCallback(
     (id: string, patch: Partial<Segment>) => {
@@ -143,13 +152,13 @@ export default function CaptionEditor({
             return (
               <motion.div
                 key={seg.id}
-                layout
+                id={`caption-${seg.id}`}
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.15 }}
                 onClick={() => onSeek(seg.start)}
-                className={`group relative rounded-xl p-3 border transition-all duration-150 cursor-pointer ${
+                className={`group relative rounded-xl p-3 border transition-colors duration-150 cursor-pointer ${
                   isActive
                     ? 'border-amber-400/70 bg-[#252420] shadow-md ring-1 ring-amber-400/40'
                     : 'border-white/[0.08] bg-[#1a1a18] hover:border-white/20 hover:bg-[#20201d]'
