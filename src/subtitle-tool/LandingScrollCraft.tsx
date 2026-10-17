@@ -140,8 +140,8 @@ export default function LandingScrollCraft({
   // Demo words for live reel display
   const demoDialogue = {
     te: {
-      romanized: ['Godavari', 'Desi', 'Ghee.', 'Inti', 'ruchiki', 'mana', 'ghee.'],
-      native: ['గోదావరి', 'దేశీ', 'గీ.', 'ఇంటి', 'రుచికి', 'మన', 'గీ.'],
+      romanized: ['Prathi', 'frame', 'lo', 'oka', 'katha.', 'Mana', 'cinema.'],
+      native: ['ప్రతి', 'ఫ్రేమ్', 'లో', 'ఒక', 'కథ.', 'మన', 'సినిమా.'],
     },
     hi: {
       romanized: ['Aapka', 'swagat', 'hai', 'is', 'nayee', 'video', 'mein.'],

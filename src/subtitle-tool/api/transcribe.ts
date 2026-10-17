@@ -139,7 +139,7 @@ export async function transcribeAudio(
   const scriptDirective = isRomanized
     ? `CRITICAL SCRIPT INSTRUCTION:
 - Transcribe the spoken audio using ROMANIZED SCRIPT / ENGLISH ALPHABET ONLY.
-- For Indian languages (e.g. Telugu, Hindi, Tamil), produce natural colloquial Romanized script (e.g. Tanglish: "Godavari Desi Ghee. Inti ruchiki mana ghee.", Hinglish: "Aapka swagat hai", etc.).
+- For Indian languages (e.g. Telugu, Hindi, Tamil), produce natural colloquial Romanized script (e.g. Tanglish: "Prathi frame lo oka katha.", Hinglish: "Aapka swagat hai", etc.).
 - Do NOT output native Telugu/Devanagari/Tamil characters. Use standard conversational English transliteration readable by social media audiences.`
     : `CRITICAL SCRIPT INSTRUCTION:
 - Transcribe the spoken audio strictly in its authentic NATIVE SCRIPT (e.g., Telugu script 'తెలుగు లిపి', Hindi Devanagari 'हिन्दी', Tamil 'தமிழ்', etc.).
@@ -158,11 +158,11 @@ Return ONLY a JSON array with this exact structure:
   {
     "start_time": 0.0,
     "end_time": 1.8,
-    "text": "${isRomanized ? 'Godavari Desi Ghee.' : 'గోదావరి దేశీ గీ'}",
+    "text": "${isRomanized ? 'Prathi frame lo oka katha.' : 'ప్రతి ఫ్రేమ్ లో ఒక కథ'}",
     "words": [
-      { "word": "${isRomanized ? 'Godavari' : 'గోదావరి'}", "start": 0.0, "end": 0.7 },
-      { "word": "${isRomanized ? 'Desi' : 'దేశీ'}", "start": 0.7, "end": 1.2 },
-      { "word": "${isRomanized ? 'Ghee.' : 'గీ'}", "start": 1.2, "end": 1.8 }
+      { "word": "${isRomanized ? 'Prathi' : 'ప్రతి'}", "start": 0.0, "end": 0.6 },
+      { "word": "${isRomanized ? 'frame' : 'ఫ్రేమ్'}", "start": 0.6, "end": 1.1 },
+      { "word": "${isRomanized ? 'katha.' : 'కథ'}", "start": 1.1, "end": 1.8 }
     ]
   }
 ]
