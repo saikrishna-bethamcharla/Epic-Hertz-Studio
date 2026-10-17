@@ -24,9 +24,6 @@ const PlayIntro = lazy(() => import('./components/PlayIntro'));
 const ProjectModal = lazy(() => import('./components/ProjectModal'));
 const ResumeModal = lazy(() => import('./components/ResumeModal'));
 
-// Subtitle tool — loaded on demand via ?tool=subtitles
-const SubtitleTool = lazy(() => import('./subtitle-tool/SubtitleTool'));
-
 type Stage = 'opening' | 'profiles' | 'home';
 
 const STORAGE_KEY = 'sai-krishna-series-profile';
@@ -41,20 +38,10 @@ function readStoredProfile(): ProfileId | null {
 }
 
 export default function App() {
-  // If ?view=portfolio is passed, show portfolio; otherwise show Subtitle Studio directly!
-  const params = new URLSearchParams(window.location.search);
-  if (params.get('view') === 'portfolio') {
-    return (
-      <SmoothScrollProvider>
-        <Series />
-      </SmoothScrollProvider>
-    );
-  }
-
   return (
-    <Suspense fallback={<div className="min-h-screen bg-ink" />}>
-      <SubtitleTool />
-    </Suspense>
+    <SmoothScrollProvider>
+      <Series />
+    </SmoothScrollProvider>
   );
 }
 
