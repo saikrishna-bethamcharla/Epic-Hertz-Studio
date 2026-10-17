@@ -8,7 +8,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-import DropZone from './DropZone';
+import LandingScrollCraft from './LandingScrollCraft';
 import VideoPreview, { type VideoPreviewHandle } from './VideoPreview';
 import CaptionEditor from './CaptionEditor';
 import TemplateDrawer from './TemplateDrawer';
@@ -327,18 +327,20 @@ export default function SubtitleTool() {
             </motion.div>
           )}
 
-          {/* Idle Stage: Drag & Drop */}
+          {/* Idle Stage: 3D ScrollCraft Detailed Motion Landing Page */}
           {stage === 'idle' && (
             <motion.div
-              key="dropzone"
-              className="flex-1 flex items-center justify-center p-6"
+              key="landing-scrollcraft"
+              className="flex-1 min-h-0 w-full h-full overflow-hidden"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
             >
-              <div className="w-full max-w-xl">
-                <DropZone onFile={handleFileDrop} />
-              </div>
+              <LandingScrollCraft
+                onFileSelect={handleFileDrop}
+                onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
+              />
             </motion.div>
           )}
 
