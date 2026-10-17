@@ -1,7 +1,7 @@
 // ─── Gemini transcription API client ────────────────────────────────────────
-// Uploads an audio Blob to the Gemini Files API, then calls
-// gemini-3.5-transcribe with word-level timestamps.
-// Requires VITE_GEMINI_API_KEY to be set in your .env.local file.
+// Supports both:
+// 1. Studio Cloud Serverless Proxy (/api/transcribe) — Zero configuration for all visitors
+// 2. Personal Custom API Key (BYOK) — Client-side or proxy forwarding for power users
 
 import { GoogleGenAI } from '@google/genai';
 import { buildSegments } from '../utils/srt';
@@ -51,6 +51,10 @@ export function getStoredApiKey(): string {
   return '';
 }
 
+export function hasCustomApiKey(): boolean {
+  return Boolean(getStoredApiKey());
+}
+
 export function setStoredApiKey(key: string): void {
   const trimmed = key.trim();
   memoryKey = trimmed;
@@ -66,14 +70,14 @@ export function setStoredApiKey(key: string): void {
   }
 }
 
-function getClient(): GoogleGenAI {
-  const key = getStoredApiKey();
-  if (!key) {
-    throw new Error(
-      'Missing Gemini API Key. Please add it via the settings gear or provide VITE_GEMINI_API_KEY.',
-    );
+function getProxyEndpoint(): string {
+  if (typeof window === 'undefined') return '/api/transcribe';
+  const hostname = window.location.hostname;
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('vercel.app')) {
+    return '/api/transcribe';
   }
-  return new GoogleGenAI({ apiKey: key });
+  // External or GitHub Pages domain fallback to Vercel serverless proxy
+  return 'https://epic-hertz-studio.vercel.app/api/transcribe';
 }
 
 function parseTime(value: unknown): number {
@@ -98,8 +102,6 @@ const LANGUAGE_LABELS: Record<SpokenLanguage, string> = {
   fr: 'French',
 };
 
-// ─── Main transcribe function ────────────────────────────────────────────────
-
 export interface TranscribeOptions {
   spokenLanguage?: SpokenLanguage;
   scriptOutput?: ScriptOutput;
@@ -107,24 +109,115 @@ export interface TranscribeOptions {
   onStatus?: (msg: string) => void;
 }
 
+/**
+ * Main transcription entrypoint.
+ * Automatically chooses between user's custom Gemini key and Studio Cloud AI.
+ */
 export async function transcribeAudio(
   audioBlob: Blob,
-  { spokenLanguage = 'auto', scriptOutput = 'romanized', onStatus }: TranscribeOptions = {},
+  options: TranscribeOptions = {},
 ): Promise<Segment[]> {
-  const client = getClient();
+  const customKey = getStoredApiKey();
 
-  // ── Step 1: Upload audio to Files API ───────────────────────────────────
-  onStatus?.('Uploading audio…');
+  // If user configured their own custom key, execute client-side with failover to proxy
+  if (customKey) {
+    try {
+      return await transcribeClientSide(audioBlob, options, customKey);
+    } catch (clientErr) {
+      console.warn('Client-side SDK run failed, attempting proxy with custom key:', clientErr);
+      return await transcribeViaProxy(audioBlob, options, customKey);
+    }
+  }
+
+  // Zero-setup default: Use Studio Cloud AI Serverless Proxy
+  return await transcribeViaProxy(audioBlob, options);
+}
+
+/**
+ * Calls the Vercel serverless proxy route /api/transcribe with streaming audio.
+ */
+async function transcribeViaProxy(
+  audioBlob: Blob,
+  options: TranscribeOptions,
+  customKey?: string,
+): Promise<Segment[]> {
+  const { spokenLanguage = 'auto', scriptOutput = 'romanized', onStatus } = options;
+
+  onStatus?.('Connecting to Studio Cloud AI…');
+
+  const endpoint = getProxyEndpoint();
+  const url = `${endpoint}?spokenLanguage=${encodeURIComponent(spokenLanguage)}&scriptOutput=${encodeURIComponent(scriptOutput)}`;
+
+  const headers: Record<string, string> = {
+    'Content-Type': audioBlob.type || 'audio/wav',
+    'x-spoken-language': spokenLanguage,
+    'x-script-output': scriptOutput,
+  };
+
+  if (customKey) {
+    headers['x-gemini-api-key'] = customKey;
+  }
+
+  onStatus?.('Uploading audio to AI model…');
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: audioBlob,
+    });
+  } catch (netErr) {
+    throw new Error(
+      `Network error connecting to transcription service: ${netErr instanceof Error ? netErr.message : String(netErr)}. You can also provide a personal Gemini API Key in Settings (⚙).`,
+    );
+  }
+
+  onStatus?.('Generating synced subtitles…');
+
+  let data: { segments?: Segment[]; error?: string };
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error(`Cloud server returned unexpected response format (HTTP ${res.status}).`);
+  }
+
+  if (!res.ok) {
+    throw new Error(
+      data?.error || `Transcription failed with HTTP ${res.status}. You can configure a personal key in Settings (⚙).`,
+    );
+  }
+
+  if (!data?.segments || !Array.isArray(data.segments) || data.segments.length === 0) {
+    throw new Error('No speech detected in audio. Please try a video with clear spoken dialogue.');
+  }
+
+  onStatus?.('Finalizing caption timeline…');
+  return data.segments;
+}
+
+/**
+ * Client-side direct transcription via @google/genai SDK for users who supply their own key.
+ */
+async function transcribeClientSide(
+  audioBlob: Blob,
+  { spokenLanguage = 'auto', scriptOutput = 'romanized', onStatus }: TranscribeOptions,
+  apiKey: string,
+): Promise<Segment[]> {
+  const client = new GoogleGenAI({ apiKey });
+
+  // Step 1: Upload audio to Files API
+  onStatus?.('Uploading audio to personal Gemini account…');
 
   const uploadedFile = await client.files.upload({
     file: audioBlob,
-    config: { mimeType: (audioBlob.type || 'audio/mp3') as 'audio/mp3' },
+    config: { mimeType: (audioBlob.type || 'audio/wav') as 'audio/mp3' },
   });
 
   // Poll until ACTIVE
   let fileState = uploadedFile;
   while (fileState.state === 'PROCESSING') {
-    await sleep(1500);
+    await sleep(1200);
     fileState = await client.files.get({ name: uploadedFile.name! });
   }
   if (fileState.state === 'FAILED') {
@@ -168,8 +261,6 @@ Return ONLY a JSON array with this exact structure:
 ]
 Output valid JSON only. Do not include markdown code block formatting or explanations.`;
 
-  // Multi-model resilience: if gemini-3.8-flash has a temporary 503 capacity spike,
-  // automatically failover to gemini-3.5-flash-lite or gemini-3.5-transcribe
   const candidateModels = [
     'gemini-3.5-flash-lite',
     'gemini-3.8-flash',
@@ -190,7 +281,7 @@ Output valid JSON only. Do not include markdown code block formatting or explana
             {
               type: 'audio',
               uri: fileState.uri!,
-              mime_type: (fileState.mimeType || 'audio/mp3') as 'audio/mp3',
+              mime_type: (fileState.mimeType || 'audio/wav') as 'audio/mp3',
             },
             {
               type: 'text',
@@ -204,12 +295,14 @@ Output valid JSON only. Do not include markdown code block formatting or explana
       } catch (err: unknown) {
         lastError = err;
         const msg = String(err);
-        const is503 = msg.includes('503') || msg.toLowerCase().includes('high demand') || msg.toLowerCase().includes('temporarily unavailable');
+        const is503 =
+          msg.includes('503') ||
+          msg.toLowerCase().includes('high demand') ||
+          msg.toLowerCase().includes('temporarily unavailable');
         if (is503) {
           onStatus?.(`Traffic spike on ${model}, retrying...`);
           await sleep(1500 * attempts);
         } else {
-          // If not 503, try next candidate model
           break;
         }
       }
@@ -217,18 +310,20 @@ Output valid JSON only. Do not include markdown code block formatting or explana
     if (rawText) break;
   }
 
+  // Cleanup uploaded file from Gemini account
+  if (uploadedFile?.name) {
+    client.files.delete({ name: uploadedFile.name }).catch(() => {});
+  }
+
   if (!rawText && lastError) {
     throw lastError;
   }
 
-  // ── Step 3: Parse segments ──────────────────────────────────────────────
   onStatus?.('Building captions…');
   const segments = parseSegmentsFromResponse(rawText);
 
   if (segments.length === 0) {
-    throw new Error(
-      'No speech detected in audio. Please try a video with clear spoken audio.',
-    );
+    throw new Error('No speech detected in audio. Please try a video with clear spoken audio.');
   }
 
   return segments;
@@ -239,7 +334,6 @@ Output valid JSON only. Do not include markdown code block formatting or explana
  */
 function parseSegmentsFromResponse(rawText: string): Segment[] {
   let cleaned = rawText.trim();
-  // Strip markdown code fences if model wrapped response
   if (cleaned.startsWith('```')) {
     cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
   }
@@ -251,11 +345,13 @@ function parseSegmentsFromResponse(rawText: string): Segment[] {
       return list.map((item: Record<string, unknown>, i: number) => {
         let words: WordTimestamp[] | undefined = undefined;
         if (Array.isArray(item.words)) {
-          words = (item.words as Record<string, unknown>[]).map((w) => ({
-            word: String(w.word ?? ''),
-            start: parseTime(w.start ?? w.start_time ?? 0),
-            end: parseTime(w.end ?? w.end_time ?? 0),
-          })).filter((w) => w.word.length > 0);
+          words = (item.words as Record<string, unknown>[])
+            .map((w) => ({
+              word: String(w.word ?? ''),
+              start: parseTime(w.start ?? w.start_time ?? 0),
+              end: parseTime(w.end ?? w.end_time ?? 0),
+            }))
+            .filter((w) => w.word.length > 0);
         }
 
         return {

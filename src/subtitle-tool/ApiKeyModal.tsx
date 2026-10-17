@@ -103,11 +103,13 @@ export default function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalPro
 
         <div className="mt-4 text-xs text-smoke leading-relaxed space-y-2">
           <p>
-            Epic Hertz uses the official Google Gemini API for speech transcription. Your key is stored
-            <strong> locally in your own browser</strong> and never committed or stored on any server.
+            Epic Hertz Studio provides <strong>built-in Studio Cloud AI</strong> so visitors can transcribe immediately without setup.
           </p>
           <p>
-            Get your key for free from{' '}
+            Optionally, you can enter your personal Google Gemini API key below for dedicated quota and higher rate limits. Your key remains safely stored in your browser's private local storage.
+          </p>
+          <p>
+            Get a free key from{' '}
             <a
               href="https://aistudio.google.com/app/apikey"
               target="_blank"
@@ -116,7 +118,7 @@ export default function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalPro
             >
               Google AI Studio ↗
             </a>
-            . (Starts with <code className="bg-black/40 px-1 py-0.5 rounded text-amber-200">AQ...</code> or <code className="bg-black/40 px-1 py-0.5 rounded text-amber-200">AIzaSy...</code>)
+            .
           </p>
         </div>
 

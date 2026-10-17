@@ -92,13 +92,6 @@ export default function SubtitleTool() {
     async (config: { spokenLanguage: SpokenLanguage; scriptOutput: ScriptOutput }) => {
       if (!videoFile) return;
 
-      const activeKey = getStoredApiKey();
-      if (!activeKey) {
-        setError('Please configure your Gemini API Key first.');
-        setIsApiKeyModalOpen(true);
-        return;
-      }
-
       setSpokenLanguage(config.spokenLanguage);
       setScriptOutput(config.scriptOutput);
 
@@ -277,12 +270,12 @@ export default function SubtitleTool() {
             {hasApiKey ? (
               <span className="flex items-center gap-1 text-[10px] font-medium text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-500/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                <span>Active</span>
+                <span>Custom Key</span>
               </span>
             ) : (
               <span className="flex items-center gap-1 text-[10px] font-medium text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded-full border border-amber-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                <span>Required</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                <span>Studio Cloud</span>
               </span>
             )}
           </button>
