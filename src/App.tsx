@@ -23,6 +23,7 @@ import { EASE } from './components/fx';
 const PlayIntro = lazy(() => import('./components/PlayIntro'));
 const ProjectModal = lazy(() => import('./components/ProjectModal'));
 const ResumeModal = lazy(() => import('./components/ResumeModal'));
+import SubtitleTool from './subtitle-tool/SubtitleTool';
 
 type Stage = 'opening' | 'profiles' | 'home';
 
@@ -38,11 +39,23 @@ function readStoredProfile(): ProfileId | null {
 }
 
 export default function App() {
-  return (
-    <SmoothScrollProvider>
-      <Series />
-    </SmoothScrollProvider>
-  );
+  const [view] = useState<'studio' | 'portfolio'>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('view') === 'portfolio') return 'portfolio';
+    }
+    return 'studio';
+  });
+
+  if (view === 'portfolio') {
+    return (
+      <SmoothScrollProvider>
+        <Series />
+      </SmoothScrollProvider>
+    );
+  }
+
+  return <SubtitleTool />;
 }
 
 function Series() {
