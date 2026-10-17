@@ -19,7 +19,7 @@ import ApiKeyModal from './ApiKeyModal';
 import ProgressOverlay from './ProgressOverlay';
 
 import { extractAudio } from './utils/extractAudio';
-import { transcribeAudio } from './api/transcribe';
+import { transcribeAudio, getStoredApiKey } from './api/transcribe';
 import { toSRT, downloadText } from './utils/srt';
 
 import type {
@@ -49,6 +49,7 @@ export default function SubtitleTool() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState(() => Boolean(getStoredApiKey()));
 
   // Subtitle styling state
   const [style, setStyle] = useState<SubtitleStyle>(() => ({
@@ -90,6 +91,14 @@ export default function SubtitleTool() {
   const handleContinueProcessing = useCallback(
     async (config: { spokenLanguage: SpokenLanguage; scriptOutput: ScriptOutput }) => {
       if (!videoFile) return;
+
+      const activeKey = getStoredApiKey();
+      if (!activeKey) {
+        setError('Please configure your Gemini API Key first.');
+        setIsApiKeyModalOpen(true);
+        return;
+      }
+
       setSpokenLanguage(config.spokenLanguage);
       setScriptOutput(config.scriptOutput);
 
@@ -201,6 +210,10 @@ export default function SubtitleTool() {
       <ApiKeyModal
         isOpen={isApiKeyModalOpen}
         onClose={() => setIsApiKeyModalOpen(false)}
+        onSaved={() => {
+          setError(null);
+          setHasApiKey(Boolean(getStoredApiKey()));
+        }}
       />
 
       {/* ── Top Header Navigation Bar ───────────────────────────────────── */}
@@ -256,11 +269,22 @@ export default function SubtitleTool() {
           {/* Gemini API Key settings button */}
           <button
             onClick={() => setIsApiKeyModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 text-xs text-mist hover:text-bone hover:border-white/25 transition-colors bg-white/[0.02]"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 text-xs text-mist hover:text-bone hover:border-white/25 transition-colors bg-white/[0.02]"
             title="Configure Gemini API Key"
           >
-            <span>⚙</span>
+            <span className="text-amber-400">⚙</span>
             <span className="hidden sm:inline">API Key</span>
+            {hasApiKey ? (
+              <span className="flex items-center gap-1 text-[10px] font-medium text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <span>Active</span>
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 text-[10px] font-medium text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded-full border border-amber-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                <span>Required</span>
+              </span>
+            )}
           </button>
         </div>
       </header>

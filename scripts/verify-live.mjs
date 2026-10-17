@@ -10,6 +10,7 @@ const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
   });
   
   const page = await browser.newPage();
+  await page.setCacheEnabled(false);
   await page.setViewport({ width: 1440, height: 900 });
   
   const urls = [

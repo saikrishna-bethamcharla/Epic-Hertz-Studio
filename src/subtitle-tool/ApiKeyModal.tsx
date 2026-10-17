@@ -15,11 +15,15 @@ export default function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalPro
   const [apiKey, setApiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
   const [warning, setWarning] = useState<string | null>(null);
+  const [savedSuccess, setSavedSuccess] = useState(false);
+
+  const existingKey = getStoredApiKey();
 
   useEffect(() => {
     if (isOpen) {
       setApiKey(getStoredApiKey());
       setWarning(null);
+      setSavedSuccess(false);
     }
   }, [isOpen]);
 
@@ -29,21 +33,37 @@ export default function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalPro
     const trimmed = apiKey.trim();
     if (!trimmed) {
       setStoredApiKey('');
+      setSavedSuccess(false);
+      onSaved?.();
       onClose();
+      return;
+    }
+
+    if (trimmed.length < 15) {
+      setWarning('API key looks too short. Gemini keys are typically 39+ characters.');
       return;
     }
 
     setWarning(null);
     setStoredApiKey(trimmed);
+    setSavedSuccess(true);
     onSaved?.();
-    onClose();
+    setTimeout(() => {
+      onClose();
+    }, 400);
   };
 
   const handleClear = () => {
     setApiKey('');
     setStoredApiKey('');
     setWarning(null);
+    setSavedSuccess(false);
+    onSaved?.();
   };
+
+  const maskedKey = existingKey
+    ? `${existingKey.slice(0, 8)}••••••••${existingKey.slice(-4)}`
+    : null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
@@ -55,7 +75,7 @@ export default function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalPro
       >
         <div className="flex items-center justify-between pb-3 border-b border-white/10">
           <div className="flex items-center gap-2">
-            <span className="text-base">⚙</span>
+            <span className="text-base text-amber-400">⚙</span>
             <h2 className="text-base font-bold text-bone">Gemini API Key</h2>
           </div>
           <button
@@ -66,9 +86,24 @@ export default function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalPro
           </button>
         </div>
 
+        {/* Existing key active indicator */}
+        {maskedKey && (
+          <div className="mt-3 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between text-xs text-emerald-300">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>
+                Active Key: <code className="font-mono">{maskedKey}</code>
+              </span>
+            </div>
+            <span className="text-[10px] bg-emerald-500/20 px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider">
+              Ready
+            </span>
+          </div>
+        )}
+
         <div className="mt-4 text-xs text-smoke leading-relaxed space-y-2">
           <p>
-            Epic Hertz uses the official Google Gemini API for transcription. Your key is stored
+            Epic Hertz uses the official Google Gemini API for speech transcription. Your key is stored
             <strong> locally in your own browser</strong> and never committed or stored on any server.
           </p>
           <p>
@@ -88,7 +123,7 @@ export default function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalPro
         {/* Input */}
         <div className="mt-4">
           <label className="block text-[11px] font-semibold text-mist uppercase tracking-wider mb-1.5">
-            API Key
+            Paste API Key
           </label>
           <div className="relative">
             <input
@@ -97,8 +132,9 @@ export default function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalPro
               onChange={(e) => {
                 setApiKey(e.target.value);
                 setWarning(null);
+                setSavedSuccess(false);
               }}
-              placeholder="AIzaSy..."
+              placeholder="AQ... or AIzaSy..."
               className="w-full bg-[#111110] border border-white/15 focus:border-amber-400 rounded-xl px-3.5 py-2.5 text-xs text-bone font-mono focus:outline-none transition-colors pr-20"
             />
             <button
@@ -114,6 +150,13 @@ export default function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalPro
         {warning && (
           <div className="mt-3 p-2.5 rounded-lg bg-amber-400/10 border border-amber-400/30 text-[11px] text-amber-200 leading-snug">
             {warning}
+          </div>
+        )}
+
+        {savedSuccess && (
+          <div className="mt-3 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-[11px] text-emerald-300 leading-snug flex items-center gap-2">
+            <span>✓</span>
+            <span>API key saved and active!</span>
           </div>
         )}
 
@@ -140,7 +183,7 @@ export default function ApiKeyModal({ isOpen, onClose, onSaved }: ApiKeyModalPro
               onClick={handleSave}
               className="px-5 py-2 rounded-full bg-amber-400 hover:bg-amber-300 text-black font-semibold text-xs transition-colors shadow-sm"
             >
-              Save Key
+              {savedSuccess ? 'Saved ✓' : 'Save Key'}
             </button>
           </div>
         </div>

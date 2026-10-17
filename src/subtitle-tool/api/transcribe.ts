@@ -9,18 +9,37 @@ import type { Segment, SpokenLanguage, ScriptOutput, WordTimestamp } from '../ty
 
 const ENV_API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
 
+let memoryKey = '';
+
 export function getStoredApiKey(): string {
-  // 1. Check user-configured key in browser storage first
+  // 1. In-memory cache
+  if (memoryKey && memoryKey.length > 5) {
+    return memoryKey;
+  }
+
+  // 2. Check localStorage
   try {
     const local = localStorage.getItem('epic_gemini_api_key')?.trim();
     if (local && local.length > 5) {
+      memoryKey = local;
       return local;
     }
   } catch {
     // ignore
   }
 
-  // 2. Fallback to env key only if not revoked or placeholder
+  // 3. Check sessionStorage
+  try {
+    const session = sessionStorage.getItem('epic_gemini_api_key')?.trim();
+    if (session && session.length > 5) {
+      memoryKey = session;
+      return session;
+    }
+  } catch {
+    // ignore
+  }
+
+  // 4. Fallback to env key only if not revoked or placeholder
   if (
     ENV_API_KEY &&
     ENV_API_KEY !== 'your_gemini_api_key_here' &&
@@ -33,8 +52,15 @@ export function getStoredApiKey(): string {
 }
 
 export function setStoredApiKey(key: string): void {
+  const trimmed = key.trim();
+  memoryKey = trimmed;
   try {
-    localStorage.setItem('epic_gemini_api_key', key.trim());
+    localStorage.setItem('epic_gemini_api_key', trimmed);
+  } catch {
+    // ignore
+  }
+  try {
+    sessionStorage.setItem('epic_gemini_api_key', trimmed);
   } catch {
     // ignore
   }
