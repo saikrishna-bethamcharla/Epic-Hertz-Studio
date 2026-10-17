@@ -155,6 +155,40 @@ export default function StyleToolbar({ style, onChange }: StyleToolbarProps) {
         <span className="text-xs text-bone font-mono w-5">{style.fontSize}</span>
       </div>
 
+      {/* Audio Sync / Timing Lead Offset Controls */}
+      <div className="flex items-center gap-1.5 border-r border-white/10 pr-3 shrink-0">
+        <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400 mr-1" title="Lead timing offset: advances text pop to match the speaker's voice onset">
+          Sync
+        </span>
+        <button
+          type="button"
+          onClick={() => onChange({ ...style, syncOffset: Math.round(((style.syncOffset ?? -0.35) - 0.15) * 100) / 100 })}
+          className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-white/5 hover:bg-white/10 text-mist hover:text-bone border border-white/10 active:scale-95 cursor-pointer"
+          title="Nudge earlier (pops text earlier to fix vocal lag)"
+        >
+          ◀ Earlier
+        </button>
+        <span className="text-[11px] font-mono font-bold text-amber-300 px-1" title="Active audio sync lead time">
+          {(style.syncOffset ?? -0.35) > 0 ? `+${(style.syncOffset ?? -0.35).toFixed(2)}s` : `${(style.syncOffset ?? -0.35).toFixed(2)}s`}
+        </span>
+        <button
+          type="button"
+          onClick={() => onChange({ ...style, syncOffset: Math.round(((style.syncOffset ?? -0.35) + 0.15) * 100) / 100 })}
+          className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-white/5 hover:bg-white/10 text-mist hover:text-bone border border-white/10 active:scale-95 cursor-pointer"
+          title="Nudge later"
+        >
+          Later ▶
+        </button>
+        <button
+          type="button"
+          onClick={() => onChange({ ...style, syncOffset: -0.35 })}
+          className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-amber-400/15 hover:bg-amber-400/25 text-amber-300 border border-amber-400/30 cursor-pointer"
+          title="Reset to optimal zero-lag lead time (-0.35s)"
+        >
+          Zero Lag
+        </button>
+      </div>
+
       {/* Position buttons */}
       <div className="flex items-center gap-1 border-r border-white/10 pr-3 shrink-0">
         <span className="text-[11px] text-smoke mr-1">Pos</span>

@@ -454,6 +454,41 @@ function TemplateDrawer({ style, onChange }: TemplateDrawerProps) {
               />
             </div>
 
+            {/* Audio Sync / Timing Lead Offset Slider */}
+            <div>
+              <div className="flex justify-between items-center mb-1.5">
+                <label className="font-semibold text-bone flex items-center gap-1.5">
+                  <span>Audio Sync (Timing Lead)</span>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 font-mono font-bold">
+                    Zero Lag
+                  </span>
+                </label>
+                <span className="font-mono text-amber-300 text-xs font-bold">
+                  {(style.syncOffset ?? -0.35) > 0 ? `+${(style.syncOffset ?? -0.35).toFixed(2)}s` : `${(style.syncOffset ?? -0.35).toFixed(2)}s`}
+                </span>
+              </div>
+              <input
+                type="range"
+                min={-1.0}
+                max={0.5}
+                step={0.05}
+                value={style.syncOffset ?? -0.35}
+                onChange={(e) => onChange({ ...style, syncOffset: Number(e.target.value) })}
+                className="w-full accent-amber-400 cursor-pointer"
+              />
+              <div className="flex justify-between text-[10px] text-smoke mt-1 font-mono">
+                <span>◀ Earlier (-1.0s)</span>
+                <button
+                  type="button"
+                  onClick={() => onChange({ ...style, syncOffset: -0.35 })}
+                  className="text-amber-400 hover:text-amber-300 underline cursor-pointer"
+                >
+                  Optimal (-0.35s)
+                </button>
+                <span>Later (+0.5s) ▶</span>
+              </div>
+            </div>
+
             {/* Outline Stroke Width */}
             <div>
               <div className="flex justify-between items-center mb-1.5">

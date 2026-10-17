@@ -321,6 +321,25 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       }
     }, [onTimeUpdate]);
 
+    // Continuous 60fps requestAnimationFrame loop for ultra-tight, zero-latency word sync
+    useEffect(() => {
+      let rafId: number;
+      const tick = () => {
+        if (videoRef.current && !videoRef.current.paused) {
+          const t = videoRef.current.currentTime;
+          setCurrentTime(t);
+        }
+        rafId = requestAnimationFrame(tick);
+      };
+
+      if (isPlaying) {
+        rafId = requestAnimationFrame(tick);
+      }
+      return () => {
+        if (rafId) cancelAnimationFrame(rafId);
+      };
+    }, [isPlaying]);
+
     const handleLoadedMetadata = useCallback(() => {
       if (videoRef.current) {
         const d = videoRef.current.duration || 0;
@@ -361,10 +380,15 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       }
     };
 
+    // Lead time offset: Default -0.35s so captions pop exactly when speech begins, eliminating the 1-2s delay
+    const syncOffset = style.syncOffset ?? -0.35;
+    // Effective time advances slightly to align visual pop with vocal onset
+    const effectiveTime = Math.max(0, currentTime - syncOffset);
+
     // Active subtitle segment for current playhead position
     const activeSegment = useMemo(() => {
-      return segments.find((s) => currentTime >= s.start && currentTime <= s.end);
-    }, [segments, currentTime]);
+      return segments.find((s) => effectiveTime >= s.start && effectiveTime <= s.end + 0.15);
+    }, [segments, effectiveTime]);
 
     // Words with timings (interpolated if model did not return per-word timings)
     const displayWords: WordTimestamp[] = useMemo(() => {
@@ -382,6 +406,27 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
         end: activeSegment.start + (i + 1) * wordDur,
       }));
     }, [activeSegment]);
+
+    // Active word index: highlights first word immediately upon segment entry and smoothly steps
+    const activeWordIndex = useMemo(() => {
+      if (!displayWords || displayWords.length === 0) return -1;
+
+      // 1. Exact match within word bounds
+      const direct = displayWords.findIndex(
+        (w) => effectiveTime >= w.start && effectiveTime < w.end
+      );
+      if (direct !== -1) return direct;
+
+      // 2. Latest word started
+      for (let i = displayWords.length - 1; i >= 0; i--) {
+        if (effectiveTime >= displayWords[i].start) {
+          return i;
+        }
+      }
+
+      // 3. Segment entered -> activate first word immediately!
+      return 0;
+    }, [displayWords, effectiveTime]);
 
     // Subtitle position class
     const posClass =
@@ -517,7 +562,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
               >
                 {displayWords.length > 0 ? (
                   displayWords.map((w, idx) => {
-                    const isSpoken = currentTime >= w.start && currentTime <= w.end;
+                    const isSpoken = idx === activeWordIndex;
                     const wordText = style.uppercase ? w.word.toUpperCase() : w.word;
                     const animEffect = style.animationEffect || 'capcut-bounce';
                     const wordStyle = getWordStyles(isSpoken, animEffect, style);

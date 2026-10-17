@@ -224,20 +224,24 @@ export default async function handler(req, res) {
 Language: Spoken in ${langName}.
 ${scriptDirective}
 
-Break the speech down into natural, short spoken dialogue segments (2 to 5 words or 1.5 to 3.0 seconds maximum each).
-Do NOT return one single long block for the entire speech. Every short phrase or pause must be its own segment with its exact start_time and end_time.
-Also include an optional "words" array with start and end times for each individual word inside the segment for word-level karaoke sync.
+CRITICAL TIMING ACCURACY INSTRUCTION:
+- Set "start_time" at the EXACT FIRST MILLISECOND (the initial audible breath or phonetic onset) when the speaker begins vocalizing each phrase.
+- DO NOT delay timestamps to the middle or end of words. The highlight must trigger the instant the word is heard.
+- Break speech into short, energetic viral segments (2 to 4 words or 1.0 to 2.2 seconds each maximum).
+- For EVERY segment, you MUST provide the "words" array with precise start and end times for each individual word.
 
 Return ONLY a JSON array with this exact structure:
 [
   {
     "start_time": 0.0,
-    "end_time": 1.8,
+    "end_time": 1.4,
     "text": "${isRomanized ? 'Prathi frame lo oka katha.' : 'ప్రతి ఫ్రేమ్ లో ఒక కథ'}",
     "words": [
-      { "word": "${isRomanized ? 'Prathi' : 'ప్రతి'}", "start": 0.0, "end": 0.6 },
-      { "word": "${isRomanized ? 'frame' : 'ఫ్రేమ్'}", "start": 0.6, "end": 1.1 },
-      { "word": "${isRomanized ? 'katha.' : 'కథ'}", "start": 1.1, "end": 1.8 }
+      { "word": "${isRomanized ? 'Prathi' : 'ప్రతి'}", "start": 0.0, "end": 0.35 },
+      { "word": "${isRomanized ? 'frame' : 'ఫ్రేమ్'}", "start": 0.35, "end": 0.75 },
+      { "word": "${isRomanized ? 'lo' : 'లో'}", "start": 0.75, "end": 0.95 },
+      { "word": "${isRomanized ? 'oka' : 'ఒక'}", "start": 0.95, "end": 1.15 },
+      { "word": "${isRomanized ? 'katha.' : 'కథ'}", "start": 1.15, "end": 1.4 }
     ]
   }
 ]

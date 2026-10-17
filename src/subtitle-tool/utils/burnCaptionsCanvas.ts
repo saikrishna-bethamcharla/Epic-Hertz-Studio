@@ -126,9 +126,11 @@ export async function burnCaptionsCanvas(
         // 1. Draw video frame
         ctx.drawImage(video, 0, 0, width, height);
 
-        // 2. Find matching subtitle
+        // 2. Find matching subtitle with syncOffset lead time
         const curTime = video.currentTime;
-        const activeSub = segments.find((s) => curTime >= s.start && curTime <= s.end);
+        const syncOffset = style?.syncOffset ?? -0.35;
+        const effectiveTime = Math.max(0, curTime - syncOffset);
+        const activeSub = segments.find((s) => effectiveTime >= s.start && effectiveTime <= s.end + 0.15);
 
         if (activeSub && activeSub.text) {
           ctx.save();

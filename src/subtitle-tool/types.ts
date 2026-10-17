@@ -73,6 +73,7 @@ export interface SubtitleStyle {
   highlightCurrentWord?: boolean;
   highlightColor?: string;
   shadowEffect?: boolean;
+  syncOffset?: number; // Timing lead offset in seconds (e.g. -0.35s to pop words in tight sync with voice onset)
 }
 
 export type AppStage =

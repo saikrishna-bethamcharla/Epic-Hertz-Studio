@@ -72,6 +72,7 @@ export default function SubtitleTool() {
     highlightCurrentWord: true,
     highlightColor: '#FFE600',
     shadowEffect: true,
+    syncOffset: -0.35,
   }));
 
   const videoRef = useRef<VideoPreviewHandle>(null);
