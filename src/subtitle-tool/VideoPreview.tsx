@@ -32,6 +32,45 @@ export interface VideoPreviewHandle {
   getCurrentTime: () => number;
 }
 
+const EMOJI_MAP: Record<string, string> = {
+  fire: '🔥',
+  nippu: '🔥',
+  aag: '🔥',
+  hot: '🔥',
+  cinema: '🎬',
+  movie: '🍿',
+  film: '🎞️',
+  katha: '📖',
+  story: '📖',
+  money: '💰',
+  koti: '💰',
+  crore: '💰',
+  dabbulu: '💵',
+  paisa: '💸',
+  speed: '⚡',
+  fast: '⚡',
+  quick: '⚡',
+  epic: '⚡',
+  hertz: '🔊',
+  magic: '✨',
+  super: '⭐',
+  star: '⭐',
+  love: '❤️',
+  prema: '❤️',
+  dil: '❤️',
+  viral: '🚀',
+  rocket: '🚀',
+  king: '👑',
+  boss: '🕶️',
+  passion: '🔥',
+  frame: '📸',
+};
+
+function getKeywordEmoji(word: string): string | null {
+  const clean = word.toLowerCase().replace(/[^a-z]/g, '');
+  return EMOJI_MAP[clean] || null;
+}
+
 function getWordStyles(
   isSpoken: boolean,
   effect: CaptionAnimationEffect,
@@ -238,6 +277,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
     const [volume, setVolume] = useState(1);
     const [isMuted, setIsMuted] = useState(false);
     const [playbackRate, setPlaybackRate] = useState(1);
+    const [showSafeZones, setShowSafeZones] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const playPromiseRef = useRef<Promise<void> | null>(null);
 
@@ -459,22 +499,38 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
 
     return (
       <div className="flex flex-col items-center justify-center w-full h-full p-2 select-none">
-        {/* Aspect Ratio Switcher Pills */}
-        <div className="flex items-center gap-1.5 mb-2.5 bg-[#1b1b19] p-1 rounded-xl border border-white/10 z-10 shadow-sm">
-          {(['9:16', '16:9', '1:1', 'original'] as VideoAspectRatio[]).map((ratio) => (
-            <button
-              key={ratio}
-              type="button"
-              onClick={() => onAspectRatioChange?.(ratio)}
-              className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
-                aspectRatio === ratio
-                  ? 'bg-[#292826] text-amber-300 shadow-sm border border-amber-300/30'
-                  : 'text-smoke hover:text-bone'
-              }`}
-            >
-              {ratio === '9:16' ? '9:16 Reel' : ratio === '16:9' ? '16:9' : ratio === '1:1' ? '1:1' : 'Original'}
-            </button>
-          ))}
+        {/* Aspect Ratio Switcher Pills & Safe Zones */}
+        <div className="flex items-center gap-2 mb-2.5 z-10 flex-wrap justify-center">
+          <div className="flex items-center gap-1.5 bg-[#1b1b19] p-1 rounded-xl border border-white/10 shadow-sm">
+            {(['9:16', '16:9', '1:1', 'original'] as VideoAspectRatio[]).map((ratio) => (
+              <button
+                key={ratio}
+                type="button"
+                onClick={() => onAspectRatioChange?.(ratio)}
+                className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                  aspectRatio === ratio
+                    ? 'bg-[#292826] text-amber-300 shadow-sm border border-amber-300/30'
+                    : 'text-smoke hover:text-bone'
+                }`}
+              >
+                {ratio === '9:16' ? '9:16 Reel' : ratio === '16:9' ? '16:9' : ratio === '1:1' ? '1:1' : 'Original'}
+              </button>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowSafeZones(!showSafeZones)}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 ${
+              showSafeZones
+                ? 'bg-amber-400 text-black border-amber-400 font-bold shadow-md shadow-amber-400/20'
+                : 'bg-[#1b1b19] border-white/10 text-smoke hover:text-bone hover:border-white/25'
+            }`}
+            title="Toggle Instagram Reels & TikTok native UI safe zones to prevent captions from getting covered"
+          >
+            <span>📱 Safe Zones</span>
+            {showSafeZones && <span className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />}
+          </button>
         </div>
 
         {/* Video Frame */}
@@ -491,6 +547,50 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
               }}
               aria-hidden="true"
             />
+          )}
+
+          {/* Social Media Native UI Safe Zone Overlay */}
+          {showSafeZones && (
+            <div className="absolute inset-0 pointer-events-none z-25 flex flex-col justify-between p-4 overflow-hidden select-none">
+              {/* Top Danger Guideline (Profile / Search Area) */}
+              <div className="flex items-center justify-between text-[10px] text-red-400/80 px-2 py-1 border-b border-dashed border-red-500/40 bg-red-950/20 rounded">
+                <span>✕ Header Tab Area</span>
+                <span className="font-mono text-[9px] uppercase tracking-wider">Unsafe Zone</span>
+              </div>
+
+              {/* Right Side Social Action Bar (Like, Comment, Share) */}
+              <div className="absolute right-3.5 bottom-28 flex flex-col items-center gap-3.5 text-white/70">
+                <div className="flex flex-col items-center">
+                  <div className="w-8 h-8 rounded-full bg-black/40 border border-white/20 flex items-center justify-center text-xs">❤️</div>
+                  <span className="text-[9px] font-mono mt-0.5">182K</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="w-8 h-8 rounded-full bg-black/40 border border-white/20 flex items-center justify-center text-xs">💬</div>
+                  <span className="text-[9px] font-mono mt-0.5">6.2K</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="w-8 h-8 rounded-full bg-black/40 border border-white/20 flex items-center justify-center text-xs">↗️</div>
+                  <span className="text-[9px] font-mono mt-0.5">Share</span>
+                </div>
+                <div className="w-7 h-7 rounded-full bg-black/70 border border-white/30 flex items-center justify-center text-[10px] animate-spin">
+                  💿
+                </div>
+              </div>
+
+              {/* Bottom Danger Guideline (Username, Native Caption & Audio bar) */}
+              <div className="w-3/4 space-y-1.5 pb-2 border-t border-dashed border-red-500/40 bg-red-950/25 p-2 rounded">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-white/90">
+                  <span>@epic_hertz_creator</span>
+                  <span className="px-1.5 py-0.2 rounded bg-amber-400 text-black text-[9px] font-semibold">Follow</span>
+                </div>
+                <p className="text-[10px] text-white/70 line-clamp-1">
+                  Social native description & hashtags live here...
+                </p>
+                <div className="flex items-center gap-1 text-[9px] text-white/50 font-mono">
+                  <span>♫ Original Audio · Viral Beat</span>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Crisp Primary Video */}
@@ -566,9 +666,15 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
                     const wordText = style.uppercase ? w.word.toUpperCase() : w.word;
                     const animEffect = style.animationEffect || 'capcut-bounce';
                     const wordStyle = getWordStyles(isSpoken, animEffect, style);
+                    const emoji = getKeywordEmoji(w.word);
 
                     return (
-                      <span key={idx} style={wordStyle}>
+                      <span key={idx} style={wordStyle} className="relative inline-block">
+                        {emoji && isSpoken && (
+                          <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-base animate-bounce pointer-events-none drop-shadow-md">
+                            {emoji}
+                          </span>
+                        )}
                         {wordText}
                       </span>
                     );
