@@ -430,14 +430,23 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       return segments.find((s) => effectiveTime >= s.start && effectiveTime <= s.end + 0.15);
     }, [segments, effectiveTime]);
 
-    // Words with timings (interpolated if model did not return per-word timings)
+    // Words with timings (interpolated if model did not return per-word timings or if text was edited)
     const displayWords: WordTimestamp[] = useMemo(() => {
       if (!activeSegment) return [];
-      if (activeSegment.words && activeSegment.words.length > 0) {
-        return activeSegment.words;
-      }
       const rawWords = activeSegment.text.trim().split(/\s+/).filter(Boolean);
       if (rawWords.length === 0) return [];
+
+      // Verify that existing words match current text
+      if (activeSegment.words && activeSegment.words.length === rawWords.length) {
+        const wordsMatch = activeSegment.words.every(
+          (w, i) => w.word.toLowerCase() === rawWords[i].toLowerCase(),
+        );
+        if (wordsMatch) {
+          return activeSegment.words;
+        }
+      }
+
+      // Re-interpolate word timings across segment bounds when text is edited or words missing
       const segDur = Math.max(0.1, activeSegment.end - activeSegment.start);
       const wordDur = segDur / rawWords.length;
       return rawWords.map((word, i) => ({
@@ -608,6 +617,10 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
               onPlayStateChange?.(true);
             }}
             onPause={() => {
+              setIsPlaying(false);
+              onPlayStateChange?.(false);
+            }}
+            onEnded={() => {
               setIsPlaying(false);
               onPlayStateChange?.(false);
             }}

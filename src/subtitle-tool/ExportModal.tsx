@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { toSRT, toVTT, downloadText, downloadBlob } from './utils/srt';
 import { burnCaptions, embedSubtitlesMP4 } from './utils/burnCaptions';
+import { burnCaptionsCanvas } from './utils/burnCaptionsCanvas';
 import type { Segment, SubtitleStyle } from './types';
 
 interface ExportModalProps {
@@ -71,9 +72,17 @@ export default function ExportModal({
         onBurnDone();
       } else if (exportType === 'hardsub') {
         const srtContent = toSRT(segments);
-        const blob = await burnCaptions(videoFile, srtContent, style, (pct) => {
-          onBurnProgress(pct);
-        });
+        let blob: Blob;
+        try {
+          blob = await burnCaptions(videoFile, srtContent, style, (pct) => {
+            onBurnProgress(pct);
+          });
+        } catch (ffmpegErr) {
+          console.warn('FFmpeg WASM burn encountered an issue, seamlessly switching to hardware Canvas burn:', ffmpegErr);
+          blob = await burnCaptionsCanvas(videoFile, segments, style, (pct) => {
+            onBurnProgress(pct);
+          });
+        }
         downloadBlob(blob, `${baseName}_burned.mp4`);
         onBurnDone();
       }

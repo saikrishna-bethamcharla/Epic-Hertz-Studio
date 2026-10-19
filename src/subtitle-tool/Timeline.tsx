@@ -159,6 +159,7 @@ export default function Timeline({
       ...currentSeg,
       end: currentTime,
       text: text1,
+      words: undefined,
     };
     const newSeg2: Segment = {
       id: `seg-${Date.now()}`,
@@ -166,6 +167,7 @@ export default function Timeline({
       start: currentTime,
       end: currentSeg.end,
       text: text2,
+      words: undefined,
     };
 
     const nextSegs = [
@@ -189,6 +191,7 @@ export default function Timeline({
       ...currentSeg,
       end: nextSeg.end,
       text: `${currentSeg.text} ${nextSeg.text}`.trim(),
+      words: undefined,
     };
 
     const nextSegs = [

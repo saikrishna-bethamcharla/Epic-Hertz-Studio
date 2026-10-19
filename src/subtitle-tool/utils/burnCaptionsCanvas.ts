@@ -45,11 +45,13 @@ export async function burnCaptionsCanvas(
       canvas.height = height;
 
       // Setup audio capture via Web Audio API so recorded video keeps sound
+      let audioDestination: MediaStreamAudioDestinationNode | null = null;
       try {
-        audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+        const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        audioContext = new AudioContextClass();
         const source = audioContext.createMediaElementSource(video);
-        const destination = audioContext.createMediaStreamDestination();
-        source.connect(destination);
+        audioDestination = audioContext.createMediaStreamDestination();
+        source.connect(audioDestination);
         // Connect to destination only, don't blast speaker during burn
       } catch (e) {
         console.warn('Audio capture setup warning:', e);
@@ -58,16 +60,24 @@ export async function burnCaptionsCanvas(
       // Capture canvas video stream at 30 fps
       const canvasStream = canvas.captureStream(30);
 
-      // Merge audio track if available
-      let combinedStream = canvasStream;
-      // @ts-expect-error captureStream can have audio or from video
-      const videoAudioTracks = video.captureStream ? video.captureStream().getAudioTracks() : [];
-      if (videoAudioTracks.length > 0) {
-        combinedStream = new MediaStream([
-          ...canvasStream.getVideoTracks(),
-          ...videoAudioTracks,
-        ]);
+      // Merge audio track from Web Audio destination or fallback video captureStream
+      let audioTracks: MediaStreamTrack[] = [];
+      if (audioDestination) {
+        audioTracks = audioDestination.stream.getAudioTracks();
       }
+      if (audioTracks.length === 0 && 'captureStream' in video) {
+        try {
+          // @ts-expect-error captureStream can have audio on some browsers
+          audioTracks = video.captureStream().getAudioTracks();
+        } catch {
+          // ignore
+        }
+      }
+
+      const combinedStream = new MediaStream([
+        ...canvasStream.getVideoTracks(),
+        ...audioTracks,
+      ]);
 
       // Determine best supported MIME type (prefer MP4, fallback to WebM)
       const mimeTypes = [
@@ -111,9 +121,15 @@ export async function burnCaptionsCanvas(
       const duration = video.duration || 1;
       const fontSize = Math.max(24, Math.round(height * 0.042)); // scales with resolution
 
+      video.onended = () => {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+          mediaRecorder.stop();
+        }
+      };
+
       const renderLoop = () => {
-        if (video.ended || video.paused) {
-          if (video.ended && mediaRecorder && mediaRecorder.state === 'recording') {
+        if (video.ended) {
+          if (mediaRecorder && mediaRecorder.state === 'recording') {
             mediaRecorder.stop();
           }
           return;
