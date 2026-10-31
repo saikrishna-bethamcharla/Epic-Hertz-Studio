@@ -29,7 +29,8 @@ try {
     run(`git commit -m "${commitMsg.replace(/"/g, '\\"')}"`, `Committing changes: "${commitMsg}"`);
   }
 
-  // 4. Push to remote origin main
+  // 4. Rebase and push to remote origin main
+  run('git pull --rebase origin main', 'Pulling latest remote changes');
   run('git push origin main', 'Pushing commits to GitHub (origin/main)');
   console.log('\x1b[32m✔ Autopush successful! Deployed to GitHub & Vercel.\x1b[0m');
 } catch (e) {
