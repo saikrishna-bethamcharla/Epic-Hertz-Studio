@@ -28,21 +28,48 @@ export type SpokenLanguage =
   | 'fr';
 
 export type CaptionAnimationEffect =
-  | 'capcut-bounce'        // CapCut signature bounce pop & tilt
-  | 'hormozi-box'          // Alex Hormozi jumping word highlight badge
-  | 'premiere-glow'        // Premiere Pro electric neon glow & scale
-  | 'comic-pop'            // MrBeast 3D comic shadow & energetic pop
-  | 'fire-flame'           // Flame gradient & hype jump
-  | 'cinematic-clean'      // Netflix / Premiere pristine film look
-  | 'premiere-rgb-glitch'  // Premiere RGB chromatic split & micro jitter
-  | 'premiere-whip-slide'  // Kinetic directional whip slide with inertia
-  | 'premiere-typewriter'  // Editorial typewriter reveal
-  | 'premiere-highlight-wipe' // Highlighter marker wipe under active word
-  | 'premiere-lower-third' // Broadcast glass lower-third banner
-  | 'premiere-impact-shake' // Camera impact shake on keywords
+  // Motion slide & text movements (Premiere Pro MOGRT Style)
+  | 'slide-up'             // Vertical mask slide up from bottom
+  | 'slide-left'           // Kinetic slide in from left with inertia
+  | 'slide-right'          // Kinetic slide in from right with inertia
+  | 'punch-zoom'           // Elastic punch zoom in
+  | 'word-cascade'         // Staggered word-by-word slide rise
+  | 'flip-3d'              // 3D perspective roll/flip into place
+  | 'bounce-rise'          // Elastic spring bounce upward with overshoot
+  | 'glitch-whip'          // Fast lateral snap with chromatic RGB displacement
+  | 'float-drift'          // Smooth floating kinetic pan
+  | 'typewriter'           // Editorial typewriter reveal
+  | 'highlight-wipe'       // Accent marker wipe under active word
+  // Legacy aliases
+  | 'capcut-bounce'
+  | 'hormozi-box'
+  | 'premiere-glow'
+  | 'comic-pop'
+  | 'fire-flame'
+  | 'cinematic-clean'
+  | 'premiere-rgb-glitch'
+  | 'premiere-whip-slide'
+  | 'premiere-typewriter'
+  | 'premiere-highlight-wipe'
+  | 'premiere-lower-third'
+  | 'premiere-impact-shake'
   | 'none';
 
 export type SubtitlePreset =
+  // Primary unified motion presets
+  | 'slide-up-modern'
+  | 'whip-left-bold'
+  | 'punch-zoom-action'
+  | 'word-cascade-reel'
+  | 'flip-3d-title'
+  | 'bounce-rise-kinetic'
+  | 'glitch-whip-cyber'
+  | 'highlight-sweep'
+  | 'broadcast-lower-third'
+  | 'editorial-typewriter'
+  | 'cinema-drift'
+  | 'clean-minimal'
+  // Legacy aliases
   | 'capcut-viral'
   | 'hormozi-yellow'
   | 'premiere-glow'
@@ -50,7 +77,6 @@ export type SubtitlePreset =
   | 'cinema-gold'
   | 'neon-tokyo'
   | 'fire-hype'
-  | 'clean-minimal'
   | 'reel-bold'
   | 'cinema-yellow'
   | 'boxed'
@@ -64,8 +90,7 @@ export type SubtitlePreset =
   | 'premiere-glitch'
   | 'premiere-whip'
   | 'premiere-broadcast'
-  | 'premiere-highlighter'
-  | 'premiere-typewriter';
+  | 'premiere-highlighter';
 
 export type SubtitlePosition = 'bottom' | 'middle' | 'top';
 export type VideoAspectRatio = 'original' | '9:16' | '16:9' | '1:1';

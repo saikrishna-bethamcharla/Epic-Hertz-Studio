@@ -58,10 +58,10 @@ export default function SubtitleTool() {
     } catch {}
   }, []);
 
-  // Subtitle styling state — Defaults to CapCut Viral bouncy pop
+  // Subtitle styling state — Defaults to Slide Up motion template
   const [style, setStyle] = useState<SubtitleStyle>(() => ({
-    preset: 'capcut-viral',
-    animationEffect: 'capcut-bounce',
+    preset: 'slide-up-modern',
+    animationEffect: 'slide-up',
     fontSize: 26,
     textColor: '#FFFFFF',
     backgroundColor: 'transparent',

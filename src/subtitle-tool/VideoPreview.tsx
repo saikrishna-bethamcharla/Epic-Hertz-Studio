@@ -51,11 +51,83 @@ function getWordStyles(
   const strokeW = style.outlineWidth ?? 2.5;
 
   switch (effect) {
-    case 'capcut-bounce':
+    case 'slide-up':
       return isSpoken
         ? {
             color: baseHighlight,
-            transform: 'scale(1.22) translateY(-2px) rotate(-1.5deg)',
+            transform: 'scale(1.2) translateY(-4px)',
+            WebkitTextStroke: `${Math.max(2, strokeW)}px #000000`,
+            textShadow: `0 4px 14px rgba(0,0,0,0.95)`,
+            fontWeight: 900,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.14s cubic-bezier(0.2, 0, 0, 1), color 0.1s ease',
+            zIndex: 10,
+          }
+        : {
+            color: baseText,
+            transform: 'scale(1.0)',
+            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
+            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
+            fontWeight: 700,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s ease',
+          };
+
+    case 'slide-left':
+      return isSpoken
+        ? {
+            color: baseHighlight,
+            transform: 'scale(1.2) translateX(4px)',
+            WebkitTextStroke: `${Math.max(2, strokeW)}px #000000`,
+            textShadow: `0 4px 14px rgba(0,0,0,0.95)`,
+            fontWeight: 900,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.14s cubic-bezier(0.18, 0.89, 0.32, 1.25), color 0.1s ease',
+            zIndex: 10,
+          }
+        : {
+            color: baseText,
+            transform: 'scale(1.0)',
+            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
+            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
+            fontWeight: 700,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s ease',
+          };
+
+    case 'slide-right':
+      return isSpoken
+        ? {
+            color: baseHighlight,
+            transform: 'scale(1.2) translateX(-4px)',
+            WebkitTextStroke: `${Math.max(2, strokeW)}px #000000`,
+            textShadow: `0 4px 14px rgba(0,0,0,0.95)`,
+            fontWeight: 900,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.14s cubic-bezier(0.18, 0.89, 0.32, 1.25), color 0.1s ease',
+            zIndex: 10,
+          }
+        : {
+            color: baseText,
+            transform: 'scale(1.0)',
+            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
+            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
+            fontWeight: 700,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s ease',
+          };
+
+    case 'punch-zoom':
+      return isSpoken
+        ? {
+            color: baseHighlight,
+            transform: 'scale(1.25)',
             WebkitTextStroke: `${Math.max(2.5, strokeW)}px #000000`,
             textShadow: `0 0 16px ${baseHighlight}bb, 0 4px 10px rgba(0,0,0,0.95)`,
             fontWeight: 900,
@@ -72,36 +144,178 @@ function getWordStyles(
             fontWeight: 800,
             display: 'inline-block',
             marginRight: '0.28em',
+            transition: 'transform 0.12s ease',
+          };
+
+    case 'word-cascade':
+      return isSpoken
+        ? {
+            color: baseHighlight,
+            transform: 'scale(1.22) translateY(-3px)',
+            WebkitTextStroke: `${Math.max(2, strokeW)}px #000000`,
+            textShadow: `0 4px 12px rgba(0,0,0,0.95)`,
+            fontWeight: 900,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.14s cubic-bezier(0.2, 0, 0, 1), color 0.1s ease',
+            zIndex: 10,
+          }
+        : {
+            color: baseText,
+            transform: 'scale(1.0)',
+            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
+            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
+            fontWeight: 700,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s ease',
+          };
+
+    case 'flip-3d':
+      return isSpoken
+        ? {
+            color: baseHighlight,
+            transform: 'scale(1.2) perspective(400px) rotateX(10deg)',
+            WebkitTextStroke: `${Math.max(2, strokeW)}px #000000`,
+            textShadow: `0 4px 14px rgba(0,0,0,0.95)`,
+            fontWeight: 900,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.14s cubic-bezier(0.2, 0, 0, 1), color 0.1s ease',
+            zIndex: 10,
+          }
+        : {
+            color: baseText,
+            transform: 'scale(1.0)',
+            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
+            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
+            fontWeight: 700,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s ease',
+          };
+
+    case 'bounce-rise':
+    case 'capcut-bounce':
+      return isSpoken
+        ? {
+            color: baseHighlight,
+            transform: 'scale(1.24) translateY(-6px)',
+            WebkitTextStroke: `${Math.max(2.5, strokeW)}px #000000`,
+            textShadow: `0 0 16px ${baseHighlight}bb, 0 4px 10px rgba(0,0,0,0.95)`,
+            fontWeight: 900,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.1s ease',
+            zIndex: 10,
+          }
+        : {
+            color: baseText,
+            transform: 'scale(1.0)',
+            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
+            textShadow: '0 2px 8px rgba(0,0,0,0.95)',
+            fontWeight: 800,
+            display: 'inline-block',
+            marginRight: '0.28em',
             transition: 'transform 0.12s ease, color 0.1s ease',
           };
 
+    case 'glitch-whip':
+    case 'premiere-rgb-glitch':
+      return isSpoken
+        ? {
+            color: '#FFFFFF',
+            fontWeight: 900,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            textShadow: '-2.5px 0 0 #00ffff, 2.5px 0 0 #ff0055, 0 0 12px rgba(0,255,255,0.7)',
+            transform: 'scale(1.22)',
+            zIndex: 10,
+          }
+        : {
+            color: 'rgba(255,255,255,0.82)',
+            transform: 'scale(1.0)',
+            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
+            fontWeight: 700,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s ease',
+          };
+
+    case 'float-drift':
+    case 'cinematic-clean':
+      return isSpoken
+        ? {
+            color: '#FFD700',
+            transform: 'scale(1.1) translateY(-2px)',
+            WebkitTextStroke: '1px rgba(0,0,0,0.5)',
+            textShadow: '0 2px 8px rgba(0,0,0,0.95)',
+            fontWeight: 800,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.14s ease, color 0.1s ease',
+            zIndex: 10,
+          }
+        : {
+            color: 'rgba(255,255,255,0.85)',
+            transform: 'scale(1.0)',
+            WebkitTextStroke: '1px rgba(0,0,0,0.5)',
+            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
+            fontWeight: 700,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s ease',
+          };
+
+    case 'highlight-wipe':
     case 'hormozi-box':
+    case 'premiere-highlight-wipe':
       return isSpoken
         ? {
             backgroundColor: baseHighlight,
             color: '#000000',
-            WebkitTextStroke: '0px transparent',
-            padding: '2px 8px',
-            borderRadius: '6px',
-            transform: 'scale(1.15) rotate(-1deg)',
-            boxShadow: '0 4px 14px rgba(0,0,0,0.8)',
+            transform: 'scale(1.14)',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.6)',
+            borderRadius: '4px',
+            padding: '0.04em 0.28em',
             fontWeight: 900,
             display: 'inline-block',
             marginRight: '0.28em',
-            transition: 'transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.08s ease',
+            transition: 'transform 0.12s cubic-bezier(0.2, 0, 0, 1), background-color 0.1s ease',
             zIndex: 10,
           }
         : {
-            backgroundColor: 'transparent',
             color: baseText,
-            padding: '2px 4px',
-            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
-            textShadow: '0 2px 8px rgba(0,0,0,0.95)',
             transform: 'scale(1.0)',
+            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
+            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
+            fontWeight: 700,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s ease',
+          };
+
+    case 'typewriter':
+    case 'premiere-typewriter':
+      return isSpoken
+        ? {
+            color: '#FFFFFF',
+            borderBottom: `2.5px solid ${baseHighlight}`,
+            transform: 'scale(1.06)',
+            textShadow: '0 2px 8px rgba(0,0,0,0.95)',
             fontWeight: 800,
             display: 'inline-block',
             marginRight: '0.28em',
-            transition: 'transform 0.12s ease, background-color 0.08s ease',
+            zIndex: 10,
+          }
+        : {
+            color: 'rgba(255,255,255,0.75)',
+            transform: 'scale(1.0)',
+            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
+            fontWeight: 600,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s ease',
           };
 
     case 'premiere-glow':
@@ -176,51 +390,6 @@ function getWordStyles(
             transition: 'transform 0.12s ease',
           };
 
-    case 'cinematic-clean':
-      return isSpoken
-        ? {
-            color: '#FFD700',
-            transform: 'scale(1.08)',
-            WebkitTextStroke: '1px rgba(0,0,0,0.5)',
-            textShadow: '0 2px 8px rgba(0,0,0,0.95)',
-            fontWeight: 800,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s ease, color 0.1s ease',
-            zIndex: 10,
-          }
-        : {
-            color: 'rgba(255,255,255,0.85)',
-            transform: 'scale(1.0)',
-            WebkitTextStroke: '1px rgba(0,0,0,0.5)',
-            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
-            fontWeight: 700,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s ease',
-          };
-
-    case 'premiere-rgb-glitch':
-      return isSpoken
-        ? {
-            color: '#FFFFFF',
-            fontWeight: 900,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            textShadow: '-2.5px 0 0 #00ffff, 2.5px 0 0 #ff0055, 0 0 12px rgba(0,255,255,0.7)',
-            transform: 'scale(1.22)',
-            zIndex: 10,
-          }
-        : {
-            color: 'rgba(255,255,255,0.82)',
-            transform: 'scale(1.0)',
-            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
-            fontWeight: 700,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s ease',
-          };
-
     case 'premiere-whip-slide':
       return isSpoken
         ? {
@@ -231,54 +400,6 @@ function getWordStyles(
             fontWeight: 900,
             display: 'inline-block',
             marginRight: '0.28em',
-            zIndex: 10,
-          }
-        : {
-            color: baseText,
-            transform: 'scale(1.0)',
-            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
-            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
-            fontWeight: 700,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s ease',
-          };
-
-    case 'premiere-typewriter':
-      return isSpoken
-        ? {
-            color: '#FFFFFF',
-            borderBottom: `2.5px solid ${baseHighlight}`,
-            transform: 'scale(1.05)',
-            textShadow: '0 2px 8px rgba(0,0,0,0.95)',
-            fontWeight: 800,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            zIndex: 10,
-          }
-        : {
-            color: 'rgba(255,255,255,0.75)',
-            transform: 'scale(1.0)',
-            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
-            fontWeight: 600,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s ease',
-          };
-
-    case 'premiere-highlight-wipe':
-      return isSpoken
-        ? {
-            backgroundColor: baseHighlight,
-            color: '#000000',
-            transform: 'scale(1.12)',
-            boxShadow: '0 4px 14px rgba(0,0,0,0.6)',
-            borderRadius: '4px',
-            padding: '0.04em 0.28em',
-            fontWeight: 900,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s cubic-bezier(0.2, 0, 0, 1), background-color 0.1s ease',
             zIndex: 10,
           }
         : {
@@ -757,13 +878,32 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             </button>
           )}
 
-          {/* Live Subtitle Overlay with CapCut & Premiere Pro Animations */}
+          {/* Live Subtitle Overlay with Kinetic Slide & Motion Effects */}
           {activeSegment && (
             <div
               className={`pointer-events-none absolute inset-x-0 z-30 flex justify-center px-4 transition-all duration-150 ${posClass}`}
             >
               <div
-                className="max-w-[94%] text-center inline-block leading-relaxed tracking-wide transition-all duration-150"
+                key={activeSegment.id}
+                className={`max-w-[94%] text-center inline-block leading-relaxed tracking-wide transition-all duration-150 ${
+                  style.animationEffect === 'slide-up'
+                    ? 'anim-slide-up'
+                    : style.animationEffect === 'slide-left'
+                    ? 'anim-slide-left'
+                    : style.animationEffect === 'slide-right'
+                    ? 'anim-slide-right'
+                    : style.animationEffect === 'punch-zoom'
+                    ? 'anim-punch-zoom'
+                    : style.animationEffect === 'flip-3d'
+                    ? 'anim-flip-3d'
+                    : style.animationEffect === 'bounce-rise' || style.animationEffect === 'capcut-bounce'
+                    ? 'anim-bounce-rise'
+                    : style.animationEffect === 'glitch-whip' || style.animationEffect === 'premiere-rgb-glitch'
+                    ? 'anim-glitch-whip'
+                    : style.animationEffect === 'float-drift'
+                    ? 'anim-float-drift'
+                    : ''
+                }`}
                 style={{
                   fontSize: `${style.fontSize}px`,
                   fontFamily: style.fontFamily || 'Montserrat, Inter, sans-serif',
@@ -792,17 +932,29 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
                   displayWords.map((w, idx) => {
                     const isSpoken = idx === activeWordIndex;
                     const wordText = style.uppercase ? w.word.toUpperCase() : w.word;
-                    const animEffect = style.animationEffect || 'capcut-bounce';
+                    const animEffect = style.animationEffect || 'slide-up';
                     const wordStyle = getWordStyles(isSpoken, animEffect, style);
                     let animClass = '';
                     if (isSpoken) {
-                      if (animEffect === 'premiere-rgb-glitch') animClass = 'anim-premiere-glitch';
-                      else if (animEffect === 'premiere-whip-slide') animClass = 'anim-premiere-whip';
-                      else if (animEffect === 'premiere-impact-shake') animClass = 'anim-premiere-impact';
+                      if (animEffect === 'glitch-whip' || animEffect === 'premiere-rgb-glitch') {
+                        animClass = 'anim-premiere-glitch';
+                      } else if (animEffect === 'bounce-rise' || animEffect === 'capcut-bounce') {
+                        animClass = 'anim-bounce-rise';
+                      } else if (animEffect === 'punch-zoom') {
+                        animClass = 'anim-punch-zoom';
+                      }
+                    } else if (animEffect === 'word-cascade') {
+                      animClass = 'anim-slide-up';
                     }
 
+                    const cascadeDelay = animEffect === 'word-cascade' ? `${idx * 0.08}s` : undefined;
+
                     return (
-                      <span key={idx} style={wordStyle} className={`relative inline-block ${animClass}`}>
+                      <span
+                        key={idx}
+                        style={{ ...wordStyle, animationDelay: cascadeDelay }}
+                        className={`relative inline-block ${animClass}`}
+                      >
                         {wordText}
                       </span>
                     );

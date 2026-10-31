@@ -164,7 +164,55 @@ export async function burnCaptionsCanvas(
           const strokeWidth = Math.max(3, Math.round(fontSize * ((style?.outlineWidth ?? 3) * 0.04)));
           const baseText = style?.textColor || '#FFFFFF';
           const highlightColor = style?.highlightColor || '#FFE600';
-          const effect = style?.animationEffect || 'capcut-bounce';
+          const effect = style?.animationEffect || 'slide-up';
+
+          // Motion Entrance Physics (Premiere Pro style slide & scale transitions)
+          const timeInSeg = Math.max(0, effectiveTime - activeSub.start);
+          const entranceDuration = 0.24;
+          const tNorm = Math.min(1, Math.max(0, timeInSeg / entranceDuration));
+          // Cubic ease-out curve
+          const easeOut = 1 - Math.pow(1 - tNorm, 3);
+
+          if (effect === 'slide-up') {
+            const slideOffsetY = (1 - easeOut) * (fontSize * 1.2);
+            ctx.translate(0, slideOffsetY);
+          } else if (effect === 'slide-left' || effect === 'premiere-whip-slide') {
+            const slideOffsetX = (1 - easeOut) * -(width * 0.1);
+            ctx.translate(slideOffsetX, 0);
+          } else if (effect === 'slide-right') {
+            const slideOffsetX = (1 - easeOut) * (width * 0.1);
+            ctx.translate(slideOffsetX, 0);
+          } else if (effect === 'punch-zoom' || effect === 'comic-pop') {
+            const punchScale = 0.65 + 0.35 * easeOut;
+            ctx.translate(width / 2, y);
+            ctx.scale(punchScale, punchScale);
+            ctx.translate(-width / 2, -y);
+          } else if (effect === 'bounce-rise' || effect === 'capcut-bounce') {
+            let bounceScale = 1;
+            let bounceY = 0;
+            if (tNorm < 0.6) {
+              const p = tNorm / 0.6;
+              bounceScale = 0.8 + 0.35 * Math.sin(p * Math.PI * 0.5);
+              bounceY = (1 - p) * (fontSize * 0.6);
+            } else {
+              const p = (tNorm - 0.6) / 0.4;
+              bounceScale = 1.15 - 0.15 * Math.sin(p * Math.PI * 0.5);
+            }
+            ctx.translate(width / 2, y + bounceY);
+            ctx.scale(bounceScale, bounceScale);
+            ctx.translate(-width / 2, -(y + bounceY));
+          } else if (effect === 'flip-3d') {
+            const scaleY = Math.max(0.05, easeOut);
+            ctx.translate(width / 2, y);
+            ctx.scale(1, scaleY);
+            ctx.translate(-width / 2, -y);
+          } else if (effect === 'glitch-whip' || effect === 'premiere-rgb-glitch') {
+            const glitchOffset = (1 - easeOut) * 12 * Math.sin(timeInSeg * 40);
+            ctx.translate(glitchOffset, 0);
+          } else if (effect === 'float-drift' || effect === 'cinematic-clean') {
+            const driftX = Math.sin(effectiveTime * 1.5) * (fontSize * 0.12);
+            ctx.translate(driftX, 0);
+          }
 
           // Word breakdown with timing sync
           const rawWords = activeSub.text.trim().split(/\s+/).filter(Boolean);
@@ -236,8 +284,18 @@ export async function burnCaptionsCanvas(
 
             ctx.save();
 
-            // Word background pill (Hormozi / Highlighter Sweep)
-            if (isSpoken && (effect === 'hormozi-box' || effect === 'premiere-highlight-wipe')) {
+            // Word level transformations
+            if (effect === 'word-cascade') {
+              const wStart = wordsWithTimings[i]?.start ?? activeSub.start;
+              const wElapsed = Math.max(0, effectiveTime - wStart);
+              const wt = Math.min(1, wElapsed / 0.18);
+              const wEase = 1 - Math.pow(1 - wt, 3);
+              const wOffsetY = (1 - wEase) * (fontSize * 0.7);
+              ctx.translate(0, wOffsetY);
+            }
+
+            // Word background pill (Highlighter Sweep / Marker Wipe)
+            if (isSpoken && (effect === 'highlight-wipe' || effect === 'hormozi-box' || effect === 'premiere-highlight-wipe')) {
               const pillPadX = fontSize * 0.2;
               const pillPadY = fontSize * 0.1;
               const prx = curX - pillPadX;
@@ -256,11 +314,21 @@ export async function burnCaptionsCanvas(
               ctx.fill();
             }
 
-            // Word level transformations
             if (isSpoken) {
-              if (effect === 'capcut-bounce' || effect === 'comic-pop' || effect === 'premiere-impact-shake' || effect === 'premiere-whip-slide') {
+              if (
+                effect === 'slide-up' ||
+                effect === 'slide-left' ||
+                effect === 'punch-zoom' ||
+                effect === 'bounce-rise' ||
+                effect === 'flip-3d' ||
+                effect === 'glitch-whip' ||
+                effect === 'capcut-bounce' ||
+                effect === 'comic-pop' ||
+                effect === 'premiere-impact-shake' ||
+                effect === 'premiere-whip-slide'
+              ) {
                 ctx.translate(wordCenterX, y);
-                ctx.scale(1.16, 1.16);
+                ctx.scale(1.15, 1.15);
                 ctx.translate(-wordCenterX, -y);
               }
 
@@ -287,8 +355,8 @@ export async function burnCaptionsCanvas(
             ctx.miterLimit = 2;
             ctx.strokeText(m.text, curX, y);
 
-            // RGB chromatic split on active word for premiere-rgb-glitch
-            if (isSpoken && effect === 'premiere-rgb-glitch') {
+            // RGB chromatic split on active word for glitch effects
+            if (isSpoken && (effect === 'glitch-whip' || effect === 'premiere-rgb-glitch')) {
               ctx.fillStyle = '#00ffff';
               ctx.fillText(m.text, curX - 2, y);
               ctx.fillStyle = '#ff0055';
@@ -296,7 +364,7 @@ export async function burnCaptionsCanvas(
             }
 
             // Fill text
-            if (isSpoken && (effect === 'hormozi-box' || effect === 'premiere-highlight-wipe')) {
+            if (isSpoken && (effect === 'highlight-wipe' || effect === 'hormozi-box' || effect === 'premiere-highlight-wipe')) {
               ctx.fillStyle = '#000000'; // High contrast black on yellow highlighter
             } else if (isSpoken && (style?.highlightCurrentWord || effect !== 'none')) {
               ctx.fillStyle = highlightColor;

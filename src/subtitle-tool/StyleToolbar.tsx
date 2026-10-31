@@ -1,5 +1,5 @@
 // ─── StyleToolbar ─────────────────────────────────────────────────────────────
-// Real-time styling studio: CapCut Bounce, Hormozi Box, Premiere Glow, MrBeast 3D, Cinema Gold.
+// Real-time styling studio: Premiere Pro style motion templates and slide effects.
 
 import type { SubtitleStyle, SubtitlePreset, CaptionAnimationEffect } from './types';
 
@@ -9,9 +9,189 @@ interface StyleToolbarProps {
 }
 
 export const PRESET_CONFIGS: Partial<Record<SubtitlePreset, Partial<SubtitleStyle>>> = {
+  'slide-up-modern': {
+    preset: 'slide-up-modern',
+    animationEffect: 'slide-up',
+    fontSize: 26,
+    textColor: '#FFFFFF',
+    backgroundColor: 'transparent',
+    outlineColor: '#000000',
+    outlineWidth: 3,
+    position: 'bottom',
+    fontFamily: 'Montserrat, Inter, sans-serif',
+    uppercase: true,
+    highlightCurrentWord: true,
+    highlightColor: '#FFE600',
+    shadowEffect: true,
+  },
+  'whip-left-bold': {
+    preset: 'whip-left-bold',
+    animationEffect: 'slide-left',
+    fontSize: 27,
+    textColor: '#FFFFFF',
+    backgroundColor: 'transparent',
+    outlineColor: '#000000',
+    outlineWidth: 3,
+    position: 'bottom',
+    fontFamily: 'Montserrat, Inter, sans-serif',
+    uppercase: true,
+    highlightCurrentWord: true,
+    highlightColor: '#00F0FF',
+    shadowEffect: true,
+  },
+  'punch-zoom-action': {
+    preset: 'punch-zoom-action',
+    animationEffect: 'punch-zoom',
+    fontSize: 28,
+    textColor: '#FFFFFF',
+    backgroundColor: 'transparent',
+    outlineColor: '#000000',
+    outlineWidth: 3.5,
+    position: 'bottom',
+    fontFamily: 'Impact, Montserrat, sans-serif',
+    uppercase: true,
+    highlightCurrentWord: true,
+    highlightColor: '#FF4500',
+    shadowEffect: true,
+  },
+  'word-cascade-reel': {
+    preset: 'word-cascade-reel',
+    animationEffect: 'word-cascade',
+    fontSize: 26,
+    textColor: '#FFFFFF',
+    backgroundColor: 'transparent',
+    outlineColor: '#000000',
+    outlineWidth: 3,
+    position: 'bottom',
+    fontFamily: 'Montserrat, Inter, sans-serif',
+    uppercase: true,
+    highlightCurrentWord: true,
+    highlightColor: '#00FF66',
+    shadowEffect: true,
+  },
+  'flip-3d-title': {
+    preset: 'flip-3d-title',
+    animationEffect: 'flip-3d',
+    fontSize: 27,
+    textColor: '#FFFFFF',
+    backgroundColor: 'transparent',
+    outlineColor: '#002B4D',
+    outlineWidth: 2.5,
+    position: 'bottom',
+    fontFamily: 'Montserrat, Inter, sans-serif',
+    uppercase: true,
+    highlightCurrentWord: true,
+    highlightColor: '#38BDF8',
+    shadowEffect: true,
+  },
+  'bounce-rise-kinetic': {
+    preset: 'bounce-rise-kinetic',
+    animationEffect: 'bounce-rise',
+    fontSize: 26,
+    textColor: '#FFFFFF',
+    backgroundColor: 'transparent',
+    outlineColor: '#000000',
+    outlineWidth: 3,
+    position: 'bottom',
+    fontFamily: 'Rubik, Montserrat, sans-serif',
+    uppercase: true,
+    highlightCurrentWord: true,
+    highlightColor: '#FFE600',
+    shadowEffect: true,
+  },
+  'glitch-whip-cyber': {
+    preset: 'glitch-whip-cyber',
+    animationEffect: 'glitch-whip',
+    fontSize: 26,
+    textColor: '#FFFFFF',
+    backgroundColor: 'transparent',
+    outlineColor: '#000000',
+    outlineWidth: 2.5,
+    position: 'bottom',
+    fontFamily: 'Montserrat, Inter, monospace',
+    uppercase: true,
+    highlightCurrentWord: true,
+    highlightColor: '#00FFFF',
+    shadowEffect: true,
+  },
+  'highlight-sweep': {
+    preset: 'highlight-sweep',
+    animationEffect: 'highlight-wipe',
+    fontSize: 26,
+    textColor: '#FFFFFF',
+    backgroundColor: 'transparent',
+    outlineColor: '#000000',
+    outlineWidth: 2,
+    position: 'bottom',
+    fontFamily: 'Rubik, Montserrat, sans-serif',
+    uppercase: true,
+    highlightCurrentWord: true,
+    highlightColor: '#FFE600',
+    shadowEffect: true,
+  },
+  'broadcast-lower-third': {
+    preset: 'broadcast-lower-third',
+    animationEffect: 'premiere-lower-third',
+    fontSize: 23,
+    textColor: '#FFFFFF',
+    backgroundColor: 'rgba(15, 15, 18, 0.85)',
+    outlineColor: '#000000',
+    outlineWidth: 1.5,
+    position: 'bottom',
+    fontFamily: 'Inter, sans-serif',
+    uppercase: false,
+    highlightCurrentWord: true,
+    highlightColor: '#FFD700',
+    shadowEffect: true,
+  },
+  'editorial-typewriter': {
+    preset: 'editorial-typewriter',
+    animationEffect: 'typewriter',
+    fontSize: 24,
+    textColor: '#FFFFFF',
+    backgroundColor: 'transparent',
+    outlineColor: '#000000',
+    outlineWidth: 2,
+    position: 'bottom',
+    fontFamily: 'Inter, monospace',
+    uppercase: false,
+    highlightCurrentWord: true,
+    highlightColor: '#00FF66',
+    shadowEffect: true,
+  },
+  'cinema-drift': {
+    preset: 'cinema-drift',
+    animationEffect: 'float-drift',
+    fontSize: 24,
+    textColor: '#FFFFFF',
+    backgroundColor: 'transparent',
+    outlineColor: '#000000',
+    outlineWidth: 2,
+    position: 'bottom',
+    fontFamily: 'Inter, sans-serif',
+    uppercase: false,
+    highlightCurrentWord: true,
+    highlightColor: '#FFE600',
+    shadowEffect: true,
+  },
+  'clean-minimal': {
+    preset: 'clean-minimal',
+    animationEffect: 'none',
+    fontSize: 24,
+    textColor: '#FFFFFF',
+    backgroundColor: 'transparent',
+    outlineColor: '#000000',
+    outlineWidth: 2.5,
+    position: 'bottom',
+    fontFamily: 'Inter, sans-serif',
+    uppercase: false,
+    highlightCurrentWord: false,
+    shadowEffect: true,
+  },
+  // Legacy aliases
   'capcut-viral': {
-    preset: 'capcut-viral',
-    animationEffect: 'capcut-bounce',
+    preset: 'slide-up-modern',
+    animationEffect: 'slide-up',
     fontSize: 26,
     textColor: '#FFFFFF',
     backgroundColor: 'transparent',
@@ -25,8 +205,8 @@ export const PRESET_CONFIGS: Partial<Record<SubtitlePreset, Partial<SubtitleStyl
     shadowEffect: true,
   },
   'hormozi-yellow': {
-    preset: 'hormozi-yellow',
-    animationEffect: 'hormozi-box',
+    preset: 'bounce-rise-kinetic',
+    animationEffect: 'bounce-rise',
     fontSize: 26,
     textColor: '#FFFFFF',
     backgroundColor: 'transparent',
@@ -40,8 +220,8 @@ export const PRESET_CONFIGS: Partial<Record<SubtitlePreset, Partial<SubtitleStyl
     shadowEffect: true,
   },
   'premiere-glow': {
-    preset: 'premiere-glow',
-    animationEffect: 'premiere-glow',
+    preset: 'whip-left-bold',
+    animationEffect: 'slide-left',
     fontSize: 26,
     textColor: '#FFFFFF',
     backgroundColor: 'transparent',
@@ -55,8 +235,8 @@ export const PRESET_CONFIGS: Partial<Record<SubtitlePreset, Partial<SubtitleStyl
     shadowEffect: true,
   },
   'mrbeast-comic': {
-    preset: 'mrbeast-comic',
-    animationEffect: 'comic-pop',
+    preset: 'punch-zoom-action',
+    animationEffect: 'punch-zoom',
     fontSize: 28,
     textColor: '#FFFFFF',
     backgroundColor: 'transparent',
@@ -66,95 +246,22 @@ export const PRESET_CONFIGS: Partial<Record<SubtitlePreset, Partial<SubtitleStyl
     fontFamily: 'Impact, Rubik, sans-serif',
     uppercase: true,
     highlightCurrentWord: true,
-    highlightColor: '#00FF66',
+    highlightColor: '#FF4500',
     shadowEffect: true,
   },
   'cinema-gold': {
-    preset: 'cinema-gold',
-    animationEffect: 'cinematic-clean',
+    preset: 'cinema-drift',
+    animationEffect: 'float-drift',
     fontSize: 24,
     textColor: '#FFE600',
     backgroundColor: 'transparent',
     outlineColor: '#000000',
-    outlineWidth: 2.5,
-    position: 'bottom',
-    fontFamily: 'Inter, sans-serif',
-    uppercase: false,
-    highlightCurrentWord: false,
-    shadowEffect: true,
-  },
-  'clean-minimal': {
-    preset: 'clean-minimal',
-    animationEffect: 'none',
-    fontSize: 22,
-    textColor: '#FFFFFF',
-    backgroundColor: 'transparent',
-    outlineColor: '#000000',
-    outlineWidth: 2.5,
-    position: 'bottom',
-    fontFamily: 'Inter, sans-serif',
-    uppercase: false,
-    highlightCurrentWord: false,
-    shadowEffect: true,
-  },
-  'premiere-glitch': {
-    preset: 'premiere-glitch',
-    animationEffect: 'premiere-rgb-glitch',
-    fontSize: 26,
-    textColor: '#FFFFFF',
-    backgroundColor: 'transparent',
-    outlineColor: '#000000',
     outlineWidth: 2,
     position: 'bottom',
-    fontFamily: 'Montserrat, Inter, monospace',
-    uppercase: true,
-    highlightCurrentWord: true,
-    highlightColor: '#00FFFF',
-    shadowEffect: true,
-  },
-  'premiere-whip': {
-    preset: 'premiere-whip',
-    animationEffect: 'premiere-whip-slide',
-    fontSize: 27,
-    textColor: '#FFFFFF',
-    backgroundColor: 'transparent',
-    outlineColor: '#000000',
-    outlineWidth: 3,
-    position: 'bottom',
-    fontFamily: 'Montserrat, Inter, sans-serif',
-    uppercase: true,
-    highlightCurrentWord: true,
-    highlightColor: '#FFE600',
-    shadowEffect: true,
-  },
-  'premiere-highlighter': {
-    preset: 'premiere-highlighter',
-    animationEffect: 'premiere-highlight-wipe',
-    fontSize: 26,
-    textColor: '#FFFFFF',
-    backgroundColor: 'transparent',
-    outlineColor: '#000000',
-    outlineWidth: 2,
-    position: 'bottom',
-    fontFamily: 'Rubik, Montserrat, sans-serif',
-    uppercase: true,
-    highlightCurrentWord: true,
-    highlightColor: '#FFE600',
-    shadowEffect: true,
-  },
-  'premiere-broadcast': {
-    preset: 'premiere-broadcast',
-    animationEffect: 'premiere-lower-third',
-    fontSize: 23,
-    textColor: '#FFFFFF',
-    backgroundColor: 'rgba(15, 15, 18, 0.85)',
-    outlineColor: '#000000',
-    outlineWidth: 1.5,
-    position: 'bottom',
     fontFamily: 'Inter, sans-serif',
     uppercase: false,
     highlightCurrentWord: true,
-    highlightColor: '#FFD700',
+    highlightColor: '#FFE600',
     shadowEffect: true,
   },
 };
@@ -182,30 +289,33 @@ export default function StyleToolbar({ style, onChange }: StyleToolbarProps) {
     <div className="flex flex-wrap items-center gap-3 px-4 py-2 bg-[#121211]/90 border-b border-white/[0.08] backdrop-blur-md overflow-x-auto scrollbar-thin">
       {/* Preset Pills */}
       <div className="flex items-center gap-1.5 border-r border-white/10 pr-3 shrink-0">
-        <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400/80 mr-1">Style</span>
-        <PresetBtn active={style.preset === 'capcut-viral'} label="CapCut Viral" onClick={() => applyPreset('capcut-viral')} />
-        <PresetBtn active={style.preset === 'hormozi-yellow'} label="Hormozi Box" onClick={() => applyPreset('hormozi-yellow')} />
-        <PresetBtn active={style.preset === 'premiere-glow'} label="Cyber Glow" onClick={() => applyPreset('premiere-glow')} />
-        <PresetBtn active={style.preset === 'premiere-glitch'} label="RGB Glitch" onClick={() => applyPreset('premiere-glitch')} />
-        <PresetBtn active={style.preset === 'premiere-whip'} label="Whip Kinetic" onClick={() => applyPreset('premiere-whip')} />
-        <PresetBtn active={style.preset === 'premiere-highlighter'} label="Marker Wipe" onClick={() => applyPreset('premiere-highlighter')} />
-        <PresetBtn active={style.preset === 'mrbeast-comic'} label="Comic 3D" onClick={() => applyPreset('mrbeast-comic')} />
-        <PresetBtn active={style.preset === 'premiere-broadcast'} label="Lower Third" onClick={() => applyPreset('premiere-broadcast')} />
-        <PresetBtn active={style.preset === 'cinema-gold'} label="Film Gold" onClick={() => applyPreset('cinema-gold')} />
+        <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400/80 mr-1">Motion</span>
+        <PresetBtn active={style.preset === 'slide-up-modern'} label="Slide Up" onClick={() => applyPreset('slide-up-modern')} />
+        <PresetBtn active={style.preset === 'whip-left-bold'} label="Whip Snap" onClick={() => applyPreset('whip-left-bold')} />
+        <PresetBtn active={style.preset === 'punch-zoom-action'} label="Punch Zoom" onClick={() => applyPreset('punch-zoom-action')} />
+        <PresetBtn active={style.preset === 'word-cascade-reel'} label="Word Cascade" onClick={() => applyPreset('word-cascade-reel')} />
+        <PresetBtn active={style.preset === 'flip-3d-title'} label="3D Flip" onClick={() => applyPreset('flip-3d-title')} />
+        <PresetBtn active={style.preset === 'bounce-rise-kinetic'} label="Bounce Rise" onClick={() => applyPreset('bounce-rise-kinetic')} />
+        <PresetBtn active={style.preset === 'glitch-whip-cyber'} label="Glitch Whip" onClick={() => applyPreset('glitch-whip-cyber')} />
+        <PresetBtn active={style.preset === 'highlight-sweep'} label="Highlighter" onClick={() => applyPreset('highlight-sweep')} />
+        <PresetBtn active={style.preset === 'broadcast-lower-third'} label="Lower 3rd" onClick={() => applyPreset('broadcast-lower-third')} />
+        <PresetBtn active={style.preset === 'editorial-typewriter'} label="Typewriter" onClick={() => applyPreset('editorial-typewriter')} />
+        <PresetBtn active={style.preset === 'cinema-drift'} label="Cinematic Drift" onClick={() => applyPreset('cinema-drift')} />
         <PresetBtn active={style.preset === 'clean-minimal'} label="Minimal" onClick={() => applyPreset('clean-minimal')} />
       </div>
 
       {/* Animation Effect Quick Selector */}
       <div className="flex items-center gap-1.5 border-r border-white/10 pr-3 shrink-0">
-        <span className="text-[10px] uppercase font-bold tracking-wider text-mist mr-1">Effect</span>
-        <EffectBtn active={style.animationEffect === 'capcut-bounce'} label="Bounce" onClick={() => setAnimation('capcut-bounce')} />
-        <EffectBtn active={style.animationEffect === 'hormozi-box'} label="Badge" onClick={() => setAnimation('hormozi-box')} />
-        <EffectBtn active={style.animationEffect === 'premiere-glow'} label="Neon Glow" onClick={() => setAnimation('premiere-glow')} />
-        <EffectBtn active={style.animationEffect === 'premiere-rgb-glitch'} label="RGB Glitch" onClick={() => setAnimation('premiere-rgb-glitch')} />
-        <EffectBtn active={style.animationEffect === 'premiere-whip-slide'} label="Whip Slide" onClick={() => setAnimation('premiere-whip-slide')} />
-        <EffectBtn active={style.animationEffect === 'premiere-highlight-wipe'} label="Highlighter" onClick={() => setAnimation('premiere-highlight-wipe')} />
-        <EffectBtn active={style.animationEffect === 'premiere-impact-shake'} label="Impact" onClick={() => setAnimation('premiere-impact-shake')} />
-        <EffectBtn active={style.animationEffect === 'comic-pop'} label="Comic Pop" onClick={() => setAnimation('comic-pop')} />
+        <span className="text-[10px] uppercase font-bold tracking-wider text-mist mr-1">Movement</span>
+        <EffectBtn active={style.animationEffect === 'slide-up'} label="Slide Up" onClick={() => setAnimation('slide-up')} />
+        <EffectBtn active={style.animationEffect === 'slide-left'} label="Whip Left" onClick={() => setAnimation('slide-left')} />
+        <EffectBtn active={style.animationEffect === 'punch-zoom'} label="Punch Zoom" onClick={() => setAnimation('punch-zoom')} />
+        <EffectBtn active={style.animationEffect === 'word-cascade'} label="Cascade" onClick={() => setAnimation('word-cascade')} />
+        <EffectBtn active={style.animationEffect === 'flip-3d'} label="3D Flip" onClick={() => setAnimation('flip-3d')} />
+        <EffectBtn active={style.animationEffect === 'bounce-rise'} label="Bounce" onClick={() => setAnimation('bounce-rise')} />
+        <EffectBtn active={style.animationEffect === 'glitch-whip'} label="Glitch" onClick={() => setAnimation('glitch-whip')} />
+        <EffectBtn active={style.animationEffect === 'highlight-wipe'} label="Highlighter" onClick={() => setAnimation('highlight-wipe')} />
+        <EffectBtn active={style.animationEffect === 'float-drift'} label="Drift" onClick={() => setAnimation('float-drift')} />
         <EffectBtn active={style.animationEffect === 'none'} label="Static" onClick={() => setAnimation('none')} />
       </div>
 
