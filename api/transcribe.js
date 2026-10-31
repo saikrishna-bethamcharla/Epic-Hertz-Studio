@@ -1,19 +1,53 @@
-// ─── Epic Hertz Studio: Serverless Transcription Proxy ──────────────────────
-// Vercel Serverless Function that receives extracted audio and calls Gemini
-// using process.env.GEMINI_API_KEY.
-// Allows any visitor to transcribe video subtitles instantly without needing their own key.
+// ─── Epic Hertz Studio: Serverless Transcription Proxy (hardened) ───────────
+// Receives extracted audio, calls Gemini, returns timestamped caption segments.
+//
+// Env vars
+//   GEMINI_API_KEY            required (do NOT use a VITE_ prefixed var — Vite bundles those into client JS)
+//   ALLOWED_ORIGINS           optional, comma-separated. Default: production + localhost
+//   MAX_AUDIO_BYTES           optional, default 4400000 (Vercel functions cap request bodies ~4.5 MB)
+//   RATE_LIMIT_PER_MIN        optional, default 8   (per IP, server-key requests only)
+//   RATE_LIMIT_PER_DAY        optional, default 60  (per IP, server-key requests only)
+//                             The web client splits long audio into ~2-minute chunks,
+//                             so one request ≈ 2 minutes of video (60/day ≈ 2 hours).
+//   UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN
+//                             optional but strongly recommended: shared rate-limit store.
+//                             Without it, limits are per-instance and easy to sidestep.
+//   GEMINI_MODELS             optional, comma-separated model fallback order
 
 import { GoogleGenAI } from '@google/genai';
-import fs from 'node:fs';
-import path from 'node:path';
-import os from 'node:os';
+import { parseSegmentsFromResponse } from './_lib/parse.js';
 
 export const config = {
-  api: {
-    bodyParser: false,
-  },
+  api: { bodyParser: false },
   maxDuration: 60,
 };
+
+// ─── Settings ───────────────────────────────────────────────────────────────
+
+const MAX_AUDIO_BYTES = Number(process.env.MAX_AUDIO_BYTES) || 4_400_000;
+const LIMIT_PER_MIN = Number(process.env.RATE_LIMIT_PER_MIN) || 8;
+const LIMIT_PER_DAY = Number(process.env.RATE_LIMIT_PER_DAY) || 60;
+const DEADLINE_MS = 52_000; // leave headroom under maxDuration (60s)
+
+const ALLOWED_ORIGINS = (
+  process.env.ALLOWED_ORIGINS ||
+  'https://epic-hertz-studio.vercel.app,https://saikrishna-bethamcharla.github.io,http://localhost:5173'
+)
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+// Verify these against Google's current model list; unknown names just fall through to the next one.
+const DEFAULT_MODELS = [
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
+  'gemini-2.0-flash',
+  'gemini-3.5-flash-lite',
+  'gemini-3.8-flash',
+];
+const CANDIDATE_MODELS = process.env.GEMINI_MODELS
+  ? process.env.GEMINI_MODELS.split(',').map((s) => s.trim()).filter(Boolean)
+  : DEFAULT_MODELS;
 
 const LANGUAGE_LABELS = {
   auto: 'any spoken language',
@@ -29,299 +63,359 @@ const LANGUAGE_LABELS = {
   fr: 'French',
 };
 
-async function getRequestBody(req) {
-  if (Buffer.isBuffer(req.body)) return req.body;
-  if (typeof req.body === 'string') return Buffer.from(req.body);
-  if (req.body && typeof req.body === 'object' && req.body.audio) {
-    return Buffer.from(req.body.audio, 'base64');
+// Formats Gemini accepts for audio
+const MIME_MAP = {
+  'audio/wav': 'audio/wav',
+  'audio/x-wav': 'audio/wav',
+  'audio/wave': 'audio/wav',
+  'audio/mpeg': 'audio/mp3',
+  'audio/mp3': 'audio/mp3',
+  'audio/ogg': 'audio/ogg',
+  'audio/aac': 'audio/aac',
+  'audio/flac': 'audio/flac',
+  'audio/aiff': 'audio/aiff',
+};
+
+// ─── Small utilities ────────────────────────────────────────────────────────
+
+class HttpError extends Error {
+  constructor(status, message, retryAfterSec) {
+    super(message);
+    this.status = status;
+    this.retryAfterSec = retryAfterSec;
   }
+}
+
+function withTimeout(promise, ms) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(Object.assign(new Error('timeout'), { code: 'TIMEOUT' })), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function clientIp(req) {
+  const real = req.headers['x-real-ip'];
+  if (real) return String(real).trim();
+  const fwd = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+  return fwd || req.socket?.remoteAddress || 'unknown';
+}
+
+// ─── Rate limiting (Upstash REST if configured, else per-instance memory) ───
+
+const memoryHits = new Map();
+
+function memoryHit(key, windowSec) {
+  const now = Date.now();
+  if (memoryHits.size > 5000) {
+    for (const [k, v] of memoryHits) if (v.reset <= now) memoryHits.delete(k);
+  }
+  const entry = memoryHits.get(key);
+  if (!entry || entry.reset <= now) {
+    memoryHits.set(key, { count: 1, reset: now + windowSec * 1000 });
+    return 1;
+  }
+  entry.count += 1;
+  return entry.count;
+}
+
+async function redisHit(key, windowSec) {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const res = await withTimeout(
+    fetch(`${url}/pipeline`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify([
+        ['INCR', key],
+        ['EXPIRE', key, String(windowSec), 'NX'],
+      ]),
+    }),
+    2000,
+  );
+  if (!res.ok) throw new Error(`redis ${res.status}`);
+  const data = await res.json();
+  return Number(data?.[0]?.result);
+}
+
+async function hit(key, windowSec) {
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    try {
+      const n = await redisHit(key, windowSec);
+      if (Number.isFinite(n)) return n;
+    } catch (err) {
+      console.warn('rate-limit store unavailable, using memory:', err?.message);
+    }
+  }
+  return memoryHit(key, windowSec);
+}
+
+async function checkRateLimit(ip) {
+  const now = new Date();
+  const day = now.toISOString().slice(0, 10);
+  const minute = Math.floor(now.getTime() / 60000);
+  const perMin = await hit(`epic:rl:m:${ip}:${minute}`, 60);
+  if (perMin > LIMIT_PER_MIN) {
+    const wait = 61 - now.getUTCSeconds(); // seconds until the next minute bucket
+    throw new HttpError(429, 'Too many requests. Please wait a moment and try again.', wait);
+  }
+  const perDay = await hit(`epic:rl:d:${ip}:${day}`, 86400);
+  if (perDay > LIMIT_PER_DAY) {
+    throw new HttpError(429, 'Daily free limit reached. Please try again tomorrow or add your own Gemini API key.');
+  }
+}
+
+// ─── Request handling ───────────────────────────────────────────────────────
+
+function applyCors(req, res) {
+  const origin = req.headers.origin;
+  res.setHeader('Vary', 'Origin');
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Content-Type, x-spoken-language, x-script-output, x-gemini-api-key',
+  );
+  res.setHeader('Access-Control-Expose-Headers', 'Retry-After');
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-site');
+  res.setHeader('Cache-Control', 'no-store');
+}
+
+async function readBody(req) {
+  const declared = Number(req.headers['content-length']);
+  if (Number.isFinite(declared) && declared > MAX_AUDIO_BYTES * 1.4) {
+    throw new HttpError(413, 'Audio is too large. Try a shorter clip.');
+  }
+  if (Buffer.isBuffer(req.body)) return req.body;
+
   const chunks = [];
+  let total = 0;
   for await (const chunk of req) {
+    total += chunk.length;
+    if (total > MAX_AUDIO_BYTES * 1.4) {
+      throw new HttpError(413, 'Audio is too large. Try a shorter clip.');
+    }
     chunks.push(chunk);
   }
   return Buffer.concat(chunks);
 }
 
-function parseTime(value) {
-  if (typeof value === 'number') return value;
-  if (typeof value === 'string') {
-    return parseFloat(value.replace('s', '')) || 0;
+async function getAudio(req) {
+  const contentType = String(req.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
+  const raw = await readBody(req);
+
+  // Legacy JSON shape: { audio: <base64>, mimeType?: string }
+  if (contentType === 'application/json') {
+    let parsed;
+    try {
+      parsed = JSON.parse(raw.toString('utf8'));
+    } catch {
+      throw new HttpError(400, 'Invalid request body.');
+    }
+    if (!parsed?.audio || typeof parsed.audio !== 'string') {
+      throw new HttpError(400, 'Invalid audio data received.');
+    }
+    const buf = Buffer.from(parsed.audio, 'base64');
+    const mime = MIME_MAP[String(parsed.mimeType || 'audio/wav').toLowerCase()];
+    if (!mime) throw new HttpError(415, 'Unsupported audio format.');
+    return { buffer: buf, mimeType: mime };
   }
-  return 0;
+
+  // Raw binary (default). Missing / generic content-type is treated as WAV.
+  const generic = !contentType || contentType === 'application/octet-stream';
+  const mimeType = generic ? 'audio/wav' : MIME_MAP[contentType];
+  if (!mimeType) throw new HttpError(415, 'Unsupported audio format. Use WAV, MP3, OGG, AAC or FLAC.');
+  return { buffer: raw, mimeType };
 }
 
-function parseSegmentsFromResponse(rawText) {
-  let cleaned = rawText.trim();
-  if (cleaned.startsWith('```')) {
-    cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
-  }
+// ─── Prompt ─────────────────────────────────────────────────────────────────
 
-  try {
-    const data = JSON.parse(cleaned);
-    const list = Array.isArray(data) ? data : data.segments || data.subtitles || [];
-    if (Array.isArray(list) && list.length > 0) {
-      return list.map((item, i) => {
-        let words = undefined;
-        if (Array.isArray(item.words)) {
-          words = item.words
-            .map((w) => ({
-              word: String(w.word ?? ''),
-              start: parseTime(w.start ?? w.start_time ?? 0),
-              end: parseTime(w.end ?? w.end_time ?? 0),
-            }))
-            .filter((w) => w.word.length > 0);
-        }
-
-        return {
-          id: `seg-${i + 1}-${Date.now()}`,
-          index: i + 1,
-          start: parseTime(item.start_time ?? item.start ?? item.startTime ?? 0),
-          end: parseTime(item.end_time ?? item.end ?? item.endTime ?? 0),
-          text: String(item.text ?? item.dialogue ?? item.caption ?? '').trim(),
-          words: words && words.length > 0 ? words : undefined,
-        };
-      }).filter((s) => s.text.length > 0);
-    }
-  } catch (err) {
-    console.warn('JSON parse fallback for subtitles:', err);
-  }
-
-  // Fallback: Check if output is standard SRT format
-  const srtBlocks = cleaned.split(/\n\s*\n/);
-  const parsedFromSRT = [];
-  let srtIdx = 1;
-  for (const block of srtBlocks) {
-    const lines = block.trim().split('\n').map((l) => l.trim()).filter(Boolean);
-    const timeLine = lines.find((l) => l.includes('-->'));
-    if (timeLine) {
-      const [startStr, endStr] = timeLine.split('-->').map((s) => s.trim());
-      const textLines = lines.slice(lines.indexOf(timeLine) + 1).join(' ');
-      if (textLines) {
-        parsedFromSRT.push({
-          id: `seg-${srtIdx}`,
-          index: srtIdx++,
-          start: parseTime(startStr),
-          end: parseTime(endStr),
-          text: textLines,
-        });
-      }
-    }
-  }
-
-  if (parsedFromSRT.length > 0) return parsedFromSRT;
-
-  // Word chunk fallback
-  const words = rawText.trim().split(/\s+/);
-  const segments = [];
-  const chunkSize = 4;
-  for (let i = 0; i < words.length; i += chunkSize) {
-    const chunkWords = words.slice(i, i + chunkSize);
-    const startTime = (i / chunkSize) * 2.0;
-    const endTime = startTime + 1.8;
-    segments.push({
-      id: `seg-${Math.floor(i / chunkSize) + 1}`,
-      index: Math.floor(i / chunkSize) + 1,
-      start: startTime,
-      end: endTime,
-      text: chunkWords.join(' '),
-    });
-  }
-  return segments;
-}
-
-export default async function handler(req, res) {
-  // Setup CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-spoken-language, x-script-output, x-gemini-api-key');
-  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-
-  if (req.method === 'OPTIONS') {
-    res.status(204).end();
-    return;
-  }
-
-  if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method Not Allowed. Use POST.' });
-    return;
-  }
-
-  const apiKey =
-    req.headers['x-gemini-api-key'] ||
-    process.env.GEMINI_API_KEY ||
-    process.env.VITE_GEMINI_API_KEY;
-
-  if (!apiKey || apiKey === 'your_gemini_api_key_here') {
-    res.status(500).json({
-      error: 'Transcription service is temporarily unavailable. Please try again shortly.',
-    });
-    return;
-  }
-
-  let tmpPath = null;
-  let client = null;
-  let uploadedFile = null;
-
-  try {
-    const audioBuffer = await getRequestBody(req);
-    if (!audioBuffer || audioBuffer.length < 500) {
-      res.status(400).json({ error: 'Invalid audio data received. Minimum 500 bytes required.' });
-      return;
-    }
-
-    // Query params or headers for options
-    const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-    const spokenLanguage =
-      url.searchParams.get('spokenLanguage') ||
-      req.headers['x-spoken-language'] ||
-      'auto';
-    const scriptOutput =
-      url.searchParams.get('scriptOutput') ||
-      req.headers['x-script-output'] ||
-      'romanized';
-
-    // Write audio buffer to temp file for upload
-    tmpPath = path.join(
-      os.tmpdir(),
-      `epichertz-${Date.now()}-${Math.random().toString(36).slice(2)}.wav`,
-    );
-    await fs.promises.writeFile(tmpPath, audioBuffer);
-
-    client = new GoogleGenAI({ apiKey });
-
-    // Upload to Files API
-    uploadedFile = await client.files.upload({
-      file: tmpPath,
-      config: { mimeType: 'audio/wav' },
-    });
-
-    // Wait for processing
-    let fileState = uploadedFile;
-    let pollCount = 0;
-    while (fileState.state === 'PROCESSING' && pollCount < 30) {
-      await new Promise((r) => setTimeout(r, 1200));
-      fileState = await client.files.get({ name: uploadedFile.name });
-      pollCount++;
-    }
-
-    if (fileState.state === 'FAILED') {
-      throw new Error('Gemini audio processing failed on Files API.');
-    }
-
-    const langName = LANGUAGE_LABELS[spokenLanguage] || 'spoken language';
-    const isRomanized = scriptOutput === 'romanized';
-
-    const scriptDirective = isRomanized
-      ? `CRITICAL SCRIPT INSTRUCTION:
+function buildPrompt(langName, isRomanized) {
+  const scriptDirective = isRomanized
+    ? `CRITICAL SCRIPT INSTRUCTION:
 - Transcribe the spoken audio using ROMANIZED SCRIPT / ENGLISH ALPHABET ONLY.
-- For Indian languages (e.g. Telugu, Hindi, Tamil), produce natural colloquial Romanized script (e.g. Tanglish: "Prathi frame lo oka katha.", Hinglish: "Aapka swagat hai", etc.).
-- Do NOT output native Telugu/Devanagari/Tamil characters. Use standard conversational English transliteration readable by social media audiences.`
-      : `CRITICAL SCRIPT INSTRUCTION:
-- Transcribe the spoken audio strictly in its authentic NATIVE SCRIPT (e.g., Telugu script 'తెలుగు లిపి', Hindi Devanagari 'हिन्दी', Tamil 'தமிழ்', etc.).
+- For Indian languages (e.g. Telugu, Hindi, Tamil), produce natural colloquial Romanized script (e.g. Tanglish: "Prathi frame lo oka katha.", Hinglish: "Aapka swagat hai").
+- Do NOT output native Telugu/Devanagari/Tamil characters. Use standard conversational transliteration readable by social media audiences.`
+    : `CRITICAL SCRIPT INSTRUCTION:
+- Transcribe the spoken audio strictly in its authentic NATIVE SCRIPT (e.g., Telugu script 'తెలుగు లిపి', Hindi Devanagari 'हिन्दी', Tamil 'தமிழ்').
 - Preserve correct native spelling, conjuncts, and punctuation.`;
 
-    const prompt = `Analyze this audio carefully and generate accurate timestamped dialogue subtitles.
+  const ex = (roman, native) => (isRomanized ? roman : native);
+
+  return `Analyze this audio carefully and generate accurate timestamped dialogue subtitles.
 Language: Spoken in ${langName}.
 ${scriptDirective}
 
-CRITICAL TIMING ACCURACY INSTRUCTION:
-- Set "start_time" at the EXACT FIRST MILLISECOND (the initial audible breath or phonetic onset) when the speaker begins vocalizing each phrase.
-- DO NOT delay timestamps to the middle or end of words. The highlight must trigger the instant the word is heard.
-- Break speech into short, energetic viral segments (2 to 4 words or 1.0 to 2.2 seconds each maximum).
-- For EVERY segment, you MUST provide the "words" array with precise start and end times for each individual word.
+TIMING RULES:
+- "start" is when the speaker first begins vocalizing that phrase/word; "end" is when it finishes.
+- All times are in SECONDS from the start of the audio, as decimal numbers (e.g. 12.35). Never use MM:SS.
+- Break speech into short, energetic segments (2 to 4 words, about 1.0 to 2.2 seconds each).
+- For EVERY segment provide a "words" array with start and end times for each word.
+- Timestamps must be non-decreasing and must not overlap.
+- If there is no speech, return [].
 
 Return ONLY a JSON array with this exact structure:
 [
   {
     "start_time": 0.0,
     "end_time": 1.4,
-    "text": "${isRomanized ? 'Prathi frame lo oka katha.' : 'ప్రతి ఫ్రేమ్ లో ఒక కథ'}",
+    "text": "${ex('Prathi frame lo oka katha.', 'ప్రతి ఫ్రేమ్ లో ఒక కథ')}",
     "words": [
-      { "word": "${isRomanized ? 'Prathi' : 'ప్రతి'}", "start": 0.0, "end": 0.35 },
-      { "word": "${isRomanized ? 'frame' : 'ఫ్రేమ్'}", "start": 0.35, "end": 0.75 },
-      { "word": "${isRomanized ? 'lo' : 'లో'}", "start": 0.75, "end": 0.95 },
-      { "word": "${isRomanized ? 'oka' : 'ఒక'}", "start": 0.95, "end": 1.15 },
-      { "word": "${isRomanized ? 'katha.' : 'కథ'}", "start": 1.15, "end": 1.4 }
+      { "word": "${ex('Prathi', 'ప్రతి')}", "start": 0.0, "end": 0.35 },
+      { "word": "${ex('frame', 'ఫ్రేమ్')}", "start": 0.35, "end": 0.75 },
+      { "word": "${ex('lo', 'లో')}", "start": 0.75, "end": 0.95 },
+      { "word": "${ex('oka', 'ఒక')}", "start": 0.95, "end": 1.15 },
+      { "word": "${ex('katha.', 'కథ')}", "start": 1.15, "end": 1.4 }
     ]
   }
 ]
-Output valid JSON only. Do not include markdown code block formatting or explanations.`;
+Output valid JSON only.`;
+}
 
-    const candidateModels = [
-      'gemini-3.5-flash-lite',
-      'gemini-3.8-flash',
-      'gemini-3.1-flash-lite',
-      'gemini-2.5-flash',
-      'gemini-2.0-flash',
-    ];
+// ─── Gemini call with model fallback and a hard deadline ────────────────────
 
-    let rawText = '';
-    let lastError = null;
+const isOverloaded = (msg) => /503|UNAVAILABLE|overloaded|high demand|temporarily/i.test(msg);
 
-    for (const model of candidateModels) {
-      let attempts = 0;
-      while (attempts < 2) {
-        try {
-          attempts++;
-          const interaction = await client.interactions.create({
+async function transcribeWithFallback(client, { base64, mimeType, prompt }, deadlineAt) {
+  let lastError = null;
+  let timedOut = false;
+
+  for (const model of CANDIDATE_MODELS) {
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      const remaining = deadlineAt - Date.now();
+      if (remaining < 4000) {
+        timedOut = true;
+        return { text: '', lastError, timedOut };
+      }
+      try {
+        const response = await withTimeout(
+          client.models.generateContent({
             model,
-            input: [
+            contents: [
               {
-                type: 'audio',
-                uri: fileState.uri,
-                mime_type: 'audio/wav',
-              },
-              {
-                type: 'text',
-                text: prompt,
+                role: 'user',
+                parts: [{ inlineData: { mimeType, data: base64 } }, { text: prompt }],
               },
             ],
-          });
-
-          rawText = interaction.output_text || '';
-          if (rawText) break;
-        } catch (err) {
-          lastError = err;
-          const msg = String(err);
-          const is503 =
-            msg.includes('503') ||
-            msg.toLowerCase().includes('high demand') ||
-            msg.toLowerCase().includes('temporarily unavailable');
-          if (is503) {
-            await new Promise((r) => setTimeout(r, 1500 * attempts));
-          } else {
-            break;
-          }
+            config: { responseMimeType: 'application/json', temperature: 0 },
+          }),
+          remaining,
+        );
+        const text = response?.text || '';
+        if (text) return { text, lastError, timedOut };
+        break; // empty answer: try the next model
+      } catch (err) {
+        lastError = err;
+        if (err?.code === 'TIMEOUT') {
+          timedOut = true;
+          return { text: '', lastError, timedOut };
         }
+        if (isOverloaded(String(err)) && attempt === 1) {
+          await sleep(1200);
+          continue; // one retry on the same model
+        }
+        break; // quota, bad model name, etc. → next model
       }
-      if (rawText) break;
+    }
+  }
+  return { text: '', lastError, timedOut };
+}
+
+// ─── Handler ────────────────────────────────────────────────────────────────
+
+export default async function handler(req, res) {
+  const startedAt = Date.now();
+  applyCors(req, res);
+
+  const origin = req.headers.origin;
+  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+    res.status(403).json({ error: 'Origin not allowed.' });
+    return;
+  }
+
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return;
+  }
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method Not Allowed. Use POST.' });
+    return;
+  }
+
+  // Bring-your-own-key users pay for themselves, so they skip the shared limit.
+  const rawUserKey = req.headers['x-gemini-api-key'];
+  const userKey =
+    typeof rawUserKey === 'string' && rawUserKey.length > 20 && rawUserKey.length < 200
+      ? rawUserKey.trim()
+      : null;
+  const apiKey = userKey || process.env.GEMINI_API_KEY;
+
+  if (!apiKey || apiKey === 'your_gemini_api_key_here') {
+    res.status(503).json({ error: 'Transcription service is temporarily unavailable. Please try again shortly.' });
+    return;
+  }
+
+  try {
+    if (!userKey) await checkRateLimit(clientIp(req));
+
+    const { buffer, mimeType } = await getAudio(req);
+    if (!buffer || buffer.length < 500) {
+      throw new HttpError(400, 'Invalid audio data received. Minimum 500 bytes required.');
+    }
+    if (buffer.length > MAX_AUDIO_BYTES) {
+      throw new HttpError(413, 'Audio is too large. Try a shorter clip.');
     }
 
-    if (!rawText && lastError) {
-      throw lastError;
+    const spokenLanguage = String(
+      new URL(req.url, 'http://localhost').searchParams.get('spokenLanguage') ||
+        req.headers['x-spoken-language'] ||
+        'auto',
+    );
+    const scriptOutput = String(
+      new URL(req.url, 'http://localhost').searchParams.get('scriptOutput') ||
+        req.headers['x-script-output'] ||
+        'romanized',
+    );
+
+    // hasOwn: stops values like "constructor" from reaching the prompt
+    const langName = Object.hasOwn(LANGUAGE_LABELS, spokenLanguage)
+      ? LANGUAGE_LABELS[spokenLanguage]
+      : LANGUAGE_LABELS.auto;
+    const isRomanized = scriptOutput !== 'native';
+
+    const client = new GoogleGenAI({ apiKey });
+    const prompt = buildPrompt(langName, isRomanized);
+
+    const { text, lastError, timedOut } = await transcribeWithFallback(
+      client,
+      { base64: buffer.toString('base64'), mimeType, prompt },
+      startedAt + DEADLINE_MS,
+    );
+
+    if (!text) {
+      if (lastError) console.error('Transcription failed:', lastError?.message || lastError);
+      if (timedOut) throw new HttpError(504, 'Transcription took too long. Try a shorter clip.');
+      throw new HttpError(503, 'Transcription service is busy. Please try again shortly.');
     }
 
-    const segments = parseSegmentsFromResponse(rawText);
-    if (!segments || segments.length === 0) {
-      res.status(422).json({
-        error: 'No speech detected in audio. Please try a video with clear spoken dialogue.',
-      });
-      return;
+    const segments = parseSegmentsFromResponse(text);
+    if (segments.length === 0) {
+      console.warn('No parseable segments. Response length:', text.length);
+      throw new HttpError(422, 'No speech detected in audio. Please try a video with clear spoken dialogue.');
     }
 
     res.status(200).json({ segments });
   } catch (error) {
+    if (error instanceof HttpError) {
+      if (error.retryAfterSec) res.setHeader('Retry-After', String(error.retryAfterSec));
+      res.status(error.status).json({ error: error.message });
+      return;
+    }
     console.error('Transcription error:', error);
-    const msg = error instanceof Error ? error.message : String(error);
-    res.status(500).json({ error: msg });
-  } finally {
-    // Clean up local temp file
-    if (tmpPath) {
-      await fs.promises.unlink(tmpPath).catch(() => {});
-    }
-    // Clean up uploaded file from Gemini storage
-    if (client && uploadedFile?.name) {
-      await client.files.delete({ name: uploadedFile.name }).catch(() => {});
-    }
+    res.status(500).json({ error: 'Something went wrong while transcribing. Please try again.' });
   }
 }

@@ -67,9 +67,16 @@ export async function transcribeAudio(
   }
 
   if (!res.ok) {
+    const retryAfter = res.headers.get('Retry-After');
+    const retryMsg = retryAfter ? ` (retry in ${retryAfter}s)` : '';
     throw new Error(
-      data?.error || `Transcription service is currently busy (HTTP ${res.status}). Please try again in a moment.`,
+      (data?.error ? `${data.error}${retryMsg}` : null) ||
+        `Transcription service is currently busy (HTTP ${res.status}). Please try again in a moment.`,
     );
+  }
+
+  if (data?.error) {
+    throw new Error(data.error);
   }
 
   if (!data?.segments || !Array.isArray(data.segments) || data.segments.length === 0) {
