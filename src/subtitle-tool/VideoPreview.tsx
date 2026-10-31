@@ -11,6 +11,14 @@ import {
   useState,
   useMemo,
 } from 'react';
+import {
+  Heart,
+  MessageSquare,
+  Share2,
+  Disc,
+  Smartphone,
+  X,
+} from 'lucide-react';
 import type { Segment, SubtitleStyle, VideoAspectRatio, CaptionAnimationEffect, WordTimestamp } from './types';
 
 interface VideoPreviewProps {
@@ -30,45 +38,6 @@ export interface VideoPreviewHandle {
   pause: () => void;
   togglePlay: () => void;
   getCurrentTime: () => number;
-}
-
-const EMOJI_MAP: Record<string, string> = {
-  fire: '🔥',
-  nippu: '🔥',
-  aag: '🔥',
-  hot: '🔥',
-  cinema: '🎬',
-  movie: '🍿',
-  film: '🎞️',
-  katha: '📖',
-  story: '📖',
-  money: '💰',
-  koti: '💰',
-  crore: '💰',
-  dabbulu: '💵',
-  paisa: '💸',
-  speed: '⚡',
-  fast: '⚡',
-  quick: '⚡',
-  epic: '⚡',
-  hertz: '🔊',
-  magic: '✨',
-  super: '⭐',
-  star: '⭐',
-  love: '❤️',
-  prema: '❤️',
-  dil: '❤️',
-  viral: '🚀',
-  rocket: '🚀',
-  king: '👑',
-  boss: '🕶️',
-  passion: '🔥',
-  frame: '📸',
-};
-
-function getKeywordEmoji(word: string): string | null {
-  const clean = word.toLowerCase().replace(/[^a-z]/g, '');
-  return EMOJI_MAP[clean] || null;
 }
 
 function getWordStyles(
@@ -224,6 +193,142 @@ function getWordStyles(
             color: 'rgba(255,255,255,0.85)',
             transform: 'scale(1.0)',
             WebkitTextStroke: '1px rgba(0,0,0,0.5)',
+            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
+            fontWeight: 700,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s ease',
+          };
+
+    case 'premiere-rgb-glitch':
+      return isSpoken
+        ? {
+            color: '#FFFFFF',
+            fontWeight: 900,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            textShadow: '-2.5px 0 0 #00ffff, 2.5px 0 0 #ff0055, 0 0 12px rgba(0,255,255,0.7)',
+            transform: 'scale(1.22)',
+            zIndex: 10,
+          }
+        : {
+            color: 'rgba(255,255,255,0.82)',
+            transform: 'scale(1.0)',
+            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
+            fontWeight: 700,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s ease',
+          };
+
+    case 'premiere-whip-slide':
+      return isSpoken
+        ? {
+            color: baseHighlight,
+            transform: 'scale(1.2) translateX(2px)',
+            WebkitTextStroke: `${Math.max(2, strokeW)}px #000000`,
+            textShadow: '0 4px 12px rgba(0,0,0,0.95)',
+            fontWeight: 900,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            zIndex: 10,
+          }
+        : {
+            color: baseText,
+            transform: 'scale(1.0)',
+            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
+            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
+            fontWeight: 700,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s ease',
+          };
+
+    case 'premiere-typewriter':
+      return isSpoken
+        ? {
+            color: '#FFFFFF',
+            borderBottom: `2.5px solid ${baseHighlight}`,
+            transform: 'scale(1.05)',
+            textShadow: '0 2px 8px rgba(0,0,0,0.95)',
+            fontWeight: 800,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            zIndex: 10,
+          }
+        : {
+            color: 'rgba(255,255,255,0.75)',
+            transform: 'scale(1.0)',
+            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
+            fontWeight: 600,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s ease',
+          };
+
+    case 'premiere-highlight-wipe':
+      return isSpoken
+        ? {
+            backgroundColor: baseHighlight,
+            color: '#000000',
+            transform: 'scale(1.12)',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.6)',
+            borderRadius: '4px',
+            padding: '0.04em 0.28em',
+            fontWeight: 900,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s cubic-bezier(0.2, 0, 0, 1), background-color 0.1s ease',
+            zIndex: 10,
+          }
+        : {
+            color: baseText,
+            transform: 'scale(1.0)',
+            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
+            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
+            fontWeight: 700,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s ease',
+          };
+
+    case 'premiere-lower-third':
+      return isSpoken
+        ? {
+            color: baseHighlight,
+            transform: 'scale(1.1)',
+            textShadow: '0 2px 10px rgba(0,0,0,0.95)',
+            fontWeight: 800,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            zIndex: 10,
+          }
+        : {
+            color: 'rgba(255,255,255,0.85)',
+            transform: 'scale(1.0)',
+            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
+            fontWeight: 600,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            transition: 'transform 0.12s ease',
+          };
+
+    case 'premiere-impact-shake':
+      return isSpoken
+        ? {
+            color: '#FFE600',
+            transform: 'scale(1.26)',
+            WebkitTextStroke: '3px #000000',
+            textShadow: '0 0 18px rgba(255,230,0,0.8), 0 4px 10px #000',
+            fontWeight: 900,
+            display: 'inline-block',
+            marginRight: '0.28em',
+            zIndex: 10,
+          }
+        : {
+            color: baseText,
+            transform: 'scale(1.0)',
+            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
             textShadow: '0 2px 6px rgba(0,0,0,0.9)',
             fontWeight: 700,
             display: 'inline-block',
@@ -537,7 +642,8 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             }`}
             title="Toggle Instagram Reels & TikTok native UI safe zones to prevent captions from getting covered"
           >
-            <span>📱 Safe Zones</span>
+            <Smartphone className="w-3.5 h-3.5" />
+            <span>Safe Zones</span>
             {showSafeZones && <span className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />}
           </button>
         </div>
@@ -562,27 +668,36 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           {showSafeZones && (
             <div className="absolute inset-0 pointer-events-none z-25 flex flex-col justify-between p-4 overflow-hidden select-none">
               {/* Top Danger Guideline (Profile / Search Area) */}
-              <div className="flex items-center justify-between text-[10px] text-red-400/80 px-2 py-1 border-b border-dashed border-red-500/40 bg-red-950/20 rounded">
-                <span>✕ Header Tab Area</span>
+              <div className="flex items-center justify-between text-[10px] text-red-400/80 px-2.5 py-1 border-b border-dashed border-red-500/40 bg-red-950/30 rounded">
+                <div className="flex items-center gap-1.5">
+                  <X className="w-3 h-3 text-red-400" />
+                  <span>Header & Search Navigation</span>
+                </div>
                 <span className="font-mono text-[9px] uppercase tracking-wider">Unsafe Zone</span>
               </div>
 
               {/* Right Side Social Action Bar (Like, Comment, Share) */}
               <div className="absolute right-3.5 bottom-28 flex flex-col items-center gap-3.5 text-white/70">
                 <div className="flex flex-col items-center">
-                  <div className="w-8 h-8 rounded-full bg-black/40 border border-white/20 flex items-center justify-center text-xs">❤️</div>
+                  <div className="w-8 h-8 rounded-full bg-black/50 border border-white/20 flex items-center justify-center text-xs">
+                    <Heart className="w-3.5 h-3.5 text-white" />
+                  </div>
                   <span className="text-[9px] font-mono mt-0.5">182K</span>
                 </div>
                 <div className="flex flex-col items-center">
-                  <div className="w-8 h-8 rounded-full bg-black/40 border border-white/20 flex items-center justify-center text-xs">💬</div>
+                  <div className="w-8 h-8 rounded-full bg-black/50 border border-white/20 flex items-center justify-center text-xs">
+                    <MessageSquare className="w-3.5 h-3.5 text-white" />
+                  </div>
                   <span className="text-[9px] font-mono mt-0.5">6.2K</span>
                 </div>
                 <div className="flex flex-col items-center">
-                  <div className="w-8 h-8 rounded-full bg-black/40 border border-white/20 flex items-center justify-center text-xs">↗️</div>
+                  <div className="w-8 h-8 rounded-full bg-black/50 border border-white/20 flex items-center justify-center text-xs">
+                    <Share2 className="w-3.5 h-3.5 text-white" />
+                  </div>
                   <span className="text-[9px] font-mono mt-0.5">Share</span>
                 </div>
-                <div className="w-7 h-7 rounded-full bg-black/70 border border-white/30 flex items-center justify-center text-[10px] animate-spin">
-                  💿
+                <div className="w-7 h-7 rounded-full bg-black/70 border border-white/30 flex items-center justify-center animate-spin">
+                  <Disc className="w-3.5 h-3.5 text-amber-400" />
                 </div>
               </div>
 
@@ -596,7 +711,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
                   Social native description & hashtags live here...
                 </p>
                 <div className="flex items-center gap-1 text-[9px] text-white/50 font-mono">
-                  <span>♫ Original Audio · Viral Beat</span>
+                  <span>Original Audio · Viral Beat</span>
                 </div>
               </div>
             </div>
@@ -679,15 +794,15 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
                     const wordText = style.uppercase ? w.word.toUpperCase() : w.word;
                     const animEffect = style.animationEffect || 'capcut-bounce';
                     const wordStyle = getWordStyles(isSpoken, animEffect, style);
-                    const emoji = getKeywordEmoji(w.word);
+                    let animClass = '';
+                    if (isSpoken) {
+                      if (animEffect === 'premiere-rgb-glitch') animClass = 'anim-premiere-glitch';
+                      else if (animEffect === 'premiere-whip-slide') animClass = 'anim-premiere-whip';
+                      else if (animEffect === 'premiere-impact-shake') animClass = 'anim-premiere-impact';
+                    }
 
                     return (
-                      <span key={idx} style={wordStyle} className="relative inline-block">
-                        {emoji && isSpoken && (
-                          <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-base animate-bounce pointer-events-none drop-shadow-md">
-                            {emoji}
-                          </span>
-                        )}
+                      <span key={idx} style={wordStyle} className={`relative inline-block ${animClass}`}>
                         {wordText}
                       </span>
                     );

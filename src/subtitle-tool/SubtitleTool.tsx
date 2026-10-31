@@ -7,6 +7,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Sparkles, CheckCircle2, Upload } from 'lucide-react';
 
 import LandingScrollCraft from './LandingScrollCraft';
 import VideoPreview, { type VideoPreviewHandle } from './VideoPreview';
@@ -290,13 +291,15 @@ export default function SubtitleTool() {
               <button
                 type="button"
                 onClick={handleTryDemo}
-                className="px-3.5 py-1.5 text-xs text-zinc-300 hover:text-white hover:bg-white/5 rounded-lg border border-white/10 transition-colors cursor-pointer"
+                className="px-3.5 py-1.5 text-xs text-zinc-300 hover:text-white hover:bg-white/5 rounded-lg border border-white/10 transition-colors cursor-pointer flex items-center gap-1.5"
               >
-                <span>⚡ Try Demo</span>
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>Try Demo</span>
               </button>
               <label
                 className="px-4 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-semibold text-xs tracking-wide shadow-sm active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
               >
+                <Upload className="w-3.5 h-3.5 text-black" />
                 <span>Upload Video</span>
                 <input
                   type="file"
@@ -462,7 +465,10 @@ export default function SubtitleTool() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
           >
-            <span>✅ Video export complete and downloaded!</span>
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <span>Video export complete and downloaded!</span>
+            </div>
             <button
               onClick={() => setStage('editing')}
               className="text-amber-300 hover:text-amber-200 underline font-medium"

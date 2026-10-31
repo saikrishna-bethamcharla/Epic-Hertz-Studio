@@ -150,13 +150,10 @@ export async function burnCaptionsCanvas(
 
         if (activeSub && activeSub.text) {
           ctx.save();
-          const rawText = style?.uppercase ? activeSub.text.toUpperCase() : activeSub.text;
           const fontFamily = style?.fontFamily || 'Montserrat, Inter, "Nirmala UI", sans-serif';
           ctx.font = `900 ${fontSize}px ${fontFamily}`;
-          ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
 
-          const x = width / 2;
           let y = height - Math.round(height * 0.12); // bottom default
           if (style?.position === 'top') {
             y = Math.round(height * 0.14);
@@ -164,18 +161,60 @@ export async function burnCaptionsCanvas(
             y = Math.round(height * 0.5);
           }
 
-          const metrics = ctx.measureText(rawText);
-          const textWidth = metrics.width;
-          const textHeight = fontSize * 1.25;
+          const strokeWidth = Math.max(3, Math.round(fontSize * ((style?.outlineWidth ?? 3) * 0.04)));
+          const baseText = style?.textColor || '#FFFFFF';
+          const highlightColor = style?.highlightColor || '#FFE600';
+          const effect = style?.animationEffect || 'capcut-bounce';
 
-          // Background box (only if configured and not transparent)
+          // Word breakdown with timing sync
+          const rawWords = activeSub.text.trim().split(/\s+/).filter(Boolean);
+          let wordsWithTimings = activeSub.words;
+          if (!wordsWithTimings || wordsWithTimings.length !== rawWords.length) {
+            const segDur = Math.max(0.1, activeSub.end - activeSub.start);
+            const wDur = segDur / Math.max(1, rawWords.length);
+            wordsWithTimings = rawWords.map((word, i) => ({
+              word,
+              start: activeSub.start + i * wDur,
+              end: activeSub.start + (i + 1) * wDur,
+            }));
+          }
+
+          // Active word index
+          let activeWIdx = wordsWithTimings.findIndex(
+            (w) => effectiveTime >= w.start && effectiveTime < w.end
+          );
+          if (activeWIdx === -1) {
+            for (let i = wordsWithTimings.length - 1; i >= 0; i--) {
+              if (effectiveTime >= wordsWithTimings[i].start) {
+                activeWIdx = i;
+                break;
+              }
+            }
+          }
+          if (activeWIdx === -1) activeWIdx = 0;
+
+          // Measure words to calculate positions
+          const spaceWidth = ctx.measureText(' ').width;
+          const wordMetrics = rawWords.map((w) => {
+            const formatted = style?.uppercase ? w.toUpperCase() : w;
+            return {
+              text: formatted,
+              width: ctx.measureText(formatted).width,
+            };
+          });
+
+          const totalLineWidth =
+            wordMetrics.reduce((acc, m) => acc + m.width, 0) +
+            spaceWidth * Math.max(0, wordMetrics.length - 1);
+
+          // Background box for whole subtitle line if configured
           if (style?.backgroundColor && style.backgroundColor !== 'transparent') {
             const padX = fontSize * 0.5;
             const padY = fontSize * 0.25;
-            const rx = x - textWidth / 2 - padX;
-            const ry = y - textHeight / 2 - padY;
-            const rw = textWidth + padX * 2;
-            const rh = textHeight + padY * 2;
+            const rx = width / 2 - totalLineWidth / 2 - padX;
+            const ry = y - (fontSize * 1.25) / 2 - padY;
+            const rw = totalLineWidth + padX * 2;
+            const rh = fontSize * 1.25 + padY * 2;
             const radius = fontSize * 0.25;
 
             ctx.fillStyle = style.backgroundColor;
@@ -188,25 +227,88 @@ export async function burnCaptionsCanvas(
             ctx.fill();
           }
 
-          // Drop shadow for crisp readability
-          if (style?.shadowEffect !== false) {
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
-            ctx.shadowBlur = Math.round(fontSize * 0.3);
-            ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = Math.round(fontSize * 0.1);
+          let curX = width / 2 - totalLineWidth / 2;
+
+          for (let i = 0; i < wordMetrics.length; i++) {
+            const m = wordMetrics[i];
+            const isSpoken = i === activeWIdx;
+            const wordCenterX = curX + m.width / 2;
+
+            ctx.save();
+
+            // Word background pill (Hormozi / Highlighter Sweep)
+            if (isSpoken && (effect === 'hormozi-box' || effect === 'premiere-highlight-wipe')) {
+              const pillPadX = fontSize * 0.2;
+              const pillPadY = fontSize * 0.1;
+              const prx = curX - pillPadX;
+              const pry = y - fontSize * 0.55 - pillPadY;
+              const prw = m.width + pillPadX * 2;
+              const prh = fontSize * 1.1 + pillPadY * 2;
+              const pradius = fontSize * 0.15;
+
+              ctx.fillStyle = highlightColor;
+              ctx.beginPath();
+              if (ctx.roundRect) {
+                ctx.roundRect(prx, pry, prw, prh, pradius);
+              } else {
+                ctx.rect(prx, pry, prw, prh);
+              }
+              ctx.fill();
+            }
+
+            // Word level transformations
+            if (isSpoken) {
+              if (effect === 'capcut-bounce' || effect === 'comic-pop' || effect === 'premiere-impact-shake' || effect === 'premiere-whip-slide') {
+                ctx.translate(wordCenterX, y);
+                ctx.scale(1.16, 1.16);
+                ctx.translate(-wordCenterX, -y);
+              }
+
+              if (effect === 'premiere-glow') {
+                ctx.shadowColor = highlightColor;
+                ctx.shadowBlur = Math.round(fontSize * 0.6);
+              } else if (style?.shadowEffect !== false) {
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+                ctx.shadowBlur = Math.round(fontSize * 0.3);
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = Math.round(fontSize * 0.1);
+              }
+            } else if (style?.shadowEffect !== false) {
+              ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+              ctx.shadowBlur = Math.round(fontSize * 0.3);
+              ctx.shadowOffsetX = 0;
+              ctx.shadowOffsetY = Math.round(fontSize * 0.1);
+            }
+
+            // Outline
+            ctx.lineWidth = strokeWidth;
+            ctx.strokeStyle = style?.outlineColor || '#000000';
+            ctx.lineJoin = 'round';
+            ctx.miterLimit = 2;
+            ctx.strokeText(m.text, curX, y);
+
+            // RGB chromatic split on active word for premiere-rgb-glitch
+            if (isSpoken && effect === 'premiere-rgb-glitch') {
+              ctx.fillStyle = '#00ffff';
+              ctx.fillText(m.text, curX - 2, y);
+              ctx.fillStyle = '#ff0055';
+              ctx.fillText(m.text, curX + 2, y);
+            }
+
+            // Fill text
+            if (isSpoken && (effect === 'hormozi-box' || effect === 'premiere-highlight-wipe')) {
+              ctx.fillStyle = '#000000'; // High contrast black on yellow highlighter
+            } else if (isSpoken && (style?.highlightCurrentWord || effect !== 'none')) {
+              ctx.fillStyle = highlightColor;
+            } else {
+              ctx.fillStyle = baseText;
+            }
+            ctx.fillText(m.text, curX, y);
+
+            ctx.restore();
+
+            curX += m.width + spaceWidth;
           }
-
-          // Stroke / outline
-          const strokeWidth = Math.max(3, Math.round(fontSize * ((style?.outlineWidth ?? 3) * 0.04)));
-          ctx.lineWidth = strokeWidth;
-          ctx.strokeStyle = style?.outlineColor || '#000000';
-          ctx.lineJoin = 'round';
-          ctx.miterLimit = 2;
-          ctx.strokeText(rawText, x, y);
-
-          // Fill text
-          ctx.fillStyle = style?.textColor || '#FFFFFF';
-          ctx.fillText(rawText, x, y);
 
           ctx.restore();
         }

@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { AlertTriangle, Zap, Film, Download } from 'lucide-react';
 import { toSRT, toVTT, downloadText, downloadBlob } from './utils/srt';
 import { burnCaptions, embedSubtitlesMP4 } from './utils/burnCaptions';
 import type { Segment, SubtitleStyle } from './types';
@@ -89,19 +90,20 @@ export default function ExportBar({
       {/* Error */}
       <AnimatePresence>
         {burnError && (
-          <motion.p
-            className="text-crimson-2 text-xs mb-3"
+          <motion.div
+            className="flex items-center gap-1.5 text-crimson-2 text-xs mb-3"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           >
-            ⚠ {burnError}
-          </motion.p>
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+            <span>{burnError}</span>
+          </motion.div>
         )}
       </AnimatePresence>
 
       <div className="flex flex-wrap items-center gap-3">
         {/* Export buttons */}
-        <ExportBtn onClick={handleSRT} icon="⬇" label="Export SRT" />
-        <ExportBtn onClick={handleVTT} icon="⬇" label="Export VTT" />
+        <ExportBtn onClick={handleSRT} label="Export SRT" />
+        <ExportBtn onClick={handleVTT} label="Export VTT" />
 
         {/* 1. Lossless MP4 Button (Recommended) */}
         <button
@@ -114,7 +116,7 @@ export default function ExportBar({
             text-white transition-colors shadow-lg shadow-crimson/20
           "
         >
-          <span>⚡</span>
+          <Zap className="w-4 h-4" />
           {processing && actionText.includes('Embedding') ? 'Embedding…' : 'Lossless Subtitled MP4 (Instant)'}
         </button>
 
@@ -129,7 +131,7 @@ export default function ExportBar({
             disabled:opacity-40 disabled:pointer-events-none text-bone transition-colors
           "
         >
-          <span>🎬</span>
+          <Film className="w-4 h-4" />
           {processing && actionText.includes('Burning') ? 'Burning…' : 'Hardcode / Burn'}
         </button>
 
@@ -153,11 +155,9 @@ export default function ExportBar({
 }
 
 function ExportBtn({
-  icon,
   label,
   onClick,
 }: {
-  icon: string;
   label: string;
   onClick: () => void;
 }) {
@@ -170,8 +170,8 @@ function ExportBtn({
         transition-colors
       "
     >
-      <span>{icon}</span>
-      {label}
+      <Download className="w-3.5 h-3.5 text-mist" />
+      <span>{label}</span>
     </button>
   );
 }

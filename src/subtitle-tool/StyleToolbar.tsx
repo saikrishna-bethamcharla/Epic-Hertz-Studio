@@ -97,6 +97,66 @@ export const PRESET_CONFIGS: Partial<Record<SubtitlePreset, Partial<SubtitleStyl
     highlightCurrentWord: false,
     shadowEffect: true,
   },
+  'premiere-glitch': {
+    preset: 'premiere-glitch',
+    animationEffect: 'premiere-rgb-glitch',
+    fontSize: 26,
+    textColor: '#FFFFFF',
+    backgroundColor: 'transparent',
+    outlineColor: '#000000',
+    outlineWidth: 2,
+    position: 'bottom',
+    fontFamily: 'Montserrat, Inter, monospace',
+    uppercase: true,
+    highlightCurrentWord: true,
+    highlightColor: '#00FFFF',
+    shadowEffect: true,
+  },
+  'premiere-whip': {
+    preset: 'premiere-whip',
+    animationEffect: 'premiere-whip-slide',
+    fontSize: 27,
+    textColor: '#FFFFFF',
+    backgroundColor: 'transparent',
+    outlineColor: '#000000',
+    outlineWidth: 3,
+    position: 'bottom',
+    fontFamily: 'Montserrat, Inter, sans-serif',
+    uppercase: true,
+    highlightCurrentWord: true,
+    highlightColor: '#FFE600',
+    shadowEffect: true,
+  },
+  'premiere-highlighter': {
+    preset: 'premiere-highlighter',
+    animationEffect: 'premiere-highlight-wipe',
+    fontSize: 26,
+    textColor: '#FFFFFF',
+    backgroundColor: 'transparent',
+    outlineColor: '#000000',
+    outlineWidth: 2,
+    position: 'bottom',
+    fontFamily: 'Rubik, Montserrat, sans-serif',
+    uppercase: true,
+    highlightCurrentWord: true,
+    highlightColor: '#FFE600',
+    shadowEffect: true,
+  },
+  'premiere-broadcast': {
+    preset: 'premiere-broadcast',
+    animationEffect: 'premiere-lower-third',
+    fontSize: 23,
+    textColor: '#FFFFFF',
+    backgroundColor: 'rgba(15, 15, 18, 0.85)',
+    outlineColor: '#000000',
+    outlineWidth: 1.5,
+    position: 'bottom',
+    fontFamily: 'Inter, sans-serif',
+    uppercase: false,
+    highlightCurrentWord: true,
+    highlightColor: '#FFD700',
+    shadowEffect: true,
+  },
 };
 
 export default function StyleToolbar({ style, onChange }: StyleToolbarProps) {
@@ -123,11 +183,15 @@ export default function StyleToolbar({ style, onChange }: StyleToolbarProps) {
       {/* Preset Pills */}
       <div className="flex items-center gap-1.5 border-r border-white/10 pr-3 shrink-0">
         <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400/80 mr-1">Style</span>
-        <PresetBtn active={style.preset === 'capcut-viral'} label="⚡ CapCut" onClick={() => applyPreset('capcut-viral')} />
-        <PresetBtn active={style.preset === 'hormozi-yellow'} label="📦 Hormozi" onClick={() => applyPreset('hormozi-yellow')} />
-        <PresetBtn active={style.preset === 'premiere-glow'} label="✨ Glow" onClick={() => applyPreset('premiere-glow')} />
-        <PresetBtn active={style.preset === 'mrbeast-comic'} label="💥 3D Pop" onClick={() => applyPreset('mrbeast-comic')} />
-        <PresetBtn active={style.preset === 'cinema-gold'} label="🎬 Gold" onClick={() => applyPreset('cinema-gold')} />
+        <PresetBtn active={style.preset === 'capcut-viral'} label="CapCut Viral" onClick={() => applyPreset('capcut-viral')} />
+        <PresetBtn active={style.preset === 'hormozi-yellow'} label="Hormozi Box" onClick={() => applyPreset('hormozi-yellow')} />
+        <PresetBtn active={style.preset === 'premiere-glow'} label="Cyber Glow" onClick={() => applyPreset('premiere-glow')} />
+        <PresetBtn active={style.preset === 'premiere-glitch'} label="RGB Glitch" onClick={() => applyPreset('premiere-glitch')} />
+        <PresetBtn active={style.preset === 'premiere-whip'} label="Whip Kinetic" onClick={() => applyPreset('premiere-whip')} />
+        <PresetBtn active={style.preset === 'premiere-highlighter'} label="Marker Wipe" onClick={() => applyPreset('premiere-highlighter')} />
+        <PresetBtn active={style.preset === 'mrbeast-comic'} label="Comic 3D" onClick={() => applyPreset('mrbeast-comic')} />
+        <PresetBtn active={style.preset === 'premiere-broadcast'} label="Lower Third" onClick={() => applyPreset('premiere-broadcast')} />
+        <PresetBtn active={style.preset === 'cinema-gold'} label="Film Gold" onClick={() => applyPreset('cinema-gold')} />
         <PresetBtn active={style.preset === 'clean-minimal'} label="Minimal" onClick={() => applyPreset('clean-minimal')} />
       </div>
 
@@ -136,8 +200,12 @@ export default function StyleToolbar({ style, onChange }: StyleToolbarProps) {
         <span className="text-[10px] uppercase font-bold tracking-wider text-mist mr-1">Effect</span>
         <EffectBtn active={style.animationEffect === 'capcut-bounce'} label="Bounce" onClick={() => setAnimation('capcut-bounce')} />
         <EffectBtn active={style.animationEffect === 'hormozi-box'} label="Badge" onClick={() => setAnimation('hormozi-box')} />
-        <EffectBtn active={style.animationEffect === 'premiere-glow'} label="Glow" onClick={() => setAnimation('premiere-glow')} />
-        <EffectBtn active={style.animationEffect === 'comic-pop'} label="Pop" onClick={() => setAnimation('comic-pop')} />
+        <EffectBtn active={style.animationEffect === 'premiere-glow'} label="Neon Glow" onClick={() => setAnimation('premiere-glow')} />
+        <EffectBtn active={style.animationEffect === 'premiere-rgb-glitch'} label="RGB Glitch" onClick={() => setAnimation('premiere-rgb-glitch')} />
+        <EffectBtn active={style.animationEffect === 'premiere-whip-slide'} label="Whip Slide" onClick={() => setAnimation('premiere-whip-slide')} />
+        <EffectBtn active={style.animationEffect === 'premiere-highlight-wipe'} label="Highlighter" onClick={() => setAnimation('premiere-highlight-wipe')} />
+        <EffectBtn active={style.animationEffect === 'premiere-impact-shake'} label="Impact" onClick={() => setAnimation('premiere-impact-shake')} />
+        <EffectBtn active={style.animationEffect === 'comic-pop'} label="Comic Pop" onClick={() => setAnimation('comic-pop')} />
         <EffectBtn active={style.animationEffect === 'none'} label="Static" onClick={() => setAnimation('none')} />
       </div>
 

@@ -5,6 +5,20 @@
 // - Fine-tuning controls: Typography, Size, Vibrant Swatches, Outline Stroke, and Background.
 
 import { useState, memo } from 'react';
+import {
+  Sparkles,
+  Zap,
+  Square,
+  Tv,
+  MoveRight,
+  Highlighter,
+  Layers,
+  Flame,
+  Film,
+  Minus,
+  Sliders,
+  Activity,
+} from 'lucide-react';
 import type { SubtitleStyle, SubtitlePreset, SubtitlePosition, CaptionAnimationEffect } from './types';
 
 interface TemplateDrawerProps {
@@ -16,7 +30,7 @@ interface PresetItem {
   id: SubtitlePreset;
   title: string;
   badge?: string;
-  category: 'capcut' | 'cinematic';
+  category: 'capcut' | 'premiere' | 'cinematic';
   previewTextColor: string;
   previewBg: string;
   previewOutline?: string;
@@ -265,16 +279,141 @@ export const PRESET_LIBRARY: PresetItem[] = [
       shadowEffect: true,
     },
   },
+  // ── Premiere Pro MOGRT Style Presets ──
+  {
+    id: 'premiere-glitch',
+    title: 'RGB Glitch MOGRT',
+    badge: 'PREMIERE',
+    category: 'premiere',
+    previewTextColor: '#FFFFFF',
+    previewBg: '#0b101c',
+    previewHighlight: '#00FFFF',
+    config: {
+      preset: 'premiere-glitch',
+      animationEffect: 'premiere-rgb-glitch',
+      fontSize: 26,
+      textColor: '#FFFFFF',
+      backgroundColor: 'transparent',
+      outlineColor: '#000000',
+      outlineWidth: 2,
+      position: 'bottom',
+      fontFamily: 'Montserrat, Inter, monospace',
+      uppercase: true,
+      highlightCurrentWord: true,
+      highlightColor: '#00FFFF',
+      shadowEffect: true,
+    },
+  },
+  {
+    id: 'premiere-whip',
+    title: 'Whip Kinetic',
+    badge: 'MOGRT',
+    category: 'premiere',
+    previewTextColor: '#FFFFFF',
+    previewBg: '#13111c',
+    previewHighlight: '#FFE600',
+    config: {
+      preset: 'premiere-whip',
+      animationEffect: 'premiere-whip-slide',
+      fontSize: 27,
+      textColor: '#FFFFFF',
+      backgroundColor: 'transparent',
+      outlineColor: '#000000',
+      outlineWidth: 3,
+      position: 'bottom',
+      fontFamily: 'Montserrat, Inter, sans-serif',
+      uppercase: true,
+      highlightCurrentWord: true,
+      highlightColor: '#FFE600',
+      shadowEffect: true,
+    },
+  },
+  {
+    id: 'premiere-highlighter',
+    title: 'Marker Swipe',
+    badge: 'VIRAL',
+    category: 'premiere',
+    previewTextColor: '#000000',
+    previewBg: '#1e1c12',
+    previewHighlight: '#FFE600',
+    config: {
+      preset: 'premiere-highlighter',
+      animationEffect: 'premiere-highlight-wipe',
+      fontSize: 26,
+      textColor: '#FFFFFF',
+      backgroundColor: 'transparent',
+      outlineColor: '#000000',
+      outlineWidth: 2,
+      position: 'bottom',
+      fontFamily: 'Rubik, Montserrat, sans-serif',
+      uppercase: true,
+      highlightCurrentWord: true,
+      highlightColor: '#FFE600',
+      shadowEffect: true,
+    },
+  },
+  {
+    id: 'premiere-broadcast',
+    title: 'Broadcast Lower 3rd',
+    badge: 'NEWS',
+    category: 'premiere',
+    previewTextColor: '#FFFFFF',
+    previewBg: '#0f141f',
+    previewHighlight: '#FFD700',
+    config: {
+      preset: 'premiere-broadcast',
+      animationEffect: 'premiere-lower-third',
+      fontSize: 23,
+      textColor: '#FFFFFF',
+      backgroundColor: 'rgba(15, 15, 18, 0.85)',
+      outlineColor: '#000000',
+      outlineWidth: 1.5,
+      position: 'bottom',
+      fontFamily: 'Inter, sans-serif',
+      uppercase: false,
+      highlightCurrentWord: true,
+      highlightColor: '#FFD700',
+      shadowEffect: true,
+    },
+  },
+  {
+    id: 'premiere-typewriter',
+    title: 'Editorial Typewriter',
+    badge: 'DOCU',
+    category: 'premiere',
+    previewTextColor: '#FFFFFF',
+    previewBg: '#121415',
+    previewHighlight: '#00FF66',
+    config: {
+      preset: 'premiere-typewriter',
+      animationEffect: 'premiere-typewriter',
+      fontSize: 24,
+      textColor: '#FFFFFF',
+      backgroundColor: 'transparent',
+      outlineColor: '#000000',
+      outlineWidth: 2,
+      position: 'bottom',
+      fontFamily: 'Inter, monospace',
+      uppercase: false,
+      highlightCurrentWord: true,
+      highlightColor: '#00FF66',
+      shadowEffect: true,
+    },
+  },
 ];
 
-const ANIMATION_OPTIONS: { id: CaptionAnimationEffect; label: string; desc: string; icon: string }[] = [
-  { id: 'capcut-bounce', label: 'CapCut Bounce', desc: 'Elastic spring pop & active tilt', icon: '⚡' },
-  { id: 'hormozi-box', label: 'Hormozi Box', desc: 'Jumping high-contrast word badge', icon: '🟨' },
-  { id: 'premiere-glow', label: 'Premiere Glow', desc: 'Electric neon aura & pulse', icon: '🔮' },
-  { id: 'comic-pop', label: 'MrBeast 3D', desc: 'Bold 3D comic shadow & jump', icon: '💥' },
-  { id: 'fire-flame', label: 'Flame Hype', desc: 'Fiery color pop & vertical jump', icon: '🔥' },
-  { id: 'cinematic-clean', label: 'Cinematic', desc: 'Subtle warm gold word sync', icon: '🎬' },
-  { id: 'none', label: 'Static', desc: 'No animation, clean subtitles', icon: '⏹' },
+const ANIMATION_OPTIONS: { id: CaptionAnimationEffect; label: string; desc: string; icon: React.ReactNode }[] = [
+  { id: 'capcut-bounce', label: 'CapCut Bounce', desc: 'Elastic spring pop & active tilt', icon: <Zap className="w-4 h-4 text-amber-400" /> },
+  { id: 'hormozi-box', label: 'Hormozi Box', desc: 'Jumping high-contrast word badge', icon: <Square className="w-4 h-4 text-amber-300" /> },
+  { id: 'premiere-glow', label: 'Cyber Glow', desc: 'Electric neon aura & pulse', icon: <Sparkles className="w-4 h-4 text-cyan-400" /> },
+  { id: 'premiere-rgb-glitch', label: 'RGB Chromatic Glitch', desc: 'Red/Cyan split & micro-jitter', icon: <Tv className="w-4 h-4 text-pink-400" /> },
+  { id: 'premiere-whip-slide', label: 'Kinetic Whip Slide', desc: 'High-speed directional whip entry', icon: <MoveRight className="w-4 h-4 text-emerald-400" /> },
+  { id: 'premiere-highlight-wipe', label: 'Highlighter Sweep', desc: 'Marker box wipe behind active word', icon: <Highlighter className="w-4 h-4 text-yellow-300" /> },
+  { id: 'premiere-impact-shake', label: 'Camera Impact Shake', desc: 'Micro vibration on vocal stress', icon: <Flame className="w-4 h-4 text-orange-400" /> },
+  { id: 'premiere-lower-third', label: 'Broadcast Lower 3rd', desc: 'Sleek glass card with accent bar', icon: <Layers className="w-4 h-4 text-blue-400" /> },
+  { id: 'comic-pop', label: 'MrBeast 3D', desc: 'Bold 3D comic shadow & jump', icon: <Activity className="w-4 h-4 text-green-400" /> },
+  { id: 'cinematic-clean', label: 'Cinematic Minimal', desc: 'Subtle warm gold word sync', icon: <Film className="w-4 h-4 text-amber-200" /> },
+  { id: 'none', label: 'Static Clean', desc: 'No animation, pristine subtitles', icon: <Minus className="w-4 h-4 text-smoke" /> },
 ];
 
 const QUICK_COLORS = [
@@ -296,6 +435,7 @@ function TemplateDrawer({ style, onChange }: TemplateDrawerProps) {
     });
   };
 
+  const premiereList = PRESET_LIBRARY.filter((p) => p.category === 'premiere');
   const capcutList = PRESET_LIBRARY.filter((p) => p.category === 'capcut');
   const cinematicList = PRESET_LIBRARY.filter((p) => p.category === 'cinematic');
 
@@ -304,7 +444,7 @@ function TemplateDrawer({ style, onChange }: TemplateDrawerProps) {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
         <h2 className="text-xs font-bold text-mist uppercase tracking-widest flex items-center gap-2">
-          <span>✨</span>
+          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
           <span>Caption Styles</span>
         </h2>
 
@@ -337,11 +477,33 @@ function TemplateDrawer({ style, onChange }: TemplateDrawerProps) {
       <div className="flex-1 overflow-y-auto p-4 space-y-6" data-lenis-prevent>
         {activeTab === 'presets' ? (
           <>
+            {/* Premiere Pro & MOGRT Presets */}
+            <div>
+              <div className="flex items-center justify-between mb-2.5">
+                <div className="text-[10px] font-bold tracking-wider text-cyan-400 uppercase flex items-center gap-1.5">
+                  <Sliders className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Premiere Pro & MOGRTs</span>
+                </div>
+                <span className="text-[9px] text-smoke">Studio Motion</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2.5">
+                {premiereList.map((item) => (
+                  <PresetCard
+                    key={item.id}
+                    item={item}
+                    isSelected={style.preset === item.id}
+                    onSelect={() => applyPreset(item)}
+                  />
+                ))}
+              </div>
+            </div>
+
             {/* CapCut & Viral Presets */}
             <div>
               <div className="flex items-center justify-between mb-2.5">
-                <div className="text-[10px] font-bold tracking-wider text-amber-400 uppercase">
-                  ⚡ CapCut & Viral Reels
+                <div className="text-[10px] font-bold tracking-wider text-amber-400 uppercase flex items-center gap-1.5">
+                  <Zap className="w-3.5 h-3.5 text-amber-400" />
+                  <span>CapCut & Viral Reels</span>
                 </div>
                 <span className="text-[9px] text-smoke">High-Engagement</span>
               </div>
@@ -360,8 +522,9 @@ function TemplateDrawer({ style, onChange }: TemplateDrawerProps) {
             {/* Cinematic & Film Templates */}
             <div>
               <div className="flex items-center justify-between mb-2.5">
-                <div className="text-[10px] font-bold tracking-wider text-mist uppercase">
-                  🎬 Cinematic & Film
+                <div className="text-[10px] font-bold tracking-wider text-mist uppercase flex items-center gap-1.5">
+                  <Film className="w-3.5 h-3.5 text-mist" />
+                  <span>Cinematic & Film</span>
                 </div>
                 <span className="text-[9px] text-smoke">Ultra Contrast</span>
               </div>
@@ -401,7 +564,9 @@ function TemplateDrawer({ style, onChange }: TemplateDrawerProps) {
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <span className="text-base">{opt.icon}</span>
+                      <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                        {opt.icon}
+                      </div>
                       <div>
                         <div className="font-bold text-xs text-bone">{opt.label}</div>
                         <div className="text-[10px] text-smoke">{opt.desc}</div>
@@ -623,7 +788,27 @@ function PresetCard({
           backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.06) 0%, transparent 80%)',
         }}
       >
-        {item.id === 'hormozi-yellow' ? (
+        {item.id === 'premiere-glitch' ? (
+          <span className="text-[11px] font-black tracking-wider text-white drop-shadow-[2px_0_#FF0055]">
+            RGB <span className="text-[#00FFFF]">GLITCH</span>
+          </span>
+        ) : item.id === 'premiere-whip' ? (
+          <span className="text-[11px] font-black italic tracking-wide text-white drop-shadow-[0_2px_4px_#000]">
+            WHIP <span className="text-[#FFE600]">KINETIC</span>
+          </span>
+        ) : item.id === 'premiere-highlighter' ? (
+          <span className="text-[10px] font-black tracking-wide text-white drop-shadow-[0_2px_4px_#000]">
+            <span className="bg-[#FFE600] text-black px-1.5 py-0.5 rounded font-black">MARKER</span> WIPE
+          </span>
+        ) : item.id === 'premiere-broadcast' ? (
+          <span className="text-[10px] font-bold tracking-wide bg-black/90 text-white px-2 py-0.5 rounded border-l-2 border-[#FFD700]">
+            LOWER <span className="text-[#FFD700]">3RD</span>
+          </span>
+        ) : item.id === 'premiere-typewriter' ? (
+          <span className="text-[11px] font-mono tracking-tight text-white">
+            TYPE<span className="text-[#00FF66]">WRITER</span>_
+          </span>
+        ) : item.id === 'hormozi-yellow' ? (
           <span className="text-[11px] font-black tracking-wide text-white drop-shadow-[0_2px_4px_#000]">
             WATCH <span className="bg-[#FFE600] text-black px-1.5 py-0.5 rounded font-black text-[10px]">THIS</span>
           </span>

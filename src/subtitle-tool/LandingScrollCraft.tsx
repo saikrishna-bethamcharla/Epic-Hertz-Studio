@@ -8,6 +8,16 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
+import {
+  Zap,
+  Sparkles,
+  Check,
+  AlertTriangle,
+  Target,
+  ShieldCheck,
+  UploadCloud,
+  ArrowRight,
+} from 'lucide-react';
 import { PRESET_LIBRARY } from './TemplateDrawer';
 import type { SubtitlePreset, ScriptOutput } from './types';
 
@@ -243,8 +253,8 @@ export default function LandingScrollCraft({
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-6 border-2 border-dashed border-amber-400"
           >
-            <div className="w-16 h-16 rounded-2xl bg-amber-400/20 text-amber-400 flex items-center justify-center text-3xl mb-3 animate-pulse">
-              ⚡
+            <div className="w-16 h-16 rounded-2xl bg-amber-400/20 text-amber-400 flex items-center justify-center mb-3 animate-pulse">
+              <Zap className="w-8 h-8" />
             </div>
             <h2 className="text-xl font-bold text-white">Release to Caption Video</h2>
             <p className="text-zinc-400 text-xs mt-1">Instant word-level sync in Telugu, Hindi, Tamil & English</p>
@@ -293,7 +303,7 @@ export default function LandingScrollCraft({
                 className="px-7 py-3.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-bold text-sm tracking-wide shadow-lg shadow-amber-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 group cursor-pointer"
               >
                 <span>Select Video</span>
-                <span className="group-hover:translate-x-0.5 transition-transform">→</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </button>
 
               <button
@@ -301,20 +311,21 @@ export default function LandingScrollCraft({
                 onClick={onTryDemo}
                 className="px-5 py-3.5 rounded-xl bg-zinc-900/80 hover:bg-zinc-800 border border-white/10 hover:border-white/20 text-zinc-200 text-xs font-semibold active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>⚡ Try Instant Demo</span>
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>Try Instant Demo</span>
               </button>
             </div>
 
             {/* Trust specs */}
             <div className="pt-3 flex flex-wrap items-center gap-y-2 gap-x-5 text-xs text-zinc-400 font-mono">
               <span className="flex items-center gap-1.5">
-                <span className="text-amber-400">✓</span> 100% In-Browser Audio
+                <Check className="w-3.5 h-3.5 text-amber-400" /> 100% In-Browser Audio
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="text-amber-400">✓</span> Tanglish & Hinglish
+                <Check className="w-3.5 h-3.5 text-amber-400" /> Tanglish & Hinglish
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="text-amber-400">✓</span> Broadcast Safe Zones
+                <Check className="w-3.5 h-3.5 text-amber-400" /> Broadcast Safe Zones
               </span>
             </div>
           </div>
@@ -432,8 +443,9 @@ export default function LandingScrollCraft({
 
             {/* RIGHT LAYER: Epic Hertz High-Retention Caption */}
             <div className="absolute inset-0 flex flex-col justify-between p-6 pointer-events-none">
-              <div className="self-end px-2.5 py-1 rounded-full bg-amber-400 text-black text-[11px] font-bold shadow-md">
-                ✨ Epic Hertz 60fps Kinetic Sync
+              <div className="self-end px-3 py-1 rounded-full bg-amber-400 text-black text-[11px] font-bold shadow-md flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3 text-black" />
+                <span>Epic Hertz 60fps Kinetic Sync</span>
               </div>
 
               <div className="my-auto text-center">
@@ -461,8 +473,9 @@ export default function LandingScrollCraft({
               className="absolute inset-0 flex flex-col justify-between p-6 pointer-events-none overflow-hidden bg-black/50 backdrop-grayscale"
               style={{ clipPath: `inset(0 ${100 - splitPos}% 0 0)` }}
             >
-              <div className="self-start px-2.5 py-1 rounded-full bg-zinc-800 text-zinc-300 text-[11px] font-medium border border-zinc-700">
-                ⚠️ Generic Delayed Subtitles
+              <div className="self-start px-3 py-1 rounded-full bg-zinc-800 text-zinc-300 text-[11px] font-medium border border-zinc-700 flex items-center gap-1.5">
+                <AlertTriangle className="w-3 h-3 text-red-400" />
+                <span>Generic Delayed Subtitles</span>
               </div>
 
               <div className="my-auto text-center">
@@ -635,7 +648,12 @@ export default function LandingScrollCraft({
 
                   <div className="mt-3 pt-2 border-t border-white/10 flex items-center justify-between text-[10px]">
                     <span className="text-zinc-400">Style ID: {preset.id}</span>
-                    {isSelected && <span className="text-amber-400 font-bold">Selected ✓</span>}
+                    {isSelected && (
+                      <span className="text-amber-400 font-bold flex items-center gap-1">
+                        <Check className="w-3 h-3 text-amber-400" />
+                        <span>Selected</span>
+                      </span>
+                    )}
                   </div>
                 </div>
               );
@@ -661,8 +679,8 @@ export default function LandingScrollCraft({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {/* Spec 1 */}
             <div className="p-5 rounded-2xl bg-[#121214] border border-white/10 space-y-2">
-              <div className="w-9 h-9 rounded-xl bg-amber-400/10 text-amber-400 flex items-center justify-center text-lg font-bold">
-                ⚡
+              <div className="w-9 h-9 rounded-xl bg-amber-400/10 text-amber-400 flex items-center justify-center">
+                <Zap className="w-5 h-5" />
               </div>
               <h3 className="text-sm font-bold text-white">Instant Audio Extraction</h3>
               <p className="text-xs text-zinc-400 leading-relaxed">
@@ -672,8 +690,8 @@ export default function LandingScrollCraft({
 
             {/* Spec 2 */}
             <div className="p-5 rounded-2xl bg-[#121214] border border-white/10 space-y-2">
-              <div className="w-9 h-9 rounded-xl bg-emerald-400/10 text-emerald-400 flex items-center justify-center text-lg font-bold">
-                🎯
+              <div className="w-9 h-9 rounded-xl bg-emerald-400/10 text-emerald-400 flex items-center justify-center">
+                <Target className="w-5 h-5" />
               </div>
               <h3 className="text-sm font-bold text-white">Sub-Word Karaoke Sync</h3>
               <p className="text-xs text-zinc-400 leading-relaxed">
@@ -683,8 +701,8 @@ export default function LandingScrollCraft({
 
             {/* Spec 3 */}
             <div className="p-5 rounded-2xl bg-[#121214] border border-white/10 space-y-2">
-              <div className="w-9 h-9 rounded-xl bg-cyan-400/10 text-cyan-400 flex items-center justify-center text-lg font-bold">
-                🔒
+              <div className="w-9 h-9 rounded-xl bg-cyan-400/10 text-cyan-400 flex items-center justify-center">
+                <ShieldCheck className="w-5 h-5" />
               </div>
               <h3 className="text-sm font-bold text-white">100% Private Video</h3>
               <p className="text-xs text-zinc-400 leading-relaxed">
@@ -708,8 +726,8 @@ export default function LandingScrollCraft({
             onClick={() => fileInputRef.current?.click()}
             className="group relative rounded-2xl border-2 border-dashed border-white/15 hover:border-amber-400/60 p-8 bg-[#121214]/60 hover:bg-[#18181a] transition-all cursor-pointer flex flex-col items-center justify-center space-y-3"
           >
-            <div className="w-12 h-12 rounded-xl bg-amber-400/10 group-hover:bg-amber-400/20 text-amber-400 flex items-center justify-center text-2xl transition-transform group-hover:scale-110">
-              📥
+            <div className="w-12 h-12 rounded-xl bg-amber-400/10 group-hover:bg-amber-400/20 text-amber-400 flex items-center justify-center transition-transform group-hover:scale-110">
+              <UploadCloud className="w-6 h-6" />
             </div>
             <div className="space-y-1">
               <p className="text-sm font-bold text-white">Click to browse or drop video here</p>
@@ -729,7 +747,8 @@ export default function LandingScrollCraft({
               onClick={onTryDemo}
               className="inline-flex items-center gap-2 text-xs text-zinc-400 hover:text-amber-300 transition-colors font-semibold cursor-pointer"
             >
-              <span>⚡ Or launch studio instantly with sample demo video</span>
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>Or launch studio instantly with sample demo video</span>
               <span>→</span>
             </button>
           </div>

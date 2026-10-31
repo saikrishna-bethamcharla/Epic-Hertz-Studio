@@ -2,6 +2,7 @@
 // Full-screen overlay shown during long async operations.
 
 import { motion } from 'framer-motion';
+import { Volume2, CloudUpload, Cpu, Film, Loader2 } from 'lucide-react';
 import type { AppStage } from './types';
 
 interface ProgressOverlayProps {
@@ -10,15 +11,22 @@ interface ProgressOverlayProps {
   progress?: number; // 0–100, used during 'burning'
 }
 
-const STAGE_ICON: Partial<Record<AppStage, string>> = {
-  extracting: '🔊',
-  uploading: '☁️',
-  transcribing: '✨',
-  burning: '🎬',
-};
+function getStageIcon(stage: AppStage) {
+  switch (stage) {
+    case 'extracting':
+      return <Volume2 className="w-12 h-12 text-amber-400" />;
+    case 'uploading':
+      return <CloudUpload className="w-12 h-12 text-cyan-400" />;
+    case 'transcribing':
+      return <Cpu className="w-12 h-12 text-emerald-400 animate-pulse" />;
+    case 'burning':
+      return <Film className="w-12 h-12 text-crimson-2" />;
+    default:
+      return <Loader2 className="w-12 h-12 text-amber-300 animate-spin" />;
+  }
+}
 
 export default function ProgressOverlay({ stage, statusText, progress }: ProgressOverlayProps) {
-  const icon = STAGE_ICON[stage] ?? '⏳';
   const showBar = stage === 'burning' && typeof progress === 'number';
 
   return (
@@ -34,11 +42,11 @@ export default function ProgressOverlay({ stage, statusText, progress }: Progres
     >
       {/* Pulsing icon */}
       <motion.div
-        className="text-6xl mb-6 select-none"
-        animate={{ scale: [1, 1.08, 1] }}
+        className="w-24 h-24 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 shadow-2xl backdrop-blur-md"
+        animate={{ scale: [1, 1.06, 1] }}
         transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
       >
-        {icon}
+        {getStageIcon(stage)}
       </motion.div>
 
       {/* Status text */}

@@ -7,6 +7,7 @@
 // - Quick edit actions: + Text, Split, Merge, Delete, Undo/Redo, Find & Replace
 
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { Scissors, Combine, Trash2, BookOpen, Plus, Undo2, Redo2 } from 'lucide-react';
 import type { Segment } from './types';
 
 interface TimelineProps {
@@ -295,37 +296,41 @@ export default function Timeline({
         <div className="flex items-center gap-1.5 bg-[#1a1a18] p-1 rounded-xl border border-white/10">
           <button
             onClick={handleAddText}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-bone hover:bg-white/10 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-amber-400 text-black hover:bg-amber-300 transition-colors cursor-pointer"
             title="Add text segment at current position"
           >
-            <span>+ Text</span>
+            <Plus className="w-3.5 h-3.5" />
+            <span>Text</span>
           </button>
 
           <button
             onClick={handleSplit}
             disabled={!currentSeg}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-bone hover:bg-white/10 disabled:opacity-40 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-bone hover:bg-white/10 disabled:opacity-40 transition-colors cursor-pointer"
             title="Split active segment at playhead"
           >
-            <span>✂ Split</span>
+            <Scissors className="w-3 h-3 text-mist" />
+            <span>Split</span>
           </button>
 
           <button
             onClick={handleMerge}
             disabled={!currentSeg}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-bone hover:bg-white/10 disabled:opacity-40 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-bone hover:bg-white/10 disabled:opacity-40 transition-colors cursor-pointer"
             title="Merge segment with next"
           >
-            <span>🔗 Merge</span>
+            <Combine className="w-3 h-3 text-mist" />
+            <span>Merge</span>
           </button>
 
           <button
             onClick={handleDelete}
             disabled={!currentSeg}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-crimson-2 hover:bg-crimson/15 disabled:opacity-40 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-crimson-2 hover:bg-crimson/15 disabled:opacity-40 transition-colors cursor-pointer"
             title="Delete segment"
           >
-            <span>🗑 Delete</span>
+            <Trash2 className="w-3 h-3 text-crimson-2" />
+            <span>Delete</span>
           </button>
 
           <div className="h-4 w-px bg-white/15 mx-1" />
@@ -334,23 +339,19 @@ export default function Timeline({
           <button
             onClick={handleUndo}
             disabled={history.length === 0}
-            className="p-1 rounded text-smoke hover:text-bone disabled:opacity-30 transition-colors"
+            className="p-1 rounded text-smoke hover:text-bone disabled:opacity-30 transition-colors cursor-pointer"
             title="Undo"
           >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a5 5 0 015 5v2M3 10l6 6m-6-6l6-6" />
-            </svg>
+            <Undo2 className="w-3.5 h-3.5" />
           </button>
 
           <button
             onClick={handleRedo}
             disabled={redoStack.length === 0}
-            className="p-1 rounded text-smoke hover:text-bone disabled:opacity-30 transition-colors"
+            className="p-1 rounded text-smoke hover:text-bone disabled:opacity-30 transition-colors cursor-pointer"
             title="Redo"
           >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10H11a5 5 0 00-5 5v2m15-7l-6 6m6-6l-6-6" />
-            </svg>
+            <Redo2 className="w-3.5 h-3.5" />
           </button>
 
           <div className="h-4 w-px bg-white/15 mx-1" />
@@ -358,10 +359,11 @@ export default function Timeline({
           {/* Find & Replace Dictionary */}
           <button
             onClick={() => setShowDictionary(!showDictionary)}
-            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-amber-300 hover:bg-amber-400/10 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-amber-300 hover:bg-amber-400/10 transition-colors cursor-pointer"
             title="Find & Replace in all captions"
           >
-            <span>📖 Dictionary</span>
+            <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+            <span>Dictionary</span>
           </button>
         </div>
 

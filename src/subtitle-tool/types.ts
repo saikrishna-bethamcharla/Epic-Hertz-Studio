@@ -28,12 +28,18 @@ export type SpokenLanguage =
   | 'fr';
 
 export type CaptionAnimationEffect =
-  | 'capcut-bounce'   // CapCut signature bounce pop & tilt
-  | 'hormozi-box'     // Alex Hormozi jumping word highlight badge
-  | 'premiere-glow'   // Premiere Pro electric neon glow & scale
-  | 'comic-pop'       // MrBeast 3D comic shadow & energetic pop
-  | 'fire-flame'      // Flame gradient & hype jump
-  | 'cinematic-clean' // Netflix / Premiere pristine film look
+  | 'capcut-bounce'        // CapCut signature bounce pop & tilt
+  | 'hormozi-box'          // Alex Hormozi jumping word highlight badge
+  | 'premiere-glow'        // Premiere Pro electric neon glow & scale
+  | 'comic-pop'            // MrBeast 3D comic shadow & energetic pop
+  | 'fire-flame'           // Flame gradient & hype jump
+  | 'cinematic-clean'      // Netflix / Premiere pristine film look
+  | 'premiere-rgb-glitch'  // Premiere RGB chromatic split & micro jitter
+  | 'premiere-whip-slide'  // Kinetic directional whip slide with inertia
+  | 'premiere-typewriter'  // Editorial typewriter reveal
+  | 'premiere-highlight-wipe' // Highlighter marker wipe under active word
+  | 'premiere-lower-third' // Broadcast glass lower-third banner
+  | 'premiere-impact-shake' // Camera impact shake on keywords
   | 'none';
 
 export type SubtitlePreset =
@@ -54,7 +60,12 @@ export type SubtitlePreset =
   | 'gold-luxe'
   | 'punch'
   | 'dark'
-  | 'headline';
+  | 'headline'
+  | 'premiere-glitch'
+  | 'premiere-whip'
+  | 'premiere-broadcast'
+  | 'premiere-highlighter'
+  | 'premiere-typewriter';
 
 export type SubtitlePosition = 'bottom' | 'middle' | 'top';
 export type VideoAspectRatio = 'original' | '9:16' | '16:9' | '1:1';

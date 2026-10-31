@@ -3,6 +3,7 @@
 
 import { useRef, useState, useCallback, type DragEvent, type ChangeEvent } from 'react';
 import { motion } from 'framer-motion';
+import { AlertCircle } from 'lucide-react';
 
 interface DropZoneProps {
   onFile: (file: File) => void;
@@ -123,12 +124,13 @@ export default function DropZone({ onFile }: DropZoneProps) {
 
       {/* Error message */}
       {error && (
-        <motion.p
-          className="mt-4 text-crimson-2 text-sm"
+        <motion.div
+          className="mt-4 text-crimson-2 text-sm flex items-center justify-center gap-1.5"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }}
         >
-          ⚠ {error}
-        </motion.p>
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{error}</span>
+        </motion.div>
       )}
 
       {/* Footnote */}
