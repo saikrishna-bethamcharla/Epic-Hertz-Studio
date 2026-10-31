@@ -94,8 +94,8 @@ export function isStudioApp(): boolean {
     return true;
   }
 
-  // Localhost or standard domain default: Portfolio
-  return false;
+  // Default for Epic Hertz Studio project
+  return true;
 }
 
 export default function App() {

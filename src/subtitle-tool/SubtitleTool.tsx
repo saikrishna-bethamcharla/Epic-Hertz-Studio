@@ -285,6 +285,32 @@ export default function SubtitleTool() {
 
         {/* Action Controls */}
         <div className="flex items-center gap-2.5">
+          {stage === 'idle' && (
+            <>
+              <button
+                type="button"
+                onClick={handleTryDemo}
+                className="px-3.5 py-1.5 text-xs text-zinc-300 hover:text-white hover:bg-white/5 rounded-lg border border-white/10 transition-colors cursor-pointer"
+              >
+                <span>⚡ Try Demo</span>
+              </button>
+              <label
+                className="px-4 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-semibold text-xs tracking-wide shadow-sm active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>Upload Video</span>
+                <input
+                  type="file"
+                  accept="video/*,audio/*,.mp4,.mov,.webm,.m4v"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleFileDrop(f);
+                  }}
+                />
+              </label>
+            </>
+          )}
+
           {stage === 'editing' && (
             <>
               <button

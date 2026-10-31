@@ -33,30 +33,13 @@ export default function Hero({ onPlay: _onPlay, onResume: _onResume, profileId: 
         mx.set((e.clientX / window.innerWidth) * 2 - 1);
       }}
     >
-      {/* 1. ATMOSPHERIC VOLUMETRIC GLOW & FILM PARTICLES */}
+      {/* 2. ATMOSPHERIC VOLUMETRIC GLOW & FILM PARTICLES */}
       <motion.div aria-hidden className="absolute inset-0 pointer-events-none" style={{ x: glowX, y: bgParallaxY }}>
         <div className="absolute left-1/2 top-[50%] -translate-x-1/2 -translate-y-1/2 h-[75vh] w-[92vw] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(222,27,28,0.36)_0%,rgba(140,12,24,0.18)_42%,rgba(5,5,7,0)_72%)] blur-3xl" />
         <div className="absolute right-[-10%] top-[-10%] h-[70vh] w-[50vw] rounded-full bg-[radial-gradient(circle,rgba(255,42,43,0.14),transparent_65%)] blur-2xl" />
         <div className="absolute bottom-[-15%] left-[-10%] h-[60vh] w-[50vw] rounded-full bg-[radial-gradient(circle,rgba(70,10,20,0.22),transparent_65%)] blur-2xl" />
       </motion.div>
       <Particles className="z-[1] opacity-75" />
-
-      {/* 2. GIREESH-STYLE TECHNICAL FURNITURE OVERLAYS */}
-      {/* Lateral Glowing Arrow Chevrons (Left & Right) */}
-      <div aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 z-20 hidden md:flex flex-col gap-6 text-bone/25">
-        {[0, 1, 2, 3].map((i) => (
-          <span key={i} className="text-xs transition-opacity duration-300 hover:text-crimson-2" style={{ opacity: 0.25 + i * 0.15 }}>
-            ◀
-          </span>
-        ))}
-      </div>
-      <div aria-hidden className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 z-20 hidden md:flex flex-col gap-6 text-bone/25">
-        {[0, 1, 2, 3].map((i) => (
-          <span key={i} className="text-xs transition-opacity duration-300 hover:text-crimson-2" style={{ opacity: 0.25 + i * 0.15 }}>
-            ▶
-          </span>
-        ))}
-      </div>
 
       {/* 3. THE GIANT CINEMATIC WORDMARK ("SAI KRISHNA") */}
       <motion.div
