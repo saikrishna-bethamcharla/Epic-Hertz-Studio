@@ -507,6 +507,19 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
     const containerRef = useRef<HTMLDivElement>(null);
     const playPromiseRef = useRef<Promise<void> | null>(null);
 
+    // Captions are authored against a ~280px-wide reel frame. On narrower frames (phones) scale them
+    // down so words don't overflow; never scale above 1 so desktop looks exactly as before.
+    const [frameWidth, setFrameWidth] = useState(0);
+
+    useEffect(() => {
+      const el = containerRef.current;
+      if (!el || typeof ResizeObserver === 'undefined') return;
+      const ro = new ResizeObserver(([entry]) => setFrameWidth(entry.contentRect.width));
+      ro.observe(el);
+      setFrameWidth(el.getBoundingClientRect().width);
+      return () => ro.disconnect();
+    }, []);
+
     // Create stable Blob URL for the video file
     const videoURL = useMemo(() => URL.createObjectURL(videoFile), [videoFile]);
 
@@ -702,6 +715,17 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       // 3. Segment entered -> activate first word immediately!
       return 0;
     }, [displayWords, effectiveTime]);
+
+    // Style as drawn in the preview (scaled down on narrow frames)
+    const previewScale = frameWidth > 0 ? Math.min(1, frameWidth / 280) : 1;
+    const viewStyle: SubtitleStyle =
+      previewScale === 1
+        ? style
+        : {
+            ...style,
+            fontSize: Math.round(style.fontSize * previewScale),
+            outlineWidth: Number((style.outlineWidth * previewScale).toFixed(1)),
+          };
 
     // Subtitle position class
     const posClass =
@@ -905,7 +929,9 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
                     : ''
                 }`}
                 style={{
-                  fontSize: `${style.fontSize}px`,
+                  fontSize: `${viewStyle.fontSize}px`,
+                  // Draw the outline behind the fill (as the exported video does) so letters stay clean and bright
+                  paintOrder: 'stroke fill',
                   fontFamily: style.fontFamily || 'Montserrat, Inter, sans-serif',
                   backgroundColor:
                     style.backgroundColor && style.backgroundColor !== 'transparent'
@@ -933,7 +959,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
                     const isSpoken = idx === activeWordIndex;
                     const wordText = style.uppercase ? w.word.toUpperCase() : w.word;
                     const animEffect = style.animationEffect || 'slide-up';
-                    const wordStyle = getWordStyles(isSpoken, animEffect, style);
+                    const wordStyle = getWordStyles(isSpoken, animEffect, viewStyle);
                     let animClass = '';
                     if (isSpoken) {
                       if (animEffect === 'glitch-whip' || animEffect === 'premiere-rgb-glitch') {
@@ -963,7 +989,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
                   <span
                     style={{
                       color: style.textColor,
-                      WebkitTextStroke: `${style.outlineWidth}px ${style.outlineColor}`,
+                      WebkitTextStroke: `${viewStyle.outlineWidth}px ${style.outlineColor}`,
                       textShadow: '0 2px 8px rgba(0,0,0,0.95)',
                       fontWeight: 800,
                     }}

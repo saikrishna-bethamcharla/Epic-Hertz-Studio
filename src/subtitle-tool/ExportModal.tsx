@@ -109,8 +109,11 @@ export default function ExportModal({
             <p className="text-xs text-smoke mt-0.5">Choose your delivery format for clients or social channels</p>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="text-smoke hover:text-bone text-base p-1"
+            aria-label="Close export dialog"
+            title="Close dialog"
+            className="text-smoke hover:text-bone text-base p-1.5 rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
           >
             ✕
           </button>

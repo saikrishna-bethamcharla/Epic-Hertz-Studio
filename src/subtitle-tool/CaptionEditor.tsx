@@ -132,8 +132,11 @@ export default function CaptionEditor({
           />
           {searchQuery && (
             <button
+              type="button"
               onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-smoke hover:text-bone text-xs"
+              aria-label="Clear search filter"
+              title="Clear search"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-smoke hover:text-bone text-xs p-1"
             >
               ✕
             </button>

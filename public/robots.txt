@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://epic-hertz-studio.vercel.app/sitemap.xml

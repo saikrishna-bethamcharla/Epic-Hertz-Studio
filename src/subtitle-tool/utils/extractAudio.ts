@@ -144,15 +144,17 @@ export async function extractAudio(
   });
 
   const inputName = 'input_video';
-  const outputName = 'audio_out.mp3';
+  // 16 kHz mono 16-bit PCM WAV — the same shape the Web Audio path produces, so the
+  // uploader can split it at pauses and every chunk stays under the server's size cap.
+  const outputName = 'audio_out.wav';
 
   await ffmpeg.writeFile(inputName, await fetchFile(videoFile));
   await ffmpeg.exec([
     '-i', inputName,
-    '-vn',                // strip video
-    '-acodec', 'libmp3lame',
-    '-q:a', '4',
-    '-ar', '16000',
+    '-vn',                 // strip video
+    '-ac', '1',            // mono
+    '-ar', '16000',        // 16 kHz
+    '-c:a', 'pcm_s16le',   // 16-bit PCM
     outputName,
   ]);
 
@@ -160,7 +162,7 @@ export async function extractAudio(
   await ffmpeg.deleteFile(inputName).catch(() => {});
   await ffmpeg.deleteFile(outputName).catch(() => {});
 
-  return new Blob([data], { type: 'audio/mp3' });
+  return new Blob([data], { type: 'audio/wav' });
 }
 
 export function prefetchFFmpeg(): void {

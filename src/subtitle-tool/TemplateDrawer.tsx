@@ -1,5 +1,5 @@
 // ─── TemplateDrawer ──────────────────────────────────────────────────────────
-// Right-hand visual preset gallery with Premiere Pro style motion templates:
+// Right-hand visual preset gallery with motion templates and slide effects:
 // - Physical text slide & movement transitions (Slide Up, Whip Left, Punch Zoom, Cascade, 3D Flip, etc.)
 // - Unified single gallery — all motion templates in one place for easy selection
 // - Fine-tuning controls: Typography, Size, Vibrant Swatches, Outline Stroke, and Background.
@@ -43,7 +43,7 @@ export const PRESET_LIBRARY: PresetItem[] = [
   {
     id: 'slide-up-modern',
     title: 'Slide Up Mask',
-    badge: 'MOGRT',
+    badge: 'REVEAL',
     motionLabel: 'Smooth upward mask reveal',
     previewTextColor: '#FFFFFF',
     previewBg: '#161a1d',
@@ -139,7 +139,7 @@ export const PRESET_LIBRARY: PresetItem[] = [
   {
     id: 'flip-3d-title',
     title: '3D Perspective Flip',
-    badge: '3D MOGRT',
+    badge: '3D FLIP',
     motionLabel: '3D perspective tumble & roll',
     previewTextColor: '#FFFFFF',
     previewBg: '#131b24',
@@ -401,11 +401,11 @@ function TemplateDrawer({ style, onChange }: TemplateDrawerProps) {
         {activeTab === 'presets' ? (
           <div>
             <div className="flex items-center justify-between mb-3">
-              <div className="text-[10px] font-bold tracking-wider text-amber-300 uppercase flex items-center gap-1.5">
+              <div className="text-xs font-bold tracking-wider text-amber-300 uppercase flex items-center gap-1.5">
                 <Sliders className="w-3.5 h-3.5 text-amber-400" />
                 <span>Motion & Text Templates</span>
               </div>
-              <span className="text-[9px] text-smoke font-mono">{PRESET_LIBRARY.length} Effects</span>
+              <span className="text-xs text-mist font-mono">{PRESET_LIBRARY.length} Effects</span>
             </div>
             {/* Unified 2-column grid containing all presets */}
             <div className="grid grid-cols-2 gap-2.5">
@@ -427,7 +427,7 @@ function TemplateDrawer({ style, onChange }: TemplateDrawerProps) {
               <label className="font-semibold text-bone block mb-1.5 flex items-center justify-between">
                 <span>Animation Effect</span>
                 <span className="text-[10px] text-amber-300 uppercase tracking-wider font-mono">
-                  {style.animationEffect || 'capcut-bounce'}
+                  {style.animationEffect || 'slide-up'}
                 </span>
               </label>
               <div className="grid grid-cols-1 gap-1.5">
@@ -448,7 +448,7 @@ function TemplateDrawer({ style, onChange }: TemplateDrawerProps) {
                       </div>
                       <div>
                         <div className="font-bold text-xs text-bone">{opt.label}</div>
-                        <div className="text-[10px] text-smoke">{opt.desc}</div>
+                        <div className="text-xs text-mist">{opt.desc}</div>
                       </div>
                     </div>
                     {style.animationEffect === opt.id && (
@@ -520,7 +520,7 @@ function TemplateDrawer({ style, onChange }: TemplateDrawerProps) {
                 onChange={(e) => onChange({ ...style, syncOffset: Number(e.target.value) })}
                 className="w-full accent-amber-400 cursor-pointer"
               />
-              <div className="flex justify-between text-[10px] text-smoke mt-1 font-mono">
+              <div className="flex justify-between text-xs text-mist mt-1 font-mono">
                 <span>◀ Earlier (-1.0s)</span>
                 <button
                   type="button"
@@ -615,7 +615,7 @@ function TemplateDrawer({ style, onChange }: TemplateDrawerProps) {
             <div className="flex items-center justify-between p-3 rounded-xl bg-[#1c1c1a] border border-white/10">
               <div>
                 <div className="text-bone font-medium">All Caps (UPPERCASE)</div>
-                <div className="text-smoke text-[11px]">CapCut / Reels signature typography</div>
+                <div className="text-smoke text-[11px]">Clean high-visibility typography</div>
               </div>
               <button
                 type="button"
@@ -725,12 +725,12 @@ function PresetCard({
           {item.title}
         </span>
         {item.badge && (
-          <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-400/10 text-amber-300 border border-amber-400/20 tracking-wider">
+          <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-amber-400/15 text-amber-300 border border-amber-400/20 tracking-wider">
             {item.badge}
           </span>
         )}
       </div>
-      <div className="text-[9px] text-smoke truncate mt-0.5 w-full">
+      <div className="text-xs text-mist truncate mt-0.5 w-full">
         {item.motionLabel}
       </div>
     </button>

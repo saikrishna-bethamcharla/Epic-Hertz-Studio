@@ -62,49 +62,49 @@ const RUNWAY_STYLES: Array<{
   words: string[];
 }> = [
   {
-    id: 'capcut-viral',
-    title: 'CapCut Viral',
-    badge: 'POPULAR',
+    id: 'slide-up-modern',
+    title: 'Slide Up Mask',
+    badge: 'REVEAL',
     highlightColor: '#FFE600',
     textColor: '#FFFFFF',
     bgBadge: 'rgba(0,0,0,0.75)',
-    words: ['THIS', 'CHANGES', 'EVERYTHING', 'FOR', 'CREATORS'],
+    words: ['SMOOTH', 'VERTICAL', 'MASK', 'REVEAL', 'CADENCE'],
   },
   {
-    id: 'hormozi-yellow',
-    title: 'Hormozi Impact',
-    badge: 'HIGH RETENTION',
-    highlightColor: '#22C55E',
-    textColor: '#FFFFFF',
-    bgBadge: 'rgba(0,0,0,0.85)',
-    words: ['NEVER', 'LOSE', 'ANOTHER', 'VIEWER', 'AGAIN'],
-  },
-  {
-    id: 'premiere-glow',
-    title: 'Cyber Glow',
-    badge: 'TECH & GAMING',
+    id: 'whip-left-bold',
+    title: 'Whip Left Snap',
+    badge: 'KINETIC',
     highlightColor: '#00F0FF',
     textColor: '#FFFFFF',
     bgBadge: 'rgba(10,10,25,0.85)',
-    words: ['NEXT', 'GEN', 'AUDIO', 'SYNC', 'IS', 'HERE'],
+    words: ['FAST', 'LATERAL', 'WHIP', 'INTO', 'POSITION'],
   },
   {
-    id: 'mrbeast-comic',
-    title: 'MrBeast Pop',
-    badge: 'HIGH ENERGY',
-    highlightColor: '#EF4444',
+    id: 'punch-zoom-action',
+    title: 'Punch Zoom In',
+    badge: 'ACTION',
+    highlightColor: '#FF4500',
     textColor: '#FFFFFF',
     bgBadge: 'rgba(0,0,0,0.8)',
-    words: ['WE', 'TESTED', '100', 'VIRAL', 'VIDEOS'],
+    words: ['DYNAMIC', 'PUNCH', 'ZOOM', 'FOR', 'CREATORS'],
+  },
+  {
+    id: 'word-cascade-reel',
+    title: 'Word Cascade',
+    badge: 'RHYTHM',
+    highlightColor: '#00FF66',
+    textColor: '#FFFFFF',
+    bgBadge: 'rgba(0,0,0,0.85)',
+    words: ['STAGGERED', 'WORD', 'BY', 'WORD', 'RISE'],
   },
   {
     id: 'clean-minimal',
-    title: 'Cinema Minimal',
+    title: 'Clean Minimal',
     badge: 'EDITORIAL',
     highlightColor: '#F59E0B',
     textColor: '#FFFFFF',
     bgBadge: 'rgba(18,18,18,0.7)',
-    words: ['CRAFTED', 'WITH', 'UNCOMPROMISING', 'PRECISION'],
+    words: ['CRISP', 'LEGIBLE', 'PRISTINE', 'CLEAN', 'TYPE'],
   },
 ];
 
@@ -120,7 +120,7 @@ export default function LandingScrollCraft({
   const [scriptMode, setScriptMode] = useState<ScriptOutput>('romanized');
 
   // Active style for runway
-  const [activePresetId, setActivePresetId] = useState<SubtitlePreset>('capcut-viral');
+  const [activePresetId, setActivePresetId] = useState<SubtitlePreset>('slide-up-modern');
   const [activeWordIdx, setActiveWordIdx] = useState(0);
 
   // Split-curtain state
@@ -348,7 +348,7 @@ export default function LandingScrollCraft({
                 <div
                   className="absolute inset-0 bg-cover bg-center filter brightness-90"
                   style={{
-                    backgroundImage: `url('https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=687&auto=format&fit=crop')`,
+                    backgroundImage: `url(${import.meta.env.BASE_URL}assets/landing-hero-reel.jpg)`,
                   }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-black/60" />
@@ -420,7 +420,7 @@ export default function LandingScrollCraft({
               Drag the Curtain. See the Contrast.
             </h2>
             <p className="text-zinc-400 text-xs sm:text-sm">
-              Flat, monochrome captions drop retention. Epic Hertz highlights each vocal syllable at 60fps with high-contrast social typography.
+              Drag the handle to compare plain, delayed captions with the word-by-word kinetic style Epic Hertz generates.
             </p>
           </div>
 
@@ -435,13 +435,13 @@ export default function LandingScrollCraft({
             <div
               className="absolute inset-0 bg-cover bg-center filter brightness-95"
               style={{
-                backgroundImage: `url('https://images.unsplash.com/photo-1516280440614-37939bbacd81?q=80&w=1200&auto=format&fit=crop')`,
+                backgroundImage: `url(${import.meta.env.BASE_URL}assets/landing-split-stage.jpg)`,
               }}
             >
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/60" />
             </div>
 
-            {/* RIGHT LAYER: Epic Hertz High-Retention Caption */}
+            {/* RIGHT LAYER: Epic Hertz Kinetic Caption */}
             <div className="absolute inset-0 flex flex-col justify-between p-6 pointer-events-none">
               <div className="self-end px-3 py-1 rounded-full bg-amber-400 text-black text-[11px] font-bold shadow-md flex items-center gap-1.5">
                 <Sparkles className="w-3 h-3 text-black" />
@@ -464,15 +464,23 @@ export default function LandingScrollCraft({
               </div>
 
               <div className="self-end text-[11px] text-zinc-400 font-mono">
-                Word Syllable Lead: <span className="text-emerald-400 font-bold">-0.35s Onset</span>
+                Word Sync: <span className="text-emerald-400 font-bold">Real-time Lead Timing</span>
               </div>
             </div>
 
-            {/* LEFT LAYER: Dull Raw Caption (Clipped by splitPos) */}
+            {/* LEFT LAYER: Dull Raw Caption (Clipped by splitPos, fully opaque so layers never overlap) */}
             <div
-              className="absolute inset-0 flex flex-col justify-between p-6 pointer-events-none overflow-hidden bg-black/50 backdrop-grayscale"
+              className="absolute inset-0 isolate flex flex-col justify-between p-6 pointer-events-none overflow-hidden bg-zinc-950"
               style={{ clipPath: `inset(0 ${100 - splitPos}% 0 0)` }}
             >
+              {/* Opaque grayscale copy of the frame, so the styled layer underneath never shows through */}
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 -z-10 bg-zinc-950 bg-cover bg-center grayscale brightness-50"
+                style={{
+                  backgroundImage: `url(${import.meta.env.BASE_URL}assets/landing-split-stage.jpg)`,
+                }}
+              />
               <div className="self-start px-3 py-1 rounded-full bg-zinc-800 text-zinc-300 text-[11px] font-medium border border-zinc-700 flex items-center gap-1.5">
                 <AlertTriangle className="w-3 h-3 text-red-400" />
                 <span>Generic Delayed Subtitles</span>
@@ -599,7 +607,7 @@ export default function LandingScrollCraft({
               Style Wardrobe
             </span>
             <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              5 Creator Presets for Immediate Impact
+              Creator Motion Presets
             </h2>
             <p className="text-zinc-400 text-xs sm:text-sm">
               Click any style to preview its kinetic typography and make it your active preset.

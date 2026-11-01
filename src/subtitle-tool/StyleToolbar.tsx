@@ -1,5 +1,5 @@
 // ─── StyleToolbar ─────────────────────────────────────────────────────────────
-// Real-time styling studio: Premiere Pro style motion templates and slide effects.
+// Real-time styling studio: Motion templates and kinetic slide effects.
 
 import type { SubtitleStyle, SubtitlePreset, CaptionAnimationEffect } from './types';
 
@@ -289,7 +289,7 @@ export default function StyleToolbar({ style, onChange }: StyleToolbarProps) {
     <div className="flex flex-wrap items-center gap-3 px-4 py-2 bg-[#121211]/90 border-b border-white/[0.08] backdrop-blur-md overflow-x-auto scrollbar-thin">
       {/* Preset Pills */}
       <div className="flex items-center gap-1.5 border-r border-white/10 pr-3 shrink-0">
-        <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400/80 mr-1">Motion</span>
+        <span className="text-xs uppercase font-bold tracking-wider text-amber-400/90 mr-1">Motion</span>
         <PresetBtn active={style.preset === 'slide-up-modern'} label="Slide Up" onClick={() => applyPreset('slide-up-modern')} />
         <PresetBtn active={style.preset === 'whip-left-bold'} label="Whip Snap" onClick={() => applyPreset('whip-left-bold')} />
         <PresetBtn active={style.preset === 'punch-zoom-action'} label="Punch Zoom" onClick={() => applyPreset('punch-zoom-action')} />
@@ -306,7 +306,7 @@ export default function StyleToolbar({ style, onChange }: StyleToolbarProps) {
 
       {/* Animation Effect Quick Selector */}
       <div className="flex items-center gap-1.5 border-r border-white/10 pr-3 shrink-0">
-        <span className="text-[10px] uppercase font-bold tracking-wider text-mist mr-1">Movement</span>
+        <span className="text-xs uppercase font-bold tracking-wider text-mist mr-1">Movement</span>
         <EffectBtn active={style.animationEffect === 'slide-up'} label="Slide Up" onClick={() => setAnimation('slide-up')} />
         <EffectBtn active={style.animationEffect === 'slide-left'} label="Whip Left" onClick={() => setAnimation('slide-left')} />
         <EffectBtn active={style.animationEffect === 'punch-zoom'} label="Punch Zoom" onClick={() => setAnimation('punch-zoom')} />
@@ -321,7 +321,7 @@ export default function StyleToolbar({ style, onChange }: StyleToolbarProps) {
 
       {/* Font Size */}
       <div className="flex items-center gap-2 border-r border-white/10 pr-3 shrink-0">
-        <span className="text-[11px] text-smoke">Size</span>
+        <span className="text-xs text-mist font-medium">Size</span>
         <input
           type="range"
           min={18}
@@ -335,24 +335,24 @@ export default function StyleToolbar({ style, onChange }: StyleToolbarProps) {
 
       {/* Audio Sync / Timing Lead Offset Controls */}
       <div className="flex items-center gap-1.5 border-r border-white/10 pr-3 shrink-0">
-        <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400 mr-1" title="Lead timing offset: advances text pop to match the speaker's voice onset">
+        <span className="text-xs uppercase font-bold tracking-wider text-amber-400 mr-1" title="Lead timing offset: advances text pop to match the speaker's voice onset">
           Sync
         </span>
         <button
           type="button"
           onClick={() => onChange({ ...style, syncOffset: Math.round(((style.syncOffset ?? -0.35) - 0.15) * 100) / 100 })}
-          className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-white/5 hover:bg-white/10 text-mist hover:text-bone border border-white/10 active:scale-95 cursor-pointer"
+          className="px-2 py-0.5 rounded text-xs font-mono bg-white/5 hover:bg-white/10 text-mist hover:text-bone border border-white/10 active:scale-95 cursor-pointer"
           title="Nudge earlier (pops text earlier to fix vocal lag)"
         >
           ◀ Earlier
         </button>
-        <span className="text-[11px] font-mono font-bold text-amber-300 px-1" title="Active audio sync lead time">
+        <span className="text-xs font-mono font-bold text-amber-300 px-1" title="Active audio sync lead time">
           {(style.syncOffset ?? -0.35) > 0 ? `+${(style.syncOffset ?? -0.35).toFixed(2)}s` : `${(style.syncOffset ?? -0.35).toFixed(2)}s`}
         </span>
         <button
           type="button"
           onClick={() => onChange({ ...style, syncOffset: Math.round(((style.syncOffset ?? -0.35) + 0.15) * 100) / 100 })}
-          className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-white/5 hover:bg-white/10 text-mist hover:text-bone border border-white/10 active:scale-95 cursor-pointer"
+          className="px-2 py-0.5 rounded text-xs font-mono bg-white/5 hover:bg-white/10 text-mist hover:text-bone border border-white/10 active:scale-95 cursor-pointer"
           title="Nudge later"
         >
           Later ▶
@@ -360,16 +360,16 @@ export default function StyleToolbar({ style, onChange }: StyleToolbarProps) {
         <button
           type="button"
           onClick={() => onChange({ ...style, syncOffset: -0.35 })}
-          className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-amber-400/15 hover:bg-amber-400/25 text-amber-300 border border-amber-400/30 cursor-pointer"
+          className="px-2 py-0.5 rounded text-xs font-semibold bg-amber-400/15 hover:bg-amber-400/25 text-amber-300 border border-amber-400/30 cursor-pointer"
           title="Reset to optimal zero-lag lead time (-0.35s)"
         >
-          Zero Lag
+          Sync Lead
         </button>
       </div>
 
       {/* Position buttons */}
       <div className="flex items-center gap-1 border-r border-white/10 pr-3 shrink-0">
-        <span className="text-[11px] text-smoke mr-1">Pos</span>
+        <span className="text-xs text-mist font-medium mr-1">Pos</span>
         <PosBtn active={style.position === 'top'} label="Top" onClick={() => onChange({ ...style, position: 'top' })} />
         <PosBtn active={style.position === 'middle'} label="Mid" onClick={() => onChange({ ...style, position: 'middle' })} />
         <PosBtn active={style.position === 'bottom'} label="Bottom" onClick={() => onChange({ ...style, position: 'bottom' })} />
@@ -378,7 +378,7 @@ export default function StyleToolbar({ style, onChange }: StyleToolbarProps) {
       {/* Color pickers */}
       <div className="flex items-center gap-2 shrink-0">
         <label className="flex items-center gap-1.5 cursor-pointer" title="Highlight / Accent Color">
-          <span className="text-[11px] text-smoke">Highlight</span>
+          <span className="text-xs text-mist font-medium">Highlight</span>
           <input
             type="color"
             value={style.highlightColor && style.highlightColor.startsWith('#') ? style.highlightColor : '#FFE600'}
@@ -388,7 +388,7 @@ export default function StyleToolbar({ style, onChange }: StyleToolbarProps) {
         </label>
 
         <label className="flex items-center gap-1.5 cursor-pointer" title="Text Color">
-          <span className="text-[11px] text-smoke">Text</span>
+          <span className="text-xs text-mist font-medium">Text</span>
           <input
             type="color"
             value={style.textColor.startsWith('#') ? style.textColor : '#ffffff'}
@@ -399,7 +399,9 @@ export default function StyleToolbar({ style, onChange }: StyleToolbarProps) {
 
         {/* Uppercase toggle */}
         <button
+          type="button"
           onClick={() => onChange({ ...style, uppercase: !style.uppercase })}
+          aria-label="Toggle uppercase text formatting"
           className={`
             px-2 py-0.5 rounded text-xs font-mono font-bold transition-colors
             ${style.uppercase ? 'bg-amber-400 text-black shadow-sm' : 'text-smoke hover:text-bone bg-white/5'}

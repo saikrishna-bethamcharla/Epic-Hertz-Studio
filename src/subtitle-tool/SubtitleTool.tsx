@@ -7,7 +7,8 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Sparkles, CheckCircle2, Upload } from 'lucide-react';
+import { Sparkles, CheckCircle2, Upload, RotateCcw, Trash2 } from 'lucide-react';
+import { useDesktop } from '../hooks/useMedia';
 
 import LandingScrollCraft from './LandingScrollCraft';
 import VideoPreview, { type VideoPreviewHandle } from './VideoPreview';
@@ -22,6 +23,15 @@ import { extractAudio } from './utils/extractAudio';
 import { transcribeAudio } from './api/transcribe';
 import { toSRT, downloadText } from './utils/srt';
 import { createDemoVideo } from './utils/createDemoVideo';
+import {
+  saveMediaAsset,
+  saveProjectMeta,
+  getSavedProjectMeta,
+  restoreFullProject,
+  clearSavedProject,
+  formatRelativeTime,
+  type SavedProjectMeta,
+} from './utils/projectStorage';
 
 import type {
   AppStage,
@@ -49,14 +59,8 @@ export default function SubtitleTool() {
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-
-  useEffect(() => {
-    document.title = 'Epic Hertz | Auto-Subtitle Studio';
-    try {
-      localStorage.removeItem('epic_gemini_api_key');
-      sessionStorage.removeItem('epic_gemini_api_key');
-    } catch {}
-  }, []);
+  const isDesktop = useDesktop();
+  const [mobileTab, setMobileTab] = useState<'captions' | 'styles' | 'timeline'>('captions');
 
   // Subtitle styling state — Defaults to Slide Up motion template
   const [style, setStyle] = useState<SubtitleStyle>(() => ({
@@ -75,6 +79,65 @@ export default function SubtitleTool() {
     shadowEffect: true,
     syncOffset: -0.35,
   }));
+
+  // IndexedDB persistence states
+  const [savedDraft, setSavedDraft] = useState<SavedProjectMeta | null>(null);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+
+  // Check for saved project draft in IndexedDB on initial mount
+  useEffect(() => {
+    let mounted = true;
+    getSavedProjectMeta().then((meta) => {
+      if (mounted && meta && meta.segmentCount > 0) {
+        setSavedDraft(meta);
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Browser-side debounced autosave to IndexedDB
+  useEffect(() => {
+    if (stage !== 'editing' || !videoFile || segments.length === 0) return;
+    setSaveStatus('saving');
+    const timer = setTimeout(async () => {
+      await saveProjectMeta({
+        videoName: videoFile.name,
+        videoType: videoFile.type || 'video/mp4',
+        segmentCount: segments.length,
+        segments,
+        style,
+        spokenLanguage,
+        scriptOutput,
+        aspectRatio,
+        updatedAt: Date.now(),
+      });
+      setSaveStatus('saved');
+      setLastSavedAt(Date.now());
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [stage, videoFile, segments, style, spokenLanguage, scriptOutput, aspectRatio]);
+
+  // Edits live in this browser tab and IndexedDB. Warn before an accidental reload.
+  useEffect(() => {
+    if (stage !== 'editing' && stage !== 'burning') return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [stage]);
+
+  useEffect(() => {
+    document.title = 'Epic Hertz | Auto-Subtitle Studio';
+    try {
+      localStorage.removeItem('epic_gemini_api_key');
+      sessionStorage.removeItem('epic_gemini_api_key');
+    } catch {}
+  }, []);
 
   const videoRef = useRef<VideoPreviewHandle>(null);
 
@@ -95,6 +158,7 @@ export default function SubtitleTool() {
     setVideoFile(file);
     setError(null);
     setStage('configuring');
+    saveMediaAsset(file, file.name);
   }, []);
 
   // ── 2. Modal Confirmed → Extract Audio & Transcribe ──────────────────────
@@ -140,6 +204,7 @@ export default function SubtitleTool() {
       setError(null);
       const file = await createDemoVideo();
       setVideoFile(file);
+      saveMediaAsset(file, file.name);
       setSpokenLanguage('te');
       setScriptOutput('romanized');
       setSegments([
@@ -191,7 +256,39 @@ export default function SubtitleTool() {
     }
   }, []);
 
-  const handleReset = useCallback(() => {
+  // ── Resume Last Project from IndexedDB ──────────────────────────────────
+  const handleResumeProject = useCallback(async () => {
+    try {
+      setStatusText('Restoring saved project draft…');
+      const project = await restoreFullProject();
+      if (!project) {
+        setError('Could not restore saved project from browser storage.');
+        setSavedDraft(null);
+        return;
+      }
+      setVideoFile(project.videoFile);
+      setSegments(project.segments);
+      setStyle(project.style);
+      setSpokenLanguage(project.spokenLanguage);
+      setScriptOutput(project.scriptOutput);
+      setAspectRatio(project.aspectRatio);
+      setSavedDraft(null);
+      setStage('editing');
+      setSaveStatus('saved');
+      setLastSavedAt(project.updatedAt);
+    } catch (err) {
+      console.warn('Restore failed:', err);
+      setError('Failed to restore project draft.');
+    }
+  }, []);
+
+  // ── Discard Saved Project ────────────────────────────────────────────────
+  const handleDiscardDraft = useCallback(async () => {
+    await clearSavedProject();
+    setSavedDraft(null);
+  }, []);
+
+  const handleReset = useCallback(async () => {
     setStage('idle');
     setVideoFile(null);
     setSegments([]);
@@ -201,6 +298,9 @@ export default function SubtitleTool() {
     setCurrentTime(0);
     setDuration(0);
     setIsPlaying(false);
+    setSaveStatus('idle');
+    const draft = await getSavedProjectMeta();
+    setSavedDraft(draft);
   }, []);
 
   const handleDownloadSRT = () => {
@@ -266,28 +366,58 @@ export default function SubtitleTool() {
       )}
 
       {/* ── Top Header Navigation Bar ───────────────────────────────────── */}
-      <header className="h-14 shrink-0 flex items-center justify-between px-5 border-b border-white/10 bg-[#141413]/90 backdrop-blur-md z-30">
-        <div className="flex items-center gap-3">
-          <span className="font-display text-xl text-amber-400 tracking-wider">
+      <header className="h-14 shrink-0 flex items-center justify-between gap-2 px-3 sm:px-5 border-b border-white/10 bg-[#141413]/90 backdrop-blur-md z-30">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="font-display text-lg sm:text-xl whitespace-nowrap text-amber-400 tracking-wider">
             EPIC HERTZ
           </span>
-          <span className="text-white/20">|</span>
-          <span className="text-mist text-xs tracking-wide">
+          <span className="hidden sm:inline text-white/20">|</span>
+          <span className="hidden sm:inline text-mist text-xs tracking-wide">
             Auto-Subtitle Studio
           </span>
 
           {stage === 'editing' && (
-            <div className="hidden sm:flex items-center gap-1.5 ml-3 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px] font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              <span>Saved</span>
+            <div
+              className="flex items-center gap-1.5 ml-2 sm:ml-3 px-2 py-0.5 rounded-full text-[11px] font-medium transition-colors border"
+              style={{
+                backgroundColor: saveStatus === 'saving' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                borderColor: saveStatus === 'saving' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(16, 185, 129, 0.3)',
+                color: saveStatus === 'saving' ? '#fcd34d' : '#6ee7b7',
+              }}
+              title={
+                saveStatus === 'saved'
+                  ? `Autosaved to IndexedDB ${lastSavedAt ? `(${formatRelativeTime(lastSavedAt)})` : ''}`
+                  : 'Saving changes to local IndexedDB…'
+              }
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  saveStatus === 'saving' ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
+                }`}
+              />
+              <span className="whitespace-nowrap">
+                {saveStatus === 'saving' ? 'Saving…' : 'Autosaved'}
+              </span>
             </div>
           )}
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 sm:gap-2.5">
           {stage === 'idle' && (
             <>
+              {savedDraft && (
+                <button
+                  type="button"
+                  onClick={handleResumeProject}
+                  className="px-3 py-1.5 text-xs text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 rounded-lg border border-amber-500/30 transition-all cursor-pointer flex items-center gap-1.5 font-medium shadow-sm"
+                  title={`Resume draft: ${savedDraft.videoName}`}
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="hidden sm:inline">Resume Draft</span>
+                  <span className="sm:hidden">Resume</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleTryDemo}
@@ -375,16 +505,57 @@ export default function SubtitleTool() {
           {stage === 'idle' && (
             <motion.div
               key="landing-scrollcraft"
-              className="flex-1 min-h-0 w-full h-full overflow-hidden"
+              className="flex-1 min-h-0 w-full h-full overflow-hidden flex flex-col"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }}
             >
-              <LandingScrollCraft
-                onFileSelect={handleFileDrop}
-                onTryDemo={handleTryDemo}
-              />
+              {/* Saved Project Draft Recovery Banner */}
+              {savedDraft && (
+                <div
+                  role="region"
+                  aria-label="Saved project draft banner"
+                  className="bg-gradient-to-r from-amber-500/15 via-[#181816] to-[#181816] border-b border-amber-400/25 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 z-20 shrink-0"
+                >
+                  <div className="flex items-center gap-2.5 text-xs">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
+                    <span className="text-bone font-medium">Saved project draft found:</span>
+                    <span className="text-amber-300 font-mono font-semibold truncate max-w-[180px] sm:max-w-xs">
+                      {savedDraft.videoName}
+                    </span>
+                    <span className="text-mist hidden sm:inline">
+                      ({savedDraft.segmentCount} captions · saved {formatRelativeTime(savedDraft.updatedAt)})
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleResumeProject}
+                      className="px-3.5 py-1 bg-amber-400 hover:bg-amber-300 text-black font-semibold text-xs rounded-md shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                    >
+                      <RotateCcw className="w-3 h-3 text-black" />
+                      <span>Resume Project</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDiscardDraft}
+                      className="px-2.5 py-1 text-mist hover:text-bone hover:bg-white/5 text-xs rounded-md transition-colors flex items-center gap-1 cursor-pointer"
+                      title="Discard saved draft"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>Discard</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex-1 min-h-0 w-full h-full overflow-hidden">
+                <LandingScrollCraft
+                  onFileSelect={handleFileDrop}
+                  onTryDemo={handleTryDemo}
+                />
+              </div>
             </motion.div>
           )}
 
@@ -398,58 +569,124 @@ export default function SubtitleTool() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }}
             >
-              {/* Top Row: 3 Columns */}
-              <div className="flex-1 flex min-h-0 overflow-hidden">
-                {/* Column 1: Captions List */}
-                <div className="w-[280px] lg:w-[320px] shrink-0 h-full overflow-hidden">
-                  <CaptionEditor
-                    segments={segments}
-                    activeId={activeId}
-                    scriptOutput={scriptOutput}
-                    spokenLanguage={spokenLanguage}
-                    onSegmentsChange={setSegments}
-                    onSeek={(t) => videoRef.current?.seekTo(t)}
-                  />
-                </div>
+              {isDesktop ? (
+                <>
+                  {/* Top Row: 3 Columns */}
+                  <div className="flex-1 flex min-h-0 overflow-hidden">
+                    {/* Column 1: Captions List */}
+                    <div className="w-[280px] lg:w-[320px] shrink-0 h-full overflow-hidden">
+                      <CaptionEditor
+                        segments={segments}
+                        activeId={activeId}
+                        scriptOutput={scriptOutput}
+                        spokenLanguage={spokenLanguage}
+                        onSegmentsChange={setSegments}
+                        onSeek={(t) => videoRef.current?.seekTo(t)}
+                      />
+                    </div>
 
-                {/* Column 2: Center Reel / Video Player */}
-                <div className="flex-1 h-full overflow-hidden bg-[#0c0c0b] flex items-center justify-center relative p-3">
-                  <VideoPreview
-                    ref={videoRef}
-                    videoFile={videoFile}
-                    segments={segments}
-                    style={style}
-                    aspectRatio={aspectRatio}
-                    onAspectRatioChange={setAspectRatio}
-                    onTimeUpdate={handleTimeUpdate}
-                    onDurationChange={setDuration}
-                    onPlayStateChange={setIsPlaying}
-                  />
-                </div>
+                    {/* Column 2: Center Reel / Video Player */}
+                    <div className="flex-1 h-full overflow-hidden bg-[#0c0c0b] flex items-center justify-center relative p-3">
+                      <VideoPreview
+                        ref={videoRef}
+                        videoFile={videoFile}
+                        segments={segments}
+                        style={style}
+                        aspectRatio={aspectRatio}
+                        onAspectRatioChange={setAspectRatio}
+                        onTimeUpdate={handleTimeUpdate}
+                        onDurationChange={setDuration}
+                        onPlayStateChange={setIsPlaying}
+                      />
+                    </div>
 
-                {/* Column 3: Right Templates Drawer */}
-                <div className="w-[280px] lg:w-[310px] shrink-0 h-full overflow-hidden">
-                  <TemplateDrawer
-                    style={style}
-                    onChange={setStyle}
-                  />
-                </div>
-              </div>
+                    {/* Column 3: Right Templates Drawer */}
+                    <div className="w-[280px] lg:w-[310px] shrink-0 h-full overflow-hidden">
+                      <TemplateDrawer
+                        style={style}
+                        onChange={setStyle}
+                      />
+                    </div>
+                  </div>
 
-              {/* Bottom Row: Multi-track Audio Timeline */}
-              <div className="h-44 shrink-0">
-                <Timeline
-                  duration={duration}
-                  currentTime={currentTime}
-                  isPlaying={isPlaying}
-                  segments={segments}
-                  activeId={activeId}
-                  onSeek={(t) => videoRef.current?.seekTo(t)}
-                  onTogglePlay={() => videoRef.current?.togglePlay()}
-                  onSegmentsChange={setSegments}
-                  onSelectSegment={(id) => setActiveId(id)}
-                />
-              </div>
+                  {/* Bottom Row: Multi-track Audio Timeline */}
+                  <div className="h-44 shrink-0">
+                    <Timeline
+                      duration={duration}
+                      currentTime={currentTime}
+                      isPlaying={isPlaying}
+                      segments={segments}
+                      activeId={activeId}
+                      onSeek={(t) => videoRef.current?.seekTo(t)}
+                      onTogglePlay={() => videoRef.current?.togglePlay()}
+                      onSegmentsChange={setSegments}
+                      onSelectSegment={(id) => setActiveId(id)}
+                    />
+                  </div>
+                </>
+              ) : (
+                /* Phones & small tablets: preview on top, one panel at a time below */
+                <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                  <div className="shrink-0 h-[52%] min-h-[280px] max-h-[500px] bg-[#0c0c0b] flex items-center justify-center relative p-2 overflow-hidden">
+                    <VideoPreview
+                      ref={videoRef}
+                      videoFile={videoFile}
+                      segments={segments}
+                      style={style}
+                      aspectRatio={aspectRatio}
+                      onAspectRatioChange={setAspectRatio}
+                      onTimeUpdate={handleTimeUpdate}
+                      onDurationChange={setDuration}
+                      onPlayStateChange={setIsPlaying}
+                    />
+                  </div>
+
+                  <div role="tablist" aria-label="Editor panels" className="shrink-0 grid grid-cols-3 border-y border-white/10 bg-[#141413]">
+                    {(['captions', 'styles', 'timeline'] as const).map((tab) => (
+                      <button
+                        key={tab}
+                        role="tab"
+                        aria-selected={mobileTab === tab}
+                        onClick={() => setMobileTab(tab)}
+                        className={`py-2.5 text-xs font-semibold tracking-wide capitalize border-b-2 transition-colors ${
+                          mobileTab === tab
+                            ? 'text-amber-300 border-amber-400 bg-white/5'
+                            : 'text-mist border-transparent hover:text-bone'
+                        }`}
+                      >
+                        {tab}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div role="tabpanel" className="flex-1 min-h-0 overflow-hidden">
+                    {mobileTab === 'captions' && (
+                      <CaptionEditor
+                        segments={segments}
+                        activeId={activeId}
+                        scriptOutput={scriptOutput}
+                        spokenLanguage={spokenLanguage}
+                        onSegmentsChange={setSegments}
+                        onSeek={(t) => videoRef.current?.seekTo(t)}
+                      />
+                    )}
+                    {mobileTab === 'styles' && <TemplateDrawer style={style} onChange={setStyle} />}
+                    {mobileTab === 'timeline' && (
+                      <Timeline
+                        duration={duration}
+                        currentTime={currentTime}
+                        isPlaying={isPlaying}
+                        segments={segments}
+                        activeId={activeId}
+                        onSeek={(t) => videoRef.current?.seekTo(t)}
+                        onTogglePlay={() => videoRef.current?.togglePlay()}
+                        onSegmentsChange={setSegments}
+                        onSelectSegment={(id) => setActiveId(id)}
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

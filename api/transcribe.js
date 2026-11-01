@@ -39,11 +39,11 @@ const ALLOWED_ORIGINS = (
 
 // Verify these against Google's current model list; unknown names just fall through to the next one.
 const DEFAULT_MODELS = [
-  'gemini-2.5-flash',
-  'gemini-2.5-flash-lite',
-  'gemini-2.0-flash',
   'gemini-3.5-flash-lite',
   'gemini-3.8-flash',
+  'gemini-3.1-flash-lite',
+  'gemini-2.5-flash',
+  'gemini-2.0-flash',
 ];
 const CANDIDATE_MODELS = process.env.GEMINI_MODELS
   ? process.env.GEMINI_MODELS.split(',').map((s) => s.trim()).filter(Boolean)

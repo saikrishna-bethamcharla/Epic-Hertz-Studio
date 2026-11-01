@@ -28,7 +28,7 @@ export type SpokenLanguage =
   | 'fr';
 
 export type CaptionAnimationEffect =
-  // Motion slide & text movements (Premiere Pro MOGRT Style)
+  // Motion slide & kinetic text movements
   | 'slide-up'             // Vertical mask slide up from bottom
   | 'slide-left'           // Kinetic slide in from left with inertia
   | 'slide-right'          // Kinetic slide in from right with inertia
