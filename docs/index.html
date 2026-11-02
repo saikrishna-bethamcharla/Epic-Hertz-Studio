@@ -9,75 +9,87 @@
       window.scrollTo(0, 0);
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
-    <title>Sai Krishna | AI Video, Web Development & Creative Design</title>
-    <meta name="description" content="Sai Krishna Bethamcharla is a creative technologist working across AI-assisted video production, web development, creative design, and post-production in Hyderabad, India." />
+    <title>Epic Hertz Studio | AI Auto-Captions for Telugu, Hindi &amp; Tamil Reels</title>
+    <meta name="description" content="AI caption studio for Reels, Shorts and TikTok. Auto-generate Tanglish, Hinglish or native-script subtitles with viral styles, word-level sync and MP4/SRT export." />
     <meta name="theme-color" content="#07070a" />
-    <meta property="og:title" content="Sai Krishna | AI Video, Web Development & Creative Design" />
-    <meta property="og:description" content="Explore Sai Krishna Bethamcharla’s work in AI-assisted video production, web development, creative design, and post-production." />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href="https://epic-hertz-studio.vercel.app/" />
+
+    <meta property="og:site_name" content="Epic Hertz Studio" />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://saikrishna-bethamcharla.github.io/Portfolio/assets/og-image.jpg" />
-    <meta name="twitter:title" content="Sai Krishna | AI Video, Web Development & Creative Design" />
-    <meta name="twitter:description" content="Explore Sai Krishna Bethamcharla’s work in AI-assisted video production, web development, creative design, and post-production." />
-    <link rel="canonical" href="https://saikrishna-bethamcharla.github.io/Portfolio/" />
+    <meta property="og:url" content="https://epic-hertz-studio.vercel.app/" />
+    <meta property="og:title" content="Epic Hertz Studio | AI Auto-Captions for Telugu, Hindi &amp; Tamil Reels" />
+    <meta property="og:description" content="Auto-generate Tanglish, Hinglish or native-script subtitles with viral caption styles and word-level sync. Export MP4 or SRT." />
+    <meta property="og:image" content="https://epic-hertz-studio.vercel.app/assets/og-epic-hertz.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Epic Hertz Studio — AI auto-captions for Telugu, Hindi and Tamil, shown as a phone with a highlighted caption" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Epic Hertz Studio | AI Auto-Captions for Telugu, Hindi &amp; Tamil Reels" />
+    <meta name="twitter:description" content="Auto-generate Tanglish, Hinglish or native-script subtitles with viral caption styles and word-level sync." />
+    <meta name="twitter:image" content="https://epic-hertz-studio.vercel.app/assets/og-epic-hertz.jpg" />
+
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "Person",
-        "name": "Sai Krishna Bethamcharla",
-        "jobTitle": "Creative & Technical Lead",
-        "url": "https://saikrishna-bethamcharla.github.io/Portfolio/",
-        "email": "saikrishnabethamcharla@gmail.com",
-        "address": {
-          "@type": "PostalAddress",
-          "addressLocality": "Hyderabad",
-          "addressRegion": "Telangana",
-          "addressCountry": "IN"
-        },
-        "worksFor": {
-          "@type": "Organization",
-          "name": "Zai Labs Private Limited",
-          "url": "https://zailabs.co.in/"
-        },
-        "sameAs": [
-          "https://linkedin.com/in/sai-krishna-bethamcharla",
-          "https://github.com/saikrishna-bethamcharla",
-          "https://www.instagram.com/saikrishna_bethamcharla"
+        "@type": "SoftwareApplication",
+        "name": "Epic Hertz Studio",
+        "url": "https://epic-hertz-studio.vercel.app/",
+        "image": "https://epic-hertz-studio.vercel.app/assets/og-epic-hertz.jpg",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Web (any modern browser)",
+        "description": "Browser-based AI auto-captioning and kinetic subtitle studio for short-form video, with Telugu, Hindi, Tamil, Kannada, Malayalam, Marathi, Bengali, English, Spanish and French support.",
+        "featureList": [
+          "Romanized (Tanglish, Hinglish) and native-script transcription",
+          "Viral caption presets with word-by-word highlighting",
+          "Word-level timestamp editor and multi-track timeline",
+          "Export hardsubbed MP4, SRT, VTT and TXT"
         ],
-        "knowsAbout": [
-          "AI-assisted video production",
-          "Web development",
-          "Post-production",
-          "Creative design"
-        ]
+        "author": {
+          "@type": "Person",
+          "name": "Sai Krishna Bethamcharla",
+          "url": "https://github.com/saikrishna-bethamcharla"
+        }
       }
     </script>
-    <meta name="twitter:card" content="summary_large_image" />
+
     <link rel="icon" type="image/svg+xml" href="./assets/favicon-BP9TIka4.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <script>
-      // Auto-recover ONLY if browser serves cached index.html that tries to load an outdated production chunk
-      window.addEventListener('error', function (e) {
-        var url = e.target && (e.target.src || e.target.href);
-        if (url && url.includes('/assets/index-') && e.target.tagName === 'SCRIPT') {
-          var key = 'chunk_reload_' + url;
-          if (!sessionStorage.getItem(key)) {
+      // After a new deploy, a tab that still holds the old index.html can ask for chunk files that
+      // no longer exist. Reload once so it picks up the current build instead of showing a blank page.
+      (function () {
+        function reloadOnce(key) {
+          try {
+            if (sessionStorage.getItem(key)) return;
             sessionStorage.setItem(key, '1');
-            window.location.reload();
-          }
+          } catch (e) { /* storage blocked: reloading could loop, so don't */ return; }
+          window.location.reload();
         }
-      }, true);
+        // Lazy-loaded chunks (Studio / Portfolio) — Vite fires this when a dynamic import 404s.
+        window.addEventListener('vite:preloadError', function (e) {
+          e.preventDefault();
+          reloadOnce('chunk_reload_preload');
+        });
+        // Entry bundle itself.
+        window.addEventListener('error', function (e) {
+          var url = e.target && (e.target.src || e.target.href);
+          if (url && url.indexOf('/assets/index-') !== -1 && e.target.tagName === 'SCRIPT') {
+            reloadOnce('chunk_reload_' + url);
+          }
+        }, true);
+      })();
     </script>
-    <script type="module" crossorigin src="./assets/index-B5qPf8hU.js"></script>
+    <script type="module" crossorigin src="./assets/index-BmuyoNKN.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/motion-CXhk2Y6U.js">
     <link rel="modulepreload" crossorigin href="./assets/react-w4gjN8vp.js">
-    <link rel="stylesheet" crossorigin href="./assets/index-Bz_7r0H9.css">
+    <link rel="stylesheet" crossorigin href="./assets/index-Bovi2hjA.css">
   </head>
   <body style="background-color: #050507; color: #f4f1ec; margin: 0; min-height: 100vh;">
     <div id="root"></div>
-    <noscript><p>Sai Krishna Bethamcharla — creative technologist focused on AI-assisted video production, web development, creative design, and post-production. JavaScript is required to view the interactive portfolio. Contact: saikrishnabethamcharla@gmail.com.</p></noscript>
+    <noscript>
+      <p>Epic Hertz Studio is a browser-based AI captioning studio for Reels, Shorts and TikTok. It generates Tanglish, Hinglish and native-script subtitles for Telugu, Hindi, Tamil and more. JavaScript is required to use it.</p>
+    </noscript>
   </body>
 </html>

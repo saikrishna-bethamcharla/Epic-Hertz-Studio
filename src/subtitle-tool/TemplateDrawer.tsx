@@ -1,740 +1,618 @@
-// ─── TemplateDrawer ──────────────────────────────────────────────────────────
-// Right-hand visual preset gallery with motion templates and slide effects:
-// - Physical text slide & movement transitions (Slide Up, Whip Left, Punch Zoom, Cascade, 3D Flip, etc.)
-// - Unified single gallery — all motion templates in one place for easy selection
-// - Fine-tuning controls: Typography, Size, Vibrant Swatches, Outline Stroke, and Background.
+// ─── TemplateDrawer ─────────────────────────────────────────────────────────
+// Right-hand style panel.
+//   Presets    – live, animated previews drawn by the real caption engine, using YOUR words.
+//   Customize  – typography, fill, highlight, effects, motion and position controls.
 
-import { useState, memo } from 'react';
-import {
-  Sparkles,
-  Zap,
-  Tv,
-  MoveRight,
-  Highlighter,
-  Layers,
-  Film,
-  Minus,
-  Sliders,
-  ArrowUp,
-  Maximize2,
-  ListOrdered,
-  RotateCw,
-} from 'lucide-react';
-import type { SubtitleStyle, SubtitlePreset, SubtitlePosition, CaptionAnimationEffect } from './types';
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import type { CaptionStyle, Segment } from './types';
+import { PRESETS, type PresetDef, type PresetGroup } from './engine/presets';
+import { FONT_FAMILIES, fontById, type Paint } from './engine/spec';
+import { ensureFamily, ensureFonts, onFontsChange } from './engine/fonts';
+import { renderCaptions } from './engine/render';
+import { parseColor } from './engine/util';
 
 interface TemplateDrawerProps {
-  style: SubtitleStyle;
-  onChange: (newStyle: SubtitleStyle) => void;
+  style: CaptionStyle;
+  onChange: (style: CaptionStyle) => void;
+  /** Project captions — presets preview with the user's own words. */
+  segments?: Segment[];
 }
 
-interface PresetItem {
-  id: SubtitlePreset;
-  title: string;
-  badge?: string;
-  motionLabel: string;
-  previewTextColor: string;
-  previewBg: string;
-  previewOutline?: string;
-  previewHighlight?: string;
-  config: Partial<SubtitleStyle>;
+// ─────────────────────────────────────────────────────────────────────────────
+// Sample text for thumbnails (the user's own first caption when available)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const FALLBACK_SAMPLE: Segment = {
+  id: 'sample',
+  index: 1,
+  start: 0,
+  end: 3,
+  text: 'Make every word count',
+  words: [
+    { word: 'Make', start: 0.1, end: 0.5 },
+    { word: 'every', start: 0.5, end: 1.0 },
+    { word: 'word', start: 1.0, end: 1.45 },
+    { word: 'count', start: 1.45, end: 2.1 },
+  ],
+};
+
+function buildSample(segments?: Segment[]): Segment {
+  const src = segments?.find((s) => s.text.trim().split(/\s+/).length >= 3) ?? segments?.[0];
+  if (!src) return FALLBACK_SAMPLE;
+  const words = src.text.trim().split(/\s+/).slice(0, 5);
+  const timed = src.words && src.words.length >= words.length ? src.words.slice(0, words.length) : null;
+  const t0 = timed ? timed[0].start : 0;
+  const list = words.map((w, i) => {
+    if (timed) return { word: w, start: 0.1 + (timed[i].start - t0), end: 0.1 + (timed[i].end - t0) };
+    return { word: w, start: 0.1 + i * 0.45, end: 0.1 + (i + 1) * 0.45 };
+  });
+  return { id: 'sample', index: 1, start: 0, end: list[list.length - 1].end + 0.5, text: words.join(' '), words: list };
 }
 
-export const PRESET_LIBRARY: PresetItem[] = [
-  {
-    id: 'slide-up-modern',
-    title: 'Slide Up Mask',
-    badge: 'REVEAL',
-    motionLabel: 'Smooth upward mask reveal',
-    previewTextColor: '#FFFFFF',
-    previewBg: '#161a1d',
-    previewHighlight: '#FFE600',
-    config: {
-      preset: 'slide-up-modern',
-      animationEffect: 'slide-up',
-      fontSize: 26,
-      textColor: '#FFFFFF',
-      backgroundColor: 'transparent',
-      outlineColor: '#000000',
-      outlineWidth: 3,
-      position: 'bottom',
-      fontFamily: 'Montserrat, Inter, sans-serif',
-      uppercase: true,
-      highlightCurrentWord: true,
-      highlightColor: '#FFE600',
-      shadowEffect: true,
-    },
-  },
-  {
-    id: 'whip-left-bold',
-    title: 'Whip Left Snap',
-    badge: 'KINETIC',
-    motionLabel: 'High-speed lateral snap',
-    previewTextColor: '#FFFFFF',
-    previewBg: '#191524',
-    previewHighlight: '#00F0FF',
-    config: {
-      preset: 'whip-left-bold',
-      animationEffect: 'slide-left',
-      fontSize: 27,
-      textColor: '#FFFFFF',
-      backgroundColor: 'transparent',
-      outlineColor: '#000000',
-      outlineWidth: 3,
-      position: 'bottom',
-      fontFamily: 'Montserrat, Inter, sans-serif',
-      uppercase: true,
-      highlightCurrentWord: true,
-      highlightColor: '#00F0FF',
-      shadowEffect: true,
-    },
-  },
-  {
-    id: 'punch-zoom-action',
-    title: 'Punch Zoom In',
-    badge: 'ACTION',
-    motionLabel: 'Impact punch scale zoom',
-    previewTextColor: '#FFFFFF',
-    previewBg: '#1f1315',
-    previewHighlight: '#FF4500',
-    config: {
-      preset: 'punch-zoom-action',
-      animationEffect: 'punch-zoom',
-      fontSize: 28,
-      textColor: '#FFFFFF',
-      backgroundColor: 'transparent',
-      outlineColor: '#000000',
-      outlineWidth: 3.5,
-      position: 'bottom',
-      fontFamily: 'Impact, Montserrat, sans-serif',
-      uppercase: true,
-      highlightCurrentWord: true,
-      highlightColor: '#FF4500',
-      shadowEffect: true,
-    },
-  },
-  {
-    id: 'word-cascade-reel',
-    title: 'Word Cascade',
-    badge: 'CADENCE',
-    motionLabel: 'Staggered rising word rhythm',
-    previewTextColor: '#FFFFFF',
-    previewBg: '#181b16',
-    previewHighlight: '#00FF66',
-    config: {
-      preset: 'word-cascade-reel',
-      animationEffect: 'word-cascade',
-      fontSize: 26,
-      textColor: '#FFFFFF',
-      backgroundColor: 'transparent',
-      outlineColor: '#000000',
-      outlineWidth: 3,
-      position: 'bottom',
-      fontFamily: 'Montserrat, Inter, sans-serif',
-      uppercase: true,
-      highlightCurrentWord: true,
-      highlightColor: '#00FF66',
-      shadowEffect: true,
-    },
-  },
-  {
-    id: 'flip-3d-title',
-    title: '3D Perspective Flip',
-    badge: '3D FLIP',
-    motionLabel: '3D perspective tumble & roll',
-    previewTextColor: '#FFFFFF',
-    previewBg: '#131b24',
-    previewHighlight: '#38BDF8',
-    config: {
-      preset: 'flip-3d-title',
-      animationEffect: 'flip-3d',
-      fontSize: 27,
-      textColor: '#FFFFFF',
-      backgroundColor: 'transparent',
-      outlineColor: '#002B4D',
-      outlineWidth: 2.5,
-      position: 'bottom',
-      fontFamily: 'Montserrat, Inter, sans-serif',
-      uppercase: true,
-      highlightCurrentWord: true,
-      highlightColor: '#38BDF8',
-      shadowEffect: true,
-    },
-  },
-  {
-    id: 'bounce-rise-kinetic',
-    title: 'Bounce & Rise',
-    badge: 'SPRING',
-    motionLabel: 'Elastic spring overshoot pop',
-    previewTextColor: '#FFFFFF',
-    previewBg: '#1f1c12',
-    previewHighlight: '#FFE600',
-    config: {
-      preset: 'bounce-rise-kinetic',
-      animationEffect: 'bounce-rise',
-      fontSize: 26,
-      textColor: '#FFFFFF',
-      backgroundColor: 'transparent',
-      outlineColor: '#000000',
-      outlineWidth: 3,
-      position: 'bottom',
-      fontFamily: 'Rubik, Montserrat, sans-serif',
-      uppercase: true,
-      highlightCurrentWord: true,
-      highlightColor: '#FFE600',
-      shadowEffect: true,
-    },
-  },
-  {
-    id: 'glitch-whip-cyber',
-    title: 'Glitch Whip Snap',
-    badge: 'RGB SPLIT',
-    motionLabel: 'Chromatic aberration snap',
-    previewTextColor: '#FFFFFF',
-    previewBg: '#0e111a',
-    previewHighlight: '#00FFFF',
-    config: {
-      preset: 'glitch-whip-cyber',
-      animationEffect: 'glitch-whip',
-      fontSize: 26,
-      textColor: '#FFFFFF',
-      backgroundColor: 'transparent',
-      outlineColor: '#000000',
-      outlineWidth: 2.5,
-      position: 'bottom',
-      fontFamily: 'Montserrat, Inter, monospace',
-      uppercase: true,
-      highlightCurrentWord: true,
-      highlightColor: '#00FFFF',
-      shadowEffect: true,
-    },
-  },
-  {
-    id: 'highlight-sweep',
-    title: 'Highlighter Sweep',
-    badge: 'MARKER',
-    motionLabel: 'Expanding highlighter bar wipe',
-    previewTextColor: '#000000',
-    previewBg: '#1a1912',
-    previewHighlight: '#FFE600',
-    config: {
-      preset: 'highlight-sweep',
-      animationEffect: 'highlight-wipe',
-      fontSize: 26,
-      textColor: '#FFFFFF',
-      backgroundColor: 'transparent',
-      outlineColor: '#000000',
-      outlineWidth: 2,
-      position: 'bottom',
-      fontFamily: 'Rubik, Montserrat, sans-serif',
-      uppercase: true,
-      highlightCurrentWord: true,
-      highlightColor: '#FFE600',
-      shadowEffect: true,
-    },
-  },
-  {
-    id: 'broadcast-lower-third',
-    title: 'Broadcast Lower 3rd',
-    badge: 'STUDIO',
-    motionLabel: 'Glass card with gold rule',
-    previewTextColor: '#FFFFFF',
-    previewBg: '#0f141f',
-    previewHighlight: '#FFD700',
-    config: {
-      preset: 'broadcast-lower-third',
-      animationEffect: 'premiere-lower-third',
-      fontSize: 23,
-      textColor: '#FFFFFF',
-      backgroundColor: 'rgba(15, 15, 18, 0.85)',
-      outlineColor: '#000000',
-      outlineWidth: 1.5,
-      position: 'bottom',
-      fontFamily: 'Inter, sans-serif',
-      uppercase: false,
-      highlightCurrentWord: true,
-      highlightColor: '#FFD700',
-      shadowEffect: true,
-    },
-  },
-  {
-    id: 'editorial-typewriter',
-    title: 'Editorial Typewriter',
-    badge: 'DOCU',
-    motionLabel: 'Typewriter text reveal',
-    previewTextColor: '#FFFFFF',
-    previewBg: '#121415',
-    previewHighlight: '#00FF66',
-    config: {
-      preset: 'editorial-typewriter',
-      animationEffect: 'typewriter',
-      fontSize: 24,
-      textColor: '#FFFFFF',
-      backgroundColor: 'transparent',
-      outlineColor: '#000000',
-      outlineWidth: 2,
-      position: 'bottom',
-      fontFamily: 'Inter, monospace',
-      uppercase: false,
-      highlightCurrentWord: true,
-      highlightColor: '#00FF66',
-      shadowEffect: true,
-    },
-  },
-  {
-    id: 'cinema-drift',
-    title: 'Cinematic Drift',
-    badge: '4K FILM',
-    motionLabel: 'Slow floating parallax drift',
-    previewTextColor: '#FFD700',
-    previewBg: '#1c1810',
-    previewHighlight: '#FFE600',
-    config: {
-      preset: 'cinema-drift',
-      animationEffect: 'float-drift',
-      fontSize: 24,
-      textColor: '#FFFFFF',
-      backgroundColor: 'transparent',
-      outlineColor: '#000000',
-      outlineWidth: 2,
-      position: 'bottom',
-      fontFamily: 'Inter, sans-serif',
-      uppercase: false,
-      highlightCurrentWord: true,
-      highlightColor: '#FFE600',
-      shadowEffect: true,
-    },
-  },
-  {
-    id: 'clean-minimal',
-    title: 'Clean Minimal',
-    badge: 'PRISTINE',
-    motionLabel: 'Crisp static subtitles',
-    previewTextColor: '#FFFFFF',
-    previewBg: '#151515',
-    previewOutline: '2px #000',
-    config: {
-      preset: 'clean-minimal',
-      animationEffect: 'none',
-      fontSize: 24,
-      textColor: '#FFFFFF',
-      backgroundColor: 'transparent',
-      outlineColor: '#000000',
-      outlineWidth: 2.5,
-      position: 'bottom',
-      fontFamily: 'Inter, sans-serif',
-      uppercase: false,
-      highlightCurrentWord: false,
-      shadowEffect: true,
-    },
-  },
-];
+// ─────────────────────────────────────────────────────────────────────────────
+// Live preset thumbnail
+// ─────────────────────────────────────────────────────────────────────────────
 
-const ANIMATION_OPTIONS: { id: CaptionAnimationEffect; label: string; desc: string; icon: React.ReactNode }[] = [
-  { id: 'slide-up', label: 'Slide Up Mask', desc: 'Smooth upward mask reveal', icon: <ArrowUp className="w-4 h-4 text-amber-400" /> },
-  { id: 'slide-left', label: 'Whip Left Snap', desc: 'Kinetic slide in from left', icon: <MoveRight className="w-4 h-4 text-cyan-400" /> },
-  { id: 'punch-zoom', label: 'Punch Zoom In', desc: 'Impact punch scale zoom', icon: <Maximize2 className="w-4 h-4 text-red-400" /> },
-  { id: 'word-cascade', label: 'Word Cascade', desc: 'Staggered rhythmic word rise', icon: <ListOrdered className="w-4 h-4 text-emerald-400" /> },
-  { id: 'flip-3d', label: '3D Perspective Flip', desc: '3D perspective tumble & roll', icon: <RotateCw className="w-4 h-4 text-sky-400" /> },
-  { id: 'bounce-rise', label: 'Bounce & Rise', desc: 'Elastic spring overshoot pop', icon: <Zap className="w-4 h-4 text-amber-300" /> },
-  { id: 'glitch-whip', label: 'Glitch Whip Snap', desc: 'Chromatic aberration snap', icon: <Tv className="w-4 h-4 text-pink-400" /> },
-  { id: 'highlight-wipe', label: 'Highlighter Sweep', desc: 'Fluorescent marker wipe', icon: <Highlighter className="w-4 h-4 text-yellow-300" /> },
-  { id: 'float-drift', label: 'Cinematic Drift', desc: 'Slow floating parallax drift', icon: <Film className="w-4 h-4 text-amber-200" /> },
-  { id: 'typewriter', label: 'Editorial Typewriter', desc: 'Typewriter character cadence', icon: <Layers className="w-4 h-4 text-green-400" /> },
-  { id: 'none', label: 'Static Clean', desc: 'No animation, pristine subtitles', icon: <Minus className="w-4 h-4 text-smoke" /> },
-];
+const VW = 270;
+const VH = 480;
+const CROP_H = 168;
+let offscreen: HTMLCanvasElement | null = null;
 
-const QUICK_COLORS = [
-  { label: 'White', color: '#FFFFFF' },
-  { label: 'Yellow', color: '#FFE600' },
-  { label: 'Lime', color: '#00FF66' },
-  { label: 'Cyan', color: '#00F0FF' },
-  { label: 'Orange', color: '#FF4500' },
-  { label: 'Magenta', color: '#FF007F' },
-];
+function drawThumb(canvas: HTMLCanvasElement, preset: CaptionStyle, sample: Segment, t: number) {
+  if (!offscreen) {
+    offscreen = document.createElement('canvas');
+    offscreen.width = VW;
+    offscreen.height = VH;
+  }
+  const o = offscreen.getContext('2d');
+  const c = canvas.getContext('2d');
+  if (!o || !c) return;
 
-function TemplateDrawer({ style, onChange }: TemplateDrawerProps) {
-  const [activeTab, setActiveTab] = useState<'presets' | 'customize'>('presets');
+  // A neutral stand-in for footage so contrast and shadows are judged honestly
+  const g = o.createLinearGradient(0, 0, VW, VH);
+  g.addColorStop(0, '#3a4256');
+  g.addColorStop(0.55, '#262a36');
+  g.addColorStop(1, '#14161d');
+  o.fillStyle = g;
+  o.fillRect(0, 0, VW, VH);
+  const r = o.createRadialGradient(VW * 0.7, VH * 0.35, 10, VW * 0.7, VH * 0.35, VW * 0.9);
+  r.addColorStop(0, 'rgba(255,196,120,0.28)');
+  r.addColorStop(1, 'rgba(255,196,120,0)');
+  o.fillStyle = r;
+  o.fillRect(0, 0, VW, VH);
 
-  const applyPreset = (preset: PresetItem) => {
-    onChange({
-      ...style,
-      ...preset.config,
-    });
-  };
+  const st: CaptionStyle = { ...preset, syncOffset: 0, layout: { ...preset.layout, x: 0.5, y: 0.5 } };
+  renderCaptions(o, VW, VH, t, [sample], st);
+
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const cssW = canvas.clientWidth || 130;
+  const cssH = Math.round((cssW * CROP_H) / VW);
+  if (canvas.width !== Math.round(cssW * dpr) || canvas.height !== Math.round(cssH * dpr)) {
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+  }
+  c.clearRect(0, 0, canvas.width, canvas.height);
+  c.drawImage(offscreen, 0, (VH - CROP_H) / 2, VW, CROP_H, 0, 0, canvas.width, canvas.height);
+}
+
+/** A representative still: the first page fully on screen, its last word active. */
+function peakTime(style: CaptionStyle, sample: Segment): number {
+  const words = sample.words ?? [];
+  if (!words.length) return 0.6;
+  const wpp = style.layout.wordsPerPage > 0 ? style.layout.wordsPerPage : words.length;
+  const idx = Math.min(wpp, words.length) - 1;
+  const t = words[idx].start + 0.3;
+  const nextPage = words[wpp]?.start;
+  return nextPage !== undefined ? Math.min(t, nextPage - 0.03) : t;
+}
+
+const PresetCard = memo(function PresetCard({
+  def,
+  sample,
+  selected,
+  onSelect,
+}: {
+  def: PresetDef;
+  sample: Segment;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  const [hot, setHot] = useState(false);
+  const animate = hot || selected;
+
+  // Static frame (and redraw once fonts arrive)
+  useEffect(() => {
+    let cancelled = false;
+    const paint = () => {
+      if (!cancelled && ref.current && !animate) drawThumb(ref.current, def.style, sample, peakTime(def.style, sample));
+    };
+    void ensureFonts(def.style, sample.text).then(paint);
+    paint();
+    const off = onFontsChange(paint);
+    return () => {
+      cancelled = true;
+      off();
+    };
+  }, [def.style, sample, animate]);
+
+  // Looping animation on hover / when selected
+  useEffect(() => {
+    if (!animate) return;
+    let raf = 0;
+    const t0 = performance.now();
+    const cycle = sample.end + 0.3;
+    const tick = (now: number) => {
+      raf = requestAnimationFrame(tick);
+      const t = ((now - t0) / 1000) % cycle;
+      if (ref.current) drawThumb(ref.current, def.style, sample, t);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [animate, def.style, sample]);
 
   return (
-    <div className="flex flex-col h-full bg-[#141413] border-l border-white/10 w-full overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-        <h2 className="text-xs font-bold text-mist uppercase tracking-widest flex items-center gap-2">
-          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-          <span>Motion Styles</span>
-        </h2>
+    <button
+      type="button"
+      onClick={onSelect}
+      onMouseEnter={() => setHot(true)}
+      onMouseLeave={() => setHot(false)}
+      onFocus={() => setHot(true)}
+      onBlur={() => setHot(false)}
+      aria-pressed={selected}
+      title={def.blurb}
+      className={`group text-left rounded-xl overflow-hidden border transition-all ${
+        selected ? 'border-amber-400 ring-1 ring-amber-400/60 bg-[#211f1a]' : 'border-white/10 hover:border-white/30 bg-[#1a1a18]'
+      }`}
+    >
+      <canvas ref={ref} className="block w-full" style={{ aspectRatio: `${VW} / ${CROP_H}` }} />
+      <div className="px-2.5 py-2">
+        <div className="text-[12px] font-semibold text-bone leading-tight">{def.style.name}</div>
+        <div className="text-[10px] text-smoke leading-snug mt-0.5 line-clamp-2">{def.blurb}</div>
+      </div>
+    </button>
+  );
+});
 
-        {/* Tab switcher: Gallery vs Customize */}
-        <div className="flex bg-[#1d1d1b] p-0.5 rounded-lg border border-white/10">
-          <button
-            onClick={() => setActiveTab('presets')}
-            className={`px-3 py-1 text-[11px] font-semibold rounded-md transition-colors ${
-              activeTab === 'presets'
-                ? 'bg-[#292826] text-amber-300 shadow-sm'
-                : 'text-smoke hover:text-bone'
-            }`}
-          >
-            Presets
-          </button>
-          <button
-            onClick={() => setActiveTab('customize')}
-            className={`px-3 py-1 text-[11px] font-semibold rounded-md transition-colors ${
-              activeTab === 'customize'
-                ? 'bg-[#292826] text-amber-300 shadow-sm'
-                : 'text-smoke hover:text-bone'
-            }`}
-          >
-            Effects
-          </button>
+// ─────────────────────────────────────────────────────────────────────────────
+// Form primitives
+// ─────────────────────────────────────────────────────────────────────────────
+
+function Field({ label, value, children }: { label: string; value?: string; children: ReactNode }) {
+  return (
+    <div className="py-1.5">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-[11px] text-mist">{label}</span>
+        {value !== undefined && <span className="text-[10px] font-mono text-smoke">{value}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Slider({
+  label,
+  value,
+  min,
+  max,
+  step,
+  onChange,
+  fmt,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (v: number) => void;
+  fmt?: (v: number) => string;
+}) {
+  return (
+    <Field label={label} value={fmt ? fmt(value) : String(+value.toFixed(3))}>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+        className="w-full h-1 accent-amber-400 bg-white/15 rounded-lg cursor-pointer"
+        aria-label={label}
+      />
+    </Field>
+  );
+}
+
+function toHex(c: [number, number, number, number]) {
+  return `#${[c[0], c[1], c[2]].map((v) => Math.round(v).toString(16).padStart(2, '0')).join('')}`;
+}
+
+function ColorField({ label, value, onChange, alpha }: { label: string; value: string; onChange: (v: string) => void; alpha?: boolean }) {
+  const c = parseColor(value);
+  const hex = toHex(c);
+  const emit = (h: string, a: number) => {
+    const p = parseColor(h);
+    onChange(alpha && a < 1 ? `rgba(${p[0]},${p[1]},${p[2]},${+a.toFixed(2)})` : h);
+  };
+  return (
+    <Field label={label} value={alpha ? `${Math.round(c[3] * 100)}%` : hex.toUpperCase()}>
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={hex}
+          onChange={(e) => emit(e.target.value, c[3])}
+          className="w-8 h-6 rounded border border-white/15 bg-transparent cursor-pointer p-0"
+          aria-label={label}
+        />
+        {alpha && (
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            value={c[3]}
+            onChange={(e) => emit(hex, parseFloat(e.target.value))}
+            className="flex-1 h-1 accent-amber-400 bg-white/15 rounded-lg cursor-pointer"
+            aria-label={`${label} opacity`}
+          />
+        )}
+      </div>
+    </Field>
+  );
+}
+
+function Seg<T extends string | number>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label?: string;
+  value: T;
+  options: Array<[T, string]>;
+  onChange: (v: T) => void;
+}) {
+  const body = (
+    <div className="flex rounded-lg overflow-hidden border border-white/10 bg-[#1a1a18]" role="group" aria-label={label}>
+      {options.map(([v, text]) => (
+        <button
+          key={String(v)}
+          type="button"
+          onClick={() => onChange(v)}
+          aria-pressed={value === v}
+          className={`flex-1 px-1.5 py-1 text-[11px] font-medium transition-colors ${
+            value === v ? 'bg-amber-400 text-black' : 'text-mist hover:text-bone hover:bg-white/5'
+          }`}
+        >
+          {text}
+        </button>
+      ))}
+    </div>
+  );
+  return label ? <Field label={label}>{body}</Field> : body;
+}
+
+function SelectField<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: Array<[T, string]>;
+  onChange: (v: T) => void;
+}) {
+  return (
+    <Field label={label}>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value as T)}
+        className="w-full bg-[#1a1a18] border border-white/10 rounded-lg px-2 py-1.5 text-[12px] text-bone focus:outline-none focus:border-amber-400/60"
+        aria-label={label}
+      >
+        {options.map(([v, text]) => (
+          <option key={v} value={v}>
+            {text}
+          </option>
+        ))}
+      </select>
+    </Field>
+  );
+}
+
+function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="flex items-center justify-between py-1.5 cursor-pointer">
+      <span className="text-[11px] text-mist">{label}</span>
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="accent-amber-400 w-3.5 h-3.5" />
+    </label>
+  );
+}
+
+function Section({ title, children, open = false }: { title: string; children: ReactNode; open?: boolean }) {
+  return (
+    <details open={open} className="group border-b border-white/10">
+      <summary className="flex items-center justify-between cursor-pointer list-none py-2.5 text-[11px] font-bold tracking-[0.12em] uppercase text-amber-300/90 select-none">
+        {title}
+        <span className="text-smoke transition-transform group-open:rotate-90">›</span>
+      </summary>
+      <div className="pb-3">{children}</div>
+    </details>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Customize panel
+// ─────────────────────────────────────────────────────────────────────────────
+
+const pct = (v: number) => `${Math.round(v * 100)}%`;
+const em = (v: number) => `${v.toFixed(2)}em`;
+
+function Customize({ style, update, onReset }: { style: CaptionStyle; update: (fn: (d: CaptionStyle) => void) => void; onReset: () => void }) {
+  const fam = fontById(style.font.family);
+  const weights = [...new Set(fam.files.map((f) => f.weight))];
+  const hasItalic = fam.files.some((f) => f.style === 'italic');
+  const gradient: Extract<Paint, object> | null = typeof style.fill === 'string' ? null : style.fill;
+  const hl = style.highlight;
+  const m = style.motion;
+
+  return (
+    <div className="px-3.5 pb-6">
+      <Section title="Text" open>
+        <SelectField
+          label="Font"
+          value={style.font.family}
+          options={FONT_FAMILIES.map((f) => [f.id, `${f.label} · ${f.group}`] as [string, string])}
+          onChange={(id) => {
+            void ensureFamily(id);
+            update((d) => {
+              d.font.family = id;
+              const f = fontById(id);
+              d.font.weight = f.files.reduce((best, x) => (Math.abs(x.weight - d.font.weight) < Math.abs(best - d.font.weight) ? x.weight : best), f.files[0].weight);
+              if (!f.files.some((x) => x.style === 'italic')) d.font.italic = false;
+            });
+          }}
+        />
+        {weights.length > 1 && (
+          <Seg label="Weight" value={style.font.weight} options={weights.map((w) => [w, String(w)] as [number, string])} onChange={(v) => update((d) => void (d.font.weight = v))} />
+        )}
+        {hasItalic && <Toggle label="Italic" checked={style.font.italic} onChange={(v) => update((d) => void (d.font.italic = v))} />}
+        <Slider label="Size" value={style.font.size} min={0.03} max={0.2} step={0.002} fmt={pct} onChange={(v) => update((d) => void (d.font.size = v))} />
+        <Slider label="Tracking" value={style.font.tracking} min={-0.05} max={0.15} step={0.005} fmt={em} onChange={(v) => update((d) => void (d.font.tracking = v))} />
+        <Slider label="Line height" value={style.font.lineHeight} min={0.8} max={1.7} step={0.01} onChange={(v) => update((d) => void (d.font.lineHeight = v))} />
+        <Seg
+          label="Case"
+          value={style.font.textCase}
+          options={[['none', 'Aa'], ['upper', 'AA'], ['lower', 'aa'], ['title', 'Title']]}
+          onChange={(v) => update((d) => void (d.font.textCase = v))}
+        />
+        <Slider
+          label="Words on screen"
+          value={style.layout.wordsPerPage}
+          min={0}
+          max={8}
+          step={1}
+          fmt={(v) => (v === 0 ? 'All' : String(v))}
+          onChange={(v) => update((d) => void (d.layout.wordsPerPage = v))}
+        />
+        <Slider label="Max lines" value={style.layout.maxLines} min={1} max={3} step={1} onChange={(v) => update((d) => void (d.layout.maxLines = v))} />
+        <Seg label="Align" value={style.layout.align} options={[['left', 'Left'], ['center', 'Centre'], ['right', 'Right']]} onChange={(v) => update((d) => void (d.layout.align = v))} />
+        <Slider label="Max width" value={style.layout.widthPct} min={0.3} max={0.98} step={0.01} fmt={pct} onChange={(v) => update((d) => void (d.layout.widthPct = v))} />
+      </Section>
+
+      <Section title="Colour">
+        <Seg
+          label="Fill"
+          value={gradient ? 'gradient' : 'solid'}
+          options={[['solid', 'Solid'], ['gradient', 'Gradient']]}
+          onChange={(v) =>
+            update((d) => {
+              const base = typeof d.fill === 'string' ? d.fill : d.fill.stops[0][1];
+              d.fill = v === 'solid' ? base : { angle: 90, stops: [[0, base], [1, '#FF4E50']] };
+            })
+          }
+        />
+        {gradient ? (
+          <>
+            {gradient.stops.map(([, c], i) => (
+              <ColorField
+                key={i}
+                label={`Gradient stop ${i + 1}`}
+                value={c}
+                onChange={(v) =>
+                  update((d) => {
+                    if (typeof d.fill !== 'string') d.fill.stops[i][1] = v;
+                  })
+                }
+              />
+            ))}
+            <Slider
+              label="Gradient angle"
+              value={gradient.angle}
+              min={0}
+              max={180}
+              step={1}
+              fmt={(v) => `${Math.round(v)}°`}
+              onChange={(v) =>
+                update((d) => {
+                  if (typeof d.fill !== 'string') d.fill.angle = v;
+                })
+              }
+            />
+          </>
+        ) : (
+          <ColorField label="Text colour" value={style.fill as string} onChange={(v) => update((d) => void (d.fill = v))} />
+        )}
+        <Slider label="Outline" value={style.stroke.width} min={0} max={0.14} step={0.005} fmt={em} onChange={(v) => update((d) => void (d.stroke.width = v))} />
+        {style.stroke.width > 0 && <ColorField label="Outline colour" value={style.stroke.color} alpha onChange={(v) => update((d) => void (d.stroke.color = v))} />}
+      </Section>
+
+      <Section title="Highlight">
+        <Seg
+          label="Active word"
+          value={hl.mode}
+          options={[['none', 'None'], ['color', 'Colour'], ['box', 'Box'], ['underline', 'Line'], ['sweep', 'Sweep']]}
+          onChange={(v) => update((d) => void (d.highlight.mode = v))}
+        />
+        {hl.mode !== 'none' && <ColorField label="Highlight colour" value={hl.color} onChange={(v) => update((d) => void (d.highlight.color = v))} />}
+        {hl.mode === 'box' && <ColorField label="Text on box" value={hl.textColor || '#0A0A0A'} onChange={(v) => update((d) => void (d.highlight.textColor = v))} />}
+        <Slider label="Pop size" value={hl.scale} min={1} max={1.4} step={0.01} fmt={(v) => `${v.toFixed(2)}×`} onChange={(v) => update((d) => void (d.highlight.scale = v))} />
+        {(hl.mode === 'color' || hl.mode === 'sweep' || hl.mode === 'underline') && (
+          <Toggle label="Keep spoken words highlighted" checked={hl.keep} onChange={(v) => update((d) => void (d.highlight.keep = v))} />
+        )}
+        <Slider label="Upcoming words" value={style.reveal.dimUnspoken} min={0.15} max={1} step={0.05} fmt={pct} onChange={(v) => update((d) => void (d.reveal.dimUnspoken = v))} />
+      </Section>
+
+      <Section title="Effects">
+        <Slider label="Shadow blur" value={style.shadow.blur} min={0} max={0.4} step={0.01} fmt={em} onChange={(v) => update((d) => void (d.shadow.blur = v))} />
+        <Slider label="Shadow offset" value={style.shadow.y} min={0} max={0.2} step={0.005} fmt={em} onChange={(v) => update((d) => void (d.shadow.y = v))} />
+        <ColorField label="Shadow colour" value={style.shadow.color} alpha onChange={(v) => update((d) => void (d.shadow.color = v))} />
+        <Slider label="Glow" value={style.glow.strength} min={0} max={3} step={1} fmt={(v) => (v === 0 ? 'Off' : String(v))} onChange={(v) => update((d) => void (d.glow.strength = v))} />
+        {style.glow.strength > 0 && (
+          <>
+            <Slider label="Glow spread" value={style.glow.blur} min={0.05} max={0.5} step={0.01} fmt={em} onChange={(v) => update((d) => void (d.glow.blur = v))} />
+            <ColorField label="Glow colour" value={style.glow.color} onChange={(v) => update((d) => void (d.glow.color = v))} />
+          </>
+        )}
+        <Slider label="3-D depth" value={style.extrude.depth} min={0} max={0.2} step={0.005} fmt={em} onChange={(v) => update((d) => void (d.extrude.depth = v))} />
+        {style.extrude.depth > 0 && <ColorField label="3-D colour" value={style.extrude.color} onChange={(v) => update((d) => void (d.extrude.color = v))} />}
+        <Seg label="Background" value={style.plate.mode} options={[['none', 'None'], ['block', 'Block'], ['line', 'Lines']]} onChange={(v) => update((d) => void (d.plate.mode = v))} />
+        {style.plate.mode !== 'none' && (
+          <>
+            <ColorField label="Background colour" value={style.plate.color} alpha onChange={(v) => update((d) => void (d.plate.color = v))} />
+            <Slider label="Padding X" value={style.plate.padX} min={0} max={1} step={0.01} fmt={em} onChange={(v) => update((d) => void (d.plate.padX = v))} />
+            <Slider label="Padding Y" value={style.plate.padY} min={0} max={0.6} step={0.01} fmt={em} onChange={(v) => update((d) => void (d.plate.padY = v))} />
+            <Slider label="Corner radius" value={style.plate.radius} min={0} max={0.8} step={0.01} fmt={em} onChange={(v) => update((d) => void (d.plate.radius = v))} />
+          </>
+        )}
+      </Section>
+
+      <Section title="Motion">
+        <SelectField
+          label="Entrance"
+          value={m.in}
+          options={[
+            ['none', 'None'], ['fade', 'Fade'], ['pop', 'Pop'], ['slide-up', 'Slide up'], ['slide-down', 'Slide down'],
+            ['zoom', 'Zoom slam'], ['blur', 'Blur in'], ['mask-up', 'Mask reveal'], ['drop', 'Drop'], ['typewriter', 'Typewriter'], ['glitch', 'Glitch'],
+          ]}
+          onChange={(v) => update((d) => void (d.motion.in = v))}
+        />
+        <SelectField label="Exit" value={m.out} options={[['none', 'None'], ['fade', 'Fade'], ['slide-down', 'Slide down'], ['shrink', 'Shrink']]} onChange={(v) => update((d) => void (d.motion.out = v))} />
+        <Seg label="Animate by" value={m.unit} options={[['line', 'Line'], ['word', 'Word'], ['char', 'Letter']]} onChange={(v) => update((d) => void (d.motion.unit = v))} />
+        <Slider label="Entrance time" value={m.inMs} min={1} max={1200} step={10} fmt={(v) => `${Math.round(v)} ms`} onChange={(v) => update((d) => void (d.motion.inMs = v))} />
+        <Slider label="Stagger" value={m.stagger} min={0} max={200} step={5} fmt={(v) => `${Math.round(v)} ms`} onChange={(v) => update((d) => void (d.motion.stagger = v))} />
+        <SelectField
+          label="Easing"
+          value={m.ease}
+          options={[['spring', 'Spring'], ['back', 'Overshoot'], ['out', 'Smooth'], ['expo', 'Snappy'], ['inout', 'Ease in-out'], ['linear', 'Linear']]}
+          onChange={(v) => update((d) => void (d.motion.ease = v))}
+        />
+        {(m.ease === 'spring' || m.ease === 'back') && <Slider label="Bounce" value={m.bounce} min={0} max={1} step={0.05} fmt={pct} onChange={(v) => update((d) => void (d.motion.bounce = v))} />}
+        <Slider label="Tilt" value={m.wobble} min={0} max={6} step={0.1} fmt={(v) => `${v.toFixed(1)}°`} onChange={(v) => update((d) => void (d.motion.wobble = v))} />
+        <Seg label="Words appear" value={style.reveal.mode} options={[['page', 'Together'], ['spoken', 'As spoken']]} onChange={(v) => update((d) => void (d.reveal.mode = v))} />
+      </Section>
+
+      <Section title="Position & timing">
+        <Slider label="Horizontal" value={style.layout.x} min={0.05} max={0.95} step={0.005} fmt={pct} onChange={(v) => update((d) => void (d.layout.x = v))} />
+        <Slider label="Vertical" value={style.layout.y} min={0.05} max={0.95} step={0.005} fmt={pct} onChange={(v) => update((d) => void (d.layout.y = v))} />
+        <div className="flex gap-1.5 py-1">
+          {([['Top', 0.18], ['Middle', 0.5], ['Lower third', 0.74], ['Bottom', 0.87]] as const).map(([label, y]) => (
+            <button key={label} type="button" onClick={() => update((d) => void ((d.layout.y = y), (d.layout.x = 0.5)))} className="flex-1 px-1 py-1 text-[10px] rounded-md border border-white/10 text-mist hover:text-bone hover:border-white/30">
+              {label}
+            </button>
+          ))}
+        </div>
+        <p className="text-[10px] text-smoke leading-snug py-1">Tip: you can also drag the captions directly in the preview. They snap to the centre lines.</p>
+        <Slider label="Timing offset" value={style.syncOffset} min={-1} max={0.5} step={0.05} fmt={(v) => `${v > 0 ? '+' : ''}${v.toFixed(2)} s`} onChange={(v) => update((d) => void (d.syncOffset = v))} />
+      </Section>
+
+      <button type="button" onClick={onReset} className="mt-4 w-full py-2 rounded-lg border border-white/15 text-[12px] text-mist hover:text-bone hover:border-white/30 transition-colors">
+        Reset to preset
+      </button>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Drawer
+// ─────────────────────────────────────────────────────────────────────────────
+
+const GROUPS: PresetGroup[] = ['Viral', 'Kinetic', 'Glow & colour', 'Film & clean'];
+
+export default function TemplateDrawer({ style, onChange, segments }: TemplateDrawerProps) {
+  const [tab, setTab] = useState<'presets' | 'customize'>('presets');
+  const baseId = useRef(PRESETS.find((p) => p.style.id === style.id)?.style.id ?? PRESETS[0].style.id);
+  const sample = useMemo(() => buildSample(segments), [segments]);
+
+  const choose = useCallback(
+    (def: PresetDef) => {
+      baseId.current = def.style.id;
+      // A preset changes the look; the project's timing offset stays as the user set it
+      onChange({ ...structuredClone(def.style), syncOffset: style.syncOffset });
+    },
+    [onChange, style.syncOffset],
+  );
+
+  const update = useCallback(
+    (fn: (d: CaptionStyle) => void) => {
+      const d = structuredClone(style);
+      fn(d);
+      if (d.id !== 'custom') {
+        d.id = 'custom';
+        d.name = 'Custom';
+      }
+      onChange(d);
+    },
+    [style, onChange],
+  );
+
+  const reset = useCallback(() => {
+    const def = PRESETS.find((p) => p.style.id === baseId.current) ?? PRESETS[0];
+    choose(def);
+  }, [choose]);
+
+  return (
+    <div className="h-full flex flex-col bg-[#131312] border-l border-white/10">
+      <div className="shrink-0 px-3.5 pt-3 pb-2.5 border-b border-white/10">
+        <div className="flex items-center justify-between mb-2.5">
+          <h3 className="text-[11px] font-bold tracking-[0.14em] uppercase text-mist">Caption style</h3>
+          <span className="text-[10px] text-amber-300/90 font-medium truncate max-w-[55%]">{style.name}</span>
+        </div>
+        <div role="tablist" className="grid grid-cols-2 rounded-lg overflow-hidden border border-white/10 bg-[#1a1a18]">
+          {(['presets', 'customize'] as const).map((t) => (
+            <button
+              key={t}
+              role="tab"
+              aria-selected={tab === t}
+              onClick={() => setTab(t)}
+              className={`py-1.5 text-[12px] font-semibold capitalize transition-colors ${tab === t ? 'bg-amber-400 text-black' : 'text-mist hover:text-bone'}`}
+            >
+              {t}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Main Drawer Body */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6" data-lenis-prevent>
-        {activeTab === 'presets' ? (
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-xs font-bold tracking-wider text-amber-300 uppercase flex items-center gap-1.5">
-                <Sliders className="w-3.5 h-3.5 text-amber-400" />
-                <span>Motion & Text Templates</span>
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        {tab === 'presets' ? (
+          <div className="px-3.5 pt-3 pb-6 space-y-5">
+            {GROUPS.map((g) => (
+              <div key={g}>
+                <div className="text-[10px] font-bold tracking-[0.14em] uppercase text-amber-300/80 mb-2">{g}</div>
+                <div className="grid grid-cols-2 gap-2.5">
+                  {PRESETS.filter((p) => p.group === g).map((def) => (
+                    <PresetCard key={def.style.id} def={def} sample={sample} selected={style.id === def.style.id} onSelect={() => choose(def)} />
+                  ))}
+                </div>
               </div>
-              <span className="text-xs text-mist font-mono">{PRESET_LIBRARY.length} Effects</span>
-            </div>
-            {/* Unified 2-column grid containing all presets */}
-            <div className="grid grid-cols-2 gap-2.5">
-              {PRESET_LIBRARY.map((item) => (
-                <PresetCard
-                  key={item.id}
-                  item={item}
-                  isSelected={style.preset === item.id}
-                  onSelect={() => applyPreset(item)}
-                />
-              ))}
-            </div>
+            ))}
+            <p className="text-[10px] text-smoke leading-snug">Hover a style to see it move. Previews use your own captions. Switch to Customize to fine-tune anything.</p>
           </div>
         ) : (
-          /* Fine-tune customize & animation controls */
-          <div className="space-y-5 text-xs text-mist">
-            {/* Animation Effect Selector */}
-            <div>
-              <label className="font-semibold text-bone block mb-1.5 flex items-center justify-between">
-                <span>Animation Effect</span>
-                <span className="text-[10px] text-amber-300 uppercase tracking-wider font-mono">
-                  {style.animationEffect || 'slide-up'}
-                </span>
-              </label>
-              <div className="grid grid-cols-1 gap-1.5">
-                {ANIMATION_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => onChange({ ...style, animationEffect: opt.id })}
-                    className={`flex items-center justify-between p-2.5 rounded-xl border transition-all text-left ${
-                      style.animationEffect === opt.id
-                        ? 'bg-[#282622] border-amber-400 text-bone shadow-md'
-                        : 'bg-[#1a1a18] border-white/10 text-smoke hover:text-bone hover:border-white/20'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-                        {opt.icon}
-                      </div>
-                      <div>
-                        <div className="font-bold text-xs text-bone">{opt.label}</div>
-                        <div className="text-xs text-mist">{opt.desc}</div>
-                      </div>
-                    </div>
-                    {style.animationEffect === opt.id && (
-                      <span className="w-2 h-2 rounded-full bg-amber-400" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Highlight Color (Spoken Word Color) */}
-            <div>
-              <label className="font-semibold text-bone block mb-1.5">
-                Spoken Word Highlight Color
-              </label>
-              <div className="flex items-center gap-2 mb-2">
-                {QUICK_COLORS.map((qc) => (
-                  <button
-                    key={qc.color}
-                    type="button"
-                    title={qc.label}
-                    onClick={() => onChange({ ...style, highlightColor: qc.color })}
-                    className="w-7 h-7 rounded-full border border-white/20 transition-transform hover:scale-110 active:scale-95 flex items-center justify-center relative shadow-sm"
-                    style={{ backgroundColor: qc.color }}
-                  >
-                    {style.highlightColor?.toLowerCase() === qc.color.toLowerCase() && (
-                      <span className="w-2 h-2 rounded-full bg-black" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Font Size */}
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <label className="font-semibold text-bone">Font Size</label>
-                <span className="font-mono text-amber-300 text-xs">{style.fontSize}px</span>
-              </div>
-              <input
-                type="range"
-                min={18}
-                max={48}
-                value={style.fontSize}
-                onChange={(e) => onChange({ ...style, fontSize: Number(e.target.value) })}
-                className="w-full accent-amber-400 cursor-pointer"
-              />
-            </div>
-
-            {/* Audio Sync / Timing Lead Offset Slider */}
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <label className="font-semibold text-bone flex items-center gap-1.5">
-                  <span>Audio Sync (Timing Lead)</span>
-                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 font-mono font-bold">
-                    Zero Lag
-                  </span>
-                </label>
-                <span className="font-mono text-amber-300 text-xs font-bold">
-                  {(style.syncOffset ?? -0.35) > 0 ? `+${(style.syncOffset ?? -0.35).toFixed(2)}s` : `${(style.syncOffset ?? -0.35).toFixed(2)}s`}
-                </span>
-              </div>
-              <input
-                type="range"
-                min={-1.0}
-                max={0.5}
-                step={0.05}
-                value={style.syncOffset ?? -0.35}
-                onChange={(e) => onChange({ ...style, syncOffset: Number(e.target.value) })}
-                className="w-full accent-amber-400 cursor-pointer"
-              />
-              <div className="flex justify-between text-xs text-mist mt-1 font-mono">
-                <span>◀ Earlier (-1.0s)</span>
-                <button
-                  type="button"
-                  onClick={() => onChange({ ...style, syncOffset: -0.35 })}
-                  className="text-amber-400 hover:text-amber-300 underline cursor-pointer"
-                >
-                  Optimal (-0.35s)
-                </button>
-                <span>Later (+0.5s) ▶</span>
-              </div>
-            </div>
-
-            {/* Outline Stroke Width */}
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <label className="font-semibold text-bone">Black Contrast Outline</label>
-                <span className="font-mono text-amber-300 text-xs">{style.outlineWidth}px</span>
-              </div>
-              <input
-                type="range"
-                min={0}
-                max={6}
-                step={0.5}
-                value={style.outlineWidth}
-                onChange={(e) => onChange({ ...style, outlineWidth: Number(e.target.value) })}
-                className="w-full accent-amber-400 cursor-pointer"
-              />
-            </div>
-
-            {/* Position */}
-            <div>
-              <label className="font-semibold text-bone block mb-2">Screen Position</label>
-              <div className="grid grid-cols-3 gap-1 bg-[#1c1c1a] p-1 rounded-xl border border-white/10">
-                {(['top', 'middle', 'bottom'] as SubtitlePosition[]).map((pos) => (
-                  <button
-                    key={pos}
-                    type="button"
-                    onClick={() => onChange({ ...style, position: pos })}
-                    className={`py-1.5 text-xs capitalize font-medium rounded-lg transition-colors ${
-                      style.position === pos
-                        ? 'bg-[#2b2a28] text-amber-300 border border-amber-300/30'
-                        : 'text-smoke hover:text-bone'
-                    }`}
-                  >
-                    {pos}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Background Style Toggle */}
-            <div>
-              <label className="font-semibold text-bone block mb-2">Background Style</label>
-              <div className="grid grid-cols-3 gap-1.5 bg-[#1c1c1a] p-1.5 rounded-xl border border-white/10">
-                <button
-                  type="button"
-                  onClick={() => onChange({ ...style, backgroundColor: 'transparent' })}
-                  className={`py-1.5 px-2 text-[11px] font-semibold rounded-lg transition-all ${
-                    style.backgroundColor === 'transparent'
-                      ? 'bg-[#2b2a28] text-amber-300 border border-amber-300/30'
-                      : 'text-smoke hover:text-bone'
-                  }`}
-                >
-                  Float (Clean)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onChange({ ...style, backgroundColor: 'rgba(0,0,0,0.65)' })}
-                  className={`py-1.5 px-2 text-[11px] font-semibold rounded-lg transition-all ${
-                    style.backgroundColor.includes('rgba')
-                      ? 'bg-[#2b2a28] text-amber-300 border border-amber-300/30'
-                      : 'text-smoke hover:text-bone'
-                  }`}
-                >
-                  Dark Glass
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onChange({ ...style, backgroundColor: '#E5132B' })}
-                  className={`py-1.5 px-2 text-[11px] font-semibold rounded-lg transition-all ${
-                    style.backgroundColor === '#E5132B'
-                      ? 'bg-[#2b2a28] text-amber-300 border border-amber-300/30'
-                      : 'text-smoke hover:text-bone'
-                  }`}
-                >
-                  Red Box
-                </button>
-              </div>
-            </div>
-
-            {/* Uppercase toggle */}
-            <div className="flex items-center justify-between p-3 rounded-xl bg-[#1c1c1a] border border-white/10">
-              <div>
-                <div className="text-bone font-medium">All Caps (UPPERCASE)</div>
-                <div className="text-smoke text-[11px]">Clean high-visibility typography</div>
-              </div>
-              <button
-                type="button"
-                onClick={() => onChange({ ...style, uppercase: !style.uppercase })}
-                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                  style.uppercase ? 'bg-amber-400' : 'bg-white/20'
-                }`}
-              >
-                <span
-                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-black transition-transform ${
-                    style.uppercase ? 'translate-x-4.5' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
+          <Customize style={style} update={update} onReset={reset} />
         )}
       </div>
     </div>
   );
 }
-
-// ─── Preset Card Component ──────────────────────────────────────────────────
-
-function PresetCard({
-  item,
-  isSelected,
-  onSelect,
-}: {
-  item: PresetItem;
-  isSelected: boolean;
-  onSelect: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={`relative text-left p-2.5 rounded-xl transition-all duration-150 flex flex-col justify-between group cursor-pointer ${
-        isSelected
-          ? 'bg-[#242320] border-2 border-amber-400 shadow-md ring-1 ring-amber-400/40'
-          : 'bg-[#181816] border border-white/10 hover:border-white/25 hover:bg-[#20201e]'
-      }`}
-    >
-      {/* Visual Subtitle Preview Badge */}
-      <div
-        className="w-full h-14 rounded-lg flex items-center justify-center p-2 mb-2 relative overflow-hidden border border-white/5"
-        style={{
-          backgroundColor: item.previewBg || '#141412',
-          backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.06) 0%, transparent 80%)',
-        }}
-      >
-        {item.id === 'slide-up-modern' ? (
-          <span className="text-[11px] font-black tracking-wide text-white drop-shadow-[0_2px_4px_#000] anim-slide-up">
-            SLIDE <span className="text-[#FFE600]">UP</span>
-          </span>
-        ) : item.id === 'whip-left-bold' ? (
-          <span className="text-[11px] font-black italic tracking-wide text-white drop-shadow-[0_2px_4px_#000] anim-slide-left">
-            WHIP <span className="text-[#00F0FF]">SNAP</span>
-          </span>
-        ) : item.id === 'punch-zoom-action' ? (
-          <span className="text-[11px] font-black tracking-wide text-white drop-shadow-[0_2px_4px_#000] anim-punch-zoom">
-            PUNCH <span className="text-[#FF4500]">ZOOM</span>
-          </span>
-        ) : item.id === 'word-cascade-reel' ? (
-          <span className="text-[11px] font-black tracking-wide text-white drop-shadow-[0_2px_4px_#000] flex gap-1">
-            <span className="anim-slide-up inline-block">WORD</span>
-            <span className="anim-slide-up inline-block text-[#00FF66]" style={{ animationDelay: '0.12s' }}>CASCADE</span>
-          </span>
-        ) : item.id === 'flip-3d-title' ? (
-          <span className="text-[11px] font-black tracking-wide text-white drop-shadow-[0_2px_4px_#000] anim-flip-3d">
-            3D <span className="text-[#38BDF8]">FLIP</span>
-          </span>
-        ) : item.id === 'bounce-rise-kinetic' ? (
-          <span className="text-[11px] font-black tracking-wide text-white drop-shadow-[0_2px_4px_#000] anim-bounce-rise">
-            BOUNCE <span className="text-[#FFE600]">& RISE</span>
-          </span>
-        ) : item.id === 'glitch-whip-cyber' ? (
-          <span className="text-[11px] font-black tracking-wider text-white drop-shadow-[2px_0_#FF0055] anim-glitch-whip">
-            GLITCH <span className="text-[#00FFFF]">WHIP</span>
-          </span>
-        ) : item.id === 'highlight-sweep' ? (
-          <span className="text-[10px] font-black tracking-wide text-white drop-shadow-[0_2px_4px_#000]">
-            <span className="bg-[#FFE600] text-black px-1.5 py-0.5 rounded font-black">MARKER</span> WIPE
-          </span>
-        ) : item.id === 'broadcast-lower-third' ? (
-          <span className="text-[10px] font-bold tracking-wide bg-black/90 text-white px-2 py-0.5 rounded border-l-2 border-[#FFD700]">
-            LOWER <span className="text-[#FFD700]">3RD</span>
-          </span>
-        ) : item.id === 'editorial-typewriter' ? (
-          <span className="text-[11px] font-mono tracking-tight text-white">
-            TYPE<span className="text-[#00FF66]">WRITER</span>_
-          </span>
-        ) : item.id === 'cinema-drift' ? (
-          <span className="text-[11px] font-bold tracking-wide text-[#FFE600] drop-shadow-[0_2px_4px_#000] anim-float-drift">
-            CINEMA DRIFT
-          </span>
-        ) : (
-          <span className="text-[11px] font-medium tracking-wide text-white drop-shadow-[0_1px_3px_#000]">
-            Clean Minimal
-          </span>
-        )}
-      </div>
-
-      {/* Label and Badge */}
-      <div className="flex items-center justify-between w-full mt-0.5">
-        <span className="text-xs font-bold text-bone group-hover:text-amber-300 transition-colors">
-          {item.title}
-        </span>
-        {item.badge && (
-          <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-amber-400/15 text-amber-300 border border-amber-400/20 tracking-wider">
-            {item.badge}
-          </span>
-        )}
-      </div>
-      <div className="text-xs text-mist truncate mt-0.5 w-full">
-        {item.motionLabel}
-      </div>
-    </button>
-  );
-}
-
-export default memo(TemplateDrawer);

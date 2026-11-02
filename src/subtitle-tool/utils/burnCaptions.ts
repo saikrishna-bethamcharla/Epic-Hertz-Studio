@@ -5,7 +5,7 @@
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
 import { getAssetUrl } from './assetUrl';
-import type { SubtitleStyle } from '../types';
+import type { BasicStyle } from '../engine/compat';
 
 let ffmpegBurnInstance: FFmpeg | null = null;
 
@@ -43,7 +43,7 @@ async function getFFmpeg(): Promise<FFmpeg> {
 export async function burnCaptions(
   videoFile: File,
   srtContent: string,
-  style?: SubtitleStyle,
+  style?: BasicStyle,
   onProgress?: (pct: number) => void,
 ): Promise<Blob> {
   const ffmpeg = await getFFmpeg();

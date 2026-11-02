@@ -11,20 +11,15 @@ import {
   useState,
   useMemo,
 } from 'react';
-import {
-  Heart,
-  MessageSquare,
-  Share2,
-  Disc,
-  Smartphone,
-  X,
-} from 'lucide-react';
-import type { Segment, SubtitleStyle, VideoAspectRatio, CaptionAnimationEffect, WordTimestamp } from './types';
+import { Smartphone, Heart, MessageCircle, Share2, Disc3 } from 'lucide-react';
+import type { Segment, CaptionStyle, VideoAspectRatio } from './types';
+import CaptionCanvas from './CaptionCanvas';
 
 interface VideoPreviewProps {
   videoFile: File;
   segments: Segment[];
-  style: SubtitleStyle;
+  style: CaptionStyle;
+  onStyleChange?: (style: CaptionStyle) => void;
   aspectRatio?: VideoAspectRatio;
   onAspectRatioChange?: (ratio: VideoAspectRatio) => void;
   onTimeUpdate: (time: number) => void;
@@ -40,454 +35,13 @@ export interface VideoPreviewHandle {
   getCurrentTime: () => number;
 }
 
-function getWordStyles(
-  isSpoken: boolean,
-  effect: CaptionAnimationEffect,
-  style: SubtitleStyle,
-): React.CSSProperties {
-  const baseHighlight = style.highlightColor || '#FFE600';
-  const baseText = style.textColor || '#FFFFFF';
-  const strokeColor = style.outlineColor || '#000000';
-  const strokeW = style.outlineWidth ?? 2.5;
-
-  switch (effect) {
-    case 'slide-up':
-      return isSpoken
-        ? {
-            color: baseHighlight,
-            transform: 'scale(1.2) translateY(-4px)',
-            WebkitTextStroke: `${Math.max(2, strokeW)}px #000000`,
-            textShadow: `0 4px 14px rgba(0,0,0,0.95)`,
-            fontWeight: 900,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.14s cubic-bezier(0.2, 0, 0, 1), color 0.1s ease',
-            zIndex: 10,
-          }
-        : {
-            color: baseText,
-            transform: 'scale(1.0)',
-            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
-            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
-            fontWeight: 700,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s ease',
-          };
-
-    case 'slide-left':
-      return isSpoken
-        ? {
-            color: baseHighlight,
-            transform: 'scale(1.2) translateX(4px)',
-            WebkitTextStroke: `${Math.max(2, strokeW)}px #000000`,
-            textShadow: `0 4px 14px rgba(0,0,0,0.95)`,
-            fontWeight: 900,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.14s cubic-bezier(0.18, 0.89, 0.32, 1.25), color 0.1s ease',
-            zIndex: 10,
-          }
-        : {
-            color: baseText,
-            transform: 'scale(1.0)',
-            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
-            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
-            fontWeight: 700,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s ease',
-          };
-
-    case 'slide-right':
-      return isSpoken
-        ? {
-            color: baseHighlight,
-            transform: 'scale(1.2) translateX(-4px)',
-            WebkitTextStroke: `${Math.max(2, strokeW)}px #000000`,
-            textShadow: `0 4px 14px rgba(0,0,0,0.95)`,
-            fontWeight: 900,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.14s cubic-bezier(0.18, 0.89, 0.32, 1.25), color 0.1s ease',
-            zIndex: 10,
-          }
-        : {
-            color: baseText,
-            transform: 'scale(1.0)',
-            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
-            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
-            fontWeight: 700,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s ease',
-          };
-
-    case 'punch-zoom':
-      return isSpoken
-        ? {
-            color: baseHighlight,
-            transform: 'scale(1.25)',
-            WebkitTextStroke: `${Math.max(2.5, strokeW)}px #000000`,
-            textShadow: `0 0 16px ${baseHighlight}bb, 0 4px 10px rgba(0,0,0,0.95)`,
-            fontWeight: 900,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.1s ease',
-            zIndex: 10,
-          }
-        : {
-            color: baseText,
-            transform: 'scale(1.0)',
-            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
-            textShadow: '0 2px 8px rgba(0,0,0,0.95)',
-            fontWeight: 800,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s ease',
-          };
-
-    case 'word-cascade':
-      return isSpoken
-        ? {
-            color: baseHighlight,
-            transform: 'scale(1.22) translateY(-3px)',
-            WebkitTextStroke: `${Math.max(2, strokeW)}px #000000`,
-            textShadow: `0 4px 12px rgba(0,0,0,0.95)`,
-            fontWeight: 900,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.14s cubic-bezier(0.2, 0, 0, 1), color 0.1s ease',
-            zIndex: 10,
-          }
-        : {
-            color: baseText,
-            transform: 'scale(1.0)',
-            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
-            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
-            fontWeight: 700,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s ease',
-          };
-
-    case 'flip-3d':
-      return isSpoken
-        ? {
-            color: baseHighlight,
-            transform: 'scale(1.2) perspective(400px) rotateX(10deg)',
-            WebkitTextStroke: `${Math.max(2, strokeW)}px #000000`,
-            textShadow: `0 4px 14px rgba(0,0,0,0.95)`,
-            fontWeight: 900,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.14s cubic-bezier(0.2, 0, 0, 1), color 0.1s ease',
-            zIndex: 10,
-          }
-        : {
-            color: baseText,
-            transform: 'scale(1.0)',
-            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
-            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
-            fontWeight: 700,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s ease',
-          };
-
-    case 'bounce-rise':
-    case 'capcut-bounce':
-      return isSpoken
-        ? {
-            color: baseHighlight,
-            transform: 'scale(1.24) translateY(-6px)',
-            WebkitTextStroke: `${Math.max(2.5, strokeW)}px #000000`,
-            textShadow: `0 0 16px ${baseHighlight}bb, 0 4px 10px rgba(0,0,0,0.95)`,
-            fontWeight: 900,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.1s ease',
-            zIndex: 10,
-          }
-        : {
-            color: baseText,
-            transform: 'scale(1.0)',
-            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
-            textShadow: '0 2px 8px rgba(0,0,0,0.95)',
-            fontWeight: 800,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s ease, color 0.1s ease',
-          };
-
-    case 'glitch-whip':
-    case 'premiere-rgb-glitch':
-      return isSpoken
-        ? {
-            color: '#FFFFFF',
-            fontWeight: 900,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            textShadow: '-2.5px 0 0 #00ffff, 2.5px 0 0 #ff0055, 0 0 12px rgba(0,255,255,0.7)',
-            transform: 'scale(1.22)',
-            zIndex: 10,
-          }
-        : {
-            color: 'rgba(255,255,255,0.82)',
-            transform: 'scale(1.0)',
-            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
-            fontWeight: 700,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s ease',
-          };
-
-    case 'float-drift':
-    case 'cinematic-clean':
-      return isSpoken
-        ? {
-            color: '#FFD700',
-            transform: 'scale(1.1) translateY(-2px)',
-            WebkitTextStroke: '1px rgba(0,0,0,0.5)',
-            textShadow: '0 2px 8px rgba(0,0,0,0.95)',
-            fontWeight: 800,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.14s ease, color 0.1s ease',
-            zIndex: 10,
-          }
-        : {
-            color: 'rgba(255,255,255,0.85)',
-            transform: 'scale(1.0)',
-            WebkitTextStroke: '1px rgba(0,0,0,0.5)',
-            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
-            fontWeight: 700,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s ease',
-          };
-
-    case 'highlight-wipe':
-    case 'hormozi-box':
-    case 'premiere-highlight-wipe':
-      return isSpoken
-        ? {
-            backgroundColor: baseHighlight,
-            color: '#000000',
-            transform: 'scale(1.14)',
-            boxShadow: '0 4px 14px rgba(0,0,0,0.6)',
-            borderRadius: '4px',
-            padding: '0.04em 0.28em',
-            fontWeight: 900,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s cubic-bezier(0.2, 0, 0, 1), background-color 0.1s ease',
-            zIndex: 10,
-          }
-        : {
-            color: baseText,
-            transform: 'scale(1.0)',
-            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
-            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
-            fontWeight: 700,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s ease',
-          };
-
-    case 'typewriter':
-    case 'premiere-typewriter':
-      return isSpoken
-        ? {
-            color: '#FFFFFF',
-            borderBottom: `2.5px solid ${baseHighlight}`,
-            transform: 'scale(1.06)',
-            textShadow: '0 2px 8px rgba(0,0,0,0.95)',
-            fontWeight: 800,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            zIndex: 10,
-          }
-        : {
-            color: 'rgba(255,255,255,0.75)',
-            transform: 'scale(1.0)',
-            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
-            fontWeight: 600,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s ease',
-          };
-
-    case 'premiere-glow':
-      return isSpoken
-        ? {
-            color: '#FFFFFF',
-            transform: 'scale(1.18)',
-            WebkitTextStroke: '1.5px #00F0FF',
-            textShadow: '0 0 12px #00F0FF, 0 0 24px #00F0FF, 0 0 36px #00F0FF, 0 2px 4px #000',
-            fontWeight: 900,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s ease, text-shadow 0.12s ease',
-            zIndex: 10,
-          }
-        : {
-            color: 'rgba(255,255,255,0.7)',
-            transform: 'scale(1.0)',
-            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
-            textShadow: '0 2px 8px rgba(0,0,0,0.9)',
-            fontWeight: 700,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s ease',
-          };
-
-    case 'comic-pop':
-      return isSpoken
-        ? {
-            color: '#00FF66',
-            transform: 'scale(1.24) rotate(2deg)',
-            WebkitTextStroke: '3.5px #000000',
-            filter: 'drop-shadow(0 4px 0 #000000)',
-            fontWeight: 900,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.1s ease',
-            zIndex: 10,
-          }
-        : {
-            color: baseText,
-            transform: 'scale(1.0)',
-            WebkitTextStroke: '3px #000000',
-            filter: 'drop-shadow(0 3px 0 #000000)',
-            fontWeight: 900,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s ease',
-          };
-
-    case 'fire-flame':
-      return isSpoken
-        ? {
-            color: '#FF4500',
-            transform: 'scale(1.2) translateY(-3px)',
-            WebkitTextStroke: '2.5px #000000',
-            textShadow: '0 0 16px #FF4500, 0 0 30px #FFA500, 0 4px 8px #000',
-            fontWeight: 900,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s ease, text-shadow 0.1s ease',
-            zIndex: 10,
-          }
-        : {
-            color: baseText,
-            transform: 'scale(1.0)',
-            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
-            textShadow: '0 2px 8px rgba(0,0,0,0.9)',
-            fontWeight: 800,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s ease',
-          };
-
-    case 'premiere-whip-slide':
-      return isSpoken
-        ? {
-            color: baseHighlight,
-            transform: 'scale(1.2) translateX(2px)',
-            WebkitTextStroke: `${Math.max(2, strokeW)}px #000000`,
-            textShadow: '0 4px 12px rgba(0,0,0,0.95)',
-            fontWeight: 900,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            zIndex: 10,
-          }
-        : {
-            color: baseText,
-            transform: 'scale(1.0)',
-            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
-            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
-            fontWeight: 700,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s ease',
-          };
-
-    case 'premiere-lower-third':
-      return isSpoken
-        ? {
-            color: baseHighlight,
-            transform: 'scale(1.1)',
-            textShadow: '0 2px 10px rgba(0,0,0,0.95)',
-            fontWeight: 800,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            zIndex: 10,
-          }
-        : {
-            color: 'rgba(255,255,255,0.85)',
-            transform: 'scale(1.0)',
-            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
-            fontWeight: 600,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s ease',
-          };
-
-    case 'premiere-impact-shake':
-      return isSpoken
-        ? {
-            color: '#FFE600',
-            transform: 'scale(1.26)',
-            WebkitTextStroke: '3px #000000',
-            textShadow: '0 0 18px rgba(255,230,0,0.8), 0 4px 10px #000',
-            fontWeight: 900,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            zIndex: 10,
-          }
-        : {
-            color: baseText,
-            transform: 'scale(1.0)',
-            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
-            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
-            fontWeight: 700,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s ease',
-          };
-
-    default: // none / static
-      return isSpoken && style.highlightCurrentWord
-        ? {
-            color: baseHighlight,
-            transform: 'scale(1.08)',
-            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
-            textShadow: '0 2px 8px rgba(0,0,0,0.95)',
-            fontWeight: 800,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s ease, color 0.1s ease',
-          }
-        : {
-            color: baseText,
-            transform: 'scale(1.0)',
-            WebkitTextStroke: `${strokeW}px ${strokeColor}`,
-            textShadow: '0 2px 6px rgba(0,0,0,0.9)',
-            fontWeight: 700,
-            display: 'inline-block',
-            marginRight: '0.28em',
-            transition: 'transform 0.12s ease',
-          };
-  }
-}
-
 const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
   (
     {
       videoFile,
       segments,
       style,
+      onStyleChange,
       aspectRatio = '9:16',
       onAspectRatioChange,
       onTimeUpdate,
@@ -506,19 +60,6 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
     const [showSafeZones, setShowSafeZones] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const playPromiseRef = useRef<Promise<void> | null>(null);
-
-    // Captions are authored against a ~280px-wide reel frame. On narrower frames (phones) scale them
-    // down so words don't overflow; never scale above 1 so desktop looks exactly as before.
-    const [frameWidth, setFrameWidth] = useState(0);
-
-    useEffect(() => {
-      const el = containerRef.current;
-      if (!el || typeof ResizeObserver === 'undefined') return;
-      const ro = new ResizeObserver(([entry]) => setFrameWidth(entry.contentRect.width));
-      ro.observe(el);
-      setFrameWidth(el.getBoundingClientRect().width);
-      return () => ro.disconnect();
-    }, []);
 
     // Create stable Blob URL for the video file
     const videoURL = useMemo(() => URL.createObjectURL(videoFile), [videoFile]);
@@ -600,13 +141,15 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       }
     }, [onTimeUpdate]);
 
-    // Continuous 60fps requestAnimationFrame loop for ultra-tight, zero-latency word sync
+    // Keep the time readout fresh while playing. Captions are drawn by CaptionCanvas on its own
+    // frame loop, so this only needs to run a few times a second.
     useEffect(() => {
       let rafId: number;
-      const tick = () => {
-        if (videoRef.current && !videoRef.current.paused) {
-          const t = videoRef.current.currentTime;
-          setCurrentTime(t);
+      let lastPush = 0;
+      const tick = (now: number) => {
+        if (videoRef.current && !videoRef.current.paused && now - lastPush > 80) {
+          lastPush = now;
+          setCurrentTime(videoRef.current.currentTime);
         }
         rafId = requestAnimationFrame(tick);
       };
@@ -659,82 +202,6 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       }
     };
 
-    // Lead time offset: Default -0.35s so captions pop exactly when speech begins, eliminating the 1-2s delay
-    const syncOffset = style.syncOffset ?? -0.35;
-    // Effective time advances slightly to align visual pop with vocal onset
-    const effectiveTime = Math.max(0, currentTime - syncOffset);
-
-    // Active subtitle segment for current playhead position
-    const activeSegment = useMemo(() => {
-      return segments.find((s) => effectiveTime >= s.start && effectiveTime <= s.end + 0.15);
-    }, [segments, effectiveTime]);
-
-    // Words with timings (interpolated if model did not return per-word timings or if text was edited)
-    const displayWords: WordTimestamp[] = useMemo(() => {
-      if (!activeSegment) return [];
-      const rawWords = activeSegment.text.trim().split(/\s+/).filter(Boolean);
-      if (rawWords.length === 0) return [];
-
-      // Verify that existing words match current text
-      if (activeSegment.words && activeSegment.words.length === rawWords.length) {
-        const wordsMatch = activeSegment.words.every(
-          (w, i) => w.word.toLowerCase() === rawWords[i].toLowerCase(),
-        );
-        if (wordsMatch) {
-          return activeSegment.words;
-        }
-      }
-
-      // Re-interpolate word timings across segment bounds when text is edited or words missing
-      const segDur = Math.max(0.1, activeSegment.end - activeSegment.start);
-      const wordDur = segDur / rawWords.length;
-      return rawWords.map((word, i) => ({
-        word,
-        start: activeSegment.start + i * wordDur,
-        end: activeSegment.start + (i + 1) * wordDur,
-      }));
-    }, [activeSegment]);
-
-    // Active word index: highlights first word immediately upon segment entry and smoothly steps
-    const activeWordIndex = useMemo(() => {
-      if (!displayWords || displayWords.length === 0) return -1;
-
-      // 1. Exact match within word bounds
-      const direct = displayWords.findIndex(
-        (w) => effectiveTime >= w.start && effectiveTime < w.end
-      );
-      if (direct !== -1) return direct;
-
-      // 2. Latest word started
-      for (let i = displayWords.length - 1; i >= 0; i--) {
-        if (effectiveTime >= displayWords[i].start) {
-          return i;
-        }
-      }
-
-      // 3. Segment entered -> activate first word immediately!
-      return 0;
-    }, [displayWords, effectiveTime]);
-
-    // Style as drawn in the preview (scaled down on narrow frames)
-    const previewScale = frameWidth > 0 ? Math.min(1, frameWidth / 280) : 1;
-    const viewStyle: SubtitleStyle =
-      previewScale === 1
-        ? style
-        : {
-            ...style,
-            fontSize: Math.round(style.fontSize * previewScale),
-            outlineWidth: Number((style.outlineWidth * previewScale).toFixed(1)),
-          };
-
-    // Subtitle position class
-    const posClass =
-      style.position === 'top'
-        ? 'top-8'
-        : style.position === 'middle'
-        ? 'top-1/2 -translate-y-1/2'
-        : 'bottom-8';
-
     // Format mm:ss
     const formatTime = (secs: number) => {
       const m = Math.floor(secs / 60);
@@ -759,14 +226,14 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
     return (
       <div className="flex flex-col items-center justify-center w-full h-full p-2 select-none">
         {/* Aspect Ratio Switcher Pills & Safe Zones */}
-        <div className="flex items-center gap-2 mb-2.5 z-10 flex-wrap justify-center">
+        <div className="flex items-center gap-2 mb-1.5 sm:mb-2.5 z-10 flex-wrap justify-center">
           <div className="flex items-center gap-1.5 bg-[#1b1b19] p-1 rounded-xl border border-white/10 shadow-sm">
             {(['9:16', '16:9', '1:1', 'original'] as VideoAspectRatio[]).map((ratio) => (
               <button
                 key={ratio}
                 type="button"
                 onClick={() => onAspectRatioChange?.(ratio)}
-                className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                className={`px-2.5 sm:px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                   aspectRatio === ratio
                     ? 'bg-[#292826] text-amber-300 shadow-sm border border-amber-300/30'
                     : 'text-smoke hover:text-bone'
@@ -780,7 +247,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           <button
             type="button"
             onClick={() => setShowSafeZones(!showSafeZones)}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all cursor-pointer hidden sm:flex items-center gap-1.5 ${
               showSafeZones
                 ? 'bg-amber-400 text-black border-amber-400 font-bold shadow-md shadow-amber-400/20'
                 : 'bg-[#1b1b19] border-white/10 text-smoke hover:text-bone hover:border-white/25'
@@ -813,36 +280,33 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           {showSafeZones && (
             <div className="absolute inset-0 pointer-events-none z-25 flex flex-col justify-between p-4 overflow-hidden select-none">
               {/* Top Danger Guideline (Profile / Search Area) */}
-              <div className="flex items-center justify-between text-[10px] text-red-400/80 px-2.5 py-1 border-b border-dashed border-red-500/40 bg-red-950/30 rounded">
-                <div className="flex items-center gap-1.5">
-                  <X className="w-3 h-3 text-red-400" />
-                  <span>Header & Search Navigation</span>
-                </div>
+              <div className="flex items-center justify-between text-[10px] text-red-400/80 px-2 py-1 border-b border-dashed border-red-500/40 bg-red-950/20 rounded">
+                <span>✕ Header Tab Area</span>
                 <span className="font-mono text-[9px] uppercase tracking-wider">Unsafe Zone</span>
               </div>
 
               {/* Right Side Social Action Bar (Like, Comment, Share) */}
               <div className="absolute right-3.5 bottom-28 flex flex-col items-center gap-3.5 text-white/70">
                 <div className="flex flex-col items-center">
-                  <div className="w-8 h-8 rounded-full bg-black/50 border border-white/20 flex items-center justify-center text-xs">
-                    <Heart className="w-3.5 h-3.5 text-white" />
+                  <div className="w-8 h-8 rounded-full bg-black/40 border border-white/20 flex items-center justify-center">
+                    <Heart className="w-4 h-4 text-white/90" />
                   </div>
                   <span className="text-[9px] font-mono mt-0.5">182K</span>
                 </div>
                 <div className="flex flex-col items-center">
-                  <div className="w-8 h-8 rounded-full bg-black/50 border border-white/20 flex items-center justify-center text-xs">
-                    <MessageSquare className="w-3.5 h-3.5 text-white" />
+                  <div className="w-8 h-8 rounded-full bg-black/40 border border-white/20 flex items-center justify-center">
+                    <MessageCircle className="w-4 h-4 text-white/90" />
                   </div>
                   <span className="text-[9px] font-mono mt-0.5">6.2K</span>
                 </div>
                 <div className="flex flex-col items-center">
-                  <div className="w-8 h-8 rounded-full bg-black/50 border border-white/20 flex items-center justify-center text-xs">
-                    <Share2 className="w-3.5 h-3.5 text-white" />
+                  <div className="w-8 h-8 rounded-full bg-black/40 border border-white/20 flex items-center justify-center">
+                    <Share2 className="w-4 h-4 text-white/90" />
                   </div>
                   <span className="text-[9px] font-mono mt-0.5">Share</span>
                 </div>
-                <div className="w-7 h-7 rounded-full bg-black/70 border border-white/30 flex items-center justify-center animate-spin">
-                  <Disc className="w-3.5 h-3.5 text-amber-400" />
+                <div className="w-7 h-7 rounded-full bg-black/70 border border-white/30 flex items-center justify-center">
+                  <Disc3 className="w-4 h-4 text-amber-300 animate-spin" />
                 </div>
               </div>
 
@@ -856,7 +320,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
                   Social native description & hashtags live here...
                 </p>
                 <div className="flex items-center gap-1 text-[9px] text-white/50 font-mono">
-                  <span>Original Audio · Viral Beat</span>
+                  <span>♫ Original Audio · Viral Beat</span>
                 </div>
               </div>
             </div>
@@ -902,104 +366,14 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             </button>
           )}
 
-          {/* Live Subtitle Overlay with Kinetic Slide & Motion Effects */}
-          {activeSegment && (
-            <div
-              className={`pointer-events-none absolute inset-x-0 z-30 flex justify-center px-4 transition-all duration-150 ${posClass}`}
-            >
-              <div
-                key={activeSegment.id}
-                className={`max-w-[94%] text-center inline-block leading-relaxed tracking-wide transition-all duration-150 ${
-                  style.animationEffect === 'slide-up'
-                    ? 'anim-slide-up'
-                    : style.animationEffect === 'slide-left'
-                    ? 'anim-slide-left'
-                    : style.animationEffect === 'slide-right'
-                    ? 'anim-slide-right'
-                    : style.animationEffect === 'punch-zoom'
-                    ? 'anim-punch-zoom'
-                    : style.animationEffect === 'flip-3d'
-                    ? 'anim-flip-3d'
-                    : style.animationEffect === 'bounce-rise' || style.animationEffect === 'capcut-bounce'
-                    ? 'anim-bounce-rise'
-                    : style.animationEffect === 'glitch-whip' || style.animationEffect === 'premiere-rgb-glitch'
-                    ? 'anim-glitch-whip'
-                    : style.animationEffect === 'float-drift'
-                    ? 'anim-float-drift'
-                    : ''
-                }`}
-                style={{
-                  fontSize: `${viewStyle.fontSize}px`,
-                  // Draw the outline behind the fill (as the exported video does) so letters stay clean and bright
-                  paintOrder: 'stroke fill',
-                  fontFamily: style.fontFamily || 'Montserrat, Inter, sans-serif',
-                  backgroundColor:
-                    style.backgroundColor && style.backgroundColor !== 'transparent'
-                      ? style.backgroundColor
-                      : undefined,
-                  padding:
-                    style.backgroundColor && style.backgroundColor !== 'transparent'
-                      ? '6px 14px'
-                      : '2px 4px',
-                  borderRadius:
-                    style.backgroundColor && style.backgroundColor !== 'transparent'
-                      ? '12px'
-                      : undefined,
-                  backdropFilter:
-                    style.backgroundColor &&
-                    style.backgroundColor !== 'transparent' &&
-                    style.backgroundColor.startsWith('rgba')
-                      ? 'blur(8px)'
-                      : undefined,
-                  letterSpacing: style.uppercase ? '0.04em' : 'normal',
-                }}
-              >
-                {displayWords.length > 0 ? (
-                  displayWords.map((w, idx) => {
-                    const isSpoken = idx === activeWordIndex;
-                    const wordText = style.uppercase ? w.word.toUpperCase() : w.word;
-                    const animEffect = style.animationEffect || 'slide-up';
-                    const wordStyle = getWordStyles(isSpoken, animEffect, viewStyle);
-                    let animClass = '';
-                    if (isSpoken) {
-                      if (animEffect === 'glitch-whip' || animEffect === 'premiere-rgb-glitch') {
-                        animClass = 'anim-premiere-glitch';
-                      } else if (animEffect === 'bounce-rise' || animEffect === 'capcut-bounce') {
-                        animClass = 'anim-bounce-rise';
-                      } else if (animEffect === 'punch-zoom') {
-                        animClass = 'anim-punch-zoom';
-                      }
-                    } else if (animEffect === 'word-cascade') {
-                      animClass = 'anim-slide-up';
-                    }
-
-                    const cascadeDelay = animEffect === 'word-cascade' ? `${idx * 0.08}s` : undefined;
-
-                    return (
-                      <span
-                        key={idx}
-                        style={{ ...wordStyle, animationDelay: cascadeDelay }}
-                        className={`relative inline-block ${animClass}`}
-                      >
-                        {wordText}
-                      </span>
-                    );
-                  })
-                ) : (
-                  <span
-                    style={{
-                      color: style.textColor,
-                      WebkitTextStroke: `${viewStyle.outlineWidth}px ${style.outlineColor}`,
-                      textShadow: '0 2px 8px rgba(0,0,0,0.95)',
-                      fontWeight: 800,
-                    }}
-                  >
-                    {style.uppercase ? activeSegment.text.toUpperCase() : activeSegment.text}
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
+          {/* Captions: drawn by the same engine that renders the export */}
+          <CaptionCanvas
+            segments={segments}
+            style={style}
+            videoRef={videoRef}
+            hostRef={containerRef}
+            onStyleChange={onStyleChange}
+          />
         </div>
 
         {/* Floating Transport Bar under Video Player (ReplixCaptions-style) */}

@@ -9,6 +9,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Sparkles, CheckCircle2, Upload, RotateCcw, Trash2 } from 'lucide-react';
 import { useDesktop } from '../hooks/useMedia';
+import { DEFAULT_STYLE } from './engine/presets';
 
 import LandingScrollCraft from './LandingScrollCraft';
 import VideoPreview, { type VideoPreviewHandle } from './VideoPreview';
@@ -36,7 +37,7 @@ import {
 import type {
   AppStage,
   Segment,
-  SubtitleStyle,
+  CaptionStyle,
   SpokenLanguage,
   ScriptOutput,
   VideoAspectRatio,
@@ -62,23 +63,8 @@ export default function SubtitleTool() {
   const isDesktop = useDesktop();
   const [mobileTab, setMobileTab] = useState<'captions' | 'styles' | 'timeline'>('captions');
 
-  // Subtitle styling state — Defaults to Slide Up motion template
-  const [style, setStyle] = useState<SubtitleStyle>(() => ({
-    preset: 'slide-up-modern',
-    animationEffect: 'slide-up',
-    fontSize: 26,
-    textColor: '#FFFFFF',
-    backgroundColor: 'transparent',
-    outlineColor: '#000000',
-    outlineWidth: 3,
-    position: 'bottom',
-    fontFamily: 'Montserrat, Inter, sans-serif',
-    uppercase: true,
-    highlightCurrentWord: true,
-    highlightColor: '#FFE600',
-    shadowEffect: true,
-    syncOffset: -0.35,
-  }));
+  // Caption style (typography, treatment, motion). Starts from the first designed preset.
+  const [style, setStyle] = useState<CaptionStyle>(() => structuredClone(DEFAULT_STYLE));
 
   // IndexedDB persistence states
   const [savedDraft, setSavedDraft] = useState<SavedProjectMeta | null>(null);
@@ -592,6 +578,7 @@ export default function SubtitleTool() {
                         videoFile={videoFile}
                         segments={segments}
                         style={style}
+                        onStyleChange={setStyle}
                         aspectRatio={aspectRatio}
                         onAspectRatioChange={setAspectRatio}
                         onTimeUpdate={handleTimeUpdate}
@@ -601,10 +588,11 @@ export default function SubtitleTool() {
                     </div>
 
                     {/* Column 3: Right Templates Drawer */}
-                    <div className="w-[280px] lg:w-[310px] shrink-0 h-full overflow-hidden">
+                    <div className="w-[300px] lg:w-[340px] shrink-0 h-full overflow-hidden">
                       <TemplateDrawer
                         style={style}
                         onChange={setStyle}
+                        segments={segments}
                       />
                     </div>
                   </div>
@@ -633,6 +621,7 @@ export default function SubtitleTool() {
                       videoFile={videoFile}
                       segments={segments}
                       style={style}
+                      onStyleChange={setStyle}
                       aspectRatio={aspectRatio}
                       onAspectRatioChange={setAspectRatio}
                       onTimeUpdate={handleTimeUpdate}
@@ -670,7 +659,7 @@ export default function SubtitleTool() {
                         onSeek={(t) => videoRef.current?.seekTo(t)}
                       />
                     )}
-                    {mobileTab === 'styles' && <TemplateDrawer style={style} onChange={setStyle} />}
+                    {mobileTab === 'styles' && <TemplateDrawer style={style} onChange={setStyle} segments={segments} />}
                     {mobileTab === 'timeline' && (
                       <Timeline
                         duration={duration}

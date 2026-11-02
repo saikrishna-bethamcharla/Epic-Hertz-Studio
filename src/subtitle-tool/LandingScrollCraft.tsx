@@ -18,7 +18,7 @@ import {
   UploadCloud,
   ArrowRight,
 } from 'lucide-react';
-import { PRESET_LIBRARY } from './TemplateDrawer';
+import { PRESET_LIBRARY } from './landingPresets';
 import type { SubtitlePreset, ScriptOutput } from './types';
 
 interface LandingScrollCraftProps {
@@ -62,7 +62,7 @@ const RUNWAY_STYLES: Array<{
   words: string[];
 }> = [
   {
-    id: 'slide-up-modern',
+    id: 'capcut-viral',
     title: 'Slide Up Mask',
     badge: 'REVEAL',
     highlightColor: '#FFE600',
@@ -71,7 +71,7 @@ const RUNWAY_STYLES: Array<{
     words: ['SMOOTH', 'VERTICAL', 'MASK', 'REVEAL', 'CADENCE'],
   },
   {
-    id: 'whip-left-bold',
+    id: 'premiere-glow',
     title: 'Whip Left Snap',
     badge: 'KINETIC',
     highlightColor: '#00F0FF',
@@ -80,7 +80,7 @@ const RUNWAY_STYLES: Array<{
     words: ['FAST', 'LATERAL', 'WHIP', 'INTO', 'POSITION'],
   },
   {
-    id: 'punch-zoom-action',
+    id: 'mrbeast-comic',
     title: 'Punch Zoom In',
     badge: 'ACTION',
     highlightColor: '#FF4500',
@@ -89,7 +89,7 @@ const RUNWAY_STYLES: Array<{
     words: ['DYNAMIC', 'PUNCH', 'ZOOM', 'FOR', 'CREATORS'],
   },
   {
-    id: 'word-cascade-reel',
+    id: 'fire-hype',
     title: 'Word Cascade',
     badge: 'RHYTHM',
     highlightColor: '#00FF66',
@@ -120,7 +120,7 @@ export default function LandingScrollCraft({
   const [scriptMode, setScriptMode] = useState<ScriptOutput>('romanized');
 
   // Active style for runway
-  const [activePresetId, setActivePresetId] = useState<SubtitlePreset>('slide-up-modern');
+  const [activePresetId, setActivePresetId] = useState<SubtitlePreset>('capcut-viral');
   const [activeWordIdx, setActiveWordIdx] = useState(0);
 
   // Split-curtain state

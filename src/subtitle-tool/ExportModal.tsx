@@ -6,14 +6,15 @@ import { motion } from 'framer-motion';
 import { toSRT, toVTT, downloadText, downloadBlob } from './utils/srt';
 import { burnCaptions, embedSubtitlesMP4 } from './utils/burnCaptions';
 import { burnCaptionsCanvas } from './utils/burnCaptionsCanvas';
-import type { Segment, SubtitleStyle } from './types';
+import type { Segment, CaptionStyle } from './types';
+import { toBasicStyle } from './engine/compat';
 
 interface ExportModalProps {
   isOpen: boolean;
   onClose: () => void;
   videoFile: File;
   segments: Segment[];
-  style: SubtitleStyle;
+  style: CaptionStyle;
   onBurnStart: () => void;
   onBurnProgress: (pct: number) => void;
   onBurnDone: () => void;
@@ -31,7 +32,7 @@ export default function ExportModal({
   onBurnDone,
   onBurnError,
 }: ExportModalProps) {
-  const [exportType, setExportType] = useState<'lossless' | 'hardsub' | 'srt' | 'vtt' | 'txt'>('lossless');
+  const [exportType, setExportType] = useState<'lossless' | 'hardsub' | 'srt' | 'vtt' | 'txt'>('hardsub');
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,16 +75,18 @@ export default function ExportModal({
         const srtContent = toSRT(segments);
         let blob: Blob;
         try {
-          blob = await burnCaptions(videoFile, srtContent, style, (pct) => {
-            onBurnProgress(pct);
-          });
-        } catch (ffmpegErr) {
-          console.warn('FFmpeg WASM burn encountered an issue, seamlessly switching to hardware Canvas burn:', ffmpegErr);
+          // Animated burn-in, drawn by the same engine as the preview (what you see is what you get)
           blob = await burnCaptionsCanvas(videoFile, segments, style, (pct) => {
             onBurnProgress(pct);
           });
+        } catch (canvasErr) {
+          console.warn('Animated burn-in failed, falling back to static hard-subs via FFmpeg:', canvasErr);
+          blob = await burnCaptions(videoFile, srtContent, toBasicStyle(style), (pct) => {
+            onBurnProgress(pct);
+          });
         }
-        downloadBlob(blob, `${baseName}_burned.mp4`);
+        const ext = blob.type.includes('webm') ? 'webm' : 'mp4';
+        downloadBlob(blob, `${baseName}_captioned.${ext}`);
         onBurnDone();
       }
     } catch (err) {
@@ -109,11 +112,10 @@ export default function ExportModal({
             <p className="text-xs text-smoke mt-0.5">Choose your delivery format for clients or social channels</p>
           </div>
           <button
-            type="button"
             onClick={onClose}
             aria-label="Close export dialog"
             title="Close dialog"
-            className="text-smoke hover:text-bone text-base p-1.5 rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
+            className="text-smoke hover:text-bone text-base p-1"
           >
             ✕
           </button>
@@ -144,9 +146,9 @@ export default function ExportModal({
             />
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-bone">Lossless Subtitled MP4</span>
+                <span className="text-xs font-bold text-bone">Lossless MP4 + subtitle track</span>
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
-                  RECOMMENDED
+                  NO RE-ENCODE
                 </span>
               </div>
               <p className="text-[11px] text-smoke mt-1 leading-relaxed">
@@ -155,7 +157,7 @@ export default function ExportModal({
             </div>
           </label>
 
-          {/* 2. Hardcoded Burn MP4 */}
+          {/* 2. Animated Burn-in */}
           <label
             className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
               exportType === 'hardsub'
@@ -172,13 +174,13 @@ export default function ExportModal({
             />
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-bone">Hardcoded Burn MP4</span>
+                <span className="text-xs font-bold text-bone">Animated Burn-in</span>
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300">
-                  REELS / TIKTOK
+                  RECOMMENDED · REELS / TIKTOK
                 </span>
               </div>
               <p className="text-[11px] text-smoke mt-1 leading-relaxed">
-                Burns styled captions directly into the video pixels. Permanent on Instagram Reels, TikTok, YouTube Shorts, and WhatsApp statuses.
+                Burns your styled, animated captions into the video exactly as shown in the preview. Permanent on Reels, TikTok, YouTube Shorts and WhatsApp. Exports in real time, so a 30 s clip takes about 30 s.
               </p>
             </div>
           </label>

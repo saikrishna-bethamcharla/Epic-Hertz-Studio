@@ -33,6 +33,13 @@ if (fs.existsSync(distAssets)) {
   fs.cpSync(distAssets, rootAssets, { recursive: true });
 }
 
+// Sync fonts to root
+const distFonts = path.join(dist, 'fonts');
+const rootFonts = path.join(root, 'fonts');
+if (fs.existsSync(distFonts)) {
+  fs.cpSync(distFonts, rootFonts, { recursive: true });
+}
+
 // Copy compiled index.html, 404.html, favicon.svg to root
 if (fs.existsSync(path.join(dist, 'index.html'))) {
   fs.copyFileSync(path.join(dist, 'index.html'), path.join(root, 'index.html'));

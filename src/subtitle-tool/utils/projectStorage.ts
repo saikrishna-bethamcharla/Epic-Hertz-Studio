@@ -5,7 +5,7 @@
 
 import type {
   Segment,
-  SubtitleStyle,
+  CaptionStyle,
   SpokenLanguage,
   ScriptOutput,
   VideoAspectRatio,
@@ -21,7 +21,7 @@ export interface SavedProjectMeta {
   videoType: string;
   segmentCount: number;
   segments: Segment[];
-  style: SubtitleStyle;
+  style: CaptionStyle;
   spokenLanguage: SpokenLanguage;
   scriptOutput: ScriptOutput;
   aspectRatio: VideoAspectRatio;
@@ -38,7 +38,7 @@ export interface SavedMediaAsset {
 export interface FullProject {
   videoFile: File;
   segments: Segment[];
-  style: SubtitleStyle;
+  style: CaptionStyle;
   spokenLanguage: SpokenLanguage;
   scriptOutput: ScriptOutput;
   aspectRatio: VideoAspectRatio;
