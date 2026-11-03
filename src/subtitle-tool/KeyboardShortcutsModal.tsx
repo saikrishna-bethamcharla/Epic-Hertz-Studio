@@ -19,9 +19,11 @@ interface ShortcutCategory {
 
 const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
   {
-    title: 'Playback & Navigation',
+    title: 'Playback & Preview Inspection',
     items: [
       { keys: ['Space'], description: 'Play or pause video' },
+      { keys: ['\\ (Hold)'], description: 'Compare clean video (instant before/after check)' },
+      { keys: ['F'], description: 'Toggle fullscreen video preview' },
       { keys: ['J', 'L'], description: 'Shuttle backward / forward 1s' },
       { keys: ['K'], description: 'Pause playback' },
       { keys: ['←', '→'], description: 'Step 1 frame backward / forward' },
@@ -41,8 +43,11 @@ const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
     ],
   },
   {
-    title: 'Timeline & Precision',
+    title: 'Precision Timing & Styling Overrides',
     items: [
+      { keys: ['Word chips'], description: 'Nudge ±0.05s, cycle color & animation FX (pop, shake, glow, bar)' },
+      { keys: ['Sliders icon'], description: 'Per-caption overrides (vertical position, scale, custom color)' },
+      { keys: ['Smile icon'], description: 'Insert creator emojis into dialogue' },
       { keys: ['Drag edge'], description: 'Trim caption start / end boundary' },
       { keys: ['Snap button'], description: 'Toggle magnetic snapping to playhead & edges' },
       { keys: ['Ripple button'], description: 'Toggle ripple editing (subsequent captions follow)' },

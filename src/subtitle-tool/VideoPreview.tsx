@@ -11,10 +11,25 @@ import {
   useState,
   useMemo,
 } from 'react';
-import { Smartphone, Heart, MessageCircle, Share2, Disc3 } from 'lucide-react';
+import {
+  Smartphone,
+  Heart,
+  MessageCircle,
+  Share2,
+  Disc3,
+  Eye,
+  EyeOff,
+  Maximize2,
+  Bookmark,
+  ThumbsUp,
+  ThumbsDown,
+  Sparkles,
+} from 'lucide-react';
 import type { Segment, CaptionStyle, VideoAspectRatio } from './types';
 import CaptionCanvas from './CaptionCanvas';
 import { formatTimecode } from './utils/formatTime';
+
+export type SafeZonePlatform = 'reels' | 'tiktok' | 'shorts';
 
 interface VideoPreviewProps {
   videoFile: File;
@@ -26,6 +41,8 @@ interface VideoPreviewProps {
   onTimeUpdate: (time: number) => void;
   onDurationChange?: (duration: number) => void;
   onPlayStateChange?: (isPlaying: boolean) => void;
+  hideCaptions?: boolean;
+  onToggleHideCaptions?: () => void;
 }
 
 export interface VideoPreviewHandle {
@@ -34,6 +51,7 @@ export interface VideoPreviewHandle {
   pause: () => void;
   togglePlay: () => void;
   getCurrentTime: () => number;
+  toggleFullscreen: () => void;
 }
 
 const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
@@ -48,6 +66,8 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       onTimeUpdate,
       onDurationChange,
       onPlayStateChange,
+      hideCaptions = false,
+      onToggleHideCaptions,
     },
     ref,
   ) => {
@@ -59,6 +79,8 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
     const [isMuted, setIsMuted] = useState(false);
     const [playbackRate, setPlaybackRate] = useState(1);
     const [showSafeZones, setShowSafeZones] = useState(false);
+    const [safePlatform, setSafePlatform] = useState<SafeZonePlatform>('reels');
+    const [localHideCaptions, setLocalHideCaptions] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const playPromiseRef = useRef<Promise<void> | null>(null);
 
@@ -110,6 +132,15 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       }
     }, [safePlay, safePause]);
 
+    const toggleFullscreen = useCallback(() => {
+      if (!containerRef.current) return;
+      if (!document.fullscreenElement) {
+        containerRef.current.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }, []);
+
     // Expose methods to parent (Timeline & Caption editor clicks)
     useImperativeHandle(ref, () => ({
       seekTo(time: number) {
@@ -132,7 +163,10 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       getCurrentTime() {
         return videoRef.current?.currentTime || 0;
       },
-    }), [safePlay, safePause, togglePlay, duration]);
+      toggleFullscreen() {
+        toggleFullscreen();
+      },
+    }), [safePlay, safePause, togglePlay, toggleFullscreen, duration]);
 
     const handleTimeUpdate = useCallback(() => {
       if (videoRef.current) {
@@ -194,15 +228,6 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       if (videoRef.current) videoRef.current.playbackRate = next;
     };
 
-    const toggleFullscreen = () => {
-      if (!containerRef.current) return;
-      if (!document.fullscreenElement) {
-        containerRef.current.requestFullscreen().catch(() => {});
-      } else {
-        document.exitFullscreen().catch(() => {});
-      }
-    };
-
     // Format timestamp
     const formatTime = (secs: number) => formatTimecode(secs, { decimals: true });
 
@@ -241,20 +266,42 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             ))}
           </div>
 
-          <button
-            type="button"
-            onClick={() => setShowSafeZones(!showSafeZones)}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all cursor-pointer hidden sm:flex items-center gap-1.5 ${
-              showSafeZones
-                ? 'bg-amber-400 text-black border-amber-400 font-bold shadow-md shadow-amber-400/20'
-                : 'bg-[#1b1b19] border-white/10 text-smoke hover:text-bone hover:border-white/25'
-            }`}
-            title="Toggle Instagram Reels & TikTok native UI safe zones to prevent captions from getting covered"
-          >
-            <Smartphone className="w-3.5 h-3.5" />
-            <span>Safe Zones</span>
-            {showSafeZones && <span className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />}
-          </button>
+          {/* Safe Zones Toggle & Platform Selector */}
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setShowSafeZones(!showSafeZones)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 ${
+                showSafeZones
+                  ? 'bg-amber-400 text-black border-amber-400 font-bold shadow-md shadow-amber-400/20'
+                  : 'bg-[#1b1b19] border-white/10 text-smoke hover:text-bone hover:border-white/25'
+              }`}
+              title="Toggle social platform UI safe zones to prevent captions from getting covered"
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              <span>Safe Zones</span>
+              {showSafeZones && <span className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />}
+            </button>
+
+            {showSafeZones && (
+              <div className="flex items-center gap-1 bg-[#1b1b19] p-0.5 rounded-lg border border-white/10 animate-in fade-in">
+                {(['reels', 'tiktok', 'shorts'] as SafeZonePlatform[]).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setSafePlatform(p)}
+                    className={`px-2 py-0.5 text-[10px] font-semibold rounded capitalize transition-all ${
+                      safePlatform === p
+                        ? 'bg-amber-400 text-black font-bold'
+                        : 'text-smoke hover:text-bone'
+                    }`}
+                  >
+                    {p === 'reels' ? 'Reels' : p === 'tiktok' ? 'TikTok' : 'Shorts'}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Video Frame */}
@@ -276,50 +323,134 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           {/* Social Media Native UI Safe Zone Overlay */}
           {showSafeZones && (
             <div className="absolute inset-0 pointer-events-none z-25 flex flex-col justify-between p-4 overflow-hidden select-none">
-              {/* Top Danger Guideline (Profile / Search Area) */}
-              <div className="flex items-center justify-between text-[10px] text-red-400/80 px-2 py-1 border-b border-dashed border-red-500/40 bg-red-950/20 rounded">
-                <span>✕ Header Tab Area</span>
-                <span className="font-mono text-[9px] uppercase tracking-wider">Unsafe Zone</span>
+              {/* Top Danger Guideline */}
+              <div className="flex items-center justify-between text-[10px] text-red-400/90 px-2 py-1 border-b border-dashed border-red-500/50 bg-red-950/40 backdrop-blur-xs rounded">
+                <span>✕ {safePlatform === 'tiktok' ? 'LIVE · Following · For You' : safePlatform === 'shorts' ? 'Shorts Search & Camera' : 'Header / Search Area'}</span>
+                <span className="font-mono text-[9px] uppercase tracking-wider">{safePlatform.toUpperCase()} SAFE ZONE</span>
               </div>
 
-              {/* Right Side Social Action Bar (Like, Comment, Share) */}
-              <div className="absolute right-3.5 bottom-28 flex flex-col items-center gap-3.5 text-white/70">
-                <div className="flex flex-col items-center">
-                  <div className="w-8 h-8 rounded-full bg-black/40 border border-white/20 flex items-center justify-center">
-                    <Heart className="w-4 h-4 text-white/90" />
+              {/* Right Side Social Action Bar */}
+              {safePlatform === 'reels' && (
+                <div className="absolute right-3.5 bottom-28 flex flex-col items-center gap-3.5 text-white/70">
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 rounded-full bg-black/40 border border-white/20 flex items-center justify-center">
+                      <Heart className="w-4 h-4 text-white/90" />
+                    </div>
+                    <span className="text-[9px] font-mono mt-0.5">182K</span>
                   </div>
-                  <span className="text-[9px] font-mono mt-0.5">182K</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className="w-8 h-8 rounded-full bg-black/40 border border-white/20 flex items-center justify-center">
-                    <MessageCircle className="w-4 h-4 text-white/90" />
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 rounded-full bg-black/40 border border-white/20 flex items-center justify-center">
+                      <MessageCircle className="w-4 h-4 text-white/90" />
+                    </div>
+                    <span className="text-[9px] font-mono mt-0.5">6.2K</span>
                   </div>
-                  <span className="text-[9px] font-mono mt-0.5">6.2K</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className="w-8 h-8 rounded-full bg-black/40 border border-white/20 flex items-center justify-center">
-                    <Share2 className="w-4 h-4 text-white/90" />
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 rounded-full bg-black/40 border border-white/20 flex items-center justify-center">
+                      <Share2 className="w-4 h-4 text-white/90" />
+                    </div>
+                    <span className="text-[9px] font-mono mt-0.5">Share</span>
                   </div>
-                  <span className="text-[9px] font-mono mt-0.5">Share</span>
+                  <div className="w-7 h-7 rounded-full bg-black/70 border border-white/30 flex items-center justify-center">
+                    <Disc3 className="w-4 h-4 text-amber-300 animate-spin" />
+                  </div>
                 </div>
-                <div className="w-7 h-7 rounded-full bg-black/70 border border-white/30 flex items-center justify-center">
-                  <Disc3 className="w-4 h-4 text-amber-300 animate-spin" />
-                </div>
-              </div>
+              )}
 
-              {/* Bottom Danger Guideline (Username, Native Caption & Audio bar) */}
-              <div className="w-3/4 space-y-1.5 pb-2 border-t border-dashed border-red-500/40 bg-red-950/25 p-2 rounded">
+              {safePlatform === 'tiktok' && (
+                <div className="absolute right-3 bottom-24 flex flex-col items-center gap-3 text-white/70">
+                  <div className="w-8 h-8 rounded-full bg-rose-500/80 border border-white flex items-center justify-center font-bold text-[10px] text-white">
+                    +
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 rounded-full bg-black/40 border border-white/20 flex items-center justify-center">
+                      <Heart className="w-4 h-4 text-white/90" />
+                    </div>
+                    <span className="text-[9px] font-mono mt-0.5">340K</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 rounded-full bg-black/40 border border-white/20 flex items-center justify-center">
+                      <MessageCircle className="w-4 h-4 text-white/90" />
+                    </div>
+                    <span className="text-[9px] font-mono mt-0.5">12.4K</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 rounded-full bg-black/40 border border-white/20 flex items-center justify-center">
+                      <Bookmark className="w-4 h-4 text-amber-300" />
+                    </div>
+                    <span className="text-[9px] font-mono mt-0.5">48K</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 rounded-full bg-black/40 border border-white/20 flex items-center justify-center">
+                      <Share2 className="w-4 h-4 text-white/90" />
+                    </div>
+                    <span className="text-[9px] font-mono mt-0.5">29K</span>
+                  </div>
+                  <div className="w-7 h-7 rounded-full bg-black/80 border border-white/40 flex items-center justify-center">
+                    <Disc3 className="w-4 h-4 text-rose-400 animate-spin" />
+                  </div>
+                </div>
+              )}
+
+              {safePlatform === 'shorts' && (
+                <div className="absolute right-3.5 bottom-24 flex flex-col items-center gap-3.5 text-white/70">
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 rounded-full bg-black/40 border border-white/20 flex items-center justify-center">
+                      <ThumbsUp className="w-4 h-4 text-white/90" />
+                    </div>
+                    <span className="text-[9px] font-mono mt-0.5">95K</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 rounded-full bg-black/40 border border-white/20 flex items-center justify-center">
+                      <ThumbsDown className="w-4 h-4 text-white/90" />
+                    </div>
+                    <span className="text-[9px] font-mono mt-0.5">Dislike</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 rounded-full bg-black/40 border border-white/20 flex items-center justify-center">
+                      <MessageCircle className="w-4 h-4 text-white/90" />
+                    </div>
+                    <span className="text-[9px] font-mono mt-0.5">3.1K</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 rounded-full bg-black/40 border border-white/20 flex items-center justify-center">
+                      <Share2 className="w-4 h-4 text-white/90" />
+                    </div>
+                    <span className="text-[9px] font-mono mt-0.5">Share</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 rounded-full bg-black/40 border border-white/20 flex items-center justify-center">
+                      <Sparkles className="w-4 h-4 text-white/90" />
+                    </div>
+                    <span className="text-[9px] font-mono mt-0.5">Remix</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Bottom Danger Guideline */}
+              <div className="w-3/4 space-y-1.5 pb-2 border-t border-dashed border-red-500/50 bg-red-950/40 p-2 rounded backdrop-blur-xs">
                 <div className="flex items-center gap-1.5 text-[11px] font-bold text-white/90">
-                  <span>@epic_hertz_creator</span>
-                  <span className="px-1.5 py-0.2 rounded bg-amber-400 text-black text-[9px] font-semibold">Follow</span>
+                  <span>@epic_creator</span>
+                  <span className={`px-1.5 py-0.2 rounded text-[9px] font-semibold ${
+                    safePlatform === 'shorts' ? 'bg-red-600 text-white' : 'bg-amber-400 text-black'
+                  }`}>
+                    {safePlatform === 'shorts' ? 'Subscribe' : 'Follow'}
+                  </span>
                 </div>
                 <p className="text-[10px] text-white/70 line-clamp-1">
-                  Social native description & hashtags live here...
+                  Social native title & hashtags live in this lower area...
                 </p>
                 <div className="flex items-center gap-1 text-[9px] text-white/50 font-mono">
                   <span>♫ Original Audio · Viral Beat</span>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Clean Preview Badge when comparing */}
+          {(hideCaptions || localHideCaptions) && (
+            <div className="absolute top-3 right-3 z-30 px-2 py-0.5 rounded bg-black/80 border border-amber-400/50 text-amber-300 text-[10px] font-mono tracking-wide flex items-center gap-1 shadow-lg pointer-events-none">
+              <EyeOff className="w-3 h-3 text-amber-400" />
+              <span>Clean Preview (Captions Hidden)</span>
             </div>
           )}
 
@@ -370,6 +501,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             videoRef={videoRef}
             hostRef={containerRef}
             onStyleChange={onStyleChange}
+            visible={!hideCaptions && !localHideCaptions}
           />
         </div>
 
@@ -380,7 +512,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             onClick={togglePlay}
             aria-label={isPlaying ? 'Pause playback' : 'Start playback'}
             className="p-1.5 hover:text-amber-300 transition-colors"
-            title={isPlaying ? 'Pause' : 'Play'}
+            title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
           >
             {isPlaying ? (
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -391,6 +523,25 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
                 <path d="M8 5v14l11-7z" />
               </svg>
             )}
+          </button>
+
+          {/* Compare Before / After Button */}
+          <button
+            type="button"
+            onClick={() => {
+              if (onToggleHideCaptions) onToggleHideCaptions();
+              else setLocalHideCaptions((prev) => !prev);
+            }}
+            aria-label="Toggle clean video preview without captions"
+            title="Compare Before/After captions (Hold \)"
+            className={`p-1.5 rounded-lg transition-colors flex items-center gap-1 ${
+              hideCaptions || localHideCaptions
+                ? 'bg-amber-400 text-black font-bold'
+                : 'text-smoke hover:text-amber-300 hover:bg-white/10'
+            }`}
+          >
+            {hideCaptions || localHideCaptions ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            <span className="text-[10px] hidden md:inline">Compare</span>
           </button>
 
           {/* Volume */}
@@ -445,11 +596,10 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           <button
             onClick={toggleFullscreen}
             className="p-1 hover:text-amber-300 transition-colors text-smoke ml-1"
-            title="Fullscreen"
+            title="Fullscreen (F)"
+            aria-label="Toggle Fullscreen"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0 0l-5-5m-6 16l-5-5m0 0h4m-4 0v-4m16 4v-4m0 4h-4m4 0l-5-5" />
-            </svg>
+            <Maximize2 className="w-4 h-4" />
           </button>
         </div>
       </div>

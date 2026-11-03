@@ -16,6 +16,7 @@ interface CaptionCanvasProps {
   /** Element that receives pointer events for dragging (the video frame). */
   hostRef: RefObject<HTMLElement | null>;
   onStyleChange?: (style: CaptionStyle) => void;
+  visible?: boolean;
 }
 
 interface Geometry {
@@ -29,12 +30,12 @@ interface Geometry {
 const SNAP = 0.02;
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 
-export default function CaptionCanvas({ segments, style, videoRef, hostRef, onStyleChange }: CaptionCanvasProps) {
+export default function CaptionCanvas({ segments, style, videoRef, hostRef, onStyleChange, visible = true }: CaptionCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Latest props, readable from the animation loop without re-subscribing
-  const live = useRef({ segments, style, onStyleChange });
-  live.current = { segments, style, onStyleChange };
+  const live = useRef({ segments, style, onStyleChange, visible });
+  live.current = { segments, style, onStyleChange, visible };
 
   const geom = useRef<Geometry>({ cssW: 0, cssH: 0, left: 0, top: 0, dpr: 1 });
   const geomVersion = useRef(0);
@@ -98,10 +99,17 @@ export default function CaptionCanvas({ segments, style, videoRef, hostRef, onSt
       const ctx = canvas?.getContext('2d');
       if (!canvas || !ctx) return;
 
-      const { segments: segs, style: st } = live.current;
+      const { segments: segs, style: st, visible } = live.current;
       const dragging = drag.current;
       const eff: CaptionStyle = dragging ? { ...st, layout: { ...st.layout, x: dragging.x, y: dragging.y } } : st;
       const t = videoRef.current?.currentTime ?? 0;
+
+      if (!visible) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        bounds.current = null;
+        last.t = t;
+        return;
+      }
 
       const changed =
         t !== last.t ||

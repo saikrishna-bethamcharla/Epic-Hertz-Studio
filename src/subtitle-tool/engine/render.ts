@@ -21,6 +21,8 @@ export interface WordTiming {
   text: string;
   start: number;
   end: number;
+  highlightColor?: string;
+  emphasis?: 'none' | 'pop' | 'shake' | 'glow' | 'underline';
 }
 
 interface Page {
@@ -33,25 +35,31 @@ interface Page {
 
 const norm = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
 
-const wordsCache = new WeakMap<Segment, { text: string; words: WordTiming[] }>();
+const wordsCache = new WeakMap<Segment, { text: string; words: WordTiming[]; timedRef?: unknown }>();
 
 export function segmentWords(seg: Segment): WordTiming[] {
   const hit = wordsCache.get(seg);
-  if (hit && hit.text === seg.text) return hit.words;
+  if (hit && hit.text === seg.text && hit.timedRef === seg.words) return hit.words;
 
   const raw = seg.text.trim().split(/\s+/).filter(Boolean);
   let words: WordTiming[] = [];
   if (raw.length) {
     const timed = seg.words;
     if (timed && timed.length === raw.length && timed.every((w, i) => norm(w.word) === norm(raw[i]))) {
-      words = timed.map((w, i) => ({ text: raw[i], start: w.start, end: Math.max(w.end, w.start + 0.06) }));
+      words = timed.map((w, i) => ({
+        text: raw[i],
+        start: w.start,
+        end: Math.max(w.end, w.start + 0.06),
+        highlightColor: w.highlightColor,
+        emphasis: w.emphasis,
+      }));
     } else {
       // Edited text no longer matches model timings → spread evenly over the segment.
       const per = Math.max(0.1, seg.end - seg.start) / raw.length;
       words = raw.map((text, i) => ({ text, start: seg.start + i * per, end: seg.start + (i + 1) * per }));
     }
   }
-  wordsCache.set(seg, { text: seg.text, words });
+  wordsCache.set(seg, { text: seg.text, words, timedRef: seg.words });
   return words;
 }
 
@@ -473,7 +481,27 @@ export function renderCaptions(
   const words = segmentWords(seg);
   if (!words.length) return NOTHING;
 
-  const pages = buildPages(seg, words, style.layout.wordsPerPage);
+  // Merge per-segment style overrides if present
+  let activeStyle = style;
+  if (seg.styleOverride) {
+    const ov = seg.styleOverride;
+    activeStyle = {
+      ...style,
+      layout: {
+        ...style.layout,
+        y: ov.positionY !== undefined ? ov.positionY : style.layout.y,
+      },
+      font: {
+        ...style.font,
+        size: ov.scale !== undefined ? style.font.size * ov.scale : style.font.size,
+      },
+      fill: ov.fillColor || style.fill,
+      stroke: ov.strokeColor ? { ...style.stroke, color: ov.strokeColor } : style.stroke,
+      highlight: ov.highlightColor ? { ...style.highlight, color: ov.highlightColor } : style.highlight,
+    };
+  }
+
+  const pages = buildPages(seg, words, activeStyle.layout.wordsPerPage);
   let pageIdx = -1;
   for (let k = pages.length - 1; k >= 0; k--) {
     if (t >= pages[k].start) {
@@ -485,24 +513,24 @@ export function renderCaptions(
   const page = pages[pageIdx];
   const visEnd = page.isLast ? seg.end + 0.15 : pages[pageIdx + 1].start;
 
-  const texts = page.words.map((w) => applyCase(w.text, style.font.textCase));
+  const texts = page.words.map((w) => applyCase(w.text, activeStyle.font.textCase));
   ctx.save();
   ctx.textBaseline = 'alphabetic';
   ctx.textAlign = 'left';
-  const L = getLayout(ctx, seg, pageIdx, texts, style, W, H);
+  const L = getLayout(ctx, seg, pageIdx, texts, activeStyle, W, H);
   const px = L.px;
-  ctx.font = canvasFont(style, px);
+  ctx.font = canvasFont(activeStyle, px);
   setSpacing(ctx, L.tracking * px);
 
   // Block origin (centre-anchored, kept inside the frame)
   const margin = Math.min(W, H) * 0.03;
-  let bx = W * style.layout.x - L.w / 2;
-  let by = H * style.layout.y - L.h / 2;
+  let bx = W * activeStyle.layout.x - L.w / 2;
+  let by = H * activeStyle.layout.y - L.h / 2;
   if (L.w < W - margin * 2) bx = Math.min(Math.max(bx, margin), W - margin - L.w);
   if (L.h < H - margin * 2) by = Math.min(Math.max(by, margin), H - margin - L.h);
 
-  const m = style.motion;
-  const hl = style.highlight;
+  const m = activeStyle.motion;
+  const hl = activeStyle.highlight;
   const inDur = Math.max(0.001, m.inMs / 1000);
   const stagger = m.stagger / 1000;
   const charMode = m.unit === 'char' && L.words.some((w) => w.chars);
@@ -606,7 +634,8 @@ export function renderCaptions(
     const enter = prev ? 1 : ease('out', clamp01((t - page.words[0].start) / 0.12));
     ctx.save();
     ctx.globalAlpha *= enter;
-    ctx.fillStyle = hl.color;
+    const activeColor = page.words[active]?.highlightColor || hl.color;
+    ctx.fillStyle = activeColor;
     const cx = r.x + r.w / 2;
     const cy = r.y + r.h / 2;
     const s = prev ? 1 : 0.85 + 0.15 * enter;
@@ -636,23 +665,31 @@ export function renderCaptions(
       const boxOut = t > nextStart ? ease('out', clamp01((t - nextStart) / 0.11)) : 0;
       colourAmt = boxIn * (1 - boxOut);
     }
-    const emphScale = emph[i];
     const isActive = i === active;
+    const wordHlColor = w.highlightColor || hl.color;
+    let emphScale = emph[i];
+    if (w.emphasis === 'pop' && (isActive || (t >= w.start && t <= w.end))) {
+      emphScale *= 1.28;
+    }
+    const isShake = w.emphasis === 'shake' && (isActive || (t >= w.start && t <= w.end));
+    const shakeDx = isShake ? Math.sin(t * 70 + i * 5) * px * 0.08 : 0;
+    const shakeDy = isShake ? Math.cos(t * 60 + i * 7) * px * 0.06 : 0;
 
     let dimAlpha = 1;
-    if (style.reveal.dimUnspoken < 1 && style.reveal.mode === 'page') {
-      dimAlpha = lerp(style.reveal.dimUnspoken, 1, ease('out', clamp01((t - w.start) / 0.1)));
+    if (activeStyle.reveal.dimUnspoken < 1 && activeStyle.reveal.mode === 'page') {
+      dimAlpha = lerp(activeStyle.reveal.dimUnspoken, 1, ease('out', clamp01((t - w.start) / 0.1)));
     }
 
     // Colour for this word
-    let fill: Paint = style.fill;
+    let fill: Paint = activeStyle.fill;
     let tint: DrawOpts['tint'];
-    if (hl.mode === 'color' || (hl.mode === 'sweep' && hl.keep && t > w.end)) {
-      const amt = hl.mode === 'sweep' ? (t > w.end ? 1 : 0) : colourAmt;
-      if (!isGradient(style.fill)) fill = mixColor(style.fill, hl.color, amt);
-      else tint = { color: hl.color, amount: amt };
+    const hasWordHl = !!w.highlightColor;
+    if (hl.mode === 'color' || (hl.mode === 'sweep' && hl.keep && t > w.end) || hasWordHl) {
+      const amt = hl.mode === 'sweep' ? (t > w.end ? 1 : 0) : hasWordHl ? (isActive || (hl.keep && t > w.end) ? 1 : colourAmt) : colourAmt;
+      if (!isGradient(activeStyle.fill)) fill = mixColor(activeStyle.fill, wordHlColor, amt);
+      else tint = { color: wordHlColor, amount: amt };
     } else if (hl.mode === 'box' && hl.textColor) {
-      if (!isGradient(style.fill)) fill = mixColor(style.fill, hl.textColor, colourAmt);
+      if (!isGradient(activeStyle.fill)) fill = mixColor(activeStyle.fill, hl.textColor, colourAmt);
       else tint = { color: hl.textColor, amount: colourAmt };
     }
 
@@ -665,12 +702,12 @@ export function renderCaptions(
       // Entrance timing for this unit
       let base: number;
       const idx = charMode ? charCounter + k : m.unit === 'line' ? wl.line : i;
-      if (style.reveal.mode === 'spoken') base = w.start + (charMode ? k * stagger : 0);
+      if (activeStyle.reveal.mode === 'spoken') base = w.start + (charMode ? k * stagger : 0);
       else base = page.start + idx * stagger;
       const local = t - base;
       if (local < 0) return;
       const p = m.in === 'none' ? 1 : clamp01(local / inDur);
-      const tx = inTransform(m.in, p, px, L.lineBox, style);
+      const tx = inTransform(m.in, p, px, L.lineBox, activeStyle);
       if (tx.alpha <= 0.003) return;
 
       ctx.save();
@@ -684,8 +721,8 @@ export function renderCaptions(
       }
 
       // word-level emphasis transform (shared by all of a word's characters)
-      if (emphScale !== 1 || wobbleDeg) {
-        ctx.translate(pivotX, pivotY);
+      if (emphScale !== 1 || wobbleDeg || isShake) {
+        ctx.translate(pivotX + shakeDx, pivotY + shakeDy);
         if (wobbleDeg) ctx.rotate((wobbleDeg * Math.PI) / 180);
         ctx.scale(emphScale, emphScale);
         ctx.translate(-pivotX, -pivotY);
@@ -701,9 +738,19 @@ export function renderCaptions(
       }
       if (tx.blur > 0.3 && filterOK) ctx.filter = `blur(${tx.blur.toFixed(2)}px)`;
 
+      // Per-word glow accent
+      if (w.emphasis === 'glow' && (isActive || (t >= w.start && t <= w.end))) {
+        ctx.save();
+        ctx.shadowColor = wordHlColor;
+        ctx.shadowBlur = px * 0.55;
+        ctx.fillStyle = wordHlColor;
+        ctx.fillText(u.t, ux, y0);
+        ctx.restore();
+      }
+
       const fillStyle = makeFill(ctx, fill, bx, lineTop(wl.line), L.w, L.lineBox);
       const jitter = hash01(Math.floor(t * 30), i * 7 + k);
-      drawText(ctx, u.t, ux, y0, px, style, { fill: fillStyle, tint, glitch: tx.glitch, jitter });
+      drawText(ctx, u.t, ux, y0, px, activeStyle, { fill: fillStyle, tint, glitch: tx.glitch, jitter });
 
       // Karaoke sweep: re-draw the word in the highlight colour, clipped to its progress
       if (hl.mode === 'sweep' && isActive && p >= 0 && t <= w.end + 0.02) {
@@ -712,7 +759,7 @@ export function renderCaptions(
         ctx.beginPath();
         ctx.rect(x0 - px * 0.2, y0 - L.asc - px * 0.3, wl.w * prog + px * 0.2, L.asc + L.desc + px * 0.6);
         ctx.clip();
-        ctx.fillStyle = hl.color;
+        ctx.fillStyle = wordHlColor;
         ctx.fillText(u.t, ux, y0);
         ctx.restore();
       }
@@ -721,11 +768,11 @@ export function renderCaptions(
     charCounter += units.length;
 
     // Underline accent
-    if (hl.mode === 'underline' && started && (isActive || (hl.keep && t > w.end))) {
+    if ((hl.mode === 'underline' || w.emphasis === 'underline') && started && (isActive || (hl.keep && t > w.end))) {
       const prog = hl.keep && t > w.end ? 1 : ease('out', clamp01((t - w.start) / 0.16));
       const thick = Math.max(2, px * 0.085);
       ctx.save();
-      ctx.fillStyle = hl.color;
+      ctx.fillStyle = wordHlColor;
       roundRect(ctx, x0, y0 + px * 0.13, wl.w * prog, thick, thick / 2);
       ctx.fill();
       ctx.restore();

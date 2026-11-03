@@ -59,6 +59,7 @@ export default function SubtitleTool() {
   const [history, setHistory] = useState<Segment[][]>([]);
   const [redoStack, setRedoStack] = useState<Segment[][]>([]);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
+  const [hideCaptions, setHideCaptions] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -226,6 +227,20 @@ export default function SubtitleTool() {
       // Shortcuts below only fire when outside input fields
       if (isTyping) return;
 
+      // Hold \ to compare clean video (hide captions)
+      if (e.code === 'Backslash' || e.key === '\\') {
+        e.preventDefault();
+        setHideCaptions(true);
+        return;
+      }
+
+      // F for Fullscreen preview
+      if (e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        videoRef.current?.toggleFullscreen();
+        return;
+      }
+
       if (e.code === 'Space' || e.key.toLowerCase() === 'k') {
         e.preventDefault();
         videoRef.current?.togglePlay();
@@ -283,8 +298,18 @@ export default function SubtitleTool() {
       }
     };
 
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Backslash' || e.key === '\\') {
+        setHideCaptions(false);
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
   }, [
     stage,
     currentTime,
@@ -835,6 +860,8 @@ export default function SubtitleTool() {
                         onTimeUpdate={handleTimeUpdate}
                         onDurationChange={setDuration}
                         onPlayStateChange={setIsPlaying}
+                        hideCaptions={hideCaptions}
+                        onToggleHideCaptions={() => setHideCaptions((prev) => !prev)}
                       />
                     </div>
 
@@ -882,6 +909,8 @@ export default function SubtitleTool() {
                       onTimeUpdate={handleTimeUpdate}
                       onDurationChange={setDuration}
                       onPlayStateChange={setIsPlaying}
+                      hideCaptions={hideCaptions}
+                      onToggleHideCaptions={() => setHideCaptions((prev) => !prev)}
                     />
                   </div>
 

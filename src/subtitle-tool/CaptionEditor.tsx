@@ -9,10 +9,40 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, ChevronDown, ChevronRight, CheckSquare, Square, Trash2, Combine, AlertTriangle, Wand2 } from 'lucide-react';
+import {
+  Play,
+  ChevronDown,
+  ChevronRight,
+  CheckSquare,
+  Square,
+  Trash2,
+  Combine,
+  AlertTriangle,
+  Wand2,
+  Smile,
+  Sliders,
+  Palette,
+  RotateCcw,
+} from 'lucide-react';
 import { formatTimecode } from './utils/formatTime';
 import { checkReadability, getCPS } from './utils/readability';
-import type { Segment, ScriptOutput, SpokenLanguage, WordTimestamp } from './types';
+import type { Segment, ScriptOutput, SpokenLanguage, WordTimestamp, SegmentStyleOverride } from './types';
+
+const POPULAR_EMOJIS = [
+  { label: 'Hype', emojis: ['🔥', '⚡', '💥', '🚀', '💯', '👑', '✨', '🌟'] },
+  { label: 'Mindset', emojis: ['💡', '🧠', '🎯', '📈', '💰', '🔑', '🏆', '📌'] },
+  { label: 'Reactions', emojis: ['😂', '😱', '🤯', '🤫', '👀', '💀', '🤩', '🙌'] },
+  { label: 'Signals', emojis: ['👍', '👏', '🤝', '❤️', '🚨', '⚠️', '❌', '✅'] },
+];
+
+const PRESET_ACCENT_COLORS = [
+  { label: 'Yellow', value: '#FACC15' },
+  { label: 'Pink', value: '#EC4899' },
+  { label: 'Cyan', value: '#06B6D4' },
+  { label: 'Lime', value: '#84CC16' },
+  { label: 'Orange', value: '#FB923C' },
+  { label: 'Red', value: '#EF4444' },
+];
 
 interface CaptionEditorProps {
   segments: Segment[];
@@ -33,6 +63,8 @@ export default function CaptionEditor({
 }: CaptionEditorProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedWordIds, setExpandedWordIds] = useState<Set<string>>(new Set());
+  const [styleOverrideSegIds, setStyleOverrideSegIds] = useState<Set<string>>(new Set());
+  const [emojiPickerSegId, setEmojiPickerSegId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const lastClickedIdRef = useRef<string | null>(null);
 
@@ -116,6 +148,29 @@ export default function CaptionEditor({
     });
   };
 
+  // Toggle style override view for a caption
+  const toggleStyleOverride = (id: string) => {
+    setStyleOverrideSegIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // Helper to ensure word array exists
+  const getOrInitWords = (seg: Segment): WordTimestamp[] => {
+    if (seg.words && seg.words.length > 0) return [...seg.words];
+    const rawWords = seg.text.trim().split(/\s+/).filter(Boolean);
+    const duration = Math.max(0.2, seg.end - seg.start);
+    const perWord = duration / Math.max(1, rawWords.length);
+    return rawWords.map((w, i) => ({
+      word: w,
+      start: +(seg.start + i * perWord).toFixed(2),
+      end: +(seg.start + (i + 1) * perWord).toFixed(2),
+    }));
+  };
+
   // Auto-distribute word timings evenly across segment bounds
   const handleAutoDistributeWords = (seg: Segment) => {
     const rawWords = seg.text.trim().split(/\s+/).filter(Boolean);
@@ -130,9 +185,9 @@ export default function CaptionEditor({
     updateSegment(seg.id, { words });
   };
 
-  // Update a single word's timing or text inside a segment
+  // Update a single word's timing, color, or emphasis inside a segment
   const updateWord = (seg: Segment, wordIdx: number, patch: Partial<WordTimestamp>) => {
-    const currentWords = [...(seg.words || [])];
+    const currentWords = getOrInitWords(seg);
     if (!currentWords[wordIdx]) return;
     currentWords[wordIdx] = { ...currentWords[wordIdx], ...patch };
     updateSegment(seg.id, { words: currentWords });
@@ -140,13 +195,60 @@ export default function CaptionEditor({
 
   // Nudge word boundaries
   const nudgeWord = (seg: Segment, wordIdx: number, deltaStart: number, deltaEnd: number) => {
-    const currentWords = [...(seg.words || [])];
+    const currentWords = getOrInitWords(seg);
     const w = currentWords[wordIdx];
     if (!w) return;
     const newStart = Math.max(seg.start, +(w.start + deltaStart).toFixed(2));
     const newEnd = Math.min(seg.end, Math.max(newStart + 0.05, +(w.end + deltaEnd).toFixed(2)));
     currentWords[wordIdx] = { ...w, start: newStart, end: newEnd };
     updateSegment(seg.id, { words: currentWords });
+  };
+
+  const cycleWordEmphasis = (seg: Segment, wordIdx: number) => {
+    const currentWords = getOrInitWords(seg);
+    const curr = currentWords[wordIdx]?.emphasis || 'none';
+    const modes: ('none' | 'pop' | 'shake' | 'glow' | 'underline')[] = ['none', 'pop', 'shake', 'glow', 'underline'];
+    const next = modes[(modes.indexOf(curr) + 1) % modes.length];
+    updateWord(seg, wordIdx, { emphasis: next });
+  };
+
+  const cycleWordColor = (seg: Segment, wordIdx: number) => {
+    const currentWords = getOrInitWords(seg);
+    const colors = ['', '#FACC15', '#EC4899', '#06B6D4', '#84CC16', '#EF4444', '#FB923C'];
+    const curr = currentWords[wordIdx]?.highlightColor || '';
+    const next = colors[(colors.indexOf(curr) + 1) % colors.length];
+    updateWord(seg, wordIdx, { highlightColor: next || undefined });
+  };
+
+  const insertEmoji = (segId: string, emoji: string) => {
+    const seg = segments.find((s) => s.id === segId);
+    if (!seg) return;
+    const textarea = document.querySelector<HTMLTextAreaElement>(`#caption-${segId} textarea`);
+    let newText = seg.text;
+    if (textarea && textarea.selectionStart !== null) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      newText = seg.text.slice(0, start) + emoji + (start < seg.text.length && seg.text[start] !== ' ' ? ' ' : '') + seg.text.slice(end);
+    } else {
+      newText = `${seg.text} ${emoji}`;
+    }
+    updateSegment(segId, { text: newText });
+    setEmojiPickerSegId(null);
+  };
+
+  const updateSegmentStyleOverride = (segId: string, override: Partial<SegmentStyleOverride> | null) => {
+    const seg = segments.find((s) => s.id === segId);
+    if (!seg) return;
+    if (override === null) {
+      updateSegment(segId, { styleOverride: undefined });
+    } else {
+      updateSegment(segId, {
+        styleOverride: {
+          ...(seg.styleOverride || {}),
+          ...override,
+        },
+      });
+    }
   };
 
   // Split segment at cursor when pressing Enter inside caption textarea
@@ -464,7 +566,7 @@ export default function CaptionEditor({
             const prevSeg = idx > 0 ? filteredSegments[idx - 1] : undefined;
             const nextSeg = idx < filteredSegments.length - 1 ? filteredSegments[idx + 1] : undefined;
             const issues = checkReadability(seg, prevSeg, nextSeg);
-            const wordsList = seg.words && seg.words.length > 0
+            const wordsList: WordTimestamp[] = seg.words && seg.words.length > 0
               ? seg.words
               : seg.text.trim().split(/\s+/).filter(Boolean).map((w, i, arr) => {
                   const per = Math.max(0.1, seg.end - seg.start) / Math.max(1, arr.length);
@@ -552,8 +654,44 @@ export default function CaptionEditor({
                     />
                   </div>
 
-                  {/* Actions & Words toggle button */}
+                  {/* Actions & Toggles: Emoji, Style Override, Words, Add, Delete */}
                   <div className="flex items-center gap-1 shrink-0 text-smoke opacity-70 group-hover:opacity-100 transition-opacity">
+                    {/* Emoji Picker Trigger */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEmojiPickerSegId((prev) => (prev === seg.id ? null : seg.id));
+                      }}
+                      aria-label={`Insert emoji into caption ${seg.index}`}
+                      className={`p-1 rounded hover:bg-white/10 transition-colors ${
+                        emojiPickerSegId === seg.id ? 'text-amber-400 bg-white/10' : 'text-smoke hover:text-bone'
+                      }`}
+                      title="Insert emoji"
+                    >
+                      <Smile className="w-3.5 h-3.5" />
+                    </button>
+
+                    {/* Style Override Drawer Trigger */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleStyleOverride(seg.id);
+                      }}
+                      aria-label={`Customize style for caption ${seg.index}`}
+                      className={`p-1 rounded hover:bg-white/10 transition-colors relative ${
+                        styleOverrideSegIds.has(seg.id) ? 'text-amber-400 bg-white/10' : 'text-smoke hover:text-bone'
+                      }`}
+                      title="Custom caption style override (Position, scale, accent color)"
+                    >
+                      <Sliders className="w-3.5 h-3.5" />
+                      {seg.styleOverride && (
+                        <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                      )}
+                    </button>
+
+                    {/* Word Timing Trigger */}
                     <button
                       type="button"
                       onClick={(e) => {
@@ -564,10 +702,12 @@ export default function CaptionEditor({
                       className={`p-1 rounded hover:bg-white/10 transition-colors ${
                         isWordsExpanded ? 'text-amber-400' : 'text-smoke hover:text-bone'
                       }`}
-                      title="Word-level timing editor"
+                      title="Word-level timing & emphasis editor"
                     >
                       {isWordsExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                     </button>
+
+                    {/* Add Segment After */}
                     <button
                       type="button"
                       onClick={(e) => {
@@ -582,6 +722,8 @@ export default function CaptionEditor({
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                       </svg>
                     </button>
+
+                    {/* Delete Segment */}
                     <button
                       type="button"
                       onClick={(e) => {
@@ -598,6 +740,167 @@ export default function CaptionEditor({
                     </button>
                   </div>
                 </div>
+
+                {/* ── Popover: Opt-In Creator Emoji Picker ──────────────────────── */}
+                <AnimatePresence>
+                  {emojiPickerSegId === seg.id && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                      className="mt-2 p-2.5 bg-[#1f1e1b] border border-amber-400/30 rounded-xl shadow-xl z-20"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex items-center justify-between pb-1.5 border-b border-white/10 mb-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1">
+                          <Smile className="w-3 h-3" />
+                          <span>Insert Reaction Emoji</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setEmojiPickerSegId(null)}
+                          className="text-smoke hover:text-bone text-xs p-0.5 rounded"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      <div className="space-y-2">
+                        {POPULAR_EMOJIS.map((group) => (
+                          <div key={group.label}>
+                            <div className="text-[9px] font-semibold text-smoke/70 mb-1">{group.label}</div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {group.emojis.map((emoji) => (
+                                <button
+                                  key={emoji}
+                                  type="button"
+                                  onClick={() => insertEmoji(seg.id, emoji)}
+                                  className="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-black/40 hover:bg-amber-400/20 hover:scale-120 active:scale-95 transition-all"
+                                  title={`Insert ${emoji}`}
+                                >
+                                  {emoji}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* ── Drawer: Per-Caption Style Overrides ────────────────────────── */}
+                <AnimatePresence>
+                  {styleOverrideSegIds.has(seg.id) && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="mt-2.5 p-2.5 bg-[#181715] border border-white/10 rounded-xl text-xs space-y-2"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex items-center justify-between text-[10px] font-bold text-amber-400 uppercase tracking-wider border-b border-white/10 pb-1">
+                        <span className="flex items-center gap-1">
+                          <Palette className="w-3 h-3" />
+                          <span>Caption Style Override</span>
+                        </span>
+                        {seg.styleOverride && (
+                          <button
+                            type="button"
+                            onClick={() => updateSegmentStyleOverride(seg.id, null)}
+                            className="flex items-center gap-1 text-[9px] text-smoke hover:text-amber-300 lowercase"
+                          >
+                            <RotateCcw className="w-2.5 h-2.5" />
+                            <span>reset</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Position Override */}
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-smoke">Position:</span>
+                        <div className="flex items-center gap-1">
+                          {[
+                            { label: 'Def', val: undefined },
+                            { label: 'Top', val: 0.18 },
+                            { label: 'Mid', val: 0.5 },
+                            { label: 'Bot', val: 0.82 },
+                          ].map((opt) => (
+                            <button
+                              key={opt.label}
+                              type="button"
+                              onClick={() => updateSegmentStyleOverride(seg.id, { positionY: opt.val })}
+                              className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                                seg.styleOverride?.positionY === opt.val
+                                  ? 'bg-amber-400 text-black font-bold'
+                                  : 'bg-white/10 text-smoke hover:text-bone'
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Scale Override */}
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-smoke">Scale:</span>
+                        <div className="flex items-center gap-1">
+                          {[
+                            { label: '0.85x', val: 0.85 },
+                            { label: '1.0x', val: undefined },
+                            { label: '1.15x', val: 1.15 },
+                            { label: '1.3x', val: 1.3 },
+                          ].map((opt) => (
+                            <button
+                              key={opt.label}
+                              type="button"
+                              onClick={() => updateSegmentStyleOverride(seg.id, { scale: opt.val })}
+                              className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                                seg.styleOverride?.scale === opt.val
+                                  ? 'bg-amber-400 text-black font-bold'
+                                  : 'bg-white/10 text-smoke hover:text-bone'
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Accent Highlight Override */}
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-smoke">Accent Color:</span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => updateSegmentStyleOverride(seg.id, { highlightColor: undefined })}
+                            className={`w-4 h-4 rounded-full border border-white/30 text-[9px] flex items-center justify-center ${
+                              !seg.styleOverride?.highlightColor ? 'ring-2 ring-amber-400' : ''
+                            }`}
+                            title="Default Color"
+                          >
+                            ✕
+                          </button>
+                          {PRESET_ACCENT_COLORS.map((col) => (
+                            <button
+                              key={col.value}
+                              type="button"
+                              onClick={() => updateSegmentStyleOverride(seg.id, { highlightColor: col.value })}
+                              style={{ backgroundColor: col.value }}
+                              className={`w-4 h-4 rounded-full transition-transform ${
+                                seg.styleOverride?.highlightColor === col.value
+                                  ? 'ring-2 ring-white scale-110'
+                                  : 'opacity-80 hover:opacity-100 hover:scale-105'
+                              }`}
+                              title={col.label}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Readability Warnings Pill */}
                 {issues.length > 0 && (
@@ -649,10 +952,16 @@ export default function CaptionEditor({
                       <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto" data-lenis-prevent>
                         {wordsList.map((w, wIdx) => {
                           const wDuration = +(w.end - w.start).toFixed(2);
+                          const hasCustomColor = !!w.highlightColor;
+                          const hasEmphasis = w.emphasis && w.emphasis !== 'none';
                           return (
                             <div
                               key={wIdx}
-                              className="flex items-center gap-1 bg-[#151514] border border-white/10 rounded-lg px-2 py-1 text-xs hover:border-amber-400/40 transition-colors"
+                              className={`flex items-center gap-1 bg-[#151514] border rounded-lg px-2 py-1 text-xs transition-colors ${
+                                hasCustomColor
+                                  ? 'border-amber-400/50 bg-[#1c1b18]'
+                                  : 'border-white/10 hover:border-amber-400/40'
+                              }`}
                             >
                               {/* Word loop play button */}
                               <button
@@ -674,6 +983,39 @@ export default function CaptionEditor({
                                 onChange={(e) => updateWord(seg, wIdx, { word: e.target.value })}
                                 className="bg-transparent text-bone font-medium text-[11px] w-14 focus:w-20 outline-none border-b border-transparent focus:border-amber-400 transition-all font-mono"
                               />
+
+                              {/* Custom Color Cycle Button */}
+                              <button
+                                type="button"
+                                onClick={() => cycleWordColor(seg, wIdx)}
+                                aria-label={`Change color for word ${w.word}`}
+                                className="w-3.5 h-3.5 rounded-full flex items-center justify-center p-0.5 transition-transform hover:scale-115"
+                                title={`Highlight Color: ${w.highlightColor || 'Default'} (Click to cycle)`}
+                              >
+                                {w.highlightColor ? (
+                                  <span
+                                    className="w-2.5 h-2.5 rounded-full ring-1 ring-white/60"
+                                    style={{ backgroundColor: w.highlightColor }}
+                                  />
+                                ) : (
+                                  <span className="w-2 h-2 rounded-full border border-white/30" />
+                                )}
+                              </button>
+
+                              {/* Custom Emphasis FX Cycle Button */}
+                              <button
+                                type="button"
+                                onClick={() => cycleWordEmphasis(seg, wIdx)}
+                                aria-label={`Change emphasis for word ${w.word}`}
+                                className={`px-1 py-0.2 rounded text-[8px] font-mono font-bold tracking-tight uppercase transition-all ${
+                                  hasEmphasis
+                                    ? 'bg-amber-400 text-black shadow-xs'
+                                    : 'text-smoke/50 hover:text-smoke hover:bg-white/5'
+                                }`}
+                                title={`Animation FX: ${w.emphasis || 'None'} (Click to cycle: pop, shake, glow, underline)`}
+                              >
+                                {w.emphasis && w.emphasis !== 'none' ? w.emphasis : '+fx'}
+                              </button>
 
                               {/* Timestamp badge */}
                               <span className="text-[9px] font-mono text-smoke">

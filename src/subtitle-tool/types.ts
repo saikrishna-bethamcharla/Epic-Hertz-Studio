@@ -4,6 +4,16 @@ export interface WordTimestamp {
   word: string;
   start: number; // seconds
   end: number;   // seconds
+  highlightColor?: string; // custom highlight color override
+  emphasis?: 'none' | 'pop' | 'shake' | 'glow' | 'underline';
+}
+
+export interface SegmentStyleOverride {
+  fillColor?: string;
+  strokeColor?: string;
+  highlightColor?: string;
+  scale?: number;
+  positionY?: number; // 0..1 frame height
 }
 
 export interface Segment {
@@ -13,6 +23,7 @@ export interface Segment {
   end: number;     // seconds
   text: string;
   words?: WordTimestamp[];
+  styleOverride?: SegmentStyleOverride;
 }
 
 export type ScriptOutput = 'romanized' | 'native'; // e.g. 'Tanglish' vs 'తెలుగు లిపి'
