@@ -2,12 +2,17 @@
 // Left panel caption list matching ReplixCaptions reference:
 // - Header with "CAPTIONS [Tanglish]" badge and search filter
 // - Segment rows with precision timestamp pill, inline editable text, split/merge keys
+// - Word-level timing chip editor (nudge boundaries, loop-preview words, distribute)
+// - Multi-select and bulk actions (bulk delete, bulk merge, bulk time shift)
+// - Readability and timing diagnostics (CPS, WPM, duration, overlap warnings)
 // - Playhead active sync, seek on click, plus add/split/delete actions
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Play, ChevronDown, ChevronRight, CheckSquare, Square, Trash2, Combine, AlertTriangle, Wand2 } from 'lucide-react';
 import { formatTimecode } from './utils/formatTime';
-import type { Segment, ScriptOutput, SpokenLanguage } from './types';
+import { checkReadability, getCPS } from './utils/readability';
+import type { Segment, ScriptOutput, SpokenLanguage, WordTimestamp } from './types';
 
 interface CaptionEditorProps {
   segments: Segment[];
@@ -27,6 +32,10 @@ export default function CaptionEditor({
   onSeek,
 }: CaptionEditorProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedWordIds, setExpandedWordIds] = useState<Set<string>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const lastClickedIdRef = useRef<string | null>(null);
+
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isUserScrollingRef = useRef(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -63,6 +72,11 @@ export default function CaptionEditor({
         .filter((s) => s.id !== id)
         .map((s, i) => ({ ...s, index: i + 1 }));
       onSegmentsChange(next);
+      setSelectedIds((prev) => {
+        const copy = new Set(prev);
+        copy.delete(id);
+        return copy;
+      });
     },
     [segments, onSegmentsChange],
   );
@@ -91,6 +105,49 @@ export default function CaptionEditor({
     },
     [segments, onSegmentsChange],
   );
+
+  // Toggle words expanded view for a caption
+  const toggleWordsExpanded = (id: string) => {
+    setExpandedWordIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // Auto-distribute word timings evenly across segment bounds
+  const handleAutoDistributeWords = (seg: Segment) => {
+    const rawWords = seg.text.trim().split(/\s+/).filter(Boolean);
+    if (rawWords.length === 0) return;
+    const duration = Math.max(0.2, seg.end - seg.start);
+    const perWord = duration / rawWords.length;
+    const words: WordTimestamp[] = rawWords.map((w, i) => ({
+      word: w,
+      start: +(seg.start + i * perWord).toFixed(2),
+      end: +(seg.start + (i + 1) * perWord).toFixed(2),
+    }));
+    updateSegment(seg.id, { words });
+  };
+
+  // Update a single word's timing or text inside a segment
+  const updateWord = (seg: Segment, wordIdx: number, patch: Partial<WordTimestamp>) => {
+    const currentWords = [...(seg.words || [])];
+    if (!currentWords[wordIdx]) return;
+    currentWords[wordIdx] = { ...currentWords[wordIdx], ...patch };
+    updateSegment(seg.id, { words: currentWords });
+  };
+
+  // Nudge word boundaries
+  const nudgeWord = (seg: Segment, wordIdx: number, deltaStart: number, deltaEnd: number) => {
+    const currentWords = [...(seg.words || [])];
+    const w = currentWords[wordIdx];
+    if (!w) return;
+    const newStart = Math.max(seg.start, +(w.start + deltaStart).toFixed(2));
+    const newEnd = Math.min(seg.end, Math.max(newStart + 0.05, +(w.end + deltaEnd).toFixed(2)));
+    currentWords[wordIdx] = { ...w, start: newStart, end: newEnd };
+    updateSegment(seg.id, { words: currentWords });
+  };
 
   // Split segment at cursor when pressing Enter inside caption textarea
   const splitAtCursor = useCallback(
@@ -188,6 +245,91 @@ export default function CaptionEditor({
     [segments, onSegmentsChange],
   );
 
+  // Selection logic (click, shift-click range, cmd/ctrl-click toggle)
+  const handleSelectRow = (id: string, e: React.MouseEvent) => {
+    if (e.shiftKey && lastClickedIdRef.current) {
+      const idx1 = segments.findIndex((s) => s.id === lastClickedIdRef.current);
+      const idx2 = segments.findIndex((s) => s.id === id);
+      if (idx1 !== -1 && idx2 !== -1) {
+        const [startIdx, endIdx] = idx1 < idx2 ? [idx1, idx2] : [idx2, idx1];
+        const range = new Set(segments.slice(startIdx, endIdx + 1).map((s) => s.id));
+        setSelectedIds(range);
+        return;
+      }
+    }
+
+    if (e.metaKey || e.ctrlKey) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+      lastClickedIdRef.current = id;
+      return;
+    }
+
+    // Normal click: select single if multiple were active, else maintain
+    lastClickedIdRef.current = id;
+    if (selectedIds.size > 1) {
+      setSelectedIds(new Set([id]));
+    }
+  };
+
+  // Bulk actions
+  const handleBulkDelete = () => {
+    if (selectedIds.size === 0) return;
+    const next = segments.filter((s) => !selectedIds.has(s.id)).map((s, i) => ({ ...s, index: i + 1 }));
+    onSegmentsChange(next);
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkMerge = () => {
+    if (selectedIds.size <= 1) return;
+    const selectedList = segments.filter((s) => selectedIds.has(s.id));
+    if (selectedList.length === 0) return;
+
+    const first = selectedList[0];
+    const last = selectedList[selectedList.length - 1];
+    const mergedText = selectedList.map((s) => s.text.trim()).filter(Boolean).join(' ');
+    const allWords = selectedList.flatMap((s) => s.words || []);
+
+    const mergedSeg: Segment = {
+      ...first,
+      text: mergedText,
+      end: last.end,
+      words: allWords.length > 0 ? allWords : undefined,
+    };
+
+    const firstIdx = segments.findIndex((s) => s.id === first.id);
+    const filtered = segments.filter((s) => !selectedIds.has(s.id));
+    const targetIdx = Math.max(0, Math.min(filtered.length, firstIdx));
+    const updated = [
+      ...filtered.slice(0, targetIdx),
+      mergedSeg,
+      ...filtered.slice(targetIdx),
+    ].map((s: Segment, i: number) => ({ ...s, index: i + 1 }));
+
+    onSegmentsChange(updated);
+    setSelectedIds(new Set([mergedSeg.id]));
+  };
+
+  const handleBulkShiftTime = (delta: number) => {
+    if (selectedIds.size === 0) return;
+    const updated = segments.map((s) => {
+      if (!selectedIds.has(s.id)) return s;
+      const newStart = Math.max(0, +(s.start + delta).toFixed(2));
+      const newEnd = Math.max(newStart + 0.1, +(s.end + delta).toFixed(2));
+      const newWords = s.words?.map((w) => ({
+        ...w,
+        start: Math.max(0, +(w.start + delta).toFixed(2)),
+        end: Math.max(0, +(w.end + delta).toFixed(2)),
+      }));
+      return { ...s, start: newStart, end: newEnd, words: newWords };
+    });
+    onSegmentsChange(updated);
+  };
+
   // Filtered segments if searching
   const filteredSegments = useMemo(() => {
     if (!searchQuery.trim()) return segments;
@@ -206,7 +348,7 @@ export default function CaptionEditor({
   return (
     <div className="flex flex-col h-full bg-[#141413] border-r border-white/10 select-none">
       {/* Header matching ReplixCaptions */}
-      <div className="p-4 border-b border-white/10">
+      <div className="p-4 border-b border-white/10 shrink-0">
         <div className="flex items-center gap-2 mb-1.5">
           <span className="text-[11px] font-bold text-mist uppercase tracking-widest">
             Captions
@@ -220,7 +362,7 @@ export default function CaptionEditor({
         </div>
 
         <div className="flex items-center justify-between">
-          <h2 className="text-xs text-smoke font-medium">Review & refine captions</h2>
+          <h2 className="text-xs text-smoke font-medium">Review & word timing</h2>
         </div>
 
         {/* Quick Search */}
@@ -247,6 +389,66 @@ export default function CaptionEditor({
         </div>
       </div>
 
+      {/* Bulk Selection Actions Bar */}
+      <AnimatePresence>
+        {selectedIds.size > 1 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="px-3 py-2 bg-gradient-to-r from-amber-500/15 via-[#1a1a18] to-[#1a1a18] border-b border-amber-400/30 flex items-center justify-between gap-2 text-xs shrink-0"
+          >
+            <div className="flex items-center gap-2 font-medium text-amber-300 text-[11px]">
+              <CheckSquare className="w-3.5 h-3.5" />
+              <span>{selectedIds.size} captions selected</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={handleBulkMerge}
+                className="px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-bone text-[11px] font-medium transition-colors flex items-center gap-1"
+                title="Merge selected captions into one"
+              >
+                <Combine className="w-3 h-3 text-amber-400" />
+                <span>Merge</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleBulkShiftTime(-0.1)}
+                className="px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-bone text-[10px] font-mono transition-colors"
+                title="Shift selected -0.1s"
+              >
+                -0.1s
+              </button>
+              <button
+                type="button"
+                onClick={() => handleBulkShiftTime(0.1)}
+                className="px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-bone text-[10px] font-mono transition-colors"
+                title="Shift selected +0.1s"
+              >
+                +0.1s
+              </button>
+              <button
+                type="button"
+                onClick={handleBulkDelete}
+                className="p-1 rounded bg-crimson/15 hover:bg-crimson/25 text-crimson-2 transition-colors"
+                title="Delete selected captions"
+                aria-label="Delete selected captions"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedIds(new Set())}
+                className="text-smoke hover:text-bone text-[11px] px-1.5 py-0.5"
+              >
+                Clear
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Scrollable list */}
       <div
         ref={scrollContainerRef}
@@ -255,8 +457,20 @@ export default function CaptionEditor({
         data-lenis-prevent
       >
         <AnimatePresence initial={false}>
-          {filteredSegments.map((seg) => {
+          {filteredSegments.map((seg, idx) => {
             const isActive = seg.id === activeId;
+            const isSelected = selectedIds.has(seg.id);
+            const isWordsExpanded = expandedWordIds.has(seg.id);
+            const prevSeg = idx > 0 ? filteredSegments[idx - 1] : undefined;
+            const nextSeg = idx < filteredSegments.length - 1 ? filteredSegments[idx + 1] : undefined;
+            const issues = checkReadability(seg, prevSeg, nextSeg);
+            const wordsList = seg.words && seg.words.length > 0
+              ? seg.words
+              : seg.text.trim().split(/\s+/).filter(Boolean).map((w, i, arr) => {
+                  const per = Math.max(0.1, seg.end - seg.start) / Math.max(1, arr.length);
+                  return { word: w, start: +(seg.start + i * per).toFixed(2), end: +(seg.start + (i + 1) * per).toFixed(2) };
+                });
+
             return (
               <motion.div
                 key={seg.id}
@@ -265,14 +479,40 @@ export default function CaptionEditor({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.15 }}
-                onClick={() => onSeek(seg.start)}
+                onClick={(e) => {
+                  handleSelectRow(seg.id, e);
+                  onSeek(seg.start);
+                }}
                 className={`group relative rounded-xl p-3 border transition-colors duration-150 cursor-pointer ${
                   isActive
-                    ? 'border-amber-400/70 bg-[#252420] shadow-md ring-1 ring-amber-400/40'
+                    ? 'border-amber-400/80 bg-[#252420] shadow-md ring-1 ring-amber-400/40'
+                    : isSelected
+                    ? 'border-amber-400/40 bg-[#1e1e1b] ring-1 ring-amber-400/20'
                     : 'border-white/[0.08] bg-[#1a1a18] hover:border-white/20 hover:bg-[#20201d]'
                 }`}
               >
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-2.5">
+                  {/* Select Checkbox (on hover or selected) */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedIds((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(seg.id)) next.delete(seg.id);
+                        else next.add(seg.id);
+                        return next;
+                      });
+                      lastClickedIdRef.current = seg.id;
+                    }}
+                    aria-label={`Select caption ${seg.index}`}
+                    className={`mt-0.5 p-0.5 text-smoke hover:text-amber-400 transition-colors ${
+                      isSelected ? 'text-amber-400 opacity-100' : 'opacity-30 group-hover:opacity-80'
+                    }`}
+                  >
+                    {isSelected ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
+                  </button>
+
                   {/* Timestamp pill with sub-second precision */}
                   <span
                     className={`font-mono text-[11px] px-2 py-0.5 rounded-md shrink-0 transition-colors ${
@@ -280,7 +520,7 @@ export default function CaptionEditor({
                         ? 'bg-amber-400 text-black font-semibold'
                         : 'bg-white/10 text-mist group-hover:text-bone'
                     }`}
-                    title={`Start: ${formatTimecode(seg.start)} · End: ${formatTimecode(seg.end)}`}
+                    title={`Start: ${formatTimecode(seg.start)} · End: ${formatTimecode(seg.end)} · Duration: ${(seg.end - seg.start).toFixed(2)}s`}
                   >
                     {formatTimecode(seg.start)}
                   </span>
@@ -312,8 +552,22 @@ export default function CaptionEditor({
                     />
                   </div>
 
-                  {/* Edit action buttons with accessible labels */}
+                  {/* Actions & Words toggle button */}
                   <div className="flex items-center gap-1 shrink-0 text-smoke opacity-70 group-hover:opacity-100 transition-opacity">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleWordsExpanded(seg.id);
+                      }}
+                      aria-label={`Expand word timings for caption ${seg.index}`}
+                      className={`p-1 rounded hover:bg-white/10 transition-colors ${
+                        isWordsExpanded ? 'text-amber-400' : 'text-smoke hover:text-bone'
+                      }`}
+                      title="Word-level timing editor"
+                    >
+                      {isWordsExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                    </button>
                     <button
                       type="button"
                       onClick={(e) => {
@@ -344,6 +598,114 @@ export default function CaptionEditor({
                     </button>
                   </div>
                 </div>
+
+                {/* Readability Warnings Pill */}
+                {issues.length > 0 && (
+                  <div className="mt-1.5 pt-1.5 border-t border-white/5 flex flex-wrap items-center gap-1.5 text-[10px]">
+                    {issues.map((iss, iIdx) => (
+                      <span
+                        key={iIdx}
+                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded ${
+                          iss.severity === 'error'
+                            ? 'bg-crimson/15 text-crimson-2 border border-crimson/30'
+                            : 'bg-amber-400/15 text-amber-300 border border-amber-400/25'
+                        }`}
+                        title={iss.message}
+                      >
+                        <AlertTriangle className="w-2.5 h-2.5" />
+                        <span>{iss.message}</span>
+                      </span>
+                    ))}
+                    <span className="text-smoke/60 ml-auto font-mono">
+                      {getCPS(seg)} CPS
+                    </span>
+                  </div>
+                )}
+
+                {/* ── Word-Level Timing Chip Editor ───────────────────────────── */}
+                <AnimatePresence>
+                  {isWordsExpanded && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="mt-2.5 pt-2.5 border-t border-white/10"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex items-center justify-between mb-2 text-[10px] text-smoke">
+                        <span className="font-semibold uppercase tracking-wider text-amber-400">Word Timing Precision</span>
+                        <button
+                          type="button"
+                          onClick={() => handleAutoDistributeWords(seg)}
+                          className="flex items-center gap-1 text-mist hover:text-amber-300 px-1.5 py-0.5 rounded hover:bg-white/5 transition-colors"
+                          title="Auto distribute word timings evenly over segment duration"
+                        >
+                          <Wand2 className="w-3 h-3 text-amber-400" />
+                          <span>Sync words</span>
+                        </button>
+                      </div>
+
+                      {/* Word Chips Row */}
+                      <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto" data-lenis-prevent>
+                        {wordsList.map((w, wIdx) => {
+                          const wDuration = +(w.end - w.start).toFixed(2);
+                          return (
+                            <div
+                              key={wIdx}
+                              className="flex items-center gap-1 bg-[#151514] border border-white/10 rounded-lg px-2 py-1 text-xs hover:border-amber-400/40 transition-colors"
+                            >
+                              {/* Word loop play button */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  onSeek(w.start);
+                                }}
+                                aria-label={`Seek to word ${w.word}`}
+                                title={`Play word: ${w.word} (${w.start.toFixed(2)}s - ${w.end.toFixed(2)}s · ${wDuration}s)`}
+                                className="p-0.5 text-smoke hover:text-amber-400 transition-colors"
+                              >
+                                <Play className="w-2.5 h-2.5 fill-current" />
+                              </button>
+
+                              {/* Editable word text */}
+                              <input
+                                type="text"
+                                value={w.word}
+                                onChange={(e) => updateWord(seg, wIdx, { word: e.target.value })}
+                                className="bg-transparent text-bone font-medium text-[11px] w-14 focus:w-20 outline-none border-b border-transparent focus:border-amber-400 transition-all font-mono"
+                              />
+
+                              {/* Timestamp badge */}
+                              <span className="text-[9px] font-mono text-smoke">
+                                {w.start.toFixed(2)}s
+                              </span>
+
+                              {/* Nudge buttons */}
+                              <div className="flex items-center ml-0.5">
+                                <button
+                                  type="button"
+                                  onClick={() => nudgeWord(seg, wIdx, -0.05, 0)}
+                                  className="px-1 text-[9px] text-smoke hover:text-bone hover:bg-white/10 rounded"
+                                  title="Nudge start earlier (-0.05s)"
+                                >
+                                  ◀
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => nudgeWord(seg, wIdx, 0.05, 0)}
+                                  className="px-1 text-[9px] text-smoke hover:text-bone hover:bg-white/10 rounded"
+                                  title="Nudge start later (+0.05s)"
+                                >
+                                  ▶
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             );
           })}

@@ -1,13 +1,16 @@
 // ─── Timeline ────────────────────────────────────────────────────────────────
 // Bottom interactive audio waveform & multi-track caption timeline matching ReplixCaptions:
-// - Zoomable time ruler
-// - Draggable/resizable caption segment blocks
+// - Zoomable time ruler with precision timecodes
+// - Draggable & resizable caption segment blocks (trim start, trim end, move)
+// - Magnetic snapping (snaps to playhead and adjacent caption boundaries)
+// - Ripple editing mode (subsequent captions follow shifts)
+// - Visual overlap warnings and gap indicators with instant snap-to-bridge
 // - Audio waveform peaks visualizer
 // - Scrubbable playhead cursor
 // - Quick edit actions: + Text, Split, Merge, Delete, Undo/Redo, Find & Replace
 
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import { Scissors, Combine, Trash2, BookOpen, Plus, Undo2, Redo2 } from 'lucide-react';
+import { Scissors, Combine, Trash2, BookOpen, Plus, Undo2, Redo2, Magnet, Link2 } from 'lucide-react';
 import { formatTimecode, formatRulerTick } from './utils/formatTime';
 import type { Segment } from './types';
 
@@ -27,6 +30,14 @@ interface TimelineProps {
   onRedo?: () => void;
 }
 
+interface DragState {
+  type: 'move' | 'trim-start' | 'trim-end';
+  segId: string;
+  initialClientX: number;
+  initialStart: number;
+  initialEnd: number;
+}
+
 export default function Timeline({
   duration,
   currentTime,
@@ -44,6 +55,10 @@ export default function Timeline({
 }: TimelineProps) {
   // Pixels per second zoom factor (default ~90px per second)
   const [zoom, setZoom] = useState(90);
+  const [isSnappingEnabled, setIsSnappingEnabled] = useState(true);
+  const [isRippleEnabled, setIsRippleEnabled] = useState(false);
+  const [snapGuide, setSnapGuide] = useState<number | null>(null);
+
   const [localHistory, setLocalHistory] = useState<Segment[][]>([]);
   const [localRedo, setLocalRedo] = useState<Segment[][]>([]);
   const [showDictionary, setShowDictionary] = useState(false);
@@ -53,6 +68,7 @@ export default function Timeline({
   const containerRef = useRef<HTMLDivElement>(null);
   const waveformCanvasRef = useRef<HTMLCanvasElement>(null);
   const isDraggingPlayhead = useRef(false);
+  const dragStateRef = useRef<DragState | null>(null);
 
   // Push state to undo history
   const pushState = useCallback((newSegments: Segment[]) => {
@@ -143,20 +159,38 @@ export default function Timeline({
 
   // ── Scrubbing / Seeking via Click & Drag on Timeline ──────────────────────
   const handleTimelineMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    // If clicking on segment controls, do not start playhead drag
+    if ((e.target as HTMLElement).closest('.timeline-segment')) return;
+
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
     isDraggingPlayhead.current = true;
 
     const scrollLeft = containerRef.current?.scrollLeft || 0;
     const clickX = e.clientX - rect.left + scrollLeft;
-    const seekTime = Math.max(0, Math.min(totalDuration, clickX / zoom));
+    let seekTime = Math.max(0, Math.min(totalDuration, clickX / zoom));
+
+    // Snap playhead to segment edges if enabled
+    if (isSnappingEnabled) {
+      const threshold = 8 / zoom;
+      const nearestEdge = segments.flatMap((s) => [s.start, s.end]).find((t) => Math.abs(t - seekTime) < threshold);
+      if (nearestEdge !== undefined) seekTime = nearestEdge;
+    }
+
     onSeek(seekTime);
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       if (!isDraggingPlayhead.current || !rect) return;
       const curScroll = containerRef.current?.scrollLeft || 0;
       const x = moveEvent.clientX - rect.left + curScroll;
-      const t = Math.max(0, Math.min(totalDuration, x / zoom));
+      let t = Math.max(0, Math.min(totalDuration, x / zoom));
+
+      if (isSnappingEnabled) {
+        const threshold = 8 / zoom;
+        const nearestEdge = segments.flatMap((s) => [s.start, s.end]).find((edge) => Math.abs(edge - t) < threshold);
+        if (nearestEdge !== undefined) t = nearestEdge;
+      }
+
       onSeek(t);
     };
 
@@ -168,6 +202,131 @@ export default function Timeline({
 
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
+  };
+
+  // ── Segment Drag / Resize Handlers with Magnetic Snapping & Ripple ─────────
+  const startSegmentDrag = (
+    e: React.MouseEvent,
+    seg: Segment,
+    type: 'move' | 'trim-start' | 'trim-end',
+  ) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onSelectSegment?.(seg.id);
+
+    dragStateRef.current = {
+      type,
+      segId: seg.id,
+      initialClientX: e.clientX,
+      initialStart: seg.start,
+      initialEnd: seg.end,
+    };
+
+    const segIndex = segments.findIndex((s) => s.id === seg.id);
+    const snapThreshold = 10 / zoom;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const state = dragStateRef.current;
+      if (!state) return;
+
+      const deltaX = moveEvent.clientX - state.initialClientX;
+      const deltaSec = deltaX / zoom;
+
+      let newStart = state.initialStart;
+      let newEnd = state.initialEnd;
+      let guide: number | null = null;
+
+      if (state.type === 'move') {
+        const span = state.initialEnd - state.initialStart;
+        newStart = Math.max(0, +(state.initialStart + deltaSec).toFixed(2));
+        newEnd = +(newStart + span).toFixed(2);
+
+        if (isSnappingEnabled) {
+          // Snap to playhead
+          if (Math.abs(newStart - currentTime) < snapThreshold) {
+            newStart = currentTime;
+            newEnd = +(newStart + span).toFixed(2);
+            guide = newStart;
+          } else if (Math.abs(newEnd - currentTime) < snapThreshold) {
+            newEnd = currentTime;
+            newStart = Math.max(0, +(newEnd - span).toFixed(2));
+            guide = newEnd;
+          } else {
+            // Snap to neighbors
+            const prev = segments.find((s) => s.id !== state.segId && Math.abs(s.end - newStart) < snapThreshold);
+            if (prev) {
+              newStart = prev.end;
+              newEnd = +(newStart + span).toFixed(2);
+              guide = newStart;
+            } else {
+              const next = segments.find((s) => s.id !== state.segId && Math.abs(s.start - newEnd) < snapThreshold);
+              if (next) {
+                newEnd = next.start;
+                newStart = Math.max(0, +(newEnd - span).toFixed(2));
+                guide = newEnd;
+              }
+            }
+          }
+        }
+      } else if (state.type === 'trim-start') {
+        newStart = Math.max(0, Math.min(state.initialEnd - 0.2, +(state.initialStart + deltaSec).toFixed(2)));
+        if (isSnappingEnabled) {
+          if (Math.abs(newStart - currentTime) < snapThreshold) {
+            newStart = Math.min(state.initialEnd - 0.2, currentTime);
+            guide = newStart;
+          } else {
+            const prev = segments.find((s) => s.id !== state.segId && Math.abs(s.end - newStart) < snapThreshold);
+            if (prev) {
+              newStart = Math.min(state.initialEnd - 0.2, prev.end);
+              guide = newStart;
+            }
+          }
+        }
+      } else if (state.type === 'trim-end') {
+        newEnd = Math.max(state.initialStart + 0.2, +(state.initialEnd + deltaSec).toFixed(2));
+        if (isSnappingEnabled) {
+          if (Math.abs(newEnd - currentTime) < snapThreshold) {
+            newEnd = Math.max(state.initialStart + 0.2, currentTime);
+            guide = newEnd;
+          } else {
+            const next = segments.find((s) => s.id !== state.segId && Math.abs(s.start - newEnd) < snapThreshold);
+            if (next) {
+              newEnd = Math.max(state.initialStart + 0.2, next.start);
+              guide = newEnd;
+            }
+          }
+        }
+      }
+
+      setSnapGuide(guide);
+
+      // Apply update (with ripple if enabled)
+      const shiftDelta = state.type === 'move' ? newStart - state.initialStart : newEnd - state.initialEnd;
+
+      const updated = segments.map((s, idx) => {
+        if (s.id === state.segId) {
+          return { ...s, start: newStart, end: newEnd };
+        }
+        if (isRippleEnabled && idx > segIndex && Math.abs(shiftDelta) > 0.01) {
+          const rStart = Math.max(0, +(s.start + shiftDelta).toFixed(2));
+          const rEnd = Math.max(rStart + 0.2, +(s.end + shiftDelta).toFixed(2));
+          return { ...s, start: rStart, end: rEnd };
+        }
+        return s;
+      });
+
+      onSegmentsChange(updated);
+    };
+
+    const onMouseUp = () => {
+      dragStateRef.current = null;
+      setSnapGuide(null);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
   };
 
   // ── Split Segment at Current Playhead ─────────────────────────────────────
@@ -253,6 +412,18 @@ export default function Timeline({
     const updated = [...segments, newSeg].sort((a, b) => a.start - b.start).map((s, i) => ({ ...s, index: i + 1 }));
     pushState(updated);
     onSelectSegment?.(newSeg.id);
+  };
+
+  // ── Snap Gap between segments ─────────────────────────────────────────────
+  const handleCloseGap = (prevSeg: Segment, nextSeg: Segment) => {
+    const updated = segments.map((s) => {
+      if (s.id === nextSeg.id) {
+        const span = s.end - s.start;
+        return { ...s, start: prevSeg.end, end: +(prevSeg.end + span).toFixed(2) };
+      }
+      return s;
+    });
+    pushState(updated);
   };
 
   // ── Bulk Find & Replace ───────────────────────────────────────────────────
@@ -350,6 +521,34 @@ export default function Timeline({
 
           <div className="h-4 w-px bg-white/15 mx-1" />
 
+          {/* Magnetic Snapping Toggle */}
+          <button
+            onClick={() => setIsSnappingEnabled((s) => !s)}
+            aria-label={`Toggle magnetic snapping (${isSnappingEnabled ? 'ON' : 'OFF'})`}
+            className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium transition-colors cursor-pointer ${
+              isSnappingEnabled ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40' : 'text-smoke hover:text-bone hover:bg-white/5'
+            }`}
+            title="Magnetic Snapping: snaps to playhead and neighboring captions"
+          >
+            <Magnet className="w-3 h-3" />
+            <span className="hidden sm:inline">Snap</span>
+          </button>
+
+          {/* Ripple Editing Mode Toggle */}
+          <button
+            onClick={() => setIsRippleEnabled((r) => !r)}
+            aria-label={`Toggle ripple editing (${isRippleEnabled ? 'ON' : 'OFF'})`}
+            className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium transition-colors cursor-pointer ${
+              isRippleEnabled ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40' : 'text-smoke hover:text-bone hover:bg-white/5'
+            }`}
+            title="Ripple Editing: subsequent captions follow shifts automatically"
+          >
+            <Link2 className="w-3 h-3" />
+            <span className="hidden sm:inline">Ripple</span>
+          </button>
+
+          <div className="h-4 w-px bg-white/15 mx-1" />
+
           {/* Undo / Redo */}
           <button
             onClick={handleUndo}
@@ -398,7 +597,7 @@ export default function Timeline({
           <input
             type="range"
             min={30}
-            max={200}
+            max={220}
             value={zoom}
             onChange={(e) => setZoom(Number(e.target.value))}
             aria-label="Timeline zoom level"
@@ -482,38 +681,89 @@ export default function Timeline({
             })}
           </div>
 
-          {/* 2. Caption Track (Segment blocks) */}
+          {/* 2. Caption Track (Segment blocks with resize/drag handles & gap bridges) */}
           <div className="h-12 relative px-1 my-1">
-            {segments.map((seg) => {
+            {segments.map((seg, sIdx) => {
               const left = seg.start * zoom;
               const width = Math.max(30, (seg.end - seg.start) * zoom);
               const isActive = seg.id === activeId;
+              const nextSeg = sIdx < segments.length - 1 ? segments[sIdx + 1] : undefined;
+              const hasOverlap = nextSeg && nextSeg.start < seg.end - 0.03;
+              const hasGap = nextSeg && nextSeg.start > seg.end + 0.6;
 
               return (
-                <div
-                  key={seg.id}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSeek(seg.start);
-                    onSelectSegment?.(seg.id);
-                  }}
-                  className={`absolute top-0.5 h-11 rounded-lg px-2 py-1 text-xs font-medium cursor-pointer transition-colors border flex flex-col justify-center overflow-hidden group shadow-md ${
-                    isActive
-                      ? 'bg-[#2b2a26] border-amber-400 text-amber-200 ring-1 ring-amber-400/50'
-                      : 'bg-[#1c1c1a] border-white/15 text-bone hover:border-white/35 hover:bg-[#222220]'
-                  }`}
-                  style={{
-                    left: `${left}px`,
-                    width: `${width}px`,
-                  }}
-                  title={`${seg.text} (${formatTimecode(seg.start)} - ${formatTimecode(seg.end)})`}
-                >
-                  <div className="truncate font-semibold text-[11px] tracking-tight">
-                    {seg.text || '...'}
+                <div key={seg.id}>
+                  {/* Segment block */}
+                  <div
+                    onMouseDown={(e) => startSegmentDrag(e, seg, 'move')}
+                    className={`timeline-segment absolute top-0.5 h-11 rounded-lg px-2 py-1 text-xs font-medium cursor-grab active:cursor-grabbing transition-colors border flex flex-col justify-center overflow-hidden group shadow-md select-none ${
+                      isActive
+                        ? 'bg-[#2b2a26] border-amber-400 text-amber-200 ring-1 ring-amber-400/50'
+                        : 'bg-[#1c1c1a] border-white/15 text-bone hover:border-white/35 hover:bg-[#222220]'
+                    }`}
+                    style={{
+                      left: `${left}px`,
+                      width: `${width}px`,
+                    }}
+                    title={`${seg.text} (${formatTimecode(seg.start)} - ${formatTimecode(seg.end)})`}
+                  >
+                    {/* Left Trim Handle */}
+                    <div
+                      onMouseDown={(e) => startSegmentDrag(e, seg, 'trim-start')}
+                      className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-amber-400/60 transition-colors z-20 group-hover:bg-white/20"
+                      title="Drag to trim start"
+                    />
+
+                    {/* Content */}
+                    <div className="truncate font-semibold text-[11px] tracking-tight pl-1">
+                      {seg.text || '...'}
+                    </div>
+                    <div className="text-[9px] text-smoke font-mono pl-1">
+                      {formatTimecode(seg.start)} - {formatTimecode(seg.end)}
+                    </div>
+
+                    {/* Right Trim Handle */}
+                    <div
+                      onMouseDown={(e) => startSegmentDrag(e, seg, 'trim-end')}
+                      className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-amber-400/60 transition-colors z-20 group-hover:bg-white/20"
+                      title="Drag to trim end"
+                    />
                   </div>
-                  <div className="text-[9px] text-smoke font-mono">
-                    {formatTimecode(seg.start)} - {formatTimecode(seg.end)}
-                  </div>
+
+                  {/* Overlap Warning Indicator */}
+                  {hasOverlap && (
+                    <div
+                      className="absolute top-0 h-12 bg-crimson/30 border-l border-r border-crimson/60 pointer-events-none z-10"
+                      style={{
+                        left: `${nextSeg.start * zoom}px`,
+                        width: `${Math.max(4, (seg.end - nextSeg.start) * zoom)}px`,
+                      }}
+                      title="Warning: Overlapping captions"
+                    />
+                  )}
+
+                  {/* Gap indicator with snap/close gap button */}
+                  {hasGap && (
+                    <div
+                      className="absolute top-2.5 h-7 flex items-center justify-center z-10"
+                      style={{
+                        left: `${seg.end * zoom}px`,
+                        width: `${(nextSeg.start - seg.end) * zoom}px`,
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCloseGap(seg, nextSeg);
+                        }}
+                        className="px-1 py-0.5 rounded bg-white/5 hover:bg-amber-400/20 text-smoke hover:text-amber-300 text-[9px] border border-dashed border-white/20 font-mono transition-colors"
+                        title="Click to snap / close gap"
+                      >
+                        Snap
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -527,7 +777,15 @@ export default function Timeline({
             />
           </div>
 
-          {/* 4. Playhead Cursor (Red/White vertical line with pointer top) */}
+          {/* Magnetic Snap Guideline (Amber vertical line) */}
+          {snapGuide !== null && (
+            <div
+              className="absolute top-0 bottom-0 pointer-events-none z-40 border-l-2 border-amber-300/90 shadow-[0_0_10px_rgba(251,191,36,0.9)]"
+              style={{ left: `${snapGuide * zoom}px` }}
+            />
+          )}
+
+          {/* 4. Playhead Cursor (Amber vertical line with pointer top) */}
           <div
             className="absolute top-0 bottom-0 pointer-events-none z-30 will-change-transform"
             style={{

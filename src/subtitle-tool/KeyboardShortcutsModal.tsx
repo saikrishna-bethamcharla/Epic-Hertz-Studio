@@ -30,12 +30,22 @@ const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
     ],
   },
   {
-    title: 'Caption Editing',
+    title: 'Caption Editing & Multi-Select',
     items: [
       { keys: ['S'], description: 'Split active caption at playhead' },
-      { keys: ['Delete'], description: 'Delete selected caption' },
+      { keys: ['Delete'], description: 'Delete selected caption(s)' },
       { keys: ['Enter'], description: 'Split caption at cursor (inside text)' },
       { keys: ['Backspace'], description: 'Merge with previous (at start of text)' },
+      { keys: ['Shift', 'Click'], description: 'Select range of captions for bulk actions' },
+      { keys: ['Ctrl / ⌘', 'Click'], description: 'Toggle multiple caption selection' },
+    ],
+  },
+  {
+    title: 'Timeline & Precision',
+    items: [
+      { keys: ['Drag edge'], description: 'Trim caption start / end boundary' },
+      { keys: ['Snap button'], description: 'Toggle magnetic snapping to playhead & edges' },
+      { keys: ['Ripple button'], description: 'Toggle ripple editing (subsequent captions follow)' },
     ],
   },
   {
