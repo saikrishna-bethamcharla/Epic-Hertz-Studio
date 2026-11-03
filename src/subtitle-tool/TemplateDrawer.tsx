@@ -160,6 +160,7 @@ const PresetCard = memo(function PresetCard({
       onFocus={() => setHot(true)}
       onBlur={() => setHot(false)}
       aria-pressed={selected}
+      aria-label={`Preset ${def.style.name}: ${def.blurb}`}
       title={def.blurb}
       className={`group text-left rounded-xl overflow-hidden border transition-all ${
         selected ? 'border-amber-400 ring-1 ring-amber-400/60 bg-[#211f1a]' : 'border-white/10 hover:border-white/30 bg-[#1a1a18]'

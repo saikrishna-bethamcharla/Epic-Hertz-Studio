@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { toSRT, toVTT, downloadText, downloadBlob } from './utils/srt';
 import { burnCaptions, embedSubtitlesMP4 } from './utils/burnCaptions';
 import { burnCaptionsCanvas } from './utils/burnCaptionsCanvas';
+import { exportCaptionedVideo, type ExportQuality } from './utils/exportVideo';
 import type { Segment, CaptionStyle } from './types';
 import { toBasicStyle } from './engine/compat';
 
@@ -17,6 +18,7 @@ interface ExportModalProps {
   style: CaptionStyle;
   onBurnStart: () => void;
   onBurnProgress: (pct: number) => void;
+  onBurnStatus?: (msg: string) => void;
   onBurnDone: () => void;
   onBurnError: (msg: string) => void;
 }
@@ -29,10 +31,13 @@ export default function ExportModal({
   style,
   onBurnStart,
   onBurnProgress,
+  onBurnStatus,
   onBurnDone,
   onBurnError,
 }: ExportModalProps) {
   const [exportType, setExportType] = useState<'lossless' | 'hardsub' | 'srt' | 'vtt' | 'txt'>('hardsub');
+  const [quality, setQuality] = useState<ExportQuality>('high');
+  const [resolution, setResolution] = useState<'original' | '1080'>('original');
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -75,15 +80,31 @@ export default function ExportModal({
         const srtContent = toSRT(segments);
         let blob: Blob;
         try {
-          // Animated burn-in, drawn by the same engine as the preview (what you see is what you get)
-          blob = await burnCaptionsCanvas(videoFile, segments, style, (pct) => {
-            onBurnProgress(pct);
-          });
-        } catch (canvasErr) {
-          console.warn('Animated burn-in failed, falling back to static hard-subs via FFmpeg:', canvasErr);
-          blob = await burnCaptions(videoFile, srtContent, toBasicStyle(style), (pct) => {
-            onBurnProgress(pct);
-          });
+          // Fast path: WebCodecs, frame by frame, same engine as the preview, audio carried over
+          blob = await exportCaptionedVideo(
+            videoFile,
+            segments,
+            style,
+            { quality, maxShortSide: resolution === '1080' ? 1080 : 0 },
+            ({ pct, etaSec }) => {
+              onBurnProgress(pct);
+              const eta = etaSec === undefined ? '' : ` · about ${etaSec < 90 ? `${Math.max(1, Math.round(etaSec))} s` : `${Math.round(etaSec / 60)} min`} left`;
+              onBurnStatus?.(`Exporting your captioned video… ${Math.round(pct)}%${eta}`);
+            },
+          );
+        } catch (fastErr) {
+          console.warn('Fast export unavailable, using real-time export:', fastErr);
+          onBurnStatus?.('Fast export is not available in this browser. Exporting in real time…');
+          try {
+            blob = await burnCaptionsCanvas(videoFile, segments, style, (pct) => {
+              onBurnProgress(pct);
+            });
+          } catch (canvasErr) {
+            console.warn('Animated burn-in failed, falling back to static hard-subs via FFmpeg:', canvasErr);
+            blob = await burnCaptions(videoFile, srtContent, toBasicStyle(style), (pct) => {
+              onBurnProgress(pct);
+            });
+          }
         }
         const ext = blob.type.includes('webm') ? 'webm' : 'mp4';
         downloadBlob(blob, `${baseName}_captioned.${ext}`);
@@ -180,10 +201,36 @@ export default function ExportModal({
                 </span>
               </div>
               <p className="text-[11px] text-smoke mt-1 leading-relaxed">
-                Burns your styled, animated captions into the video exactly as shown in the preview. Permanent on Reels, TikTok, YouTube Shorts and WhatsApp. Exports in real time, so a 30 s clip takes about 30 s.
+                Burns your styled, animated captions into the video exactly as shown in the preview. Permanent on Reels, TikTok, YouTube Shorts and WhatsApp. Processed frame by frame, usually much faster than real time, keeping your original frame rate and sound.
               </p>
             </div>
           </label>
+
+          {exportType === 'hardsub' && (
+            <div className="grid grid-cols-2 gap-3 rounded-xl border border-white/10 bg-[#1c1c1a] p-3">
+              {([
+                ['Quality', quality, [['standard', 'Standard'], ['high', 'High'], ['max', 'Maximum']], (v: string) => setQuality(v as ExportQuality)],
+                ['Size', resolution, [['original', 'Original'], ['1080', 'Up to 1080p']], (v: string) => setResolution(v as 'original' | '1080')],
+              ] as const).map(([label, value, options, onPick]) => (
+                <div key={label}>
+                  <div className="text-[10px] font-bold tracking-[0.12em] uppercase text-smoke mb-1.5">{label}</div>
+                  <div className="flex rounded-lg overflow-hidden border border-white/10" role="group" aria-label={label}>
+                    {options.map(([v, text]) => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => onPick(v)}
+                        aria-pressed={value === v}
+                        className={`flex-1 px-1.5 py-1.5 text-[11px] font-medium transition-colors ${value === v ? 'bg-amber-400 text-black' : 'text-mist hover:text-bone hover:bg-white/5'}`}
+                      >
+                        {text}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* 3. Subtitle / Transcript files */}
           <div className="grid grid-cols-3 gap-2 pt-2">

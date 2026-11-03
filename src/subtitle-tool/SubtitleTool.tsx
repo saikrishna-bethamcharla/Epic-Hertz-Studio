@@ -7,7 +7,8 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Sparkles, CheckCircle2, Upload, RotateCcw, Trash2 } from 'lucide-react';
+import { Sparkles, CheckCircle2, Upload, RotateCcw, Trash2, Keyboard } from 'lucide-react';
+import KeyboardShortcutsModal from './KeyboardShortcutsModal';
 import { useDesktop } from '../hooks/useMedia';
 import { DEFAULT_STYLE } from './engine/presets';
 
@@ -55,6 +56,9 @@ export default function SubtitleTool() {
   const [aspectRatio, setAspectRatio] = useState<VideoAspectRatio>('9:16');
 
   const [segments, setSegments] = useState<Segment[]>([]);
+  const [history, setHistory] = useState<Segment[][]>([]);
+  const [redoStack, setRedoStack] = useState<Segment[][]>([]);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -62,14 +66,237 @@ export default function SubtitleTool() {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const isDesktop = useDesktop();
   const [mobileTab, setMobileTab] = useState<'captions' | 'styles' | 'timeline'>('captions');
-
-  // Caption style (typography, treatment, motion). Starts from the first designed preset.
   const [style, setStyle] = useState<CaptionStyle>(() => structuredClone(DEFAULT_STYLE));
-
-  // IndexedDB persistence states
   const [savedDraft, setSavedDraft] = useState<SavedProjectMeta | null>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const videoRef = useRef<VideoPreviewHandle>(null);
+
+  const updateSegments = useCallback(
+    (newSegments: Segment[] | ((prev: Segment[]) => Segment[]), recordUndo: boolean = true) => {
+      setSegments((prev) => {
+        const next = typeof newSegments === 'function' ? newSegments(prev) : newSegments;
+        if (recordUndo) {
+          setHistory((h) => [...h.slice(-30), prev]);
+          setRedoStack([]);
+        }
+        return next;
+      });
+    },
+    [],
+  );
+
+  const handleUndo = useCallback(() => {
+    setHistory((h) => {
+      if (h.length === 0) return h;
+      const prev = h[h.length - 1];
+      setSegments((curr) => {
+        setRedoStack((r) => [curr, ...r]);
+        return prev;
+      });
+      return h.slice(0, -1);
+    });
+  }, []);
+
+  const handleRedo = useCallback(() => {
+    setRedoStack((r) => {
+      if (r.length === 0) return r;
+      const next = r[0];
+      setSegments((curr) => {
+        setHistory((h) => [...h.slice(-30), curr]);
+        return next;
+      });
+      return r.slice(1);
+    });
+  }, []);
+
+  const handleSplitAtPlayhead = useCallback(() => {
+    const curTime = currentTime;
+    const target = segments.find((s) => curTime >= s.start && curTime <= s.end);
+    if (!target) return;
+    if (curTime <= target.start + 0.15 || curTime >= target.end - 0.15) return;
+
+    const idx = segments.findIndex((s) => s.id === target.id);
+    const words = target.text.split(' ');
+    const ratio = (curTime - target.start) / (target.end - target.start);
+    const wordSplitIdx = Math.max(1, Math.min(words.length - 1, Math.round(words.length * ratio)));
+    const text1 = words.slice(0, wordSplitIdx).join(' ');
+    const text2 = words.slice(wordSplitIdx).join(' ');
+
+    const newSeg1: Segment = {
+      ...target,
+      end: curTime,
+      text: text1,
+      words: target.words ? target.words.filter((w) => w.start < curTime) : undefined,
+    };
+    const newId = 'seg-' + Date.now();
+    const newSeg2: Segment = {
+      id: newId,
+      index: target.index + 1,
+      start: curTime,
+      end: target.end,
+      text: text2,
+      words: target.words ? target.words.filter((w) => w.start >= curTime) : undefined,
+    };
+
+    const updated = [
+      ...segments.slice(0, idx),
+      newSeg1,
+      newSeg2,
+      ...segments.slice(idx + 1),
+    ].map((s, i) => ({ ...s, index: i + 1 }));
+
+    updateSegments(updated);
+    setActiveId(newId);
+  }, [currentTime, segments, updateSegments]);
+
+  const handleDeleteActive = useCallback(() => {
+    if (!activeId) return;
+    const next = segments
+      .filter((s) => s.id !== activeId)
+      .map((s, i) => ({ ...s, index: i + 1 }));
+    updateSegments(next);
+    setActiveId(null);
+  }, [activeId, segments, updateSegments]);
+
+  const handleJumpPrevCaption = useCallback(() => {
+    const prev = [...segments].reverse().find((s) => s.start < currentTime - 0.25);
+    if (prev) {
+      videoRef.current?.seekTo(prev.start);
+      setActiveId(prev.id);
+    }
+  }, [currentTime, segments]);
+
+  const handleJumpNextCaption = useCallback(() => {
+    const next = segments.find((s) => s.start > currentTime + 0.25);
+    if (next) {
+      videoRef.current?.seekTo(next.start);
+      setActiveId(next.id);
+    }
+  }, [currentTime, segments]);
+
+  // Global Keyboard Shortcuts
+  useEffect(() => {
+    if (stage !== 'editing') return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isTyping =
+        target && (['INPUT', 'TEXTAREA'].includes(target.tagName) || target.isContentEditable);
+
+      // Global Undo: Ctrl+Z / Cmd+Z
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+        if (e.shiftKey) {
+          e.preventDefault();
+          handleRedo();
+          return;
+        } else {
+          e.preventDefault();
+          handleUndo();
+          return;
+        }
+      }
+
+      // Global Redo: Ctrl+Y / Cmd+Y
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        handleRedo();
+        return;
+      }
+
+      // Cheat sheet: ?
+      if (e.key === '?' && !isTyping) {
+        e.preventDefault();
+        setIsShortcutsOpen((prev) => !prev);
+        return;
+      }
+
+      // Escape key: close dialogs or blur textareas
+      if (e.key === 'Escape') {
+        if (isShortcutsOpen) {
+          setIsShortcutsOpen(false);
+          return;
+        }
+        if (target && typeof target.blur === 'function') {
+          target.blur();
+        }
+        return;
+      }
+
+      // Shortcuts below only fire when outside input fields
+      if (isTyping) return;
+
+      if (e.code === 'Space' || e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        videoRef.current?.togglePlay();
+        return;
+      }
+
+      if (e.key.toLowerCase() === 'j') {
+        e.preventDefault();
+        videoRef.current?.seekTo(Math.max(0, currentTime - 1));
+        return;
+      }
+
+      if (e.key.toLowerCase() === 'l') {
+        e.preventDefault();
+        videoRef.current?.seekTo(Math.min(duration || 0, currentTime + 1));
+        return;
+      }
+
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const step = e.shiftKey ? 1.0 : (1 / 30);
+        videoRef.current?.seekTo(Math.max(0, currentTime - step));
+        return;
+      }
+
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        const step = e.shiftKey ? 1.0 : (1 / 30);
+        videoRef.current?.seekTo(Math.min(duration || 0, currentTime + step));
+        return;
+      }
+
+      if (e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        handleSplitAtPlayhead();
+        return;
+      }
+
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        handleDeleteActive();
+        return;
+      }
+
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        handleJumpPrevCaption();
+        return;
+      }
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        handleJumpNextCaption();
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [
+    stage,
+    currentTime,
+    duration,
+    isShortcutsOpen,
+    handleUndo,
+    handleRedo,
+    handleSplitAtPlayhead,
+    handleDeleteActive,
+    handleJumpPrevCaption,
+    handleJumpNextCaption,
+  ]);
 
   // Check for saved project draft in IndexedDB on initial mount
   useEffect(() => {
@@ -125,8 +352,6 @@ export default function SubtitleTool() {
     } catch {}
   }, []);
 
-  const videoRef = useRef<VideoPreviewHandle>(null);
-
   // ── Sync Playhead Time ───────────────────────────────────────────────────
   const handleTimeUpdate = useCallback(
     (time: number) => {
@@ -175,6 +400,8 @@ export default function SubtitleTool() {
         });
 
         setSegments(segs);
+        setHistory([]);
+        setRedoStack([]);
         setStage('editing');
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -193,6 +420,8 @@ export default function SubtitleTool() {
       saveMediaAsset(file, file.name);
       setSpokenLanguage('te');
       setScriptOutput('romanized');
+      setHistory([]);
+      setRedoStack([]);
       setSegments([
         {
           id: 'demo-1',
@@ -254,6 +483,8 @@ export default function SubtitleTool() {
       }
       setVideoFile(project.videoFile);
       setSegments(project.segments);
+      setHistory([]);
+      setRedoStack([]);
       setStyle(project.style);
       setSpokenLanguage(project.spokenLanguage);
       setScriptOutput(project.scriptOutput);
@@ -278,6 +509,8 @@ export default function SubtitleTool() {
     setStage('idle');
     setVideoFile(null);
     setSegments([]);
+    setHistory([]);
+    setRedoStack([]);
     setActiveId(null);
     setError(null);
     setBurnProgress(0);
@@ -350,6 +583,12 @@ export default function SubtitleTool() {
           }}
         />
       )}
+
+      {/* ── Keyboard Shortcuts Modal ───────────────────────────────────── */}
+      <KeyboardShortcutsModal
+        isOpen={isShortcutsOpen}
+        onClose={() => setIsShortcutsOpen(false)}
+      />
 
       {/* ── Top Header Navigation Bar ───────────────────────────────────── */}
       <header className="h-14 shrink-0 flex items-center justify-between gap-2 px-3 sm:px-5 border-b border-white/10 bg-[#141413]/90 backdrop-blur-md z-30">
@@ -437,6 +676,18 @@ export default function SubtitleTool() {
                 className="px-3 py-1.5 text-xs text-mist hover:text-bone hover:bg-white/5 rounded-lg border border-white/10 transition-colors"
               >
                 New Video
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsShortcutsOpen(true)}
+                aria-label="Keyboard shortcuts (?)"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-mist hover:text-bone hover:bg-white/5 rounded-lg border border-white/10 transition-colors cursor-pointer"
+                title="Keyboard shortcuts (?)"
+              >
+                <Keyboard className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden sm:inline">Shortcuts</span>
+                <kbd className="hidden md:inline px-1 py-0.5 rounded bg-white/10 text-[10px] text-smoke font-mono font-semibold">?</kbd>
               </button>
 
               <button
@@ -566,7 +817,7 @@ export default function SubtitleTool() {
                         activeId={activeId}
                         scriptOutput={scriptOutput}
                         spokenLanguage={spokenLanguage}
-                        onSegmentsChange={setSegments}
+                        onSegmentsChange={updateSegments}
                         onSeek={(t) => videoRef.current?.seekTo(t)}
                       />
                     </div>
@@ -607,8 +858,12 @@ export default function SubtitleTool() {
                       activeId={activeId}
                       onSeek={(t) => videoRef.current?.seekTo(t)}
                       onTogglePlay={() => videoRef.current?.togglePlay()}
-                      onSegmentsChange={setSegments}
+                      onSegmentsChange={updateSegments}
                       onSelectSegment={(id) => setActiveId(id)}
+                      canUndo={history.length > 0}
+                      canRedo={redoStack.length > 0}
+                      onUndo={handleUndo}
+                      onRedo={handleRedo}
                     />
                   </div>
                 </>
@@ -655,7 +910,7 @@ export default function SubtitleTool() {
                         activeId={activeId}
                         scriptOutput={scriptOutput}
                         spokenLanguage={spokenLanguage}
-                        onSegmentsChange={setSegments}
+                        onSegmentsChange={updateSegments}
                         onSeek={(t) => videoRef.current?.seekTo(t)}
                       />
                     )}
@@ -669,8 +924,12 @@ export default function SubtitleTool() {
                         activeId={activeId}
                         onSeek={(t) => videoRef.current?.seekTo(t)}
                         onTogglePlay={() => videoRef.current?.togglePlay()}
-                        onSegmentsChange={setSegments}
+                        onSegmentsChange={updateSegments}
                         onSelectSegment={(id) => setActiveId(id)}
+                        canUndo={history.length > 0}
+                        canRedo={redoStack.length > 0}
+                        onUndo={handleUndo}
+                        onRedo={handleRedo}
                       />
                     )}
                   </div>

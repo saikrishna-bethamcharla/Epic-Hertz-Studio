@@ -120,7 +120,7 @@ const layoutKeyCache = new WeakMap<CaptionStyle, string>();
 function styleLayoutKey(style: CaptionStyle): string {
   let k = layoutKeyCache.get(style);
   if (!k) {
-    k = JSON.stringify([style.font, style.layout.wordsPerPage, style.layout.maxLines, style.layout.widthPct, style.layout.align, style.motion.unit, style.motion.in, style.highlight.scale, style.highlight.mode, style.highlight.boxPadX]);
+    k = JSON.stringify([style.font, style.layout.wordsPerPage, style.layout.maxLines, style.layout.widthPct, style.layout.align, style.motion.unit, style.motion.in, style.highlight.scale, style.highlight.mode, style.highlight.boxPadX, style.stroke.width]);
     layoutKeyCache.set(style, k);
   }
   return k;
@@ -163,7 +163,9 @@ function layoutPage(
   for (let attempt = 0; attempt < 10; attempt++) {
     ctx.font = canvasFont(style, px);
     setSpacing(ctx, tracking * px);
-    spaceW = (ctx.measureText(' ').width || px * 0.3) + Math.max(0, style.highlight.scale - 1) * px * 0.85;
+    spaceW = (ctx.measureText(' ').width || px * 0.3) + Math.max(0, style.highlight.scale - 1) * px * 0.25;
+    // The outline is drawn centred on the glyph edge, so it eats into the space from both sides.
+    spaceW += style.stroke.width * px * 1.3;
     // A highlight box pads out past the word on both sides — keep it clear of the neighbours.
     if (style.highlight.mode === 'box') spaceW = Math.max(spaceW, style.highlight.boxPadX * px * 1.9);
     widths = texts.map((t) => ctx.measureText(t).width);
@@ -539,11 +541,33 @@ export function renderCaptions(
   let active = -1;
   for (let i = 0; i < page.words.length; i++) if (t >= page.words[i].start) active = i;
 
+  // Emphasis (pop) per word, and the sideways shift that keeps neighbours from colliding with it
+  const emph: number[] = page.words.map((w) => {
+    if (hl.scale === 1 || t < w.start) return 1;
+    const fallP = t > w.end ? ease('out', clamp01((t - w.end) / 0.14)) : 0;
+    const popP = spring(clamp01((t - w.start) / 0.3), m.bounce) * (1 - fallP);
+    return 1 + (hl.scale - 1) * popP;
+  });
+  const shift: number[] = new Array(page.words.length).fill(0);
+  if (hl.scale !== 1) {
+    const lines = new Map<number, number[]>();
+    L.words.forEach((wl, i) => lines.set(wl.line, [...(lines.get(wl.line) ?? []), i]));
+    lines.forEach((idxs) => {
+      const extra = idxs.map((i) => (emph[i] - 1) * (L.words[i].w + 2 * style.stroke.width * px));
+      const total = extra.reduce((a, b) => a + b, 0);
+      let cum = 0;
+      idxs.forEach((i, k) => {
+        shift[i] = cum + extra[k] / 2 - total / 2;
+        cum += extra[k];
+      });
+    });
+  }
+
   const lineTop = (li: number) => by + li * L.lineBox;
   const wordRect = (i: number) => {
     const wl = L.words[i];
     return {
-      x: bx + wl.x - hl.boxPadX * px,
+      x: bx + wl.x + shift[i] - hl.boxPadX * px,
       y: lineTop(wl.line) + L.baseline - L.asc * 0.92 - hl.boxPadY * px,
       w: wl.w + hl.boxPadX * px * 2,
       h: (L.asc + L.desc) * 0.92 + hl.boxPadY * px * 2,
@@ -598,7 +622,7 @@ export function renderCaptions(
   for (let i = 0; i < page.words.length; i++) {
     const w = page.words[i];
     const wl = L.words[i];
-    const x0 = bx + wl.x;
+    const x0 = bx + wl.x + shift[i];
     const y0 = lineTop(wl.line) + L.baseline;
 
     // Emphasis amounts for this word
@@ -612,9 +636,7 @@ export function renderCaptions(
       const boxOut = t > nextStart ? ease('out', clamp01((t - nextStart) / 0.11)) : 0;
       colourAmt = boxIn * (1 - boxOut);
     }
-    const popRise = started ? spring(clamp01((t - w.start) / 0.3), m.bounce) : 0;
-    const pop = popRise * (1 - fall);
-    const emphScale = hl.scale !== 1 ? 1 + (hl.scale - 1) * pop : 1;
+    const emphScale = emph[i];
     const isActive = i === active;
 
     let dimAlpha = 1;

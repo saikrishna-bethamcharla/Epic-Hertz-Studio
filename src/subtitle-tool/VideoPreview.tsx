@@ -14,6 +14,7 @@ import {
 import { Smartphone, Heart, MessageCircle, Share2, Disc3 } from 'lucide-react';
 import type { Segment, CaptionStyle, VideoAspectRatio } from './types';
 import CaptionCanvas from './CaptionCanvas';
+import { formatTimecode } from './utils/formatTime';
 
 interface VideoPreviewProps {
   videoFile: File;
@@ -202,12 +203,8 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       }
     };
 
-    // Format mm:ss
-    const formatTime = (secs: number) => {
-      const m = Math.floor(secs / 60);
-      const s = Math.floor(secs % 60);
-      return `${m}:${s < 10 ? '0' : ''}${s}`;
-    };
+    // Format timestamp
+    const formatTime = (secs: number) => formatTimecode(secs, { decimals: true });
 
     // Aspect ratio container styles
     const aspectContainerClass = useMemo(() => {
@@ -381,6 +378,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           {/* Play / Pause */}
           <button
             onClick={togglePlay}
+            aria-label={isPlaying ? 'Pause playback' : 'Start playback'}
             className="p-1.5 hover:text-amber-300 transition-colors"
             title={isPlaying ? 'Pause' : 'Play'}
           >
@@ -399,6 +397,8 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           <div className="flex items-center gap-1.5">
             <button
               onClick={toggleMute}
+              aria-label={isMuted || volume === 0 ? 'Unmute video audio' : 'Mute video audio'}
+              title={isMuted || volume === 0 ? 'Unmute' : 'Mute'}
               className="p-1 hover:text-amber-300 transition-colors text-smoke"
             >
               {isMuted || volume === 0 ? (
@@ -419,6 +419,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
               step={0.05}
               value={isMuted ? 0 : volume}
               onChange={handleVolumeChange}
+              aria-label="Video volume"
               className="w-14 h-1 accent-amber-400 bg-white/20 rounded-lg cursor-pointer"
             />
           </div>
@@ -433,6 +434,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           {/* Speed badge */}
           <button
             onClick={cyclePlaybackRate}
+            aria-label={`Playback speed: ${playbackRate}x`}
             className="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 font-mono text-[11px] text-amber-200 transition-colors"
             title="Playback Speed"
           >

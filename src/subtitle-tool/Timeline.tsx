@@ -8,6 +8,7 @@
 
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { Scissors, Combine, Trash2, BookOpen, Plus, Undo2, Redo2 } from 'lucide-react';
+import { formatTimecode, formatRulerTick } from './utils/formatTime';
 import type { Segment } from './types';
 
 interface TimelineProps {
@@ -20,6 +21,10 @@ interface TimelineProps {
   onTogglePlay: () => void;
   onSegmentsChange: (segments: Segment[]) => void;
   onSelectSegment?: (id: string) => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
 }
 
 export default function Timeline({
@@ -32,11 +37,15 @@ export default function Timeline({
   onTogglePlay,
   onSegmentsChange,
   onSelectSegment,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
 }: TimelineProps) {
-  // Pixels per second zoom factor (default ~80px per second)
+  // Pixels per second zoom factor (default ~90px per second)
   const [zoom, setZoom] = useState(90);
-  const [history, setHistory] = useState<Segment[][]>([]);
-  const [redoStack, setRedoStack] = useState<Segment[][]>([]);
+  const [localHistory, setLocalHistory] = useState<Segment[][]>([]);
+  const [localRedo, setLocalRedo] = useState<Segment[][]>([]);
   const [showDictionary, setShowDictionary] = useState(false);
   const [findWord, setFindWord] = useState('');
   const [replaceWord, setReplaceWord] = useState('');
@@ -47,29 +56,45 @@ export default function Timeline({
 
   // Push state to undo history
   const pushState = useCallback((newSegments: Segment[]) => {
-    setHistory((prev) => [...prev.slice(-25), segments]);
-    setRedoStack([]);
-    onSegmentsChange(newSegments);
-  }, [segments, onSegmentsChange]);
+    if (onUndo) {
+      onSegmentsChange(newSegments);
+    } else {
+      setLocalHistory((prev) => [...prev.slice(-25), segments]);
+      setLocalRedo([]);
+      onSegmentsChange(newSegments);
+    }
+  }, [segments, onSegmentsChange, onUndo]);
 
   const handleUndo = () => {
-    if (history.length === 0) return;
-    const prev = history[history.length - 1];
-    setRedoStack((r) => [segments, ...r]);
-    setHistory((h) => h.slice(0, -1));
-    onSegmentsChange(prev);
+    if (onUndo) {
+      onUndo();
+    } else {
+      if (localHistory.length === 0) return;
+      const prev = localHistory[localHistory.length - 1];
+      setLocalRedo((r) => [segments, ...r]);
+      setLocalHistory((h) => h.slice(0, -1));
+      onSegmentsChange(prev);
+    }
   };
 
   const handleRedo = () => {
-    if (redoStack.length === 0) return;
-    const next = redoStack[0];
-    setHistory((h) => [...h, segments]);
-    setRedoStack((r) => r.slice(1));
-    onSegmentsChange(next);
+    if (onRedo) {
+      onRedo();
+    } else {
+      if (localRedo.length === 0) return;
+      const next = localRedo[0];
+      setLocalHistory((h) => [...h, segments]);
+      setLocalRedo((r) => r.slice(1));
+      onSegmentsChange(next);
+    }
   };
 
-  // Safe duration
-  const totalDuration = Math.max(duration || 10, 5);
+  const isUndoDisabled = onUndo ? !canUndo : localHistory.length === 0;
+  const isRedoDisabled = onRedo ? !canRedo : localRedo.length === 0;
+
+  // Safe duration calculation ensuring timeline span covers both video and caption limits
+  const maxSegEnd = segments.length > 0 ? Math.max(...segments.map((s) => s.end)) : 0;
+  const totalDuration = Math.max(duration || 0, maxSegEnd, 5);
   const totalWidth = Math.max(totalDuration * zoom, 600);
 
   // Active segment
@@ -160,28 +185,29 @@ export default function Timeline({
       ...currentSeg,
       end: currentTime,
       text: text1,
-      words: undefined,
+      words: currentSeg.words ? currentSeg.words.filter((w) => w.start < currentTime) : undefined,
     };
+
     const newSeg2: Segment = {
       id: `seg-${Date.now()}`,
       index: currentSeg.index + 1,
       start: currentTime,
       end: currentSeg.end,
       text: text2,
-      words: undefined,
+      words: currentSeg.words ? currentSeg.words.filter((w) => w.start >= currentTime) : undefined,
     };
 
-    const nextSegs = [
+    const updated = [
       ...segments.slice(0, segIndex),
       newSeg1,
       newSeg2,
       ...segments.slice(segIndex + 1),
     ].map((s, idx) => ({ ...s, index: idx + 1 }));
 
-    pushState(nextSegs);
+    pushState(updated);
   };
 
-  // ── Merge Current Segment with Next ──────────────────────────────────────
+  // ── Merge Current Segment with Next ───────────────────────────────────────
   const handleMerge = () => {
     if (!currentSeg) return;
     const idx = segments.findIndex((s) => s.id === currentSeg.id);
@@ -191,29 +217,29 @@ export default function Timeline({
     const mergedSeg: Segment = {
       ...currentSeg,
       end: nextSeg.end,
-      text: `${currentSeg.text} ${nextSeg.text}`.trim(),
-      words: undefined,
+      text: `${currentSeg.text.trim()} ${nextSeg.text.trim()}`.trim(),
+      words: currentSeg.words && nextSeg.words ? [...currentSeg.words, ...nextSeg.words] : undefined,
     };
 
-    const nextSegs = [
+    const updated = [
       ...segments.slice(0, idx),
       mergedSeg,
       ...segments.slice(idx + 2),
     ].map((s, i) => ({ ...s, index: i + 1 }));
 
-    pushState(nextSegs);
+    pushState(updated);
   };
 
-  // ── Delete Active Segment ─────────────────────────────────────────────────
+  // ── Delete Current Segment ────────────────────────────────────────────────
   const handleDelete = () => {
     if (!currentSeg) return;
-    const nextSegs = segments
+    const updated = segments
       .filter((s) => s.id !== currentSeg.id)
-      .map((s, i) => ({ ...s, index: i + 1 }));
-    pushState(nextSegs);
+      .map((s, idx) => ({ ...s, index: idx + 1 }));
+    pushState(updated);
   };
 
-  // ── Add New Segment at Playhead ───────────────────────────────────────────
+  // ── Add New Text Segment at Playhead ───────────────────────────────────────
   const handleAddText = () => {
     const start = currentTime;
     const end = Math.min(totalDuration, start + 2);
@@ -224,13 +250,12 @@ export default function Timeline({
       end,
       text: 'New Caption',
     };
-    const updated = [...segments, newSeg]
-      .sort((a, b) => a.start - b.start)
-      .map((s, i) => ({ ...s, index: i + 1 }));
+    const updated = [...segments, newSeg].sort((a, b) => a.start - b.start).map((s, i) => ({ ...s, index: i + 1 }));
     pushState(updated);
+    onSelectSegment?.(newSeg.id);
   };
 
-  // ── Find and Replace ──────────────────────────────────────────────────────
+  // ── Bulk Find & Replace ───────────────────────────────────────────────────
   const handleBulkReplace = () => {
     if (!findWord.trim()) return;
     const regex = new RegExp(findWord, 'gi');
@@ -239,24 +264,9 @@ export default function Timeline({
       text: s.text.replace(regex, replaceWord),
     }));
     pushState(updated);
-    setShowDictionary(false);
     setFindWord('');
     setReplaceWord('');
-  };
-
-  // Format timestamp (0:01.10)
-  const formatPreciseTime = (secs: number) => {
-    const m = Math.floor(secs / 60);
-    const s = Math.floor(secs % 60);
-    const ms = Math.floor((secs % 1) * 100);
-    return `${m}:${s < 10 ? '0' : ''}${s}.${ms < 10 ? '0' : ''}${ms}`;
-  };
-
-  // Format ruler seconds (0:00, 0:02...)
-  const formatRuler = (secs: number) => {
-    const m = Math.floor(secs / 60);
-    const s = Math.floor(secs % 60);
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
+    setShowDictionary(false);
   };
 
   // Ruler markers every 2 or 5 seconds based on zoom
@@ -271,8 +281,9 @@ export default function Timeline({
         <div className="flex items-center gap-3">
           <button
             onClick={onTogglePlay}
-            className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-bone flex items-center justify-center transition-colors"
-            title={isPlaying ? 'Pause' : 'Play'}
+            aria-label={isPlaying ? 'Pause playback (Space)' : 'Start playback (Space)'}
+            className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-bone flex items-center justify-center transition-colors focus-visible:ring-1 focus-visible:ring-amber-400"
+            title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
           >
             {isPlaying ? (
               <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
@@ -286,9 +297,9 @@ export default function Timeline({
           </button>
 
           <span className="font-mono text-mist text-[11px]">
-            <span className="text-bone font-medium">{formatPreciseTime(currentTime)}</span>
+            <span className="text-bone font-medium">{formatTimecode(currentTime)}</span>
             <span className="text-smoke mx-1">/</span>
-            <span>{formatPreciseTime(totalDuration)}</span>
+            <span>{formatTimecode(totalDuration)}</span>
           </span>
         </div>
 
@@ -296,7 +307,8 @@ export default function Timeline({
         <div className="flex items-center gap-1.5 bg-[#1a1a18] p-1 rounded-xl border border-white/10">
           <button
             onClick={handleAddText}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-amber-400 text-black hover:bg-amber-300 transition-colors cursor-pointer"
+            aria-label="Add text caption at playhead"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-amber-400 text-black hover:bg-amber-300 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-400"
             title="Add text segment at current position"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -306,8 +318,9 @@ export default function Timeline({
           <button
             onClick={handleSplit}
             disabled={!currentSeg}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-bone hover:bg-white/10 disabled:opacity-40 transition-colors cursor-pointer"
-            title="Split active segment at playhead"
+            aria-label="Split active caption at playhead (S)"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-bone hover:bg-white/10 disabled:opacity-40 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-400"
+            title="Split active segment at playhead (S)"
           >
             <Scissors className="w-3 h-3 text-mist" />
             <span>Split</span>
@@ -316,7 +329,8 @@ export default function Timeline({
           <button
             onClick={handleMerge}
             disabled={!currentSeg}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-bone hover:bg-white/10 disabled:opacity-40 transition-colors cursor-pointer"
+            aria-label="Merge active caption with next"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-bone hover:bg-white/10 disabled:opacity-40 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-400"
             title="Merge segment with next"
           >
             <Combine className="w-3 h-3 text-mist" />
@@ -326,8 +340,9 @@ export default function Timeline({
           <button
             onClick={handleDelete}
             disabled={!currentSeg}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-crimson-2 hover:bg-crimson/15 disabled:opacity-40 transition-colors cursor-pointer"
-            title="Delete segment"
+            aria-label="Delete active caption (Delete)"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-crimson-2 hover:bg-crimson/15 disabled:opacity-40 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-crimson-2"
+            title="Delete segment (Delete)"
           >
             <Trash2 className="w-3 h-3 text-crimson-2" />
             <span>Delete</span>
@@ -338,18 +353,20 @@ export default function Timeline({
           {/* Undo / Redo */}
           <button
             onClick={handleUndo}
-            disabled={history.length === 0}
-            className="p-1 rounded text-smoke hover:text-bone disabled:opacity-30 transition-colors cursor-pointer"
-            title="Undo"
+            disabled={isUndoDisabled}
+            aria-label="Undo last edit (Ctrl+Z)"
+            className="p-1 rounded text-smoke hover:text-bone disabled:opacity-30 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-400"
+            title="Undo (Ctrl+Z)"
           >
             <Undo2 className="w-3.5 h-3.5" />
           </button>
 
           <button
             onClick={handleRedo}
-            disabled={redoStack.length === 0}
-            className="p-1 rounded text-smoke hover:text-bone disabled:opacity-30 transition-colors cursor-pointer"
-            title="Redo"
+            disabled={isRedoDisabled}
+            aria-label="Redo last edit (Ctrl+Shift+Z)"
+            className="p-1 rounded text-smoke hover:text-bone disabled:opacity-30 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-400"
+            title="Redo (Ctrl+Shift+Z)"
           >
             <Redo2 className="w-3.5 h-3.5" />
           </button>
@@ -359,7 +376,8 @@ export default function Timeline({
           {/* Find & Replace Dictionary */}
           <button
             onClick={() => setShowDictionary(!showDictionary)}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-amber-300 hover:bg-amber-400/10 transition-colors cursor-pointer"
+            aria-label="Find and replace dialogue in all captions"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-amber-300 hover:bg-amber-400/10 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-400"
             title="Find & Replace in all captions"
           >
             <BookOpen className="w-3.5 h-3.5 text-amber-400" />
@@ -372,7 +390,8 @@ export default function Timeline({
           <span className="text-[10px] text-smoke">Zoom</span>
           <button
             onClick={() => setZoom((z) => Math.max(30, z - 15))}
-            className="text-smoke hover:text-bone p-1"
+            aria-label="Zoom out timeline"
+            className="text-smoke hover:text-bone p-1 font-bold text-sm"
           >
             −
           </button>
@@ -382,11 +401,13 @@ export default function Timeline({
             max={200}
             value={zoom}
             onChange={(e) => setZoom(Number(e.target.value))}
+            aria-label="Timeline zoom level"
             className="w-16 h-1 accent-amber-400 bg-white/20 rounded cursor-pointer"
           />
           <button
             onClick={() => setZoom((z) => Math.min(220, z + 15))}
-            className="text-smoke hover:text-bone p-1"
+            aria-label="Zoom in timeline"
+            className="text-smoke hover:text-bone p-1 font-bold text-sm"
           >
             +
           </button>
@@ -402,6 +423,7 @@ export default function Timeline({
             placeholder="Find word..."
             value={findWord}
             onChange={(e) => setFindWord(e.target.value)}
+            aria-label="Word to find"
             className="px-2.5 py-1 bg-[#222220] border border-white/15 rounded text-bone focus:outline-none focus:border-amber-400 text-xs w-36"
           />
           <span className="text-smoke">with</span>
@@ -410,6 +432,7 @@ export default function Timeline({
             placeholder="Replace with..."
             value={replaceWord}
             onChange={(e) => setReplaceWord(e.target.value)}
+            aria-label="Replacement word"
             className="px-2.5 py-1 bg-[#222220] border border-white/15 rounded text-bone focus:outline-none focus:border-amber-400 text-xs w-36"
           />
           <button
@@ -420,6 +443,7 @@ export default function Timeline({
           </button>
           <button
             onClick={() => setShowDictionary(false)}
+            aria-label="Close find and replace banner"
             className="text-smoke hover:text-bone text-xs ml-auto"
           >
             ✕
@@ -451,7 +475,7 @@ export default function Timeline({
                   className="absolute top-0 flex flex-col items-center"
                   style={{ left: `${left}px` }}
                 >
-                  <span className="px-1 text-[9px] -translate-x-1/2">{formatRuler(sec)}</span>
+                  <span className="px-1 text-[9px] -translate-x-1/2">{formatRulerTick(sec)}</span>
                   <div className="w-px h-2 bg-white/20" />
                 </div>
               );
@@ -482,13 +506,13 @@ export default function Timeline({
                     left: `${left}px`,
                     width: `${width}px`,
                   }}
-                  title={`${seg.text} (${seg.start.toFixed(2)}s - ${seg.end.toFixed(2)}s)`}
+                  title={`${seg.text} (${formatTimecode(seg.start)} - ${formatTimecode(seg.end)})`}
                 >
                   <div className="truncate font-semibold text-[11px] tracking-tight">
                     {seg.text || '...'}
                   </div>
                   <div className="text-[9px] text-smoke font-mono">
-                    {seg.start.toFixed(1)}s - {seg.end.toFixed(1)}s
+                    {formatTimecode(seg.start)} - {formatTimecode(seg.end)}
                   </div>
                 </div>
               );

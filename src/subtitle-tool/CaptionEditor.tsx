@@ -1,11 +1,12 @@
 // ─── CaptionEditor ────────────────────────────────────────────────────────────
 // Left panel caption list matching ReplixCaptions reference:
 // - Header with "CAPTIONS [Tanglish]" badge and search filter
-// - Segment rows with timestamp pill, inline editable text, and edit icon
+// - Segment rows with precision timestamp pill, inline editable text, split/merge keys
 // - Playhead active sync, seek on click, plus add/split/delete actions
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatTimecode } from './utils/formatTime';
 import type { Segment, ScriptOutput, SpokenLanguage } from './types';
 
 interface CaptionEditorProps {
@@ -26,15 +27,26 @@ export default function CaptionEditor({
   onSeek,
 }: CaptionEditorProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isUserScrollingRef = useRef(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Auto-scroll to active caption row when playing
+  // Auto-scroll to active caption row when playing (unless user is actively scrolling)
   useEffect(() => {
-    if (!activeId) return;
+    if (!activeId || isUserScrollingRef.current) return;
     const el = document.getElementById(`caption-${activeId}`);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }, [activeId]);
+
+  const handleScroll = () => {
+    isUserScrollingRef.current = true;
+    if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+    scrollTimeoutRef.current = setTimeout(() => {
+      isUserScrollingRef.current = false;
+    }, 2000);
+  };
 
   const updateSegment = useCallback(
     (id: string, patch: Partial<Segment>) => {
@@ -58,10 +70,11 @@ export default function CaptionEditor({
   const addAfter = useCallback(
     (id: string) => {
       const idx = segments.findIndex((s) => s.id === id);
+      if (idx === -1) return;
       const prev = segments[idx];
       const next = segments[idx + 1];
-      const newStart = prev.end + 0.05;
-      const newEnd = next ? Math.min(next.start - 0.05, newStart + 2) : newStart + 2;
+      const newStart = +(prev.end + 0.05).toFixed(2);
+      const newEnd = next ? +Math.min(next.start - 0.05, newStart + 2).toFixed(2) : +(newStart + 2).toFixed(2);
       const newSeg: Segment = {
         id: `seg-${Date.now()}`,
         index: idx + 2,
@@ -79,19 +92,108 @@ export default function CaptionEditor({
     [segments, onSegmentsChange],
   );
 
+  // Split segment at cursor when pressing Enter inside caption textarea
+  const splitAtCursor = useCallback(
+    (id: string, cursorIndex: number) => {
+      const idx = segments.findIndex((s) => s.id === id);
+      if (idx === -1) return;
+      const target = segments[idx];
+      const fullText = target.text;
+      const beforeText = fullText.slice(0, cursorIndex).trim();
+      const afterText = fullText.slice(cursorIndex).trim();
+
+      if (!beforeText || !afterText) return;
+
+      const ratio = beforeText.length / (beforeText.length + afterText.length);
+      const span = target.end - target.start;
+      const splitTime = +(target.start + Math.max(0.2, Math.min(span - 0.2, span * ratio))).toFixed(2);
+
+      let words1 = target.words ? target.words.filter((w) => w.start <= splitTime) : undefined;
+      let words2 = target.words ? target.words.filter((w) => w.start > splitTime) : undefined;
+
+      const seg1: Segment = {
+        ...target,
+        text: beforeText,
+        end: splitTime,
+        words: words1,
+      };
+
+      const newId = `seg-${Date.now()}`;
+      const seg2: Segment = {
+        id: newId,
+        index: idx + 2,
+        start: splitTime,
+        end: target.end,
+        text: afterText,
+        words: words2,
+      };
+
+      const updated = [
+        ...segments.slice(0, idx),
+        seg1,
+        seg2,
+        ...segments.slice(idx + 1),
+      ].map((s, i) => ({ ...s, index: i + 1 }));
+
+      onSegmentsChange(updated);
+
+      // Focus the newly split second segment shortly after render
+      setTimeout(() => {
+        const nextInput = document.querySelector<HTMLTextAreaElement>(`#caption-${newId} textarea`);
+        nextInput?.focus();
+        nextInput?.setSelectionRange(0, 0);
+      }, 50);
+    },
+    [segments, onSegmentsChange],
+  );
+
+  // Merge segment with previous when pressing Backspace at index 0
+  const mergeWithPrevious = useCallback(
+    (id: string): boolean => {
+      const idx = segments.findIndex((s) => s.id === id);
+      if (idx <= 0) return false;
+      const prev = segments[idx - 1];
+      const curr = segments[idx];
+
+      const mergedText = `${prev.text.trim()} ${curr.text.trim()}`.trim();
+      const mergedWords = prev.words || curr.words ? [...(prev.words || []), ...(curr.words || [])] : undefined;
+
+      const mergedSeg: Segment = {
+        ...prev,
+        text: mergedText,
+        end: Math.max(prev.end, curr.end),
+        words: mergedWords,
+      };
+
+      const updated = [
+        ...segments.slice(0, idx - 1),
+        mergedSeg,
+        ...segments.slice(idx + 1),
+      ].map((s, i) => ({ ...s, index: i + 1 }));
+
+      onSegmentsChange(updated);
+
+      // Position cursor at junction point in the merged textarea
+      setTimeout(() => {
+        const prevInput = document.querySelector<HTMLTextAreaElement>(`#caption-${prev.id} textarea`);
+        if (prevInput) {
+          prevInput.focus();
+          const junction = prev.text.trim().length + 1;
+          prevInput.setSelectionRange(junction, junction);
+        }
+      }, 50);
+
+      return true;
+    },
+    [segments, onSegmentsChange],
+  );
+
   // Filtered segments if searching
   const filteredSegments = useMemo(() => {
     if (!searchQuery.trim()) return segments;
     const q = searchQuery.toLowerCase();
     return segments.filter((s) => s.text.toLowerCase().includes(q));
   }, [segments, searchQuery]);
-
-  // Format mm:ss
-  const formatTime = (secs: number) => {
-    const m = Math.floor(secs / 60);
-    const s = Math.floor(secs % 60);
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
-  };
 
   const scriptBadgeText = useMemo(() => {
     if (scriptOutput === 'native') return 'Native';
@@ -118,7 +220,7 @@ export default function CaptionEditor({
         </div>
 
         <div className="flex items-center justify-between">
-          <h2 className="text-xs text-smoke font-medium">Review captions</h2>
+          <h2 className="text-xs text-smoke font-medium">Review & refine captions</h2>
         </div>
 
         {/* Quick Search */}
@@ -128,7 +230,8 @@ export default function CaptionEditor({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search dialogue…"
-            className="w-full bg-[#1f1f1d] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-bone placeholder:text-smoke focus:outline-none focus:border-amber-400/60"
+            aria-label="Search caption dialogue"
+            className="w-full bg-[#1f1f1d] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-bone placeholder:text-smoke focus:outline-none focus:border-amber-400/60 focus:ring-1 focus:ring-amber-400/40"
           />
           {searchQuery && (
             <button
@@ -136,7 +239,7 @@ export default function CaptionEditor({
               onClick={() => setSearchQuery('')}
               aria-label="Clear search filter"
               title="Clear search"
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-smoke hover:text-bone text-xs p-1"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-smoke hover:text-bone text-xs p-1 rounded"
             >
               ✕
             </button>
@@ -146,6 +249,8 @@ export default function CaptionEditor({
 
       {/* Scrollable list */}
       <div
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
         className="flex-1 overflow-y-auto p-3 space-y-2"
         data-lenis-prevent
       >
@@ -168,30 +273,46 @@ export default function CaptionEditor({
                 }`}
               >
                 <div className="flex items-start gap-3">
-                  {/* Timestamp pill (Replix-style e.g. "0:00", "0:04") */}
+                  {/* Timestamp pill with sub-second precision */}
                   <span
-                    className={`font-mono text-xs px-2 py-0.5 rounded-md shrink-0 transition-colors ${
+                    className={`font-mono text-[11px] px-2 py-0.5 rounded-md shrink-0 transition-colors ${
                       isActive
                         ? 'bg-amber-400 text-black font-semibold'
                         : 'bg-white/10 text-mist group-hover:text-bone'
                     }`}
+                    title={`Start: ${formatTimecode(seg.start)} · End: ${formatTimecode(seg.end)}`}
                   >
-                    {formatTime(seg.start)}
+                    {formatTimecode(seg.start)}
                   </span>
 
-                  {/* Caption text display or edit */}
+                  {/* Caption text display or edit with Enter/Backspace shortcuts */}
                   <div className="flex-1 min-w-0">
                     <textarea
                       value={seg.text}
                       onChange={(e) => updateSegment(seg.id, { text: e.target.value })}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          splitAtCursor(seg.id, e.currentTarget.selectionStart);
+                        } else if (
+                          e.key === 'Backspace' &&
+                          e.currentTarget.selectionStart === 0 &&
+                          e.currentTarget.selectionEnd === 0
+                        ) {
+                          if (mergeWithPrevious(seg.id)) {
+                            e.preventDefault();
+                          }
+                        }
+                      }}
                       rows={2}
-                      className="w-full resize-none bg-transparent text-bone text-sm leading-relaxed outline-none focus:outline-none rounded hover:bg-white/5 focus:bg-white/5 p-1 transition-colors cursor-text"
+                      aria-label={`Caption ${seg.index} text (${formatTimecode(seg.start)})`}
+                      className="w-full resize-none bg-transparent text-bone text-sm leading-relaxed outline-none focus:outline-none rounded hover:bg-white/5 focus:bg-white/5 focus:ring-1 focus:ring-amber-400/30 p-1 transition-colors cursor-text"
                       placeholder="Caption text…"
                       onClick={(e) => e.stopPropagation()}
                     />
                   </div>
 
-                  {/* Edit pencil icon and actions */}
+                  {/* Edit action buttons with accessible labels */}
                   <div className="flex items-center gap-1 shrink-0 text-smoke opacity-70 group-hover:opacity-100 transition-opacity">
                     <button
                       type="button"
@@ -199,8 +320,9 @@ export default function CaptionEditor({
                         e.stopPropagation();
                         addAfter(seg.id);
                       }}
-                      className="p-1 hover:text-amber-300 rounded hover:bg-white/10"
-                      title="Add segment after"
+                      aria-label={`Add caption after segment ${seg.index}`}
+                      className="p-1 hover:text-amber-300 rounded hover:bg-white/10 transition-colors"
+                      title="Add segment after (+)"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -212,7 +334,8 @@ export default function CaptionEditor({
                         e.stopPropagation();
                         deleteSegment(seg.id);
                       }}
-                      className="p-1 hover:text-crimson-2 rounded hover:bg-crimson/10"
+                      aria-label={`Delete caption ${seg.index}`}
+                      className="p-1 hover:text-crimson-2 rounded hover:bg-crimson/10 transition-colors"
                       title="Delete segment"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

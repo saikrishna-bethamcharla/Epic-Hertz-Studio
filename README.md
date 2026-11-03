@@ -53,7 +53,8 @@ One Canvas 2D engine (`src/subtitle-tool/engine/`) renders the live preview, the
 
 ### ⚡ Zero-Config Export
 - **Lossless Subtitles:** Download industry-standard `.srt`, `.vtt`, or clean `.txt` transcripts.
-- **Animated burn-in (default):** the engine draws every frame, so animation, highlights and fonts are baked into the video exactly as previewed. It records in real time (a 30 s clip takes about 30 s). Static FFmpeg hard-subs remain as an automatic fallback.
+- **Animated burn-in (default):** the caption engine draws every frame of your video, so animation, highlights and fonts are baked in exactly as previewed. It uses WebCodecs (via [Mediabunny](https://mediabunny.dev)): the source is decoded frame by frame, captions are drawn on top, and the result is hardware-encoded to H.264 MP4 with the original frame rate and audio kept. Choose Standard / High / Maximum quality and Original / up to 1080p size. It is not tied to playback, so it can run faster than real time on devices with hardware encoders.
+  - **Automatic fallbacks:** if the browser can't do this (no WebCodecs, or audio that can't be carried over), export falls back to a real-time canvas recording, and finally to static FFmpeg hard-subs. A file is never produced silently without its sound.
 - **Soft subtitles:** lossless MP4 with a subtitle track.
 
 ---
@@ -108,6 +109,13 @@ Open [http://localhost:5173/?view=studio](http://localhost:5173/?view=studio) in
 npm run build
 npm run preview
 ```
+
+---
+
+## 📦 Third-party notices
+
+- **Mediabunny** (export pipeline): MPL-2.0. Used unmodified as a dependency.
+- **Fonts** in `public/fonts/`: SIL Open Font License 1.1 (see `public/fonts/OFL-NOTICE.md`).
 
 ---
 
