@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   Heart,
   Upload,
+  Ban,
 } from 'lucide-react';
 
 import type { Segment, CaptionStyle, SpokenLanguage, ScriptOutput, SegmentStyleOverride } from '../types';
@@ -53,6 +54,15 @@ interface LibraryPanelProps {
 // ─────────────────────────────────────────────────────────────────────────────
 // Look-only presets (Text Effects tab)
 // ─────────────────────────────────────────────────────────────────────────────
+const NONE_LOOK: Partial<CaptionStyle> = {
+  fill: '#FFFFFF',
+  stroke: { width: 0.03, color: '#000000' },
+  shadow: { x: 0, y: 0.02, blur: 0.04, color: 'rgba(0,0,0,0.5)' },
+  glow: { color: '', blur: 0, strength: 0 },
+  extrude: { depth: 0, color: '#000000', angle: 90 },
+  plate: { mode: 'none', color: '', padX: 0, padY: 0, radius: 0 },
+};
+
 const LOOK_PRESETS: Array<{ id: string; name: string; look: Partial<CaptionStyle> }> = [
   {
     id: 'neon-glow',
@@ -218,15 +228,24 @@ export default function LibraryPanel({
 
   // Apply look only
   const applyLookToScope = (look: Partial<CaptionStyle>, name: string) => {
+    const isNone = name === 'None';
     if (scope === 'all' || !activeId) {
       onStyleChange({ ...style, ...look });
-      if (onNotification) onNotification(`Applied "${name}" look to all captions`);
+      if (onNotification) onNotification(isNone ? 'Reset text effects on all captions' : `Applied "${name}" look to all captions`);
     } else if (scope === 'caption' && onSegmentOverrideChange) {
-      onSegmentOverrideChange(activeId, {
-        fillColor: typeof look.fill === 'string' ? look.fill : undefined,
-        strokeColor: look.stroke?.color,
-      });
-      if (onNotification) onNotification(`Applied "${name}" look to selected caption`);
+      if (isNone) {
+        onSegmentOverrideChange(activeId, {
+          fillColor: undefined,
+          strokeColor: undefined,
+          customStyle: undefined,
+        });
+      } else {
+        onSegmentOverrideChange(activeId, {
+          fillColor: typeof look.fill === 'string' ? look.fill : undefined,
+          strokeColor: look.stroke?.color,
+        });
+      }
+      if (onNotification) onNotification(isNone ? 'Removed text effect from selected caption' : `Applied "${name}" look to selected caption`);
     }
   };
 
@@ -523,12 +542,23 @@ export default function LibraryPanel({
               Applies styling treatment (fill, outline, shadow, glow, 3D) without changing your chosen font or animation.
             </p>
             <div className="grid grid-cols-3 gap-1.5">
+              {/* None / Reset tile: symbol only, no text label */}
+              <button
+                type="button"
+                onClick={() => applyLookToScope(NONE_LOOK, 'None')}
+                className="group p-2 rounded-lg bg-[#181817] border border-white/10 hover:border-amber-400 flex items-center justify-center transition-all hover:scale-102 min-h-[46px]"
+                title="None (reset text effect)"
+                aria-label="None (reset text effect)"
+              >
+                <Ban className="w-5 h-5 text-smoke/70 group-hover:text-amber-400 group-hover:scale-110 transition-all" />
+              </button>
+
               {LOOK_PRESETS.map((eff) => (
                 <button
                   key={eff.id}
                   type="button"
                   onClick={() => applyLookToScope(eff.look, eff.name)}
-                  className="p-2 rounded-lg bg-[#181817] border border-white/10 hover:border-amber-400 text-left transition-all hover:scale-102 flex flex-col gap-0.5"
+                  className="p-2 rounded-lg bg-[#181817] border border-white/10 hover:border-amber-400 text-left transition-all hover:scale-102 flex flex-col gap-0.5 min-h-[46px]"
                 >
                   <span className="text-[11px] font-bold text-bone truncate">{eff.name}</span>
                   <span className="text-[9px] text-smoke">Effect</span>
