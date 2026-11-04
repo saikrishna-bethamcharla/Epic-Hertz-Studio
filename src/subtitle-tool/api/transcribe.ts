@@ -23,6 +23,27 @@ function getProxyEndpoint(): string {
   return 'https://epic-hertz-studio.vercel.app/api/transcribe';
 }
 
+const USER_KEY_STORAGE = 'epic_user_gemini_key';
+
+export function getUserApiKey(): string | null {
+  try {
+    const k = localStorage.getItem(USER_KEY_STORAGE);
+    return k && k.trim().length >= 20 && k.trim().length <= 200 ? k.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setUserApiKey(key: string | null): void {
+  try {
+    if (key && key.trim()) {
+      localStorage.setItem(USER_KEY_STORAGE, key.trim());
+    } else {
+      localStorage.removeItem(USER_KEY_STORAGE);
+    }
+  } catch {}
+}
+
 export interface TranscribeOptions {
   spokenLanguage?: SpokenLanguage;
   scriptOutput?: ScriptOutput;
@@ -104,11 +125,15 @@ export async function transcribeAudio(
   const endpoint = getProxyEndpoint();
   const url = `${endpoint}?spokenLanguage=${encodeURIComponent(spokenLanguage)}&scriptOutput=${encodeURIComponent(scriptOutput)}`;
 
+  const userKey = getUserApiKey();
   const headers: Record<string, string> = {
     'Content-Type': audioBlob.type || 'audio/wav',
     'x-spoken-language': spokenLanguage,
     'x-script-output': scriptOutput,
   };
+  if (userKey) {
+    headers['x-gemini-api-key'] = userKey;
+  }
 
   // Split at pauses so every piece fits the server's request-size limit.
   const chunks: AudioChunk[] = await splitWavForUpload(audioBlob);

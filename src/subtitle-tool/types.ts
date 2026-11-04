@@ -103,7 +103,7 @@ export type AppStage =
   | 'idle'
   | 'configuring'  // "Prepare your media" modal (Replix-style)
   | 'extracting'   // pulling audio out of the video
-  | 'uploading'    // uploading audio to Gemini Files API
+  | 'uploading'    // sending chunked audio to serverless transcription proxy
   | 'transcribing' // waiting for speech-to-text
   | 'editing'      // 3-column Replix editor layout
   | 'burning'      // burning subtitles into MP4

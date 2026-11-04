@@ -27,7 +27,12 @@ export const config = {
 const MAX_AUDIO_BYTES = Number(process.env.MAX_AUDIO_BYTES) || 4_400_000;
 const LIMIT_PER_MIN = Number(process.env.RATE_LIMIT_PER_MIN) || 8;
 const LIMIT_PER_DAY = Number(process.env.RATE_LIMIT_PER_DAY) || 60;
+const GLOBAL_DAILY_LIMIT = Number(process.env.GLOBAL_DAILY_LIMIT) || 0;
 const DEADLINE_MS = 52_000; // leave headroom under maxDuration (60s)
+
+if (process.env.NODE_ENV === 'production' && (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN)) {
+  console.warn('[transcribe] UPSTASH_REDIS_REST_* is not configured; using memory fallback (limits apply per serverless instance).');
+}
 
 const ALLOWED_ORIGINS = (
   process.env.ALLOWED_ORIGINS ||
@@ -37,12 +42,10 @@ const ALLOWED_ORIGINS = (
   .map((s) => s.trim())
   .filter(Boolean);
 
-// Verify these against Google's current model list; unknown names just fall through to the next one.
+// Current production Gemini models supporting audio input & structured output.
 const DEFAULT_MODELS = [
-  'gemini-3.5-flash-lite',
-  'gemini-3.8-flash',
-  'gemini-3.1-flash-lite',
   'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
   'gemini-2.0-flash',
 ];
 const CANDIDATE_MODELS = process.env.GEMINI_MODELS
@@ -156,6 +159,17 @@ async function checkRateLimit(ip) {
   const now = new Date();
   const day = now.toISOString().slice(0, 10);
   const minute = Math.floor(now.getTime() / 60000);
+
+  if (GLOBAL_DAILY_LIMIT > 0) {
+    const globalDayHits = await hit(`epic:rl:global:${day}`, 86400);
+    if (globalDayHits > GLOBAL_DAILY_LIMIT) {
+      throw new HttpError(
+        429,
+        'Studio daily capacity reached. Please try again tomorrow or add your own free Gemini API key to continue without limits.',
+      );
+    }
+  }
+
   const perMin = await hit(`epic:rl:m:${ip}:${minute}`, 60);
   if (perMin > LIMIT_PER_MIN) {
     const wait = 61 - now.getUTCSeconds(); // seconds until the next minute bucket
@@ -163,7 +177,7 @@ async function checkRateLimit(ip) {
   }
   const perDay = await hit(`epic:rl:d:${ip}:${day}`, 86400);
   if (perDay > LIMIT_PER_DAY) {
-    throw new HttpError(429, 'Daily free limit reached. Please try again tomorrow or add your own Gemini API key.');
+    throw new HttpError(429, 'Daily free limit reached. Please try again tomorrow or add your own free Gemini API key to continue without limits.');
   }
 }
 
@@ -294,7 +308,7 @@ async function transcribeWithFallback(client, { base64, mimeType, prompt }, dead
       const remaining = deadlineAt - Date.now();
       if (remaining < 4000) {
         timedOut = true;
-        return { text: '', lastError, timedOut };
+        return { text: '', lastError, timedOut, model: null };
       }
       try {
         const response = await withTimeout(
@@ -306,18 +320,24 @@ async function transcribeWithFallback(client, { base64, mimeType, prompt }, dead
                 parts: [{ inlineData: { mimeType, data: base64 } }, { text: prompt }],
               },
             ],
-            config: { responseMimeType: 'application/json', temperature: 0 },
+            config: {
+              responseMimeType: 'application/json',
+              temperature: 0,
+            },
           }),
           remaining,
         );
         const text = response?.text || '';
-        if (text) return { text, lastError, timedOut };
+        if (text) {
+          console.info(`[transcribe] Succeeded using model: ${model}`);
+          return { text, lastError, timedOut, model };
+        }
         break; // empty answer: try the next model
       } catch (err) {
         lastError = err;
         if (err?.code === 'TIMEOUT') {
           timedOut = true;
-          return { text: '', lastError, timedOut };
+          return { text: '', lastError, timedOut, model: null };
         }
         if (isOverloaded(String(err)) && attempt === 1) {
           await sleep(1200);
@@ -327,7 +347,7 @@ async function transcribeWithFallback(client, { base64, mimeType, prompt }, dead
       }
     }
   }
-  return { text: '', lastError, timedOut };
+  return { text: '', lastError, timedOut, model: null };
 }
 
 // ─── Handler ────────────────────────────────────────────────────────────────
@@ -395,7 +415,7 @@ export default async function handler(req, res) {
     const client = new GoogleGenAI({ apiKey });
     const prompt = buildPrompt(langName, isRomanized, isAutoDetect);
 
-    const { text, lastError, timedOut } = await transcribeWithFallback(
+    const { text, lastError, timedOut, model: successfulModel } = await transcribeWithFallback(
       client,
       { base64: buffer.toString('base64'), mimeType, prompt },
       startedAt + DEADLINE_MS,
@@ -413,7 +433,7 @@ export default async function handler(req, res) {
       throw new HttpError(422, 'No speech detected in audio. Please try a video with clear spoken dialogue.');
     }
 
-    res.status(200).json({ segments });
+    res.status(200).json({ segments, model: successfulModel });
   } catch (error) {
     if (error instanceof HttpError) {
       if (error.retryAfterSec) res.setHeader('Retry-After', String(error.retryAfterSec));
