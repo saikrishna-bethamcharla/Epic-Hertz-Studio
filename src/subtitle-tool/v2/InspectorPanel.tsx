@@ -177,7 +177,7 @@ export default function InspectorPanel({
       </div>
 
       {/* ── Inspector Scroll Body ── */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-4" data-lenis-prevent>
+      <div className="flex-1 overflow-y-auto p-3 space-y-4">
         {/* ─────────────────────────────────────────────────────────────
             TAB 1: TEXT
         ────────────────────────────────────────────────────────────── */}

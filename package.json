@@ -1,14 +1,12 @@
 {
-  "name": "sai-krishna-portfolio",
+  "name": "epic-hertz-studio",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "node scripts/pre-build.mjs && vite",
     "build": "node scripts/pre-build.mjs && tsc -b && vite build && node scripts/sync-all.mjs",
-    "preview": "vite preview",
-    "autopush": "node scripts/autopush.mjs",
-    "images": "node scripts/build-images.mjs"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@ffmpeg/core": "^0.12.6",
@@ -16,7 +14,6 @@
     "@ffmpeg/util": "^0.12.2",
     "@google/genai": "^2.30.0",
     "framer-motion": "11.18.2",
-    "lenis": "1.1.20",
     "lucide-react": "^1.66.0",
     "mediabunny": "^1.65.0",
     "react": "18.3.1",
@@ -27,8 +24,6 @@
     "@types/react": "18.3.20",
     "@types/react-dom": "18.3.6",
     "@vitejs/plugin-react": "4.4.1",
-    "puppeteer-core": "^25.13.0",
-    "sharp": "0.34.1",
     "tailwindcss": "4.1.4",
     "typescript": "5.8.3",
     "vite": "6.3.5"

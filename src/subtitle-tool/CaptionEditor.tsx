@@ -600,7 +600,6 @@ export default function CaptionEditor({
         ref={scrollContainerRef}
         onScroll={handleScroll}
         className="flex-1 overflow-y-auto p-3 space-y-2"
-        data-lenis-prevent
       >
         <AnimatePresence initial={false}>
           {filteredSegments.map((seg, idx) => {
@@ -1082,7 +1081,7 @@ export default function CaptionEditor({
                       </div>
 
                       {/* Word Chips Row */}
-                      <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto" data-lenis-prevent>
+                      <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
                         {wordsList.map((w, wIdx) => {
                           const wDuration = +(w.end - w.start).toFixed(2);
                           const hasCustomColor = !!w.highlightColor;

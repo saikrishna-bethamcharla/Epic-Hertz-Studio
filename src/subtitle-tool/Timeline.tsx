@@ -729,7 +729,6 @@ export default function Timeline({
         onMouseDown={handleTimelineMouseDown}
         className="flex-1 min-h-0 relative overflow-x-auto overflow-y-hidden cursor-crosshair bg-[#0c0c0b]"
         style={{ scrollBehavior: 'auto' }}
-        data-lenis-prevent
       >
         <div
           className="relative h-full flex flex-col justify-between"

@@ -9,7 +9,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Sparkles, CheckCircle2, Upload, RotateCcw, Trash2 } from 'lucide-react';
 import KeyboardShortcutsModal from './KeyboardShortcutsModal';
-import { useDesktop } from '../hooks/useMedia';
+import { useDesktop } from './utils/useMedia';
 import { DEFAULT_STYLE } from './engine/presets';
 
 import LandingScrollCraft from './LandingScrollCraft';

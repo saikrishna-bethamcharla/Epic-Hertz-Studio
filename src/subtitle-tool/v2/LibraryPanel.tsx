@@ -288,7 +288,7 @@ export default function LibraryPanel({
       </div>
 
       {/* ── Tab Content Container ── */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3" data-lenis-prevent>
+      <div className="flex-1 overflow-y-auto p-3 space-y-3">
         {/* ─────────────────────────────────────────────────────────────
             TAB 1: CAPTIONS
         ────────────────────────────────────────────────────────────── */}

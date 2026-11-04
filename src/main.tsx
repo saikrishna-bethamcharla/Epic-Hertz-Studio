@@ -31,20 +31,20 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Portfolio ErrorBoundary caught:', error, errorInfo);
+    console.error('Epic Hertz Studio ErrorBoundary caught:', error, errorInfo);
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ backgroundColor: '#050507', color: '#f4f1ec', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center', fontFamily: 'sans-serif' }}>
+        <div style={{ backgroundColor: '#0e0e0d', color: '#f4f1ec', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center', fontFamily: 'sans-serif' }}>
           <h1 style={{ fontSize: '2rem', marginBottom: '1rem', color: '#ff3d5a' }}>Something went wrong</h1>
           <p style={{ color: '#a7a6ad', maxWidth: '400px', marginBottom: '2rem' }}>A visual asset or component failed to load. Please click below to refresh.</p>
           <button
             onClick={() => window.location.reload()}
-            style={{ backgroundColor: '#e5132b', color: '#fff', border: 'none', padding: '0.75rem 2rem', borderRadius: '9999px', fontWeight: 'bold', cursor: 'pointer', letterSpacing: '0.1em' }}
+            style={{ backgroundColor: '#f59e0b', color: '#000', border: 'none', padding: '0.75rem 2rem', borderRadius: '9999px', fontWeight: 'bold', cursor: 'pointer', letterSpacing: '0.05em' }}
           >
-            RELOAD PORTFOLIO
+            RELOAD STUDIO
           </button>
         </div>
       );

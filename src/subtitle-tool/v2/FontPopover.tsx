@@ -143,7 +143,7 @@ export default function FontPopover({
       </div>
 
       {/* Font Family List */}
-      <div className="flex-1 overflow-y-auto space-y-1 pr-1 max-h-64" data-lenis-prevent>
+      <div className="flex-1 overflow-y-auto space-y-1 pr-1 max-h-64">
         {activeGroup === 'Indic' ? (
           <div className="space-y-1.5">
             <p className="text-[10px] text-smoke italic px-1">

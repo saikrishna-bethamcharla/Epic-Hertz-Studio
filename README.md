@@ -95,9 +95,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:5173/?view=studio](http://localhost:5173/?view=studio) in your browser.
-
-> **Tip:** Append `?view=studio` to the local URL to force-load the Epic Hertz Studio interface in local development environments.
+Open [http://localhost:5173/](http://localhost:5173/) in your browser.
 
 ### Transcription API (local)
 
@@ -132,8 +130,6 @@ npm run preview
 
 **How long videos work:** the browser extracts 16 kHz mono audio, splits it at the quietest moment near every ~100 s, sends the pieces two at a time, then stitches the captions back onto one timeline. Rate-limit and overload responses are retried automatically.
 
-**One codebase, two sites:** `src/App.tsx` picks the Studio or the portfolio from the hostname/path (see `isStudioApp`). Each is its own lazy-loaded chunk. Use `?view=studio` or `?view=portfolio` to force one locally.
-
 ---
 
 ## 🏗️ Project Architecture
@@ -145,25 +141,25 @@ Epic-Hertz-Studio/
 │   └── _lib/parse.js             # Caption JSON/SRT parsing & timestamp normalisation (not deployed as an endpoint)
 ├── public/                       # Static assets & FFmpeg WASM binaries
 ├── src/
-│   ├── App.tsx                   # Hostname routing; lazy-loads Studio or Portfolio
-│   ├── PortfolioApp.tsx          # The portfolio experience
-│   ├── main.tsx                  # Application mount
+│   ├── App.tsx                   # Studio root application mount
+│   ├── main.tsx                  # Application entry point & error boundary
 │   ├── index.css                 # Tailwind 4 design system
 │   ├── subtitle-tool/
 │   │   ├── SubtitleTool.tsx      # Main Studio lifecycle controller
 │   │   ├── LandingScrollCraft.tsx# 3D Scroll-Craft interactive landing showcase
 │   │   ├── VideoPreview.tsx      # 60fps reel player with safe-zone overlays
 │   │   ├── CaptionEditor.tsx     # Left-side transcript & segment editor
-│   │   ├── TemplateDrawer.tsx    # Right-side viral preset & style palette
 │   │   ├── Timeline.tsx          # Multi-track audio waveform timeline
 │   │   ├── PrepareMediaModal.tsx # Pre-processing language & script selector
 │   │   ├── ExportModal.tsx       # Export options (SRT, VTT, TXT, Hardsub MP4)
+│   │   ├── v2/                   # v2 Studio UI (LibraryPanel, InspectorPanel, TopBar)
 │   │   ├── api/
 │   │   │   └── transcribe.ts     # Chunked upload, retries, timeline stitching
 │   │   ├── engine/               # Caption engine: render.ts, presets.ts, spec.ts, fonts.ts, util.ts, compat.ts
 │   │   ├── CaptionCanvas.tsx     # Preview overlay: follows the video rect, drag-to-position
 │   │   └── utils/
-│   │       ├── burnCaptions.ts   # Canvas / FFmpeg video burn pipeline
+│   │       ├── burnCaptionsCanvas.ts # Real-time canvas fallback
+│   │       ├── exportVideo.ts    # WebCodecs + Mediabunny hardware-accelerated MP4 encoder
 │   │       ├── extractAudio.ts   # Client-side audio track extractor (always 16 kHz mono WAV)
 │   │       ├── splitAudio.ts     # Silence-aware chunking + timeline merge
 │   │       └── srt.ts            # Subtitle format serializers

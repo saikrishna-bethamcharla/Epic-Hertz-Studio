@@ -108,7 +108,7 @@ export default function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShor
             </div>
 
             {/* Content List */}
-            <div className="flex-1 overflow-y-auto py-4 space-y-5" data-lenis-prevent>
+            <div className="flex-1 overflow-y-auto py-4 space-y-5">
               {SHORTCUT_CATEGORIES.map((cat) => (
                 <div key={cat.title}>
                   <h3 className="text-[11px] font-bold uppercase tracking-wider text-amber-400/90 mb-2.5">
