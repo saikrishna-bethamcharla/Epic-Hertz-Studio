@@ -47,7 +47,8 @@ const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
     items: [
       { keys: ['Mic / +S pill'], description: 'Cycle or assign speaker (S1, S2, S3...) with distinct color coding' },
       { keys: ['Word chips'], description: 'Nudge ±0.05s, cycle color & animation FX (pop, shake, glow, bar)' },
-      { keys: ['Sliders icon'], description: 'Per-caption overrides (vertical position, scale, custom color)' },
+      { keys: ['Drag on video'], description: 'Reposition active caption freely (Hold Shift to move all captions)' },
+      { keys: ['Sliders icon'], description: 'Per-caption overrides (2D position anchor, scale, custom color)' },
       { keys: ['Smile icon'], description: 'Insert creator emojis into dialogue' },
       { keys: ['Drag edge'], description: 'Trim caption start / end boundary' },
       { keys: ['Snap button'], description: 'Toggle magnetic snapping to playhead & edges' },

@@ -25,7 +25,7 @@ import {
   ThumbsDown,
   Sparkles,
 } from 'lucide-react';
-import type { Segment, CaptionStyle, VideoAspectRatio } from './types';
+import type { Segment, CaptionStyle, VideoAspectRatio, SegmentStyleOverride } from './types';
 import CaptionCanvas from './CaptionCanvas';
 import { formatTimecode } from './utils/formatTime';
 
@@ -36,6 +36,7 @@ interface VideoPreviewProps {
   segments: Segment[];
   style: CaptionStyle;
   onStyleChange?: (style: CaptionStyle) => void;
+  onSegmentOverrideChange?: (segmentId: string, override: Partial<SegmentStyleOverride> | null) => void;
   aspectRatio?: VideoAspectRatio;
   onAspectRatioChange?: (ratio: VideoAspectRatio) => void;
   onTimeUpdate: (time: number) => void;
@@ -61,6 +62,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       segments,
       style,
       onStyleChange,
+      onSegmentOverrideChange,
       aspectRatio = '9:16',
       onAspectRatioChange,
       onTimeUpdate,
@@ -86,6 +88,14 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
 
     // Create stable Blob URL for the video file
     const videoURL = useMemo(() => URL.createObjectURL(videoFile), [videoFile]);
+
+    const activeSeg = useMemo(() => {
+      const t = currentTime - (style.syncOffset || 0);
+      return segments.find((s) => t >= s.start && t <= s.end + 0.15);
+    }, [segments, currentTime, style.syncOffset]);
+
+    const hasCustomPos =
+      activeSeg?.styleOverride?.positionX !== undefined || activeSeg?.styleOverride?.positionY !== undefined;
 
     useEffect(() => {
       return () => {
@@ -501,8 +511,58 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             videoRef={videoRef}
             hostRef={containerRef}
             onStyleChange={onStyleChange}
+            onSegmentOverrideChange={onSegmentOverrideChange}
             visible={!hideCaptions && !localHideCaptions}
           />
+
+          {/* Floating pill when active caption has a custom 2D position override */}
+          {hasCustomPos && activeSeg && (
+            <div className="absolute top-3 left-3 z-30 flex items-center gap-2 px-3 py-1.5 bg-[#141413]/90 backdrop-blur-md rounded-xl border border-amber-400/40 text-[11px] text-bone shadow-2xl animate-in fade-in duration-150">
+              <span className="flex items-center gap-1.5 text-amber-300 font-semibold">
+                <span className="text-xs">📍</span>
+                <span>Custom Position</span>
+                <span className="text-smoke text-[10px] font-mono">
+                  ({Math.round((activeSeg.styleOverride?.positionX ?? style.layout.x) * 100)}%,{' '}
+                  {Math.round((activeSeg.styleOverride?.positionY ?? style.layout.y) * 100)}%)
+                </span>
+              </span>
+              <div className="h-3 w-px bg-white/20 mx-0.5" />
+              <button
+                type="button"
+                onClick={() => {
+                  if (onStyleChange) {
+                    onStyleChange({
+                      ...style,
+                      layout: {
+                        ...style.layout,
+                        x: activeSeg.styleOverride?.positionX ?? style.layout.x,
+                        y: activeSeg.styleOverride?.positionY ?? style.layout.y,
+                      },
+                    });
+                  }
+                  if (onSegmentOverrideChange) {
+                    onSegmentOverrideChange(activeSeg.id, { positionX: undefined, positionY: undefined });
+                  }
+                }}
+                className="px-2 py-0.5 rounded-md bg-amber-400/20 hover:bg-amber-400 text-amber-300 hover:text-black font-semibold text-[10px] transition-colors"
+                title="Apply this exact position to all captions across the video"
+              >
+                Apply to All
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onSegmentOverrideChange) {
+                    onSegmentOverrideChange(activeSeg.id, { positionX: undefined, positionY: undefined });
+                  }
+                }}
+                className="px-1.5 py-0.5 rounded-md bg-white/10 hover:bg-white/20 text-smoke hover:text-bone text-[10px] transition-colors"
+                title="Reset this caption back to default project position"
+              >
+                Reset
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Floating Transport Bar under Video Player (ReplixCaptions-style) */}

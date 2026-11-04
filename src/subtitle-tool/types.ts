@@ -13,7 +13,8 @@ export interface SegmentStyleOverride {
   strokeColor?: string;
   highlightColor?: string;
   scale?: number;
-  positionY?: number; // 0..1 frame height
+  positionX?: number; // 0..1 frame width (0 = left, 0.5 = center, 1 = right)
+  positionY?: number; // 0..1 frame height (0 = top, 0.5 = center, 1 = bottom)
 }
 
 export interface Segment {

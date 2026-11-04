@@ -456,7 +456,7 @@ export interface RenderResult {
 }
 const NOTHING: RenderResult = { bounds: null };
 
-function findSegment(segments: Segment[], t: number): Segment | undefined {
+export function findSegment(segments: Segment[], t: number): Segment | undefined {
   // Captions linger 0.15s after their end; if the next one has already started, it wins.
   let hit: Segment | undefined;
   for (let i = 0; i < segments.length; i++) {
@@ -501,6 +501,7 @@ export function renderCaptions(
       ...activeStyle,
       layout: {
         ...activeStyle.layout,
+        x: ov.positionX !== undefined ? ov.positionX : activeStyle.layout.x,
         y: ov.positionY !== undefined ? ov.positionY : activeStyle.layout.y,
       },
       font: {

@@ -38,6 +38,7 @@ import {
 import type {
   AppStage,
   Segment,
+  SegmentStyleOverride,
   CaptionStyle,
   SpokenLanguage,
   ScriptOutput,
@@ -110,6 +111,28 @@ export default function SubtitleTool() {
       return r.slice(1);
     });
   }, []);
+
+  const handleSegmentOverride = useCallback(
+    (segId: string, override: Partial<SegmentStyleOverride> | null) => {
+      updateSegments((prev) =>
+        prev.map((s) => {
+          if (s.id !== segId) return s;
+          if (!override) {
+            const { styleOverride: _, ...rest } = s;
+            return rest;
+          }
+          return {
+            ...s,
+            styleOverride: {
+              ...(s.styleOverride || {}),
+              ...override,
+            },
+          };
+        }),
+      );
+    },
+    [updateSegments],
+  );
 
   const handleSplitAtPlayhead = useCallback(() => {
     const curTime = currentTime;
@@ -855,6 +878,7 @@ export default function SubtitleTool() {
                         segments={segments}
                         style={style}
                         onStyleChange={setStyle}
+                        onSegmentOverrideChange={handleSegmentOverride}
                         aspectRatio={aspectRatio}
                         onAspectRatioChange={setAspectRatio}
                         onTimeUpdate={handleTimeUpdate}
@@ -904,6 +928,7 @@ export default function SubtitleTool() {
                       segments={segments}
                       style={style}
                       onStyleChange={setStyle}
+                      onSegmentOverrideChange={handleSegmentOverride}
                       aspectRatio={aspectRatio}
                       onAspectRatioChange={setAspectRatio}
                       onTimeUpdate={handleTimeUpdate}

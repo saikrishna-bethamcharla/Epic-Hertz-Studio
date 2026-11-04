@@ -692,6 +692,16 @@ export default function CaptionEditor({
                     <span>{speakerStyle ? getSpeakerShortCode(seg.speaker) : '+S'}</span>
                   </button>
 
+                  {/* Custom Position Indicator */}
+                  {(seg.styleOverride?.positionX !== undefined || seg.styleOverride?.positionY !== undefined) && (
+                    <span
+                      className="text-[10px] text-amber-400 font-mono flex items-center shrink-0 cursor-help"
+                      title={`Custom Position: (${Math.round((seg.styleOverride.positionX ?? 0.5) * 100)}%, ${Math.round((seg.styleOverride.positionY ?? 0.82) * 100)}%)`}
+                    >
+                      📍
+                    </span>
+                  )}
+
                   {/* Caption text display or edit with Enter/Backspace shortcuts */}
                   <div className="flex-1 min-w-0">
                     <textarea
@@ -882,29 +892,56 @@ export default function CaptionEditor({
                       </div>
 
                       {/* Position Override */}
-                      <div className="flex items-center justify-between text-[11px]">
-                        <span className="text-smoke">Position:</span>
-                        <div className="flex items-center gap-1">
-                          {[
-                            { label: 'Def', val: undefined },
-                            { label: 'Top', val: 0.18 },
-                            { label: 'Mid', val: 0.5 },
-                            { label: 'Bot', val: 0.82 },
-                          ].map((opt) => (
-                            <button
-                              key={opt.label}
-                              type="button"
-                              onClick={() => updateSegmentStyleOverride(seg.id, { positionY: opt.val })}
-                              className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                                seg.styleOverride?.positionY === opt.val
-                                  ? 'bg-amber-400 text-black font-bold'
-                                  : 'bg-white/10 text-smoke hover:text-bone'
-                              }`}
-                            >
-                              {opt.label}
-                            </button>
-                          ))}
+                      <div className="space-y-1.5 text-[11px]">
+                        <div className="flex items-center justify-between">
+                          <span className="text-smoke">Position (2D Anchor):</span>
+                          {(seg.styleOverride?.positionX !== undefined || seg.styleOverride?.positionY !== undefined) && (
+                            <span className="text-[10px] text-amber-300 font-mono">
+                              ({Math.round((seg.styleOverride.positionX ?? 0.5) * 100)}%,{' '}
+                              {Math.round((seg.styleOverride.positionY ?? 0.82) * 100)}%)
+                            </span>
+                          )}
                         </div>
+                        <div className="grid grid-cols-4 gap-1">
+                          {[
+                            { label: 'Def', x: undefined, y: undefined },
+                            { label: 'Top', x: 0.5, y: 0.18 },
+                            { label: 'Mid', x: 0.5, y: 0.5 },
+                            { label: 'Bot', x: 0.5, y: 0.82 },
+                            { label: 'Top-L', x: 0.22, y: 0.18 },
+                            { label: 'Top-R', x: 0.78, y: 0.18 },
+                            { label: 'Bot-L', x: 0.22, y: 0.82 },
+                            { label: 'Bot-R', x: 0.78, y: 0.82 },
+                          ].map((opt) => {
+                            const isSelected =
+                              opt.x === undefined && opt.y === undefined
+                                ? seg.styleOverride?.positionX === undefined && seg.styleOverride?.positionY === undefined
+                                : Math.abs((seg.styleOverride?.positionX ?? 0.5) - (opt.x ?? 0.5)) < 0.05 &&
+                                  Math.abs((seg.styleOverride?.positionY ?? 0.82) - (opt.y ?? 0.82)) < 0.05;
+                            return (
+                              <button
+                                key={opt.label}
+                                type="button"
+                                onClick={() =>
+                                  updateSegmentStyleOverride(seg.id, {
+                                    positionX: opt.x,
+                                    positionY: opt.y,
+                                  })
+                                }
+                                className={`px-1.5 py-1 rounded text-[10px] font-medium transition-colors text-center ${
+                                  isSelected
+                                    ? 'bg-amber-400 text-black font-bold'
+                                    : 'bg-white/10 text-smoke hover:text-bone'
+                                }`}
+                              >
+                                {opt.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <p className="text-[10px] text-smoke/70 italic">
+                          💡 You can also drag this caption directly on the video player.
+                        </p>
                       </div>
 
                       {/* Scale Override */}

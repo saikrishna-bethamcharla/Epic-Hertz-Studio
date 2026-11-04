@@ -5,8 +5,8 @@
 // Drag the caption block to reposition it (snaps to the centre lines).
 
 import { useEffect, useMemo, useRef, type RefObject } from 'react';
-import type { CaptionStyle, Segment } from './types';
-import { renderCaptions } from './engine/render';
+import type { CaptionStyle, Segment, SegmentStyleOverride } from './types';
+import { renderCaptions, findSegment } from './engine/render';
 import { ensureFonts, fontsVersion, onFontsChange } from './engine/fonts';
 
 interface CaptionCanvasProps {
@@ -16,6 +16,7 @@ interface CaptionCanvasProps {
   /** Element that receives pointer events for dragging (the video frame). */
   hostRef: RefObject<HTMLElement | null>;
   onStyleChange?: (style: CaptionStyle) => void;
+  onSegmentOverrideChange?: (segmentId: string, override: Partial<SegmentStyleOverride>) => void;
   visible?: boolean;
 }
 
@@ -30,18 +31,26 @@ interface Geometry {
 const SNAP = 0.02;
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 
-export default function CaptionCanvas({ segments, style, videoRef, hostRef, onStyleChange, visible = true }: CaptionCanvasProps) {
+export default function CaptionCanvas({
+  segments,
+  style,
+  videoRef,
+  hostRef,
+  onStyleChange,
+  onSegmentOverrideChange,
+  visible = true,
+}: CaptionCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Latest props, readable from the animation loop without re-subscribing
-  const live = useRef({ segments, style, onStyleChange, visible });
-  live.current = { segments, style, onStyleChange, visible };
+  const live = useRef({ segments, style, onStyleChange, onSegmentOverrideChange, visible });
+  live.current = { segments, style, onStyleChange, onSegmentOverrideChange, visible };
 
   const geom = useRef<Geometry>({ cssW: 0, cssH: 0, left: 0, top: 0, dpr: 1 });
   const geomVersion = useRef(0);
   const bounds = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
   const hover = useRef(false);
-  const drag = useRef<{ x: number; y: number; snapX: boolean; snapY: boolean } | null>(null);
+  const drag = useRef<{ x: number; y: number; snapX: boolean; snapY: boolean; segId?: string } | null>(null);
 
   // ── Fonts: make sure the chosen family (and any Indic script in the text) is loaded
   const allText = useMemo(() => segments.map((s) => s.text).join(' '), [segments]);
@@ -101,8 +110,28 @@ export default function CaptionCanvas({ segments, style, videoRef, hostRef, onSt
 
       const { segments: segs, style: st, visible } = live.current;
       const dragging = drag.current;
-      const eff: CaptionStyle = dragging ? { ...st, layout: { ...st.layout, x: dragging.x, y: dragging.y } } : st;
       const t = videoRef.current?.currentTime ?? 0;
+
+      let effSegs = segs;
+      let effStyle = st;
+      if (dragging) {
+        if (dragging.segId && live.current.onSegmentOverrideChange) {
+          effSegs = segs.map((s) =>
+            s.id === dragging.segId
+              ? {
+                  ...s,
+                  styleOverride: {
+                    ...(s.styleOverride || {}),
+                    positionX: dragging.x,
+                    positionY: dragging.y,
+                  },
+                }
+              : s,
+          );
+        } else {
+          effStyle = { ...st, layout: { ...st.layout, x: dragging.x, y: dragging.y } };
+        }
+      }
 
       if (!visible) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -113,17 +142,17 @@ export default function CaptionCanvas({ segments, style, videoRef, hostRef, onSt
 
       const changed =
         t !== last.t ||
-        eff !== last.style ||
-        segs !== last.segs ||
+        effStyle !== last.style ||
+        effSegs !== last.segs ||
         geomVersion.current !== last.g ||
         fontsVersion() !== last.f ||
         !!dragging !== last.drag ||
         hover.current !== last.hover;
       if (!changed && !dragging) return;
-      last = { t, style: eff, segs, g: geomVersion.current, f: fontsVersion(), drag: !!dragging, hover: hover.current };
+      last = { t, style: effStyle, segs: effSegs, g: geomVersion.current, f: fontsVersion(), drag: !!dragging, hover: hover.current };
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const res = renderCaptions(ctx, canvas.width, canvas.height, t, segs, eff);
+      const res = renderCaptions(ctx, canvas.width, canvas.height, t, effSegs, effStyle);
       bounds.current = res.bounds;
 
       // Editing aids: bounding box on hover/drag, centre guides while dragging
@@ -135,6 +164,23 @@ export default function CaptionCanvas({ segments, style, videoRef, hostRef, onSt
         ctx.lineWidth = Math.max(1, canvas.width * 0.003);
         ctx.strokeStyle = 'rgba(251,191,36,0.9)';
         ctx.strokeRect(b.x - pad, b.y - pad, b.w + pad * 2, b.h + pad * 2);
+
+        // Subtle indicator badge while dragging
+        if (dragging) {
+          const isAll = !dragging.segId;
+          const label = isAll ? 'Repositioning: All Captions' : 'Repositioning: This Caption Only';
+          ctx.font = `600 ${Math.max(10, canvas.width * 0.016)}px sans-serif`;
+          const tw = ctx.measureText(label).width;
+          const th = Math.max(14, canvas.width * 0.024);
+          const lx = Math.max(pad + 4, Math.min(b.x, canvas.width - tw - pad * 2 - 8));
+          const ly = Math.max(th + 6, b.y - pad - 6);
+          ctx.fillStyle = 'rgba(20,20,19,0.88)';
+          ctx.beginPath();
+          ctx.roundRect(lx - 6, ly - th + 3, tw + 12, th + 2, 4);
+          ctx.fill();
+          ctx.fillStyle = '#fbbf24';
+          ctx.fillText(label, lx, ly);
+        }
         ctx.restore();
       }
       if (dragging) {
@@ -187,7 +233,15 @@ export default function CaptionCanvas({ segments, style, videoRef, hostRef, onSt
       return x >= b.x - pad && x <= b.x + b.w + pad && y >= b.y - pad && y <= b.y + b.h + pad;
     };
 
-    let start: { cx: number; cy: number; bx: number; by: number; moved: boolean } | null = null;
+    let start: {
+      cx: number;
+      cy: number;
+      bx: number;
+      by: number;
+      moved: boolean;
+      segId?: string;
+      isShiftOrAlt: boolean;
+    } | null = null;
     let suppressClick = false;
 
     const onMove = (e: PointerEvent) => {
@@ -202,7 +256,7 @@ export default function CaptionCanvas({ segments, style, videoRef, hostRef, onSt
         const snapY = Math.abs(ny - 0.5) < SNAP;
         if (snapX) nx = 0.5;
         if (snapY) ny = 0.5;
-        drag.current = { x: nx, y: ny, snapX, snapY };
+        drag.current = { x: nx, y: ny, snapX, snapY, segId: start.segId };
         return;
       }
       const over = hit(e);
@@ -216,9 +270,30 @@ export default function CaptionCanvas({ segments, style, videoRef, hostRef, onSt
       if (e.button !== 0 || !hit(e)) return;
       e.preventDefault();
       e.stopPropagation();
-      const { style: st } = live.current;
-      start = { cx: e.clientX, cy: e.clientY, bx: st.layout.x, by: st.layout.y, moved: false };
-      drag.current = { x: st.layout.x, y: st.layout.y, snapX: false, snapY: false };
+      const { style: st, segments: segs } = live.current;
+      const t = (video?.currentTime ?? 0) - st.syncOffset;
+      const activeSeg = findSegment(segs, t);
+      const isShiftOrAlt = e.shiftKey || e.altKey;
+
+      const initX = activeSeg?.styleOverride?.positionX !== undefined ? activeSeg.styleOverride.positionX : st.layout.x;
+      const initY = activeSeg?.styleOverride?.positionY !== undefined ? activeSeg.styleOverride.positionY : st.layout.y;
+
+      start = {
+        cx: e.clientX,
+        cy: e.clientY,
+        bx: initX,
+        by: initY,
+        moved: false,
+        segId: isShiftOrAlt ? undefined : activeSeg?.id,
+        isShiftOrAlt,
+      };
+      drag.current = {
+        x: initX,
+        y: initY,
+        snapX: false,
+        snapY: false,
+        segId: isShiftOrAlt ? undefined : activeSeg?.id,
+      };
       try {
         host.setPointerCapture(e.pointerId);
       } catch {
@@ -226,12 +301,19 @@ export default function CaptionCanvas({ segments, style, videoRef, hostRef, onSt
       }
     };
 
-    const onUp = () => {
+    const onUp = (e?: PointerEvent) => {
       if (!start) return;
       const d = drag.current;
-      const { style: st, onStyleChange: commit } = live.current;
+      const { style: st, onStyleChange: commit, onSegmentOverrideChange: commitSeg } = live.current;
       if (start.moved) suppressClick = true;
-      if (d && start.moved && commit) commit({ ...st, layout: { ...st.layout, x: d.x, y: d.y } });
+      if (d && start.moved) {
+        const applyToAll = start.isShiftOrAlt || (e && (e.shiftKey || e.altKey)) || !commitSeg || !start.segId;
+        if (applyToAll && commit) {
+          commit({ ...st, layout: { ...st.layout, x: d.x, y: d.y } });
+        } else if (commitSeg && start.segId) {
+          commitSeg(start.segId, { positionX: d.x, positionY: d.y });
+        }
+      }
       drag.current = null;
       start = null;
     };
