@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" style="background-color: #050507; color: #f4f1ec;">
+<html lang="en" style="background-color: #0e0e0d; color: #f4f1ec;">
   <head>
     <meta charset="UTF-8" />
     <script>
@@ -53,26 +53,22 @@
       }
     </script>
 
-    <link rel="icon" type="image/svg+xml" href="./assets/favicon-BP9TIka4.svg" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <script>
-      // After a new deploy, a tab that still holds the old index.html can ask for chunk files that
-      // no longer exist. Reload once so it picks up the current build instead of showing a blank page.
       (function () {
         function reloadOnce(key) {
           try {
             if (sessionStorage.getItem(key)) return;
             sessionStorage.setItem(key, '1');
-          } catch (e) { /* storage blocked: reloading could loop, so don't */ return; }
+          } catch (e) { return; }
           window.location.reload();
         }
-        // Lazy-loaded chunks (Studio / Portfolio) — Vite fires this when a dynamic import 404s.
         window.addEventListener('vite:preloadError', function (e) {
           e.preventDefault();
           reloadOnce('chunk_reload_preload');
         });
-        // Entry bundle itself.
         window.addEventListener('error', function (e) {
           var url = e.target && (e.target.src || e.target.href);
           if (url && url.indexOf('/assets/index-') !== -1 && e.target.tagName === 'SCRIPT') {
@@ -81,15 +77,12 @@
         }, true);
       })();
     </script>
-    <script type="module" crossorigin src="./assets/index-Dm6QoOBR.js"></script>
-    <link rel="modulepreload" crossorigin href="./assets/motion-Bv5RnQwP.js">
-    <link rel="modulepreload" crossorigin href="./assets/react-BAp3HPfX.js">
-    <link rel="stylesheet" crossorigin href="./assets/index-CzkCoQ2t.css">
   </head>
-  <body style="background-color: #050507; color: #f4f1ec; margin: 0; min-height: 100vh;">
+  <body style="background-color: #0e0e0d; color: #f4f1ec; margin: 0; min-height: 100vh;">
     <div id="root"></div>
     <noscript>
       <p>Epic Hertz Studio is a browser-based AI captioning studio for Reels, Shorts and TikTok. It generates Tanglish, Hinglish and native-script subtitles for Telugu, Hindi, Tamil and more. JavaScript is required to use it.</p>
     </noscript>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
