@@ -34,7 +34,6 @@ import {
 
 import { extractAudio } from './utils/extractAudio';
 import { transcribeAudio } from './api/transcribe';
-import { toSRT, downloadText } from './utils/srt';
 import { createDemoVideo } from './utils/createDemoVideo';
 import {
   saveMediaAsset,
@@ -620,12 +619,6 @@ export default function SubtitleTool() {
     setSavedDraft(draft);
   }, []);
 
-  const handleDownloadSRT = () => {
-    if (!videoFile || segments.length === 0) return;
-    const baseName = videoFile.name.replace(/\.[^.]+$/, '');
-    downloadText(toSRT(segments), `${baseName}.srt`, 'text/plain');
-  };
-
   const showOverlay =
     stage === 'extracting' ||
     stage === 'uploading' ||
@@ -852,7 +845,6 @@ export default function SubtitleTool() {
                 lastSavedAt={lastSavedAt}
                 onNewVideo={handleReset}
                 onOpenShortcuts={() => setIsShortcutsOpen(true)}
-                onDownloadSRT={handleDownloadSRT}
                 onOpenExport={() => setIsExportModalOpen(true)}
               />
 

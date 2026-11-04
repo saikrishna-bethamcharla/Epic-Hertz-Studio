@@ -22,7 +22,6 @@ interface TopBarProps {
   lastSavedAt: number | null;
   onNewVideo?: () => void;
   onOpenShortcuts: () => void;
-  onDownloadSRT?: () => void;
   onOpenExport: () => void;
 }
 
@@ -37,7 +36,6 @@ export default function TopBar({
   lastSavedAt,
   onNewVideo,
   onOpenShortcuts,
-  onDownloadSRT,
   onOpenExport,
 }: TopBarProps) {
   const [isEditingName, setIsEditingName] = useState(false);
@@ -205,17 +203,6 @@ export default function TopBar({
           <span className="hidden sm:inline">Shortcuts</span>
           <kbd className="hidden md:inline px-1 py-0.5 rounded bg-white/10 text-[10px] text-smoke font-mono font-semibold">?</kbd>
         </button>
-
-        {onDownloadSRT && (
-          <button
-            type="button"
-            onClick={onDownloadSRT}
-            className="hidden md:flex items-center gap-1 px-3 py-1.5 text-xs text-mist hover:text-bone hover:bg-white/5 rounded-lg border border-white/10 transition-colors"
-            title="Download standard SRT subtitle file"
-          >
-            <span>Download .SRT</span>
-          </button>
-        )}
 
         <button
           type="button"
