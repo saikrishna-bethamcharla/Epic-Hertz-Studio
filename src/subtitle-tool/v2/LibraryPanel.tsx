@@ -7,7 +7,6 @@ import {
   Zap,
   Smile,
   Palette,
-  Wrench,
   Search,
   ChevronLeft,
   AlertTriangle,
@@ -30,7 +29,7 @@ import {
 import { formatTimecode } from '../utils/formatTime';
 import { checkReadability } from '../utils/readability';
 
-export type LibraryTab = 'captions' | 'styles' | 'effects' | 'animations' | 'emoji' | 'brand' | 'tools';
+export type LibraryTab = 'captions' | 'styles' | 'effects' | 'animations' | 'emoji' | 'brand';
 
 interface LibraryPanelProps {
   leftTab: LibraryTab;
@@ -186,10 +185,6 @@ export default function LibraryPanel({
   const [brandColors] = useState<string[]>(() => getBrandColors());
   const [hoveredPresetId, setHoveredPresetId] = useState<string | null>(null);
 
-  // Tools Tab States
-  const [findWord, setFindWord] = useState('');
-  const [replaceWord, setReplaceWord] = useState('');
-
   // Sample segment for thumbnail rendering (rule: user's first caption or fallback)
   const sampleSegment: Segment = useMemo(() => {
     if (segments.length > 0 && segments[0].text) return segments[0];
@@ -249,37 +244,6 @@ export default function LibraryPanel({
     }
   };
 
-  // Find & Replace Handler
-  const handleFindReplace = () => {
-    if (!findWord.trim()) return;
-    const regex = new RegExp(findWord.trim(), 'gi');
-    let count = 0;
-    const next = segments.map((seg) => {
-      const match = seg.text.match(regex);
-      if (match) count += match.length;
-      return {
-        ...seg,
-        text: seg.text.replace(regex, replaceWord.trim()),
-      };
-    });
-    onSegmentsChange(next);
-    if (onNotification) onNotification(`Replaced ${count} occurrences of "${findWord}"`);
-    setFindWord('');
-    setReplaceWord('');
-  };
-
-  // Issues / Readability Diagnostic
-  const issuesList = useMemo(() => {
-    const list: Array<{ seg: Segment; issues: string[] }> = [];
-    segments.forEach((seg) => {
-      const issues = checkReadability(seg).map((i) => i.message);
-      if (issues.length > 0) {
-        list.push({ seg, issues });
-      }
-    });
-    return list;
-  }, [segments]);
-
   return (
     <div className="h-full flex flex-col bg-[#141413] border-r border-white/10 select-none overflow-hidden">
       {/* ── 3.1 Tab Rail (Compact tabs with small icon above label, amber underline) ── */}
@@ -291,7 +255,6 @@ export default function LibraryPanel({
           { id: 'animations', label: 'Anim', icon: Zap },
           { id: 'emoji', label: 'Emoji', icon: Smile },
           { id: 'brand', label: 'Brand', icon: Palette },
-          { id: 'tools', label: 'Tools', icon: Wrench },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = leftTab === tab.id;
@@ -773,74 +736,6 @@ export default function LibraryPanel({
                   }}
                 />
               </label>
-            </div>
-          </div>
-        )}
-
-        {/* ─────────────────────────────────────────────────────────────
-            TAB 7: TOOLS
-        ────────────────────────────────────────────────────────────── */}
-        {leftTab === 'tools' && (
-          <div className="space-y-4">
-            {/* Find & Replace */}
-            <div className="space-y-2 p-3 bg-[#181817] rounded-xl border border-white/5">
-              <span className="text-xs font-bold text-bone block">Find & Replace</span>
-              <input
-                type="text"
-                value={findWord}
-                onChange={(e) => setFindWord(e.target.value)}
-                placeholder="Word to find…"
-                className="w-full bg-[#121211] border border-white/15 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs text-bone focus:outline-none"
-              />
-              <input
-                type="text"
-                value={replaceWord}
-                onChange={(e) => setReplaceWord(e.target.value)}
-                placeholder="Replace with…"
-                className="w-full bg-[#121211] border border-white/15 focus:border-amber-400 rounded-lg px-2.5 py-1.5 text-xs text-bone focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={handleFindReplace}
-                disabled={!findWord.trim()}
-                className="w-full py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 disabled:opacity-40 text-black font-bold text-xs shadow-xs"
-              >
-                Replace All Occurrences
-              </button>
-            </div>
-
-            {/* Readability Warnings List */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-bone">Readability Diagnostics</span>
-                <span className="text-amber-400 font-mono text-[11px]">{issuesList.length} alerts</span>
-              </div>
-              {issuesList.length === 0 ? (
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-300 text-xs text-center font-medium">
-                  ✓ All captions have optimal reading pacing and length!
-                </div>
-              ) : (
-                <div className="space-y-1.5">
-                  {issuesList.map(({ seg, issues }) => (
-                    <div
-                      key={seg.id}
-                      onClick={() => {
-                        onSelectSegment(seg.id);
-                        onSeek(seg.start);
-                      }}
-                      className="p-2 bg-[#181817] hover:bg-white/5 border border-white/10 rounded-xl text-xs cursor-pointer flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-mono text-smoke">#{seg.index}</span>
-                        <span className="text-amber-300 font-medium truncate max-w-[180px]">
-                          {issues[0]}
-                        </span>
-                      </div>
-                      <span className="font-mono text-smoke text-[10px]">{formatTimecode(seg.start)}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         )}
