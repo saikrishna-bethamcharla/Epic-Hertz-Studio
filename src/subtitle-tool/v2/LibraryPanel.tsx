@@ -263,7 +263,7 @@ export default function LibraryPanel({
 
   return (
     <div className="h-full flex flex-col bg-[#141413] border-r border-white/10 select-none overflow-hidden">
-      {/* ── 3.1 Tab Rail (64px wide tabs with icon above label, amber underline) ── */}
+      {/* ── 3.1 Tab Rail (Compact tabs with small icon above label, amber underline) ── */}
       <div className="flex items-center border-b border-white/10 bg-[#121211] overflow-x-auto no-scrollbar shrink-0">
         {[
           { id: 'captions', label: 'Captions', icon: Captions },
@@ -281,11 +281,11 @@ export default function LibraryPanel({
               key={tab.id}
               type="button"
               onClick={() => onTabChange(tab.id as LibraryTab)}
-              className={`min-w-[62px] flex-1 py-2.5 flex flex-col items-center justify-center gap-1 text-[11px] font-semibold transition-colors relative ${
+              className={`min-w-[54px] flex-1 py-2 flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-colors relative ${
                 isActive ? 'text-amber-300 bg-white/5' : 'text-smoke hover:text-bone hover:bg-white/5'
               }`}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="w-3.5 h-3.5" />
               <span className="text-[10px] tracking-tight">{tab.label}</span>
               {isActive && (
                 <div className="absolute bottom-0 left-2 right-2 h-[2px] bg-amber-400 rounded-full" />
@@ -297,7 +297,7 @@ export default function LibraryPanel({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="px-2 py-2.5 text-smoke hover:text-bone hover:bg-white/5 transition-colors shrink-0"
+            className="px-2 py-2 text-smoke hover:text-bone hover:bg-white/5 transition-colors shrink-0"
             title="Collapse library panel ([)"
           >
             <ChevronLeft className="w-3.5 h-3.5" />
@@ -429,8 +429,8 @@ export default function LibraryPanel({
               ))}
             </div>
 
-            {/* Style Cards Grid (2-columns) */}
-            <div className="grid grid-cols-2 gap-2.5">
+            {/* Style Cards Grid (3-columns: small icons, 3 in a line) */}
+            <div className="grid grid-cols-3 gap-2">
               {/* User presets if in 'All' or 'Yours' */}
               {(styleCategory === 'All' || styleCategory === 'Yours') &&
                 userPresetsList.map((up) => (
@@ -439,16 +439,17 @@ export default function LibraryPanel({
                     onClick={() => applyPresetToScope(up.style, up.name)}
                     onMouseEnter={() => setHoveredPresetId(up.id)}
                     onMouseLeave={() => setHoveredPresetId(null)}
-                    className="group relative rounded-xl bg-[#181817] border border-amber-400/30 hover:border-amber-400 p-2 cursor-pointer transition-all hover:scale-101 flex flex-col gap-1.5"
+                    title={up.name}
+                    className="group relative rounded-lg bg-[#181817] border border-amber-400/30 hover:border-amber-400 p-1.5 cursor-pointer transition-all hover:scale-102 flex flex-col gap-1 shadow-xs"
                   >
                     <StyleThumbnail
                       style={up.style}
                       sampleSegment={sampleSegment}
                       isHovered={hoveredPresetId === up.id}
                     />
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-bone truncate">{up.name}</span>
-                      <span className="text-[9px] px-1 py-0.5 rounded bg-amber-400/20 text-amber-300 font-mono">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-[11px] font-bold text-bone truncate leading-tight">{up.name}</span>
+                      <span className="text-[8px] px-1 py-0.2 rounded bg-amber-400/20 text-amber-300 font-mono shrink-0">
                         Yours
                       </span>
                     </div>
@@ -475,9 +476,10 @@ export default function LibraryPanel({
                     onClick={() => applyPresetToScope(p.style, p.style.name)}
                     onMouseEnter={() => setHoveredPresetId(p.style.id)}
                     onMouseLeave={() => setHoveredPresetId(null)}
-                    className={`group relative rounded-xl bg-[#181817] border p-2 cursor-pointer transition-all hover:scale-101 flex flex-col gap-1.5 ${
+                    title={`${p.style.name}: ${p.blurb}`}
+                    className={`group relative rounded-lg bg-[#181817] border p-1.5 cursor-pointer transition-all hover:scale-102 flex flex-col gap-1 shadow-xs ${
                       isSelected
-                        ? 'border-amber-400 ring-1 ring-amber-400/40 bg-amber-400/5'
+                        ? 'border-amber-400 ring-1 ring-amber-400/40 bg-amber-400/10'
                         : 'border-white/10 hover:border-white/20'
                     }`}
                   >
@@ -487,28 +489,24 @@ export default function LibraryPanel({
                       isHovered={hoveredPresetId === p.style.id}
                     />
 
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-bone truncate">{p.style.name}</span>
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-[11px] font-bold text-bone truncate leading-tight">{p.style.name}</span>
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           setFavorites(toggleFavoritePresetId(p.style.id));
                         }}
-                        className="p-1 rounded text-smoke hover:text-amber-400"
+                        className="p-0.5 rounded text-smoke hover:text-amber-400 shrink-0"
                         title={isFav ? 'Favorited' : 'Add to favorites'}
                       >
                         <Heart
-                          className={`w-3.5 h-3.5 ${
+                          className={`w-3 h-3 ${
                             isFav ? 'fill-amber-400 text-amber-400' : 'text-smoke/60'
                           }`}
                         />
                       </button>
                     </div>
-
-                    <p className="text-[10px] text-smoke line-clamp-2 leading-tight">
-                      {p.blurb}
-                    </p>
                   </div>
                 );
               })}
@@ -524,16 +522,16 @@ export default function LibraryPanel({
             <p className="text-[11px] text-smoke">
               Applies styling treatment (fill, outline, shadow, glow, 3D) without changing your chosen font or animation.
             </p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-1.5">
               {LOOK_PRESETS.map((eff) => (
                 <button
                   key={eff.id}
                   type="button"
                   onClick={() => applyLookToScope(eff.look, eff.name)}
-                  className="p-3 rounded-xl bg-[#181817] border border-white/10 hover:border-amber-400 text-left transition-all hover:scale-102 flex flex-col gap-1"
+                  className="p-2 rounded-lg bg-[#181817] border border-white/10 hover:border-amber-400 text-left transition-all hover:scale-102 flex flex-col gap-0.5"
                 >
-                  <span className="text-xs font-bold text-bone">{eff.name}</span>
-                  <span className="text-[10px] text-smoke">Look preset</span>
+                  <span className="text-[11px] font-bold text-bone truncate">{eff.name}</span>
+                  <span className="text-[9px] text-smoke">Effect</span>
                 </button>
               ))}
             </div>
