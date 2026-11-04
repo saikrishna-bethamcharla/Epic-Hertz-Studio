@@ -37,17 +37,44 @@ async function getFFmpeg(): Promise<FFmpeg> {
 }
 
 /**
+ * Ensures an AudioBuffer is resampled to exactly 16,000Hz mono.
+ * Fully standards-compliant across all browsers (including Safari and Firefox which
+ * frequently decode at 44.1kHz / 48kHz and ignore initial AudioContext sampleRate).
+ */
+async function resampleTo16kHzMono(audioBuffer: AudioBuffer): Promise<AudioBuffer> {
+  const targetSampleRate = 16000;
+  if (audioBuffer.sampleRate === targetSampleRate && audioBuffer.numberOfChannels === 1) {
+    return audioBuffer;
+  }
+
+  const targetLength = Math.max(1, Math.round((audioBuffer.length * targetSampleRate) / audioBuffer.sampleRate));
+  const OfflineCtxClass =
+    window.OfflineAudioContext ||
+    (window as unknown as { webkitOfflineAudioContext: typeof OfflineAudioContext }).webkitOfflineAudioContext;
+  const offlineCtx = new OfflineCtxClass(1, targetLength, targetSampleRate);
+
+  const source = offlineCtx.createBufferSource();
+  source.buffer = audioBuffer;
+  source.connect(offlineCtx.destination);
+  source.start(0);
+
+  return await offlineCtx.startRendering();
+}
+
+/**
  * Native Browser Web Audio API Extractor.
- * Decodes the video file's audio stream directly in-memory and encodes a clean 16kHz mono WAV.
+ * Decodes the video file's audio stream directly in-memory, resamples to 16kHz mono,
+ * and encodes a clean 16kHz mono WAV.
  */
 async function extractAudioViaWebAudio(videoFile: File): Promise<Blob> {
   const AudioCtxClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-  const audioCtx = new AudioCtxClass({ sampleRate: 16000 });
+  const audioCtx = new AudioCtxClass();
 
   try {
     const arrayBuffer = await videoFile.arrayBuffer();
     const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-    return audioBufferToWav(audioBuffer);
+    const normalizedBuffer = await resampleTo16kHzMono(audioBuffer);
+    return audioBufferToWav(normalizedBuffer);
   } finally {
     audioCtx.close().catch(() => {});
   }
@@ -57,7 +84,7 @@ async function extractAudioViaWebAudio(videoFile: File): Promise<Blob> {
  * Encodes an AudioBuffer into a 16-bit 16kHz mono WAV Blob suitable for speech-to-text.
  */
 function audioBufferToWav(buffer: AudioBuffer): Blob {
-  const sampleRate = buffer.sampleRate;
+  const sampleRate = buffer.sampleRate || 16000;
   const numChannels = 1;
   const bitDepth = 16;
 

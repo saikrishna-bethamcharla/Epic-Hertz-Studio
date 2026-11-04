@@ -15,26 +15,61 @@ interface PrepareMediaModalProps {
   onCancel: () => void;
 }
 
+const PREF_LANG_KEY = 'ehs.pref.spokenLanguage';
+const PREF_SCRIPT_KEY = 'ehs.pref.scriptOutput';
+
 const LANGUAGES: Array<{ code: SpokenLanguage; label: string; nativeName: string }> = [
+  { code: 'auto', label: 'Auto Detect', nativeName: 'Auto Detect (Recommended)' },
+  { code: 'en', label: 'English', nativeName: 'English' },
   { code: 'te', label: 'Telugu', nativeName: 'తెలుగు' },
   { code: 'hi', label: 'Hindi', nativeName: 'हिन्दी' },
-  { code: 'en', label: 'English', nativeName: 'English' },
   { code: 'ta', label: 'Tamil', nativeName: 'தமிழ்' },
   { code: 'kn', label: 'Kannada', nativeName: 'ಕನ್ನಡ' },
   { code: 'ml', label: 'Malayalam', nativeName: 'മലയാളം' },
   { code: 'mr', label: 'Marathi', nativeName: 'मराठी' },
   { code: 'bn', label: 'Bengali', nativeName: 'বাংলা' },
-  { code: 'auto', label: 'Auto Detect', nativeName: 'Auto Detect' },
 ];
+
+function getInitialLanguage(): SpokenLanguage {
+  try {
+    const saved = localStorage.getItem(PREF_LANG_KEY) as SpokenLanguage | null;
+    if (saved && ['auto', 'en', 'te', 'hi', 'ta', 'kn', 'ml', 'mr', 'bn'].includes(saved)) {
+      return saved;
+    }
+  } catch {}
+  return 'auto';
+}
+
+function getInitialScript(): ScriptOutput {
+  try {
+    const saved = localStorage.getItem(PREF_SCRIPT_KEY) as ScriptOutput | null;
+    if (saved === 'romanized' || saved === 'native') return saved;
+  } catch {}
+  return 'romanized';
+}
 
 export default function PrepareMediaModal({
   videoFile,
   onContinue,
   onCancel,
 }: PrepareMediaModalProps) {
-  const [spokenLanguage, setSpokenLanguage] = useState<SpokenLanguage>('te');
-  const [scriptOutput, setScriptOutput] = useState<ScriptOutput>('romanized');
+  const [spokenLanguage, setSpokenLanguage] = useState<SpokenLanguage>(getInitialLanguage);
+  const [scriptOutput, setScriptOutput] = useState<ScriptOutput>(getInitialScript);
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+
+  const handleLanguageChange = (lang: SpokenLanguage) => {
+    setSpokenLanguage(lang);
+    try {
+      localStorage.setItem(PREF_LANG_KEY, lang);
+    } catch {}
+  };
+
+  const handleScriptChange = (script: ScriptOutput) => {
+    setScriptOutput(script);
+    try {
+      localStorage.setItem(PREF_SCRIPT_KEY, script);
+    } catch {}
+  };
 
   // Generate thumbnail from video file
   useEffect(() => {
@@ -172,7 +207,7 @@ export default function PrepareMediaModal({
             <div className="relative">
               <select
                 value={spokenLanguage}
-                onChange={(e) => setSpokenLanguage(e.target.value as SpokenLanguage)}
+                onChange={(e) => handleLanguageChange(e.target.value as SpokenLanguage)}
                 className="w-full appearance-none bg-[#212120] hover:bg-[#282826] border border-white/15 focus:border-amber-400/70 rounded-xl px-4 py-3 text-sm text-bone font-medium focus:outline-none transition-colors cursor-pointer"
               >
                 {LANGUAGES.map((lang) => (
@@ -200,7 +235,7 @@ export default function PrepareMediaModal({
             <div className="grid grid-cols-2 p-1 rounded-xl bg-[#121211] border border-white/10 gap-1">
               <button
                 type="button"
-                onClick={() => setScriptOutput('romanized')}
+                onClick={() => handleScriptChange('romanized')}
                 className={`py-2.5 px-3 rounded-lg text-xs font-semibold transition-all duration-150 ${
                   scriptOutput === 'romanized'
                     ? 'bg-[#292826] text-amber-200 border border-amber-300/30 shadow-sm'
@@ -211,7 +246,7 @@ export default function PrepareMediaModal({
               </button>
               <button
                 type="button"
-                onClick={() => setScriptOutput('native')}
+                onClick={() => handleScriptChange('native')}
                 className={`py-2.5 px-3 rounded-lg text-xs font-semibold transition-all duration-150 ${
                   scriptOutput === 'native'
                     ? 'bg-[#292826] text-amber-200 border border-amber-300/30 shadow-sm'

@@ -44,10 +44,10 @@ function normalizeSegments(list) {
       const words = normalizeWords(item?.words);
       let start = parseTime(item?.start_time ?? item?.start ?? item?.startTime ?? 0);
       let end = parseTime(item?.end_time ?? item?.end ?? item?.endTime ?? 0);
-      if (words) {
-        // Trust word timings if the segment bounds are missing or inconsistent
-        if (!start) start = words[0].start;
-        if (end <= start) end = words[words.length - 1].end;
+      if (words && words.length > 0) {
+        // If word-level timings are provided, anchor segment start and end to them
+        start = words[0].start;
+        end = Math.max(start + 0.35, words[words.length - 1].end);
       }
       if (end <= start) end = start + 0.8;
       return { start, end, text, words };
@@ -55,18 +55,27 @@ function normalizeSegments(list) {
     .filter((s) => s.text.length > 0)
     .sort((a, b) => a.start - b.start);
 
-  // Remove overlaps between consecutive segments
+  // Remove overlaps and enforce positive non-zero segment durations
   for (let i = 1; i < segs.length; i++) {
-    if (segs[i].start < segs[i - 1].end && segs[i].start > segs[i - 1].start) {
-      segs[i - 1].end = segs[i].start;
+    const prev = segs[i - 1];
+    const curr = segs[i];
+    if (curr.start < prev.end) {
+      if (curr.start >= prev.start + 0.35) {
+        prev.end = curr.start;
+      } else {
+        curr.start = prev.end;
+        if (curr.end <= curr.start) {
+          curr.end = curr.start + 0.8;
+        }
+      }
     }
   }
 
   return segs.map((s, i) => ({
     id: `seg-${i + 1}-${stamp}`,
     index: i + 1,
-    start: s.start,
-    end: s.end,
+    start: +s.start.toFixed(2),
+    end: +s.end.toFixed(2),
     text: s.text,
     words: s.words,
   }));

@@ -234,12 +234,16 @@ async function getAudio(req) {
 
 // ─── Prompt ─────────────────────────────────────────────────────────────────
 
-function buildPrompt(langName, isRomanized) {
+function buildPrompt(langName, isRomanized, isAutoDetect = false) {
+  const languageDirective = isAutoDetect
+    ? `Language: Auto-detect the spoken language (e.g. English, Telugu, Hindi, Tamil). Transcribe speech faithfully in whatever language is spoken.`
+    : `Language: Spoken in ${langName}.`;
+
   const scriptDirective = isRomanized
     ? `CRITICAL SCRIPT INSTRUCTION:
-- Transcribe the spoken audio using ROMANIZED SCRIPT / ENGLISH ALPHABET ONLY.
-- For Indian languages (e.g. Telugu, Hindi, Tamil), produce natural colloquial Romanized script (e.g. Tanglish: "Prathi frame lo oka katha.", Hinglish: "Aapka swagat hai").
-- Do NOT output native Telugu/Devanagari/Tamil characters. Use standard conversational transliteration readable by social media audiences.`
+- If the spoken audio is English: Output standard English words with proper spelling and capitalization.
+- If the spoken audio is an Indian language (e.g. Telugu, Hindi, Tamil): Transcribe into natural colloquial Romanized script (e.g. Tanglish: "Prathi frame lo oka katha.", Hinglish: "Aapka swagat hai") using the Latin/English alphabet only.
+- Do NOT output native Telugu/Devanagari/Tamil characters when Romanized is requested.`
     : `CRITICAL SCRIPT INSTRUCTION:
 - Transcribe the spoken audio strictly in its authentic NATIVE SCRIPT (e.g., Telugu script 'తెలుగు లిపి', Hindi Devanagari 'हिन्दी', Tamil 'தமிழ்').
 - Preserve correct native spelling, conjuncts, and punctuation.`;
@@ -247,12 +251,13 @@ function buildPrompt(langName, isRomanized) {
   const ex = (roman, native) => (isRomanized ? roman : native);
 
   return `Analyze this audio carefully and generate accurate timestamped dialogue subtitles.
-Language: Spoken in ${langName}.
+${languageDirective}
 ${scriptDirective}
 
 TIMING RULES:
-- "start" is when the speaker first begins vocalizing that phrase/word; "end" is when it finishes.
-- All times are in SECONDS from the start of the audio, as decimal numbers (e.g. 12.35). Never use MM:SS.
+- "start" is when the speaker begins vocalizing that phrase/word; "end" is when vocalization ceases.
+- All times are in SECONDS from the start of this audio clip, as decimal numbers (e.g. 1.35). Never use MM:SS.
+- The timestamps must strictly match the acoustic speech in the audio. Do not drift or invent time offsets.
 - Break speech into short, energetic segments (2 to 4 words, about 1.0 to 2.2 seconds each).
 - For EVERY segment provide a "words" array with start and end times for each word.
 - Timestamps must be non-decreasing and must not overlap.
@@ -381,14 +386,14 @@ export default async function handler(req, res) {
         'romanized',
     );
 
-    // hasOwn: stops values like "constructor" from reaching the prompt
+    const isAutoDetect = spokenLanguage === 'auto';
     const langName = Object.hasOwn(LANGUAGE_LABELS, spokenLanguage)
       ? LANGUAGE_LABELS[spokenLanguage]
       : LANGUAGE_LABELS.auto;
     const isRomanized = scriptOutput !== 'native';
 
     const client = new GoogleGenAI({ apiKey });
-    const prompt = buildPrompt(langName, isRomanized);
+    const prompt = buildPrompt(langName, isRomanized, isAutoDetect);
 
     const { text, lastError, timedOut } = await transcribeWithFallback(
       client,
