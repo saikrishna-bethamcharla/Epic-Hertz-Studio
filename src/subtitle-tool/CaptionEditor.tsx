@@ -23,9 +23,11 @@ import {
   Sliders,
   Palette,
   RotateCcw,
+  Mic,
 } from 'lucide-react';
 import { formatTimecode } from './utils/formatTime';
 import { checkReadability, getCPS } from './utils/readability';
+import { getSpeakerStyle, getSpeakerShortCode } from './utils/speakers';
 import type { Segment, ScriptOutput, SpokenLanguage, WordTimestamp, SegmentStyleOverride } from './types';
 
 const POPULAR_EMOJIS = [
@@ -249,6 +251,26 @@ export default function CaptionEditor({
         },
       });
     }
+  };
+
+  const cycleSpeaker = (segId: string) => {
+    const seg = segments.find((s) => s.id === segId);
+    if (!seg) return;
+    const speakers = [undefined, 'Speaker 1', 'Speaker 2', 'Speaker 3', 'Speaker 4'];
+    const currIdx = speakers.indexOf(seg.speaker);
+    const nextSpeaker = speakers[(currIdx + 1) % speakers.length];
+    updateSegment(segId, { speaker: nextSpeaker });
+  };
+
+  const handleBulkSetSpeaker = (speaker?: string) => {
+    if (selectedIds.size === 0) return;
+    const updated = segments.map((s) => {
+      if (selectedIds.has(s.id)) {
+        return { ...s, speaker };
+      }
+      return s;
+    });
+    onSegmentsChange(updated);
   };
 
   // Split segment at cursor when pressing Enter inside caption textarea
@@ -530,6 +552,28 @@ export default function CaptionEditor({
               >
                 +0.1s
               </button>
+              <div className="flex items-center gap-1 border-l border-white/10 pl-1.5 ml-0.5">
+                <span className="text-[10px] text-smoke font-mono">Speaker:</span>
+                {['S1', 'S2', 'S3'].map((code, i) => (
+                  <button
+                    key={code}
+                    type="button"
+                    onClick={() => handleBulkSetSpeaker(`Speaker ${i + 1}`)}
+                    className="px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 text-bone text-[10px] font-mono font-bold"
+                    title={`Set selected to Speaker ${i + 1}`}
+                  >
+                    {code}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => handleBulkSetSpeaker(undefined)}
+                  className="px-1 py-0.5 rounded bg-white/5 hover:bg-white/10 text-smoke text-[9px]"
+                  title="Clear speaker"
+                >
+                  ✕
+                </button>
+              </div>
               <button
                 type="button"
                 onClick={handleBulkDelete}
@@ -566,6 +610,7 @@ export default function CaptionEditor({
             const prevSeg = idx > 0 ? filteredSegments[idx - 1] : undefined;
             const nextSeg = idx < filteredSegments.length - 1 ? filteredSegments[idx + 1] : undefined;
             const issues = checkReadability(seg, prevSeg, nextSeg);
+            const speakerStyle = getSpeakerStyle(seg.speaker);
             const wordsList: WordTimestamp[] = seg.words && seg.words.length > 0
               ? seg.words
               : seg.text.trim().split(/\s+/).filter(Boolean).map((w, i, arr) => {
@@ -585,6 +630,7 @@ export default function CaptionEditor({
                   handleSelectRow(seg.id, e);
                   onSeek(seg.start);
                 }}
+                style={speakerStyle ? { borderLeftColor: speakerStyle.darkBorder, borderLeftWidth: 3 } : undefined}
                 className={`group relative rounded-xl p-3 border transition-colors duration-150 cursor-pointer ${
                   isActive
                     ? 'border-amber-400/80 bg-[#252420] shadow-md ring-1 ring-amber-400/40'
@@ -626,6 +672,25 @@ export default function CaptionEditor({
                   >
                     {formatTimecode(seg.start)}
                   </span>
+
+                  {/* Speaker Badge & Quick Cycle Selector */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      cycleSpeaker(seg.id);
+                    }}
+                    aria-label={`Speaker: ${seg.speaker || 'Unassigned'} (Click to cycle)`}
+                    title={`Speaker: ${seg.speaker || 'Unassigned'} (Click to cycle S1, S2, S3, S4)`}
+                    className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold font-mono tracking-wide border flex items-center gap-1 transition-all shrink-0 ${
+                      speakerStyle
+                        ? `${speakerStyle.bg} ${speakerStyle.text} ${speakerStyle.border} shadow-xs`
+                        : 'bg-white/5 text-smoke/70 border-white/10 hover:text-bone hover:bg-white/10'
+                    }`}
+                  >
+                    <Mic className="w-2.5 h-2.5" />
+                    <span>{speakerStyle ? getSpeakerShortCode(seg.speaker) : '+S'}</span>
+                  </button>
 
                   {/* Caption text display or edit with Enter/Backspace shortcuts */}
                   <div className="flex-1 min-w-0">
@@ -896,6 +961,37 @@ export default function CaptionEditor({
                               title={col.label}
                             />
                           ))}
+                        </div>
+                      </div>
+
+                      {/* Speaker Assignment */}
+                      <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-white/5">
+                        <span className="text-smoke">Speaker:</span>
+                        <div className="flex items-center gap-1">
+                          {['Speaker 1', 'Speaker 2', 'Speaker 3', 'Speaker 4'].map((spk, i) => (
+                            <button
+                              key={spk}
+                              type="button"
+                              onClick={() => updateSegment(seg.id, { speaker: seg.speaker === spk ? undefined : spk })}
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-medium font-mono transition-colors ${
+                                seg.speaker === spk
+                                  ? 'bg-amber-400 text-black font-bold'
+                                  : 'bg-white/10 text-smoke hover:text-bone'
+                              }`}
+                            >
+                              S{i + 1}
+                            </button>
+                          ))}
+                          {seg.speaker && (
+                            <button
+                              type="button"
+                              onClick={() => updateSegment(seg.id, { speaker: undefined })}
+                              className="text-smoke hover:text-bone text-[9px] px-1"
+                              title="Clear speaker"
+                            >
+                              ✕
+                            </button>
+                          )}
                         </div>
                       </div>
                     </motion.div>

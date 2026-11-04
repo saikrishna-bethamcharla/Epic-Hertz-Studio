@@ -45,6 +45,7 @@ const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
   {
     title: 'Precision Timing & Styling Overrides',
     items: [
+      { keys: ['Mic / +S pill'], description: 'Cycle or assign speaker (S1, S2, S3...) with distinct color coding' },
       { keys: ['Word chips'], description: 'Nudge ±0.05s, cycle color & animation FX (pop, shake, glow, bar)' },
       { keys: ['Sliders icon'], description: 'Per-caption overrides (vertical position, scale, custom color)' },
       { keys: ['Smile icon'], description: 'Insert creator emojis into dialogue' },

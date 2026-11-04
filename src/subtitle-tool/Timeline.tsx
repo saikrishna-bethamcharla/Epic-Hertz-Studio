@@ -12,6 +12,7 @@
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { Scissors, Combine, Trash2, BookOpen, Plus, Undo2, Redo2, Magnet, Link2 } from 'lucide-react';
 import { formatTimecode, formatRulerTick } from './utils/formatTime';
+import { getSpeakerStyle, getSpeakerShortCode } from './utils/speakers';
 import type { Segment } from './types';
 
 interface TimelineProps {
@@ -687,6 +688,7 @@ export default function Timeline({
               const left = seg.start * zoom;
               const width = Math.max(30, (seg.end - seg.start) * zoom);
               const isActive = seg.id === activeId;
+              const speakerStyle = getSpeakerStyle(seg.speaker);
               const nextSeg = sIdx < segments.length - 1 ? segments[sIdx + 1] : undefined;
               const hasOverlap = nextSeg && nextSeg.start < seg.end - 0.03;
               const hasGap = nextSeg && nextSeg.start > seg.end + 0.6;
@@ -704,8 +706,10 @@ export default function Timeline({
                     style={{
                       left: `${left}px`,
                       width: `${width}px`,
+                      borderTopColor: speakerStyle ? speakerStyle.darkBorder : undefined,
+                      borderTopWidth: speakerStyle ? 3 : 1,
                     }}
-                    title={`${seg.text} (${formatTimecode(seg.start)} - ${formatTimecode(seg.end)})`}
+                    title={`${speakerStyle ? `[${speakerStyle.name}] ` : ''}${seg.text} (${formatTimecode(seg.start)} - ${formatTimecode(seg.end)})`}
                   >
                     {/* Left Trim Handle */}
                     <div
@@ -715,8 +719,17 @@ export default function Timeline({
                     />
 
                     {/* Content */}
-                    <div className="truncate font-semibold text-[11px] tracking-tight pl-1">
-                      {seg.text || '...'}
+                    <div className="flex items-center gap-1 pl-1 min-w-0">
+                      {speakerStyle && (
+                        <span
+                          className={`px-1 py-0.2 rounded text-[8px] font-mono font-bold uppercase shrink-0 border ${speakerStyle.bg} ${speakerStyle.text} ${speakerStyle.border}`}
+                        >
+                          {getSpeakerShortCode(seg.speaker)}
+                        </span>
+                      )}
+                      <span className="truncate font-semibold text-[11px] tracking-tight">
+                        {seg.text || '...'}
+                      </span>
                     </div>
                     <div className="text-[9px] text-smoke font-mono pl-1">
                       {formatTimecode(seg.start)} - {formatTimecode(seg.end)}

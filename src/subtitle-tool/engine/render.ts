@@ -12,6 +12,7 @@ import type { Segment } from '../types';
 import { COMPLEX_SCRIPT, type CaptionStyle, type GradientPaint, type InAnim, type Paint } from './spec';
 import { canvasFont, fontsVersion } from './fonts';
 import { clamp01, ease, hash01, lerp, mixColor, spring } from './util';
+import { getSpeakerStyle } from '../utils/speakers';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Words & pages
@@ -481,23 +482,34 @@ export function renderCaptions(
   const words = segmentWords(seg);
   if (!words.length) return NOTHING;
 
-  // Merge per-segment style overrides if present
+  // Merge speaker color and per-segment style overrides if present
   let activeStyle = style;
+  const speakerStyle = getSpeakerStyle(seg.speaker);
+  if (speakerStyle) {
+    activeStyle = {
+      ...activeStyle,
+      highlight: {
+        ...activeStyle.highlight,
+        color: speakerStyle.color,
+      },
+    };
+  }
+
   if (seg.styleOverride) {
     const ov = seg.styleOverride;
     activeStyle = {
-      ...style,
+      ...activeStyle,
       layout: {
-        ...style.layout,
-        y: ov.positionY !== undefined ? ov.positionY : style.layout.y,
+        ...activeStyle.layout,
+        y: ov.positionY !== undefined ? ov.positionY : activeStyle.layout.y,
       },
       font: {
-        ...style.font,
-        size: ov.scale !== undefined ? style.font.size * ov.scale : style.font.size,
+        ...activeStyle.font,
+        size: ov.scale !== undefined ? activeStyle.font.size * ov.scale : activeStyle.font.size,
       },
-      fill: ov.fillColor || style.fill,
-      stroke: ov.strokeColor ? { ...style.stroke, color: ov.strokeColor } : style.stroke,
-      highlight: ov.highlightColor ? { ...style.highlight, color: ov.highlightColor } : style.highlight,
+      fill: ov.fillColor || activeStyle.fill,
+      stroke: ov.strokeColor ? { ...activeStyle.stroke, color: ov.strokeColor } : activeStyle.stroke,
+      highlight: ov.highlightColor ? { ...activeStyle.highlight, color: ov.highlightColor } : activeStyle.highlight,
     };
   }
 

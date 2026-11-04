@@ -22,6 +22,7 @@ export interface Segment {
   start: number;   // seconds
   end: number;     // seconds
   text: string;
+  speaker?: string; // e.g. 'Speaker 1', 'Speaker 2', 'Guest', 'Host'
   words?: WordTimestamp[];
   styleOverride?: SegmentStyleOverride;
 }
