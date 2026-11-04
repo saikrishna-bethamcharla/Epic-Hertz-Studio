@@ -1,4 +1,5 @@
-export type { CaptionStyle } from './engine/spec';
+import type { CaptionStyle, TextCase } from './engine/spec';
+export type { CaptionStyle, TextCase } from './engine/spec';
 
 export interface WordTimestamp {
   word: string;
@@ -15,6 +16,13 @@ export interface SegmentStyleOverride {
   scale?: number;
   positionX?: number; // 0..1 frame width (0 = left, 0.5 = center, 1 = right)
   positionY?: number; // 0..1 frame height (0 = top, 0.5 = center, 1 = bottom)
+  fontFamily?: string;
+  fontWeight?: number;
+  fontSize?: number;
+  underline?: boolean;
+  italic?: boolean;
+  textCase?: TextCase;
+  customStyle?: Partial<CaptionStyle>;
 }
 
 export interface Segment {

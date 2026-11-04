@@ -10,7 +10,7 @@ export const BASE_STYLE: CaptionStyle = {
   id: 'base',
   name: 'Base',
   syncOffset: -0.35,
-  font: { family: 'montserrat', weight: 800, italic: false, size: 0.075, tracking: 0, lineHeight: 1.15, textCase: 'none' },
+  font: { family: 'montserrat', weight: 800, italic: false, underline: false, size: 0.075, tracking: 0, lineHeight: 1.15, textCase: 'none' },
   layout: { wordsPerPage: 3, maxLines: 2, widthPct: 0.86, align: 'center', x: 0.5, y: 0.74 },
   fill: '#FFFFFF',
   stroke: { width: 0, color: '#000000' },

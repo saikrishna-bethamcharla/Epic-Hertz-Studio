@@ -497,6 +497,22 @@ export function renderCaptions(
 
   if (seg.styleOverride) {
     const ov = seg.styleOverride;
+    if (ov.customStyle) {
+      activeStyle = {
+        ...activeStyle,
+        ...ov.customStyle,
+        font: { ...activeStyle.font, ...(ov.customStyle.font || {}) },
+        layout: { ...activeStyle.layout, ...(ov.customStyle.layout || {}) },
+        stroke: { ...activeStyle.stroke, ...(ov.customStyle.stroke || {}) },
+        shadow: { ...activeStyle.shadow, ...(ov.customStyle.shadow || {}) },
+        glow: { ...activeStyle.glow, ...(ov.customStyle.glow || {}) },
+        extrude: { ...activeStyle.extrude, ...(ov.customStyle.extrude || {}) },
+        plate: { ...activeStyle.plate, ...(ov.customStyle.plate || {}) },
+        highlight: { ...activeStyle.highlight, ...(ov.customStyle.highlight || {}) },
+        reveal: { ...activeStyle.reveal, ...(ov.customStyle.reveal || {}) },
+        motion: { ...activeStyle.motion, ...(ov.customStyle.motion || {}) },
+      };
+    }
     activeStyle = {
       ...activeStyle,
       layout: {
@@ -506,7 +522,12 @@ export function renderCaptions(
       },
       font: {
         ...activeStyle.font,
-        size: ov.scale !== undefined ? activeStyle.font.size * ov.scale : activeStyle.font.size,
+        family: ov.fontFamily || activeStyle.font.family,
+        weight: ov.fontWeight || activeStyle.font.weight,
+        size: ov.fontSize !== undefined ? ov.fontSize : (ov.scale !== undefined ? activeStyle.font.size * ov.scale : activeStyle.font.size),
+        underline: ov.underline !== undefined ? ov.underline : activeStyle.font.underline,
+        italic: ov.italic !== undefined ? ov.italic : activeStyle.font.italic,
+        textCase: ov.textCase !== undefined ? ov.textCase : activeStyle.font.textCase,
       },
       fill: ov.fillColor || activeStyle.fill,
       stroke: ov.strokeColor ? { ...activeStyle.stroke, color: ov.strokeColor } : activeStyle.stroke,
@@ -780,9 +801,10 @@ export function renderCaptions(
     });
     charCounter += units.length;
 
-    // Underline accent
-    if ((hl.mode === 'underline' || w.emphasis === 'underline') && started && (isActive || (hl.keep && t > w.end))) {
-      const prog = hl.keep && t > w.end ? 1 : ease('out', clamp01((t - w.start) / 0.16));
+    // Underline accent (from font style or highlight mode or word emphasis)
+    const hasUnderline = activeStyle.font.underline || hl.mode === 'underline' || w.emphasis === 'underline';
+    if (hasUnderline && started && (isActive || activeStyle.font.underline || (hl.keep && t > w.end))) {
+      const prog = (hl.keep && t > w.end) || activeStyle.font.underline ? 1 : ease('out', clamp01((t - w.start) / 0.16));
       const thick = Math.max(2, px * 0.085);
       ctx.save();
       ctx.fillStyle = wordHlColor;

@@ -21,6 +21,17 @@ import PrepareMediaModal from './PrepareMediaModal';
 import ExportModal from './ExportModal';
 import ProgressOverlay from './ProgressOverlay';
 
+import TopBar from './v2/TopBar';
+import ResizeHandle from './v2/ResizeHandle';
+import LibraryPanel, { type LibraryTab } from './v2/LibraryPanel';
+import InspectorPanel from './v2/InspectorPanel';
+import {
+  getStoredLayout,
+  saveStoredLayout,
+  DEFAULT_LAYOUT,
+  type WorkspaceLayout,
+} from './v2/userPresets';
+
 import { extractAudio } from './utils/extractAudio';
 import { transcribeAudio } from './api/transcribe';
 import { toSRT, downloadText } from './utils/srt';
@@ -72,6 +83,20 @@ export default function SubtitleTool() {
   const [savedDraft, setSavedDraft] = useState<SavedProjectMeta | null>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const [layout, setLayout] = useState<WorkspaceLayout>(() => getStoredLayout());
+  const [scope, setScope] = useState<'all' | 'caption' | 'words'>('all');
+  const [leftTab, setLeftTab] = useState<LibraryTab>('captions');
+  const [selectedWordIndices, setSelectedWordIndices] = useState<number[]>([]);
+  const [projectName, setProjectName] = useState<string>('Untitled Video');
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = useCallback((msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage((cur) => (cur === msg ? null : cur));
+    }, 4000);
+  }, []);
+
   const videoRef = useRef<VideoPreviewHandle>(null);
 
   const updateSegments = useCallback(
@@ -235,7 +260,7 @@ export default function SubtitleTool() {
         return;
       }
 
-      // Escape key: close dialogs or blur textareas
+      // Escape key: close dialogs or return scope to 'all'
       if (e.key === 'Escape') {
         if (isShortcutsOpen) {
           setIsShortcutsOpen(false);
@@ -244,6 +269,30 @@ export default function SubtitleTool() {
         if (target && typeof target.blur === 'function') {
           target.blur();
         }
+        setScope('all');
+        setSelectedWordIndices([]);
+        return;
+      }
+
+      // Toggle Left Library Panel: [
+      if (e.key === '[' && !isTyping) {
+        e.preventDefault();
+        setLayout((prev) => {
+          const next = { ...prev, isLeftCollapsed: !prev.isLeftCollapsed };
+          saveStoredLayout(next);
+          return next;
+        });
+        return;
+      }
+
+      // Toggle Right Inspector Panel: ]
+      if (e.key === ']' && !isTyping) {
+        e.preventDefault();
+        setLayout((prev) => {
+          const next = { ...prev, isRightCollapsed: !prev.isRightCollapsed };
+          saveStoredLayout(next);
+          return next;
+        });
         return;
       }
 
@@ -415,6 +464,7 @@ export default function SubtitleTool() {
   // ── 1. File Selected → Go to 'configuring' modal ─────────────────────────
   const handleFileDrop = useCallback((file: File) => {
     setVideoFile(file);
+    setProjectName(file.name.replace(/\.[^/.]+$/, ''));
     setError(null);
     setStage('configuring');
     saveMediaAsset(file, file.name);
@@ -854,24 +904,84 @@ export default function SubtitleTool() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }}
             >
-              {isDesktop ? (
-                <>
-                  {/* Top Row: 3 Columns */}
-                  <div className="flex-1 flex min-h-0 overflow-hidden">
-                    {/* Column 1: Captions List */}
-                    <div className="w-[280px] lg:w-[320px] shrink-0 h-full overflow-hidden">
-                      <CaptionEditor
-                        segments={segments}
-                        activeId={activeId}
-                        scriptOutput={scriptOutput}
-                        spokenLanguage={spokenLanguage}
-                        onSegmentsChange={updateSegments}
-                        onSeek={(t) => videoRef.current?.seekTo(t)}
-                      />
-                    </div>
+              {/* TopBar (48px) */}
+              <TopBar
+                projectName={projectName}
+                onProjectNameChange={setProjectName}
+                canUndo={history.length > 0}
+                canRedo={redoStack.length > 0}
+                onUndo={handleUndo}
+                onRedo={handleRedo}
+                saveStatus={saveStatus}
+                lastSavedAt={lastSavedAt}
+                onOpenShortcuts={() => setIsShortcutsOpen(true)}
+                onOpenExport={() => setIsExportModalOpen(true)}
+              />
 
-                    {/* Column 2: Center Reel / Video Player */}
-                    <div className="flex-1 h-full overflow-hidden bg-[#0c0c0b] flex items-center justify-center relative p-3">
+              {isDesktop ? (
+                <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                  {/* Middle Work Area: Left Library | Player | Right Inspector */}
+                  <div className="flex-1 flex min-h-0 overflow-hidden relative">
+                    {/* Zone 1: Left Library Panel */}
+                    {!layout.isLeftCollapsed && (
+                      <>
+                        <div
+                          style={{ width: `${layout.leftWidth}px` }}
+                          className="shrink-0 h-full overflow-hidden"
+                        >
+                          <LibraryPanel
+                            leftTab={leftTab}
+                            onTabChange={setLeftTab}
+                            segments={segments}
+                            activeId={activeId}
+                            onSelectSegment={(id) => {
+                              setActiveId(id);
+                              setScope('caption');
+                            }}
+                            onSegmentsChange={updateSegments}
+                            onSeek={(t) => videoRef.current?.seekTo(t)}
+                            style={style}
+                            onStyleChange={setStyle}
+                            onSegmentOverrideChange={handleSegmentOverride}
+                            spokenLanguage={spokenLanguage}
+                            scriptOutput={scriptOutput}
+                            onRetranscribe={() => setStage('configuring')}
+                            scope={scope}
+                            onNotification={(msg) => showToast(msg)}
+                            onToggleCollapse={() => {
+                              setLayout((p) => {
+                                const next = { ...p, isLeftCollapsed: true };
+                                saveStoredLayout(next);
+                                return next;
+                              });
+                            }}
+                          />
+                        </div>
+
+                        {/* Resize handle between Left Panel and Player */}
+                        <ResizeHandle
+                          direction="horizontal"
+                          onResize={(delta) => {
+                            setLayout((p) => {
+                              const newW = Math.max(320, Math.min(480, p.leftWidth + delta));
+                              const next = { ...p, leftWidth: newW };
+                              saveStoredLayout(next);
+                              return next;
+                            });
+                          }}
+                          onReset={() => {
+                            setLayout((p) => {
+                              const next = { ...p, leftWidth: DEFAULT_LAYOUT.leftWidth };
+                              saveStoredLayout(next);
+                              return next;
+                            });
+                          }}
+                        />
+                      </>
+                    )}
+
+                    {/* Zone 2: Center Player */}
+                    <div className="flex-1 h-full overflow-hidden bg-[#0c0c0b] flex flex-col items-center justify-center relative p-2 min-w-0">
                       <VideoPreview
                         ref={videoRef}
                         videoFile={videoFile}
@@ -886,21 +996,108 @@ export default function SubtitleTool() {
                         onPlayStateChange={setIsPlaying}
                         hideCaptions={hideCaptions}
                         onToggleHideCaptions={() => setHideCaptions((prev) => !prev)}
+                        isLeftCollapsed={layout.isLeftCollapsed}
+                        onToggleLeftCollapsed={() => {
+                          setLayout((p) => {
+                            const next = { ...p, isLeftCollapsed: !p.isLeftCollapsed };
+                            saveStoredLayout(next);
+                            return next;
+                          });
+                        }}
+                        isRightCollapsed={layout.isRightCollapsed}
+                        onToggleRightCollapsed={() => {
+                          setLayout((p) => {
+                            const next = { ...p, isRightCollapsed: !p.isRightCollapsed };
+                            saveStoredLayout(next);
+                            return next;
+                          });
+                        }}
                       />
                     </div>
 
-                    {/* Column 3: Right Templates Drawer */}
-                    <div className="w-[300px] lg:w-[340px] shrink-0 h-full overflow-hidden">
-                      <TemplateDrawer
-                        style={style}
-                        onChange={setStyle}
-                        segments={segments}
-                      />
-                    </div>
+                    {/* Zone 3: Right Contextual Inspector */}
+                    {!layout.isRightCollapsed && (
+                      <>
+                        {/* Resize handle between Player and Right Inspector */}
+                        <ResizeHandle
+                          direction="horizontal"
+                          onResize={(delta) => {
+                            setLayout((p) => {
+                              const newW = Math.max(300, Math.min(440, p.rightWidth - delta));
+                              const next = { ...p, rightWidth: newW };
+                              saveStoredLayout(next);
+                              return next;
+                            });
+                          }}
+                          onReset={() => {
+                            setLayout((p) => {
+                              const next = { ...p, rightWidth: DEFAULT_LAYOUT.rightWidth };
+                              saveStoredLayout(next);
+                              return next;
+                            });
+                          }}
+                        />
+
+                        <div
+                          style={{ width: `${layout.rightWidth}px` }}
+                          className="shrink-0 h-full overflow-hidden"
+                        >
+                          <InspectorPanel
+                            scope={scope}
+                            onScopeChange={setScope}
+                            style={style}
+                            onStyleChange={setStyle}
+                            activeSegment={segments.find((s) => s.id === activeId) || null}
+                            onUpdateActiveSegment={(override) => {
+                              if (!activeId) return;
+                              const updated = segments.map((s) =>
+                                s.id === activeId ? { ...s, ...override } : s
+                              );
+                              updateSegments(updated);
+                            }}
+                            onSegmentOverrideChange={handleSegmentOverride}
+                            selectedWordIndices={selectedWordIndices}
+                            onSelectWordIndex={(idx) => {
+                              setSelectedWordIndices([idx]);
+                              setScope('words');
+                            }}
+                            totalSegmentsCount={segments.length}
+                            onPlayPreview={() => {
+                              const active = segments.find((s) => s.id === activeId);
+                              if (active) {
+                                videoRef.current?.seekTo(active.start);
+                                videoRef.current?.play();
+                              }
+                            }}
+                            onGoToBrand={() => setLeftTab('brand')}
+                          />
+                        </div>
+                      </>
+                    )}
                   </div>
 
-                  {/* Bottom Row: Multi-track Audio Timeline */}
-                  <div className="h-44 shrink-0">
+                  {/* Horizontal Resize Handle above Timeline */}
+                  <ResizeHandle
+                    direction="vertical"
+                    onResize={(delta) => {
+                      setLayout((p) => {
+                        const newH = Math.max(180, Math.min(360, p.timelineHeight - delta));
+                        const next = { ...p, timelineHeight: newH };
+                        saveStoredLayout(next);
+                        return next;
+                      });
+                    }}
+                    onReset={() => {
+                      setLayout((p) => {
+                        const next = { ...p, timelineHeight: DEFAULT_LAYOUT.timelineHeight };
+                        saveStoredLayout(next);
+                        return next;
+                      });
+                    }}
+                  />
+
+                  {/* Zone 4: Bottom Multi-track Audio Timeline */}
+                  <div style={{ height: `${layout.timelineHeight}px` }} className="shrink-0">
                     <Timeline
                       duration={duration}
                       currentTime={currentTime}
@@ -910,14 +1107,17 @@ export default function SubtitleTool() {
                       onSeek={(t) => videoRef.current?.seekTo(t)}
                       onTogglePlay={() => videoRef.current?.togglePlay()}
                       onSegmentsChange={updateSegments}
-                      onSelectSegment={(id) => setActiveId(id)}
+                      onSelectSegment={(id) => {
+                        setActiveId(id);
+                        setScope('caption');
+                      }}
                       canUndo={history.length > 0}
                       canRedo={redoStack.length > 0}
                       onUndo={handleUndo}
                       onRedo={handleRedo}
                     />
                   </div>
-                </>
+                </div>
               ) : (
                 /* Phones & small tablets: preview on top, one panel at a time below */
                 <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -993,6 +1193,31 @@ export default function SubtitleTool() {
           )}
         </AnimatePresence>
       </main>
+
+      {/* Floating Action Toast Notification */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            role="status"
+            className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-2 rounded-xl bg-[#1c1c1b] border border-amber-400/40 text-bone text-xs shadow-2xl backdrop-blur-md"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 15 }}
+          >
+            <span>{toastMessage}</span>
+            <button
+              type="button"
+              onClick={() => {
+                handleUndo();
+                setToastMessage(null);
+              }}
+              className="text-amber-300 hover:text-white font-bold ml-2 underline underline-offset-2"
+            >
+              Undo
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Done notification toast */}
       <AnimatePresence>

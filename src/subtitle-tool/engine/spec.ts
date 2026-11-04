@@ -38,6 +38,7 @@ export interface CaptionStyle {
     family: string; // id from FONT_FAMILIES
     weight: number;
     italic: boolean;
+    underline?: boolean;
     /** Fraction of min(frame width, frame height). 0.08 ≈ classic reel caption. */
     size: number;
     /** em */

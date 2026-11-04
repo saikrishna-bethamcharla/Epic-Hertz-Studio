@@ -60,6 +60,8 @@ const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
     items: [
       { keys: ['Ctrl / ⌘', 'Z'], description: 'Undo last edit' },
       { keys: ['Ctrl / ⌘', 'Shift', 'Z'], description: 'Redo last edit' },
+      { keys: ['['], description: 'Toggle / collapse Left Library panel' },
+      { keys: [']'], description: 'Toggle / collapse Right Inspector panel' },
       { keys: ['?'], description: 'Open this keyboard shortcuts guide' },
       { keys: ['Esc'], description: 'Close dialogs or clear selection' },
     ],

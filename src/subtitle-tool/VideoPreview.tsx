@@ -24,6 +24,12 @@ import {
   ThumbsUp,
   ThumbsDown,
   Sparkles,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen,
+  SkipBack,
+  SkipForward,
 } from 'lucide-react';
 import type { Segment, CaptionStyle, VideoAspectRatio, SegmentStyleOverride } from './types';
 import CaptionCanvas from './CaptionCanvas';
@@ -44,6 +50,10 @@ interface VideoPreviewProps {
   onPlayStateChange?: (isPlaying: boolean) => void;
   hideCaptions?: boolean;
   onToggleHideCaptions?: () => void;
+  isLeftCollapsed?: boolean;
+  onToggleLeftCollapsed?: () => void;
+  isRightCollapsed?: boolean;
+  onToggleRightCollapsed?: () => void;
 }
 
 export interface VideoPreviewHandle {
@@ -70,6 +80,10 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       onPlayStateChange,
       hideCaptions = false,
       onToggleHideCaptions,
+      isLeftCollapsed = false,
+      onToggleLeftCollapsed,
+      isRightCollapsed = false,
+      onToggleRightCollapsed,
     },
     ref,
   ) => {
@@ -257,59 +271,107 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
 
     return (
       <div className="flex flex-col items-center justify-center w-full h-full p-2 select-none">
-        {/* Aspect Ratio Switcher Pills & Safe Zones */}
-        <div className="flex items-center gap-2 mb-1.5 sm:mb-2.5 z-10 flex-wrap justify-center">
-          <div className="flex items-center gap-1.5 bg-[#1b1b19] p-1 rounded-xl border border-white/10 shadow-sm">
-            {(['9:16', '16:9', '1:1', 'original'] as VideoAspectRatio[]).map((ratio) => (
+        {/* Player View Settings Bar (Title, Aspect Ratio, Safe Zones, Panel Toggles) */}
+        <div className="w-full flex items-center justify-between gap-2 mb-2 px-1 z-10 flex-wrap">
+          {/* Left: Left Panel Toggle & Title */}
+          <div className="flex items-center gap-2">
+            {onToggleLeftCollapsed && (
               <button
-                key={ratio}
                 type="button"
-                onClick={() => onAspectRatioChange?.(ratio)}
-                className={`px-2.5 sm:px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                  aspectRatio === ratio
-                    ? 'bg-[#292826] text-amber-300 shadow-sm border border-amber-300/30'
-                    : 'text-smoke hover:text-bone'
-                }`}
+                onClick={onToggleLeftCollapsed}
+                className="p-1.5 rounded-lg bg-[#1b1b19] border border-white/10 text-smoke hover:text-bone hover:bg-white/10 transition-colors"
+                title={isLeftCollapsed ? 'Expand Library panel ([)' : 'Collapse Library panel ([)'}
               >
-                {ratio === '9:16' ? '9:16 Reel' : ratio === '16:9' ? '16:9' : ratio === '1:1' ? '1:1' : 'Original'}
+                {isLeftCollapsed ? <PanelLeftOpen className="w-3.5 h-3.5" /> : <PanelLeftClose className="w-3.5 h-3.5" />}
               </button>
-            ))}
+            )}
+            <span className="text-xs font-bold text-bone tracking-tight hidden sm:inline">Preview</span>
           </div>
 
-          {/* Safe Zones Toggle & Platform Selector */}
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setShowSafeZones(!showSafeZones)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 ${
-                showSafeZones
-                  ? 'bg-amber-400 text-black border-amber-400 font-bold shadow-md shadow-amber-400/20'
-                  : 'bg-[#1b1b19] border-white/10 text-smoke hover:text-bone hover:border-white/25'
-              }`}
-              title="Toggle social platform UI safe zones to prevent captions from getting covered"
-            >
-              <Smartphone className="w-3.5 h-3.5" />
-              <span>Safe Zones</span>
-              {showSafeZones && <span className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />}
-            </button>
+          {/* Center: Aspect Ratio & Safe Zones */}
+          <div className="flex items-center gap-1.5 flex-wrap justify-center">
+            <div className="flex items-center gap-1 bg-[#1b1b19] p-0.5 rounded-xl border border-white/10 shadow-xs">
+              {(['9:16', '16:9', '1:1', 'original'] as VideoAspectRatio[]).map((ratio) => (
+                <button
+                  key={ratio}
+                  type="button"
+                  onClick={() => onAspectRatioChange?.(ratio)}
+                  className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
+                    aspectRatio === ratio
+                      ? 'bg-[#292826] text-amber-300 border border-amber-300/30'
+                      : 'text-smoke hover:text-bone'
+                  }`}
+                >
+                  {ratio === '9:16' ? '9:16 Reel' : ratio === '16:9' ? '16:9' : ratio === '1:1' ? '1:1' : 'Fit'}
+                </button>
+              ))}
+            </div>
 
-            {showSafeZones && (
-              <div className="flex items-center gap-1 bg-[#1b1b19] p-0.5 rounded-lg border border-white/10 animate-in fade-in">
-                {(['reels', 'tiktok', 'shorts'] as SafeZonePlatform[]).map((p) => (
+            {/* Safe Zones Selector */}
+            <div className="flex items-center gap-1 bg-[#1b1b19] p-0.5 rounded-xl border border-white/10">
+              <button
+                type="button"
+                onClick={() => setShowSafeZones(!showSafeZones)}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-lg flex items-center gap-1 ${
+                  showSafeZones ? 'bg-amber-400 text-black font-bold' : 'text-smoke hover:text-bone'
+                }`}
+                title="Toggle Platform Safe Zones"
+              >
+                <Smartphone className="w-3.5 h-3.5" />
+                <span>Safe Zones</span>
+              </button>
+              {showSafeZones &&
+                (['reels', 'tiktok', 'shorts'] as SafeZonePlatform[]).map((p) => (
                   <button
                     key={p}
                     type="button"
                     onClick={() => setSafePlatform(p)}
-                    className={`px-2 py-0.5 text-[10px] font-semibold rounded capitalize transition-all ${
-                      safePlatform === p
-                        ? 'bg-amber-400 text-black font-bold'
-                        : 'text-smoke hover:text-bone'
+                    className={`px-1.5 py-0.5 text-[10px] font-semibold rounded capitalize ${
+                      safePlatform === p ? 'bg-amber-400 text-black' : 'text-smoke hover:text-bone'
                     }`}
                   >
                     {p === 'reels' ? 'Reels' : p === 'tiktok' ? 'TikTok' : 'Shorts'}
                   </button>
                 ))}
-              </div>
+            </div>
+          </div>
+
+          {/* Right: Compare, Fullscreen & Inspector Toggle */}
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                if (onToggleHideCaptions) onToggleHideCaptions();
+                else setLocalHideCaptions((prev) => !prev);
+              }}
+              title="Compare Before/After (Hold \)"
+              className={`p-1.5 rounded-lg border transition-colors ${
+                hideCaptions || localHideCaptions
+                  ? 'bg-amber-400 text-black border-amber-400 font-bold'
+                  : 'bg-[#1b1b19] border-white/10 text-smoke hover:text-bone'
+              }`}
+            >
+              {hideCaptions || localHideCaptions ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+            </button>
+
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              title="Fullscreen Preview (F)"
+              className="p-1.5 rounded-lg bg-[#1b1b19] border border-white/10 text-smoke hover:text-bone hover:bg-white/10 transition-colors"
+            >
+              <Maximize2 className="w-3.5 h-3.5" />
+            </button>
+
+            {onToggleRightCollapsed && (
+              <button
+                type="button"
+                onClick={onToggleRightCollapsed}
+                className="p-1.5 rounded-lg bg-[#1b1b19] border border-white/10 text-smoke hover:text-bone hover:bg-white/10 transition-colors"
+                title={isRightCollapsed ? 'Expand Inspector (])' : 'Collapse Inspector (])'}
+              >
+                {isRightCollapsed ? <PanelRightOpen className="w-3.5 h-3.5" /> : <PanelRightClose className="w-3.5 h-3.5" />}
+              </button>
             )}
           </div>
         </div>
@@ -565,44 +627,100 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           )}
         </div>
 
-        {/* Floating Transport Bar under Video Player (ReplixCaptions-style) */}
-        <div className="flex items-center gap-3 mt-3 px-4 py-2 bg-[#1b1b19]/90 backdrop-blur-md rounded-2xl border border-white/10 shadow-lg text-bone text-xs">
+        {/* Player Transport Bar (48px) */}
+        <div className="flex items-center gap-2 mt-2 px-3 py-1.5 bg-[#1b1b19]/90 backdrop-blur-md rounded-2xl border border-white/10 shadow-lg text-bone text-xs">
+          {/* Shuttle -1s (J) */}
+          <button
+            type="button"
+            onClick={() => {
+              if (videoRef.current) {
+                const target = Math.max(0, currentTime - 1.0);
+                videoRef.current.currentTime = target;
+                setCurrentTime(target);
+              }
+            }}
+            className="p-1 rounded text-smoke hover:text-amber-300 hover:bg-white/10 transition-colors"
+            title="Rewind 1s (J)"
+          >
+            <SkipBack className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Frame Step Backward */}
+          <button
+            type="button"
+            onClick={() => {
+              if (videoRef.current) {
+                const target = Math.max(0, currentTime - 1 / 30);
+                videoRef.current.currentTime = target;
+                setCurrentTime(target);
+              }
+            }}
+            className="p-1 rounded text-smoke hover:text-amber-300 hover:bg-white/10 transition-colors"
+            title="Step 1 frame backward (←)"
+          >
+            <span className="font-mono text-[10px] font-bold">◄</span>
+          </button>
+
           {/* Play / Pause */}
           <button
             onClick={togglePlay}
             aria-label={isPlaying ? 'Pause playback' : 'Start playback'}
-            className="p-1.5 hover:text-amber-300 transition-colors"
+            className="p-2 rounded-full bg-amber-400 hover:bg-amber-300 text-black shadow-xs transition-colors"
             title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
           >
             {isPlaying ? (
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
               </svg>
             ) : (
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z" />
               </svg>
             )}
           </button>
 
-          {/* Compare Before / After Button */}
+          {/* Frame Step Forward */}
           <button
             type="button"
             onClick={() => {
-              if (onToggleHideCaptions) onToggleHideCaptions();
-              else setLocalHideCaptions((prev) => !prev);
+              if (videoRef.current) {
+                const target = Math.min(duration, currentTime + 1 / 30);
+                videoRef.current.currentTime = target;
+                setCurrentTime(target);
+              }
             }}
-            aria-label="Toggle clean video preview without captions"
-            title="Compare Before/After captions (Hold \)"
-            className={`p-1.5 rounded-lg transition-colors flex items-center gap-1 ${
-              hideCaptions || localHideCaptions
-                ? 'bg-amber-400 text-black font-bold'
-                : 'text-smoke hover:text-amber-300 hover:bg-white/10'
-            }`}
+            className="p-1 rounded text-smoke hover:text-amber-300 hover:bg-white/10 transition-colors"
+            title="Step 1 frame forward (→)"
           >
-            {hideCaptions || localHideCaptions ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            <span className="text-[10px] hidden md:inline">Compare</span>
+            <span className="font-mono text-[10px] font-bold">►</span>
           </button>
+
+          {/* Shuttle +1s (L) */}
+          <button
+            type="button"
+            onClick={() => {
+              if (videoRef.current) {
+                const target = Math.min(duration, currentTime + 1.0);
+                videoRef.current.currentTime = target;
+                setCurrentTime(target);
+              }
+            }}
+            className="p-1 rounded text-smoke hover:text-amber-300 hover:bg-white/10 transition-colors"
+            title="Forward 1s (L)"
+          >
+            <SkipForward className="w-3.5 h-3.5" />
+          </button>
+
+          <div className="h-4 w-px bg-white/10 mx-1" />
+
+          {/* Time display: 0:01.20 / 0:08.50 */}
+          <div className="font-mono text-mist text-[11px] px-1">
+            <span className="text-bone font-semibold">{formatTime(currentTime)}</span>
+            <span className="text-smoke mx-1">/</span>
+            <span>{formatTime(duration)}</span>
+          </div>
+
+          <div className="h-4 w-px bg-white/10 mx-1" />
 
           {/* Volume */}
           <div className="flex items-center gap-1.5">
@@ -613,12 +731,12 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
               className="p-1 hover:text-amber-300 transition-colors text-smoke"
             >
               {isMuted || volume === 0 ? (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
                 </svg>
               ) : (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
                 </svg>
               )}
@@ -631,35 +749,18 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
               value={isMuted ? 0 : volume}
               onChange={handleVolumeChange}
               aria-label="Video volume"
-              className="w-14 h-1 accent-amber-400 bg-white/20 rounded-lg cursor-pointer"
+              className="w-12 h-1 accent-amber-400 bg-white/20 rounded-lg cursor-pointer"
             />
-          </div>
-
-          {/* Time display: 0:01 / 0:08 */}
-          <div className="font-mono text-mist text-[11px] px-2">
-            <span className="text-bone">{formatTime(currentTime)}</span>
-            <span className="text-smoke mx-1">/</span>
-            <span>{formatTime(duration)}</span>
           </div>
 
           {/* Speed badge */}
           <button
             onClick={cyclePlaybackRate}
             aria-label={`Playback speed: ${playbackRate}x`}
-            className="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 font-mono text-[11px] text-amber-200 transition-colors"
+            className="px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 font-mono text-[10px] font-bold text-amber-200 transition-colors"
             title="Playback Speed"
           >
             {playbackRate}x
-          </button>
-
-          {/* Fullscreen */}
-          <button
-            onClick={toggleFullscreen}
-            className="p-1 hover:text-amber-300 transition-colors text-smoke ml-1"
-            title="Fullscreen (F)"
-            aria-label="Toggle Fullscreen"
-          >
-            <Maximize2 className="w-4 h-4" />
           </button>
         </div>
       </div>
