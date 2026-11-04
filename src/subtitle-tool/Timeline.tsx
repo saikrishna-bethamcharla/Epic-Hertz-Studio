@@ -127,8 +127,9 @@ export default function Timeline({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const ch = canvas.clientHeight || 48;
     canvas.width = totalWidth;
-    canvas.height = 42;
+    canvas.height = ch;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -446,9 +447,9 @@ export default function Timeline({
   const numRulerTicks = Math.ceil(totalDuration / rulerInterval);
 
   return (
-    <div className="flex flex-col bg-[#121211] border-t border-white/10 select-none">
+    <div className="h-full w-full flex flex-col bg-[#121211] border-t border-white/10 select-none overflow-hidden">
       {/* ── Timeline Toolbar ──────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-white/10 text-xs">
+      <div className="shrink-0 flex items-center justify-between px-4 py-2 border-b border-white/10 text-xs">
         {/* Left: Playhead control & current time */}
         <div className="flex items-center gap-3">
           <button
@@ -655,16 +656,16 @@ export default function Timeline({
       <div
         ref={containerRef}
         onMouseDown={handleTimelineMouseDown}
-        className="relative overflow-x-auto overflow-y-hidden cursor-crosshair h-32 bg-[#0c0c0b]"
+        className="flex-1 min-h-0 relative overflow-x-auto overflow-y-hidden cursor-crosshair bg-[#0c0c0b]"
         style={{ scrollBehavior: 'auto' }}
         data-lenis-prevent
       >
         <div
-          className="relative h-full"
+          className="relative h-full flex flex-col justify-between"
           style={{ width: `${totalWidth}px` }}
         >
           {/* 1. Time Ruler Top */}
-          <div className="h-6 border-b border-white/10 relative text-[10px] font-mono text-smoke">
+          <div className="h-6 shrink-0 border-b border-white/10 relative text-[10px] font-mono text-smoke">
             {Array.from({ length: numRulerTicks + 1 }).map((_, i) => {
               const sec = i * rulerInterval;
               const left = sec * zoom;
@@ -683,7 +684,7 @@ export default function Timeline({
           </div>
 
           {/* 2. Caption Track (Segment blocks with resize/drag handles & gap bridges) */}
-          <div className="h-12 relative px-1 my-1">
+          <div className="h-12 shrink-0 relative px-1 my-1">
             {segments.map((seg, sIdx) => {
               const left = seg.start * zoom;
               const width = Math.max(30, (seg.end - seg.start) * zoom);
@@ -783,10 +784,10 @@ export default function Timeline({
           </div>
 
           {/* 3. Audio Waveform Track */}
-          <div className="h-11 relative">
+          <div className="flex-1 min-h-[44px] relative">
             <canvas
               ref={waveformCanvasRef}
-              className="absolute inset-0 pointer-events-none"
+              className="absolute inset-0 w-full h-full pointer-events-none"
             />
           </div>
 

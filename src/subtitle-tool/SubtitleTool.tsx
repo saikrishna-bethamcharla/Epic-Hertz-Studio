@@ -633,7 +633,7 @@ export default function SubtitleTool() {
     stage === 'burning';
 
   return (
-    <div className="h-screen w-screen bg-[#0e0e0d] text-bone flex flex-col overflow-hidden relative font-sans">
+    <div className="h-screen h-[100dvh] w-screen bg-[#0e0e0d] text-bone flex flex-col overflow-hidden relative font-sans">
       {/* Background grain */}
       <div className="grain" aria-hidden />
 
@@ -1035,7 +1035,7 @@ export default function SubtitleTool() {
                   />
 
                   {/* Zone 4: Bottom Multi-track Audio Timeline */}
-                  <div style={{ height: `${layout.timelineHeight}px` }} className="shrink-0">
+                  <div style={{ height: `${layout.timelineHeight}px` }} className="shrink-0 w-full overflow-hidden bg-[#121211]">
                     <Timeline
                       duration={duration}
                       currentTime={currentTime}
