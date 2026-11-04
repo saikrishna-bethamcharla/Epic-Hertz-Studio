@@ -9,6 +9,7 @@ import {
   Loader2,
   Edit2,
   Check,
+  FileVideo,
 } from 'lucide-react';
 
 interface TopBarProps {
@@ -179,30 +180,44 @@ export default function TopBar({
         </div>
       </div>
 
-      {/* ── Right Side: Top Strip Options (New Video, Shortcuts, Download .SRT, Export) ── */}
+      {/* ── Right Side: Top Strip Options (New Video, Shortcuts, Export) ── */}
       <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         {onNewVideo && (
-          <button
-            type="button"
-            onClick={onNewVideo}
-            className="px-2.5 sm:px-3 py-1.5 text-xs text-mist hover:text-bone hover:bg-white/5 rounded-lg border border-white/10 transition-colors"
-            title="Upload or start a new video"
-          >
-            New Video
-          </button>
+          <div className="relative group/tip flex items-center">
+            <button
+              type="button"
+              onClick={onNewVideo}
+              aria-label="New Video"
+              className="w-8 h-8 flex items-center justify-center text-mist hover:text-bone hover:bg-white/10 rounded-lg border border-white/10 transition-colors cursor-pointer"
+            >
+              <FileVideo className="w-4 h-4 text-mist group-hover/tip:text-bone transition-colors" />
+            </button>
+            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
+              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap">
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
+                <span>New Video</span>
+              </div>
+            </div>
+          </div>
         )}
 
-        <button
-          type="button"
-          onClick={onOpenShortcuts}
-          aria-label="Keyboard shortcuts (?)"
-          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs text-mist hover:text-bone hover:bg-white/5 rounded-lg border border-white/10 transition-colors cursor-pointer"
-          title="Keyboard shortcuts (?)"
-        >
-          <Keyboard className="w-3.5 h-3.5 text-amber-400" />
-          <span className="hidden sm:inline">Shortcuts</span>
-          <kbd className="hidden md:inline px-1 py-0.5 rounded bg-white/10 text-[10px] text-smoke font-mono font-semibold">?</kbd>
-        </button>
+        <div className="relative group/tip flex items-center">
+          <button
+            type="button"
+            onClick={onOpenShortcuts}
+            aria-label="Keyboard shortcuts (?)"
+            className="w-8 h-8 flex items-center justify-center text-mist hover:text-bone hover:bg-white/10 rounded-lg border border-white/10 transition-colors cursor-pointer"
+          >
+            <Keyboard className="w-4 h-4 text-amber-400" />
+          </button>
+          <div className="absolute top-full mt-2 right-0 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
+            <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
+              <div className="absolute -top-1 right-3 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
+              <span>Shortcuts</span>
+              <kbd className="px-1 py-0.2 rounded bg-white/10 text-[9px] text-smoke font-mono font-semibold">?</kbd>
+            </div>
+          </div>
+        </div>
 
         <button
           type="button"

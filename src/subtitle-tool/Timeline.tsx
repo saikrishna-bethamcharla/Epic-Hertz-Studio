@@ -476,114 +476,185 @@ export default function Timeline({
           </span>
         </div>
 
-        {/* Center: Editing tools (+ Text, Split, Merge, Delete, Undo/Redo) */}
-        <div className="flex items-center gap-1.5 bg-[#1a1a18] p-1 rounded-xl border border-white/10">
-          <button
-            onClick={handleAddText}
-            aria-label="Add text caption at playhead"
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-amber-400 text-black hover:bg-amber-300 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-400"
-            title="Add text segment at current position"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Text</span>
-          </button>
+        {/* Center: Editing tools (+ Text, Split, Merge, Delete, Snap, Ripple, Undo/Redo, Dictionary) */}
+        <div className="flex items-center gap-1 bg-[#1a1a18] p-1 rounded-xl border border-white/10">
+          {/* Add Text */}
+          <div className="relative group/tip flex items-center">
+            <button
+              onClick={handleAddText}
+              aria-label="Add text caption at playhead"
+              className="w-7 h-7 flex items-center justify-center rounded-lg bg-amber-400 text-black hover:bg-amber-300 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-400"
+            >
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+            </button>
+            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
+              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap">
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
+                <span>Add Text</span>
+              </div>
+            </div>
+          </div>
 
-          <button
-            onClick={handleSplit}
-            disabled={!currentSeg}
-            aria-label="Split active caption at playhead (S)"
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-bone hover:bg-white/10 disabled:opacity-40 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-400"
-            title="Split active segment at playhead (S)"
-          >
-            <Scissors className="w-3 h-3 text-mist" />
-            <span>Split</span>
-          </button>
+          {/* Split */}
+          <div className="relative group/tip flex items-center">
+            <button
+              onClick={handleSplit}
+              disabled={!currentSeg}
+              aria-label="Split active caption at playhead (S)"
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-bone hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-400"
+            >
+              <Scissors className="w-3.5 h-3.5 text-mist" />
+            </button>
+            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
+              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
+                <span>Split</span>
+                <kbd className="px-1 py-0.2 rounded bg-white/10 text-[9px] text-smoke font-mono font-semibold">S</kbd>
+              </div>
+            </div>
+          </div>
 
-          <button
-            onClick={handleMerge}
-            disabled={!currentSeg}
-            aria-label="Merge active caption with next"
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-bone hover:bg-white/10 disabled:opacity-40 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-400"
-            title="Merge segment with next"
-          >
-            <Combine className="w-3 h-3 text-mist" />
-            <span>Merge</span>
-          </button>
+          {/* Merge */}
+          <div className="relative group/tip flex items-center">
+            <button
+              onClick={handleMerge}
+              disabled={!currentSeg}
+              aria-label="Merge active caption with next"
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-bone hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-400"
+            >
+              <Combine className="w-3.5 h-3.5 text-mist" />
+            </button>
+            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
+              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap">
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
+                <span>Merge</span>
+              </div>
+            </div>
+          </div>
 
-          <button
-            onClick={handleDelete}
-            disabled={!currentSeg}
-            aria-label="Delete active caption (Delete)"
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-crimson-2 hover:bg-crimson/15 disabled:opacity-40 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-crimson-2"
-            title="Delete segment (Delete)"
-          >
-            <Trash2 className="w-3 h-3 text-crimson-2" />
-            <span>Delete</span>
-          </button>
+          {/* Delete */}
+          <div className="relative group/tip flex items-center">
+            <button
+              onClick={handleDelete}
+              disabled={!currentSeg}
+              aria-label="Delete active caption (Delete)"
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-crimson-2 hover:bg-crimson/15 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-crimson-2"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-crimson-2" />
+            </button>
+            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
+              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
+                <span>Delete</span>
+                <kbd className="px-1 py-0.2 rounded bg-white/10 text-[9px] text-smoke font-mono font-semibold">Del</kbd>
+              </div>
+            </div>
+          </div>
 
-          <div className="h-4 w-px bg-white/15 mx-1" />
+          <div className="h-4 w-px bg-white/15 mx-0.5" />
 
           {/* Magnetic Snapping Toggle */}
-          <button
-            onClick={() => setIsSnappingEnabled((s) => !s)}
-            aria-label={`Toggle magnetic snapping (${isSnappingEnabled ? 'ON' : 'OFF'})`}
-            className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium transition-colors cursor-pointer ${
-              isSnappingEnabled ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40' : 'text-smoke hover:text-bone hover:bg-white/5'
-            }`}
-            title="Magnetic Snapping: snaps to playhead and neighboring captions"
-          >
-            <Magnet className="w-3 h-3" />
-            <span className="hidden sm:inline">Snap</span>
-          </button>
+          <div className="relative group/tip flex items-center">
+            <button
+              onClick={() => setIsSnappingEnabled((s) => !s)}
+              aria-label={`Toggle magnetic snapping (${isSnappingEnabled ? 'ON' : 'OFF'})`}
+              className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors cursor-pointer ${
+                isSnappingEnabled ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40' : 'text-smoke hover:text-bone hover:bg-white/5'
+              }`}
+            >
+              <Magnet className="w-3.5 h-3.5" />
+            </button>
+            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
+              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
+                <span>Snap</span>
+                <span className={`text-[9px] font-bold ${isSnappingEnabled ? 'text-amber-400' : 'text-smoke'}`}>
+                  {isSnappingEnabled ? 'ON' : 'OFF'}
+                </span>
+              </div>
+            </div>
+          </div>
 
           {/* Ripple Editing Mode Toggle */}
-          <button
-            onClick={() => setIsRippleEnabled((r) => !r)}
-            aria-label={`Toggle ripple editing (${isRippleEnabled ? 'ON' : 'OFF'})`}
-            className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium transition-colors cursor-pointer ${
-              isRippleEnabled ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40' : 'text-smoke hover:text-bone hover:bg-white/5'
-            }`}
-            title="Ripple Editing: subsequent captions follow shifts automatically"
-          >
-            <Link2 className="w-3 h-3" />
-            <span className="hidden sm:inline">Ripple</span>
-          </button>
+          <div className="relative group/tip flex items-center">
+            <button
+              onClick={() => setIsRippleEnabled((r) => !r)}
+              aria-label={`Toggle ripple editing (${isRippleEnabled ? 'ON' : 'OFF'})`}
+              className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors cursor-pointer ${
+                isRippleEnabled ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40' : 'text-smoke hover:text-bone hover:bg-white/5'
+              }`}
+            >
+              <Link2 className="w-3.5 h-3.5" />
+            </button>
+            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
+              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
+                <span>Ripple</span>
+                <span className={`text-[9px] font-bold ${isRippleEnabled ? 'text-amber-400' : 'text-smoke'}`}>
+                  {isRippleEnabled ? 'ON' : 'OFF'}
+                </span>
+              </div>
+            </div>
+          </div>
 
-          <div className="h-4 w-px bg-white/15 mx-1" />
+          <div className="h-4 w-px bg-white/15 mx-0.5" />
 
-          {/* Undo / Redo */}
-          <button
-            onClick={handleUndo}
-            disabled={isUndoDisabled}
-            aria-label="Undo last edit (Ctrl+Z)"
-            className="p-1 rounded text-smoke hover:text-bone disabled:opacity-30 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-400"
-            title="Undo (Ctrl+Z)"
-          >
-            <Undo2 className="w-3.5 h-3.5" />
-          </button>
+          {/* Undo */}
+          <div className="relative group/tip flex items-center">
+            <button
+              onClick={handleUndo}
+              disabled={isUndoDisabled}
+              aria-label="Undo last edit (Ctrl+Z)"
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-smoke hover:text-bone disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-400"
+            >
+              <Undo2 className="w-3.5 h-3.5" />
+            </button>
+            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
+              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
+                <span>Undo</span>
+                <kbd className="px-1 py-0.2 rounded bg-white/10 text-[9px] text-smoke font-mono font-semibold">Ctrl+Z</kbd>
+              </div>
+            </div>
+          </div>
 
-          <button
-            onClick={handleRedo}
-            disabled={isRedoDisabled}
-            aria-label="Redo last edit (Ctrl+Shift+Z)"
-            className="p-1 rounded text-smoke hover:text-bone disabled:opacity-30 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-400"
-            title="Redo (Ctrl+Shift+Z)"
-          >
-            <Redo2 className="w-3.5 h-3.5" />
-          </button>
+          {/* Redo */}
+          <div className="relative group/tip flex items-center">
+            <button
+              onClick={handleRedo}
+              disabled={isRedoDisabled}
+              aria-label="Redo last edit (Ctrl+Shift+Z)"
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-smoke hover:text-bone disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-400"
+            >
+              <Redo2 className="w-3.5 h-3.5" />
+            </button>
+            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
+              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
+                <span>Redo</span>
+                <kbd className="px-1 py-0.2 rounded bg-white/10 text-[9px] text-smoke font-mono font-semibold">Ctrl+Y</kbd>
+              </div>
+            </div>
+          </div>
 
-          <div className="h-4 w-px bg-white/15 mx-1" />
+          <div className="h-4 w-px bg-white/15 mx-0.5" />
 
           {/* Find & Replace Dictionary */}
-          <button
-            onClick={() => setShowDictionary(!showDictionary)}
-            aria-label="Find and replace dialogue in all captions"
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-amber-300 hover:bg-amber-400/10 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-400"
-            title="Find & Replace in all captions"
-          >
-            <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-            <span>Dictionary</span>
-          </button>
+          <div className="relative group/tip flex items-center">
+            <button
+              onClick={() => setShowDictionary(!showDictionary)}
+              aria-label="Find and replace dialogue in all captions"
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-amber-300 hover:bg-amber-400/10 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-400"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+            </button>
+            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
+              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap">
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
+                <span>Dictionary</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Right: Zoom controls */}
