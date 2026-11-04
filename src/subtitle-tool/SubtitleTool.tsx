@@ -7,7 +7,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Sparkles, CheckCircle2, Upload, RotateCcw, Trash2, Keyboard } from 'lucide-react';
+import { Sparkles, CheckCircle2, Upload, RotateCcw, Trash2 } from 'lucide-react';
 import KeyboardShortcutsModal from './KeyboardShortcutsModal';
 import { useDesktop } from '../hooks/useMedia';
 import { DEFAULT_STYLE } from './engine/presets';
@@ -688,127 +688,63 @@ export default function SubtitleTool() {
         onClose={() => setIsShortcutsOpen(false)}
       />
 
-      {/* ── Top Header Navigation Bar ───────────────────────────────────── */}
-      <header className="h-14 shrink-0 flex items-center justify-between gap-2 px-3 sm:px-5 border-b border-white/10 bg-[#141413]/90 backdrop-blur-md z-30">
-        <div className="flex items-center gap-3 min-w-0">
-          <span className="font-display text-lg sm:text-xl whitespace-nowrap text-amber-400 tracking-wider">
-            EPIC HERTZ
-          </span>
-          <span className="hidden sm:inline text-white/20">|</span>
-          <span className="hidden sm:inline text-mist text-xs tracking-wide">
-            Auto-Subtitle Studio
-          </span>
+      {/* ── Top Header Navigation Bar (Shown on Landing / Idle / Config Stages) ── */}
+      {stage !== 'editing' && (
+        <header className="h-14 shrink-0 flex items-center justify-between gap-2 px-3 sm:px-5 border-b border-white/10 bg-[#141413]/90 backdrop-blur-md z-30">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="font-display text-lg sm:text-xl whitespace-nowrap text-amber-400 tracking-wider">
+              EPIC HERTZ
+            </span>
+            <span className="hidden sm:inline text-white/20">|</span>
+            <span className="hidden sm:inline text-mist text-xs tracking-wide">
+              Auto-Subtitle Studio
+            </span>
+          </div>
 
-          {stage === 'editing' && (
-            <div
-              className="flex items-center gap-1.5 ml-2 sm:ml-3 px-2 py-0.5 rounded-full text-[11px] font-medium transition-colors border"
-              style={{
-                backgroundColor: saveStatus === 'saving' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-                borderColor: saveStatus === 'saving' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(16, 185, 129, 0.3)',
-                color: saveStatus === 'saving' ? '#fcd34d' : '#6ee7b7',
-              }}
-              title={
-                saveStatus === 'saved'
-                  ? `Autosaved to IndexedDB ${lastSavedAt ? `(${formatRelativeTime(lastSavedAt)})` : ''}`
-                  : 'Saving changes to local IndexedDB…'
-              }
-            >
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${
-                  saveStatus === 'saving' ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
-                }`}
-              />
-              <span className="whitespace-nowrap">
-                {saveStatus === 'saving' ? 'Saving…' : 'Autosaved'}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Action Controls */}
-        <div className="flex items-center gap-2 sm:gap-2.5">
-          {stage === 'idle' && (
-            <>
-              {savedDraft && (
+          {/* Action Controls */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            {stage === 'idle' && (
+              <>
+                {savedDraft && (
+                  <button
+                    type="button"
+                    onClick={handleResumeProject}
+                    className="px-3 py-1.5 text-xs text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 rounded-lg border border-amber-500/30 transition-all cursor-pointer flex items-center gap-1.5 font-medium shadow-sm"
+                    title={`Resume draft: ${savedDraft.videoName}`}
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                    <span className="hidden sm:inline">Resume Draft</span>
+                    <span className="sm:hidden">Resume</span>
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={handleResumeProject}
-                  className="px-3 py-1.5 text-xs text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 rounded-lg border border-amber-500/30 transition-all cursor-pointer flex items-center gap-1.5 font-medium shadow-sm"
-                  title={`Resume draft: ${savedDraft.videoName}`}
+                  onClick={handleTryDemo}
+                  className="px-3.5 py-1.5 text-xs text-zinc-300 hover:text-white hover:bg-white/5 rounded-lg border border-white/10 transition-colors cursor-pointer flex items-center gap-1.5"
                 >
-                  <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-                  <span className="hidden sm:inline">Resume Draft</span>
-                  <span className="sm:hidden">Resume</span>
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Try Demo</span>
                 </button>
-              )}
-              <button
-                type="button"
-                onClick={handleTryDemo}
-                className="px-3.5 py-1.5 text-xs text-zinc-300 hover:text-white hover:bg-white/5 rounded-lg border border-white/10 transition-colors cursor-pointer flex items-center gap-1.5"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span>Try Demo</span>
-              </button>
-              <label
-                className="px-4 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-semibold text-xs tracking-wide shadow-sm active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
-              >
-                <Upload className="w-3.5 h-3.5 text-black" />
-                <span>Upload Video</span>
-                <input
-                  type="file"
-                  accept="video/*,audio/*,.mp4,.mov,.webm,.m4v"
-                  className="hidden"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) handleFileDrop(f);
-                  }}
-                />
-              </label>
-            </>
-          )}
-
-          {stage === 'editing' && (
-            <>
-              <button
-                onClick={handleReset}
-                className="px-3 py-1.5 text-xs text-mist hover:text-bone hover:bg-white/5 rounded-lg border border-white/10 transition-colors"
-              >
-                New Video
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsShortcutsOpen(true)}
-                aria-label="Keyboard shortcuts (?)"
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-mist hover:text-bone hover:bg-white/5 rounded-lg border border-white/10 transition-colors cursor-pointer"
-                title="Keyboard shortcuts (?)"
-              >
-                <Keyboard className="w-3.5 h-3.5 text-amber-400" />
-                <span className="hidden sm:inline">Shortcuts</span>
-                <kbd className="hidden md:inline px-1 py-0.5 rounded bg-white/10 text-[10px] text-smoke font-mono font-semibold">?</kbd>
-              </button>
-
-              <button
-                onClick={handleDownloadSRT}
-                className="hidden md:flex items-center gap-1 px-3 py-1.5 text-xs text-mist hover:text-bone hover:bg-white/5 rounded-lg border border-white/10 transition-colors"
-                title="Download standard SRT subtitle file"
-              >
-                <span>Download .SRT</span>
-              </button>
-
-              <button
-                onClick={() => setIsExportModalOpen(true)}
-                className="px-4 py-1.5 rounded-full bg-amber-400 hover:bg-amber-300 text-black font-semibold text-xs tracking-wide shadow-md active:scale-95 transition-all flex items-center gap-1.5"
-              >
-                <span>Export</span>
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-            </>
-          )}
-        </div>
-      </header>
+                <label
+                  className="px-4 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-semibold text-xs tracking-wide shadow-sm active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Upload className="w-3.5 h-3.5 text-black" />
+                  <span>Upload Video</span>
+                  <input
+                    type="file"
+                    accept="video/*,audio/*,.mp4,.mov,.webm,.m4v"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleFileDrop(f);
+                    }}
+                  />
+                </label>
+              </>
+            )}
+          </div>
+        </header>
+      )}
 
       {/* ── Main Viewport ──────────────────────────────────────────────── */}
       <main className="flex-1 flex flex-col min-h-0 relative">
@@ -904,7 +840,7 @@ export default function SubtitleTool() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }}
             >
-              {/* TopBar (48px) */}
+              {/* TopBar (48px Unified Single Header Strip) */}
               <TopBar
                 projectName={projectName}
                 onProjectNameChange={setProjectName}
@@ -914,7 +850,9 @@ export default function SubtitleTool() {
                 onRedo={handleRedo}
                 saveStatus={saveStatus}
                 lastSavedAt={lastSavedAt}
+                onNewVideo={handleReset}
                 onOpenShortcuts={() => setIsShortcutsOpen(true)}
+                onDownloadSRT={handleDownloadSRT}
                 onOpenExport={() => setIsExportModalOpen(true)}
               />
 

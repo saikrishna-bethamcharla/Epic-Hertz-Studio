@@ -3,8 +3,8 @@ import { useState, useRef, useEffect } from 'react';
 import {
   Undo2,
   Redo2,
-  HelpCircle,
-  Download,
+  Keyboard,
+  ChevronDown,
   CheckCircle2,
   Loader2,
   Edit2,
@@ -20,7 +20,9 @@ interface TopBarProps {
   onRedo: () => void;
   saveStatus: 'idle' | 'saving' | 'saved' | 'error';
   lastSavedAt: number | null;
+  onNewVideo?: () => void;
   onOpenShortcuts: () => void;
+  onDownloadSRT?: () => void;
   onOpenExport: () => void;
 }
 
@@ -33,7 +35,9 @@ export default function TopBar({
   onRedo,
   saveStatus,
   lastSavedAt,
+  onNewVideo,
   onOpenShortcuts,
+  onDownloadSRT,
   onOpenExport,
 }: TopBarProps) {
   const [isEditingName, setIsEditingName] = useState(false);
@@ -63,9 +67,10 @@ export default function TopBar({
     : null;
 
   return (
-    <header className="h-12 w-full bg-[#141413] border-b border-white/10 px-3.5 flex items-center justify-between select-none z-40 shrink-0">
-      {/* Left: Brand Logo & Editable Project Name */}
-      <div className="flex items-center gap-3 min-w-0">
+    <header className="h-12 w-full bg-[#141413] border-b border-white/10 px-3 sm:px-4 flex items-center justify-between select-none z-40 shrink-0 gap-2">
+      {/* ── Left Side: Brand Logo, Editable Project Name, Undo/Redo & Save Status ── */}
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        {/* Brand Logo & Studio title */}
         <div className="flex items-center gap-2 shrink-0">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-black shadow-sm font-black text-xs">
             EH
@@ -75,10 +80,10 @@ export default function TopBar({
           </span>
         </div>
 
-        <div className="h-4 w-px bg-white/10 mx-1 shrink-0 hidden sm:block" />
+        <div className="h-4 w-px bg-white/10 mx-0.5 shrink-0 hidden sm:block" />
 
         {/* Project Name Editor */}
-        <div className="flex items-center gap-1.5 min-w-0">
+        <div className="flex items-center min-w-0">
           {isEditingName ? (
             <div className="flex items-center gap-1">
               <input
@@ -95,7 +100,7 @@ export default function TopBar({
                 }}
                 onBlur={commitName}
                 maxLength={60}
-                className="bg-[#20201e] text-bone text-xs font-semibold px-2 py-1 rounded-md border border-amber-400/60 focus:outline-none focus:ring-1 focus:ring-amber-400 w-48 sm:w-64"
+                className="bg-[#20201e] text-bone text-xs font-semibold px-2 py-1 rounded-md border border-amber-400/60 focus:outline-none focus:ring-1 focus:ring-amber-400 w-36 sm:w-56"
               />
               <button
                 type="button"
@@ -110,7 +115,7 @@ export default function TopBar({
             <button
               type="button"
               onClick={() => setIsEditingName(true)}
-              className="group flex items-center gap-1.5 text-xs font-semibold text-bone hover:text-amber-300 px-2 py-1 rounded-md hover:bg-white/5 transition-colors max-w-[200px] sm:max-w-[320px] truncate"
+              className="group flex items-center gap-1.5 text-xs font-semibold text-bone hover:text-amber-300 px-2 py-1 rounded-md hover:bg-white/5 transition-colors max-w-[140px] sm:max-w-[240px] md:max-w-[300px] truncate"
               title="Click to rename project"
             >
               <span className="truncate">{projectName || 'Untitled Video'}</span>
@@ -118,12 +123,11 @@ export default function TopBar({
             </button>
           )}
         </div>
-      </div>
 
-      {/* Center: History (Undo/Redo) & Autosave Status */}
-      <div className="flex items-center gap-3">
-        {/* Undo / Redo */}
-        <div className="flex items-center gap-0.5 bg-[#1b1b1a] rounded-lg p-0.5 border border-white/5">
+        <div className="h-4 w-px bg-white/10 mx-0.5 shrink-0 hidden md:block" />
+
+        {/* History Undo / Redo */}
+        <div className="flex items-center gap-0.5 bg-[#1b1b1a] rounded-lg p-0.5 border border-white/5 shrink-0">
           <button
             type="button"
             onClick={onUndo}
@@ -131,7 +135,7 @@ export default function TopBar({
             className={`p-1.5 rounded-md transition-colors ${
               canUndo
                 ? 'text-mist hover:text-bone hover:bg-white/10 active:scale-95'
-                : 'text-smoke/40 cursor-not-allowed'
+                : 'text-smoke/30 cursor-not-allowed'
             }`}
             title="Undo (Ctrl+Z)"
             aria-label="Undo last change"
@@ -145,7 +149,7 @@ export default function TopBar({
             className={`p-1.5 rounded-md transition-colors ${
               canRedo
                 ? 'text-mist hover:text-bone hover:bg-white/10 active:scale-95'
-                : 'text-smoke/40 cursor-not-allowed'
+                : 'text-smoke/30 cursor-not-allowed'
             }`}
             title="Redo (Ctrl+Shift+Z)"
             aria-label="Redo last undone change"
@@ -155,7 +159,7 @@ export default function TopBar({
         </div>
 
         {/* Autosave Status Indicator */}
-        <div className="hidden md:flex items-center gap-1.5 text-[11px] text-smoke font-mono">
+        <div className="hidden lg:flex items-center gap-1.5 text-[11px] text-smoke font-mono shrink-0 pl-1">
           {saveStatus === 'saving' ? (
             <>
               <Loader2 className="w-3 h-3 animate-spin text-amber-400" />
@@ -177,25 +181,49 @@ export default function TopBar({
         </div>
       </div>
 
-      {/* Right: Keyboard Shortcuts & Primary Export Action */}
-      <div className="flex items-center gap-2">
+      {/* ── Right Side: Top Strip Options (New Video, Shortcuts, Download .SRT, Export) ── */}
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        {onNewVideo && (
+          <button
+            type="button"
+            onClick={onNewVideo}
+            className="px-2.5 sm:px-3 py-1.5 text-xs text-mist hover:text-bone hover:bg-white/5 rounded-lg border border-white/10 transition-colors"
+            title="Upload or start a new video"
+          >
+            New Video
+          </button>
+        )}
+
         <button
           type="button"
           onClick={onOpenShortcuts}
-          className="p-1.5 rounded-lg text-smoke hover:text-bone hover:bg-white/5 transition-colors"
-          title="Keyboard Shortcuts (?)"
-          aria-label="Open keyboard shortcuts cheat sheet"
+          aria-label="Keyboard shortcuts (?)"
+          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs text-mist hover:text-bone hover:bg-white/5 rounded-lg border border-white/10 transition-colors cursor-pointer"
+          title="Keyboard shortcuts (?)"
         >
-          <HelpCircle className="w-4 h-4" />
+          <Keyboard className="w-3.5 h-3.5 text-amber-400" />
+          <span className="hidden sm:inline">Shortcuts</span>
+          <kbd className="hidden md:inline px-1 py-0.5 rounded bg-white/10 text-[10px] text-smoke font-mono font-semibold">?</kbd>
         </button>
+
+        {onDownloadSRT && (
+          <button
+            type="button"
+            onClick={onDownloadSRT}
+            className="hidden md:flex items-center gap-1 px-3 py-1.5 text-xs text-mist hover:text-bone hover:bg-white/5 rounded-lg border border-white/10 transition-colors"
+            title="Download standard SRT subtitle file"
+          >
+            <span>Download .SRT</span>
+          </button>
+        )}
 
         <button
           type="button"
           onClick={onOpenExport}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black font-bold text-xs shadow-md hover:shadow-amber-500/20 active:scale-98 transition-all"
+          className="px-3.5 sm:px-4 py-1.5 rounded-full bg-amber-400 hover:bg-amber-300 text-black font-semibold text-xs tracking-wide shadow-md active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
         >
-          <Download className="w-3.5 h-3.5" />
           <span>Export</span>
+          <ChevronDown className="w-3.5 h-3.5" />
         </button>
       </div>
     </header>
