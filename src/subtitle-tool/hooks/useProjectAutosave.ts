@@ -112,6 +112,29 @@ export function useProjectAutosave({
     return () => clearTimeout(timer);
   }, [stage, videoFile, segments, style, spokenLanguage, scriptOutput, aspectRatio, projectName]);
 
+  // Explicitly flush active project to IndexedDB immediately (e.g. before navigating to Home)
+  const flushAutosaveNow = useCallback(async () => {
+    if (stage !== 'editing' || !videoFile || segments.length === 0) return;
+    try {
+      await saveProjectMeta({
+        name: projectName,
+        videoName: videoFile.name,
+        videoType: videoFile.type || 'video/mp4',
+        segmentCount: segments.length,
+        segments,
+        style,
+        spokenLanguage,
+        scriptOutput,
+        aspectRatio,
+        updatedAt: Date.now(),
+      });
+      setSaveStatus('saved');
+      setLastSavedAt(Date.now());
+    } catch (err) {
+      console.warn('Manual save before exit failed:', err);
+    }
+  }, [stage, videoFile, segments, style, spokenLanguage, scriptOutput, aspectRatio, projectName]);
+
   // Edits live in this browser tab and IndexedDB. Warn before an accidental reload.
   useEffect(() => {
     if (stage !== 'editing' && stage !== 'burning') return;
@@ -234,6 +257,7 @@ export function useProjectAutosave({
     handleSelectProject,
     handleDiscardDraft,
     refreshDraft,
+    flushAutosaveNow,
     activeProjectId: getActiveProjectId(),
   };
 }

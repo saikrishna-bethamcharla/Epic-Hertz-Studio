@@ -1,6 +1,7 @@
 // ─── Workspace TopBar — Epic Hertz Studio v2 ──────────────────────────────────
 import { useState, useRef, useEffect } from 'react';
 import {
+  ArrowLeft,
   Undo2,
   Redo2,
   Keyboard,
@@ -22,6 +23,7 @@ interface TopBarProps {
   onRedo: () => void;
   saveStatus: 'idle' | 'saving' | 'saved' | 'error';
   lastSavedAt: number | null;
+  onGoHome?: () => void;
   onNewVideo?: () => void;
   onOpenProjects?: () => void;
   onOpenShortcuts: () => void;
@@ -37,6 +39,7 @@ export default function TopBar({
   onRedo,
   saveStatus,
   lastSavedAt,
+  onGoHome,
   onNewVideo,
   onOpenProjects,
   onOpenShortcuts,
@@ -72,15 +75,54 @@ export default function TopBar({
     <header className="h-12 w-full bg-[#141413] border-b border-white/10 px-3 sm:px-4 flex items-center justify-between select-none z-40 shrink-0 gap-2">
       {/* ── Left Side: Brand Logo, Editable Project Name, Undo/Redo & Save Status ── */}
       <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-        {/* Brand Logo & Studio title */}
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-black shadow-sm font-black text-xs">
-            EH
+        {/* Back to Home Button */}
+        {onGoHome && (
+          <div className="relative group/tip flex items-center shrink-0">
+            <button
+              type="button"
+              onClick={onGoHome}
+              aria-label="Back to Home"
+              className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-zinc-300 hover:text-white hover:bg-white/10 rounded-lg border border-white/10 transition-all cursor-pointer group"
+              title="Back to Home"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 text-zinc-400 group-hover:text-amber-400 group-hover:-translate-x-0.5 transition-transform" />
+              <span className="hidden sm:inline font-medium">Home</span>
+            </button>
+            <div className="absolute top-full mt-2 left-0 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
+              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap">
+                <div className="absolute -top-1 left-3 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
+                <span>Back to Home</span>
+              </div>
+            </div>
           </div>
-          <span className="text-xs font-bold text-bone tracking-tight hidden sm:inline">
-            Epic Hertz <span className="text-amber-400 font-medium">Studio</span>
-          </span>
-        </div>
+        )}
+
+        {/* Brand Logo & Studio title (Clickable to Go Home) */}
+        {onGoHome ? (
+          <button
+            type="button"
+            onClick={onGoHome}
+            aria-label="Epic Hertz Studio — Back to Home"
+            className="flex items-center gap-2 shrink-0 text-left hover:opacity-90 transition-opacity cursor-pointer group"
+            title="Epic Hertz Studio — Back to Home"
+          >
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-black shadow-sm font-black text-xs group-hover:scale-105 transition-transform">
+              EH
+            </div>
+            <span className="text-xs font-bold text-bone tracking-tight hidden sm:inline">
+              Epic Hertz <span className="text-amber-400 font-medium">Studio</span>
+            </span>
+          </button>
+        ) : (
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-black shadow-sm font-black text-xs">
+              EH
+            </div>
+            <span className="text-xs font-bold text-bone tracking-tight hidden sm:inline">
+              Epic Hertz <span className="text-amber-400 font-medium">Studio</span>
+            </span>
+          </div>
+        )}
 
         <div className="h-4 w-px bg-white/10 mx-0.5 shrink-0 hidden sm:block" />
 

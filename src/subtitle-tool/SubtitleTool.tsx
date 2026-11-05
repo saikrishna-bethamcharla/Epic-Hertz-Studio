@@ -7,7 +7,15 @@
 
 import { useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Sparkles, CheckCircle2, Upload, RotateCcw, Trash2, FolderOpen } from 'lucide-react';
+import {
+  Sparkles,
+  CheckCircle2,
+  Upload,
+  RotateCcw,
+  Trash2,
+  FolderOpen,
+  ArrowRight,
+} from 'lucide-react';
 import { useDesktop } from './utils/useMedia';
 import { DEFAULT_STYLE } from './engine/presets';
 
@@ -111,6 +119,7 @@ export default function SubtitleTool() {
     handleSelectProject,
     handleDiscardDraft,
     refreshDraft,
+    flushAutosaveNow,
     activeProjectId,
   } = useProjectAutosave({
     stage,
@@ -561,6 +570,14 @@ export default function SubtitleTool() {
     }
   }, []);
 
+  const handleGoHome = useCallback(async () => {
+    // Flush active project to IndexedDB so all recent changes are immediately persisted
+    await flushAutosaveNow();
+    resetPlayback();
+    await refreshDraft();
+    setStage('idle');
+  }, [flushAutosaveNow, resetPlayback, refreshDraft]);
+
   const handleReset = useCallback(async () => {
     setStage('idle');
     setVideoFile(null);
@@ -683,6 +700,17 @@ export default function SubtitleTool() {
           <div className="flex items-center gap-2 sm:gap-2.5">
             {stage === 'idle' && (
               <>
+                {videoFile && segments.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setStage('editing')}
+                    className="px-3 py-1.5 text-xs text-amber-300 hover:text-amber-200 bg-amber-500/20 hover:bg-amber-500/30 rounded-lg border border-amber-500/40 transition-all cursor-pointer flex items-center gap-1.5 font-semibold shadow-sm"
+                    title="Return to your open project in editor"
+                  >
+                    <ArrowRight className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Back to Editor</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setIsProjectManagerOpen(true)}
@@ -849,6 +877,7 @@ export default function SubtitleTool() {
                 onRedo={handleRedo}
                 saveStatus={saveStatus}
                 lastSavedAt={lastSavedAt}
+                onGoHome={handleGoHome}
                 onNewVideo={handleReset}
                 onOpenProjects={() => setIsProjectManagerOpen(true)}
                 onOpenShortcuts={() => setIsShortcutsOpen(true)}
