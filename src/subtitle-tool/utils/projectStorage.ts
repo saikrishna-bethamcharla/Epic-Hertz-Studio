@@ -10,6 +10,7 @@ import type {
   ScriptOutput,
   VideoAspectRatio,
 } from '../types';
+import { ensureCaptionStyle } from '../engine/compat';
 
 export const DB_NAME = 'epic_hertz_studio_db';
 export const DB_VERSION = 2;
@@ -104,7 +105,7 @@ async function migrateLegacyIfPresent(db: IDBDatabase): Promise<void> {
               videoType: oldMeta.videoType || 'video/mp4',
               segmentCount: oldMeta.segmentCount || oldMeta.segments?.length || 0,
               segments: oldMeta.segments || [],
-              style: oldMeta.style,
+              style: ensureCaptionStyle(oldMeta.style),
               spokenLanguage: oldMeta.spokenLanguage || 'te',
               scriptOutput: oldMeta.scriptOutput || 'romanized',
               aspectRatio: oldMeta.aspectRatio || '9:16',
@@ -348,7 +349,7 @@ export async function loadProjectWithMedia(id: string): Promise<FullProject | nu
       name: project.name,
       videoFile: file,
       segments: project.segments || [],
-      style: project.style,
+      style: ensureCaptionStyle(project.style),
       spokenLanguage: project.spokenLanguage || 'te',
       scriptOutput: project.scriptOutput || 'romanized',
       aspectRatio: project.aspectRatio || '9:16',

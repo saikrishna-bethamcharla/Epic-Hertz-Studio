@@ -248,4 +248,34 @@ describe('projectStorage: Migration from DB v1 to v2', () => {
     expect(full?.videoFile.name).toBe('legacy_recording.mp4');
     expect(full?.segments.length).toBe(2);
   });
+
+  it('normalizes legacy or malformed style objects to full CaptionStyle on load', async () => {
+    const rawProj: any = {
+      id: 'legacy-style-proj',
+      name: 'Legacy Style',
+      videoName: 'test.mp4',
+      videoType: 'video/mp4',
+      segmentCount: 1,
+      segments: [{ id: 's1', index: 1, start: 0, end: 1, text: 'Hi' }],
+      // Legacy style format missing modern font/animation/layout
+      style: { preset: 'hormozi-yellow', fontSize: 26, textColor: '#FFFFFF' },
+      spokenLanguage: 'en',
+      scriptOutput: 'native',
+      aspectRatio: '9:16',
+      schemaVersion: 1,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    await saveProjectRecord(rawProj);
+    await saveProjectMedia('legacy-style-proj', new Blob(['data']), 'test.mp4');
+
+    const loaded = await loadProjectWithMedia('legacy-style-proj');
+    expect(loaded).not.toBeNull();
+    // Must be normalized to valid CaptionStyle
+    expect(loaded?.style.font).toBeDefined();
+    expect(loaded?.style.motion).toBeDefined();
+    expect(loaded?.style.layout).toBeDefined();
+    expect(loaded?.style.fill).toBeDefined();
+  });
 });
