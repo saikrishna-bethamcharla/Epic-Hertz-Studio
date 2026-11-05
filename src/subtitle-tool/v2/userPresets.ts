@@ -152,3 +152,45 @@ export function saveBrandColors(colors: string[]): string[] {
   }
   return colors;
 }
+
+// ─── JSON Import & Export ───────────────────────────────────────────────────
+
+export function exportUserPresetsAsJson(): string {
+  const presets = getUserPresets();
+  const brandColors = getBrandColors();
+  const payload = {
+    app: 'Epic Hertz Studio',
+    version: 2,
+    exportedAt: new Date().toISOString(),
+    presets,
+    brandColors,
+  };
+  return JSON.stringify(payload, null, 2);
+}
+
+export function importUserPresetsFromJson(jsonStr: string): {
+  importedCount: number;
+  errors: string[];
+} {
+  try {
+    const data = JSON.parse(jsonStr);
+    const presets: UserPreset[] = Array.isArray(data.presets) ? data.presets : [];
+    if (!presets.length && !Array.isArray(data.brandColors)) {
+      return { importedCount: 0, errors: ['No valid presets or brand colors found in file.'] };
+    }
+    for (const p of presets) {
+      if (p.id && p.name && p.style) {
+        saveUserPreset(p);
+      }
+    }
+    if (Array.isArray(data.brandColors)) {
+      saveBrandColors(data.brandColors);
+    }
+    return { importedCount: presets.length, errors: [] };
+  } catch (err) {
+    return {
+      importedCount: 0,
+      errors: [err instanceof Error ? err.message : 'Invalid JSON file structure.'],
+    };
+  }
+}

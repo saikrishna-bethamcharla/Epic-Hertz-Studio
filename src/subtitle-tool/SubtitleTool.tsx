@@ -35,7 +35,7 @@ import {
 } from './v2/userPresets';
 
 import { createDemoVideo } from './utils/createDemoVideo';
-import { saveMediaAsset, formatRelativeTime } from './utils/projectStorage';
+import { saveMediaAsset, formatRelativeTime, listCustomFonts } from './utils/projectStorage';
 import { usePlayback } from './hooks/usePlayback';
 import { useTranscription } from './hooks/useTranscription';
 import { useProjectAutosave } from './hooks/useProjectAutosave';
@@ -262,6 +262,23 @@ export default function SubtitleTool() {
       setActiveId(next.id);
     }
   }, [currentTime, segments]);
+
+  // Restore persisted brand fonts from IndexedDB on startup
+  useEffect(() => {
+    if (typeof document === 'undefined' || !('fonts' in document)) return;
+    listCustomFonts()
+      .then((fonts) => {
+        for (const f of fonts) {
+          try {
+            const face = new FontFace(f.name, f.buffer);
+            face.load().then(() => document.fonts.add(face));
+          } catch (e) {
+            console.warn('Failed restoring font:', f.name, e);
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Global Keyboard Shortcuts
   useEffect(() => {

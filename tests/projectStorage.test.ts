@@ -10,6 +10,9 @@ import {
   duplicateProject,
   renameProject,
   deleteProject,
+  saveCustomFont,
+  listCustomFonts,
+  deleteCustomFont,
   type ProjectRecord,
   DB_NAME,
   PROJECTS_STORE,
@@ -277,5 +280,19 @@ describe('projectStorage: Migration from DB v1 to v2', () => {
     expect(loaded?.style.motion).toBeDefined();
     expect(loaded?.style.layout).toBeDefined();
     expect(loaded?.style.fill).toBeDefined();
+  });
+
+  it('persists, retrieves, and deletes custom brand font buffers', async () => {
+    const dummyBuffer = new Uint8Array([1, 2, 3, 4, 5]).buffer;
+    await saveCustomFont('CustomBrandFont', dummyBuffer);
+
+    let fonts = await listCustomFonts();
+    expect(fonts).toHaveLength(1);
+    expect(fonts[0].name).toBe('CustomBrandFont');
+    expect(new Uint8Array(fonts[0].buffer)).toEqual(new Uint8Array([1, 2, 3, 4, 5]));
+
+    await deleteCustomFont('CustomBrandFont');
+    fonts = await listCustomFonts();
+    expect(fonts).toHaveLength(0);
   });
 });

@@ -13,10 +13,11 @@ import type {
 import { ensureCaptionStyle } from '../engine/compat';
 
 export const DB_NAME = 'epic_hertz_studio_db';
-export const DB_VERSION = 2;
+export const DB_VERSION = 3;
 export const PROJECTS_STORE = 'projects';
 export const MEDIA_STORE = 'media';
 export const LEGACY_STORE = 'project_store';
+export const CUSTOM_FONTS_STORE = 'custom_fonts';
 
 export interface ProjectRecord {
   id: string;
@@ -156,6 +157,10 @@ export function openDB(): Promise<IDBDatabase> {
 
       if (!db.objectStoreNames.contains(MEDIA_STORE)) {
         db.createObjectStore(MEDIA_STORE, { keyPath: 'id' });
+      }
+
+      if (!db.objectStoreNames.contains(CUSTOM_FONTS_STORE)) {
+        db.createObjectStore(CUSTOM_FONTS_STORE, { keyPath: 'name' });
       }
     };
 
@@ -509,4 +514,45 @@ export function formatRelativeTime(timestamp: number): string {
   if (diffHours < 24) return `${diffHours}h ago`;
   const diffDays = Math.floor(diffHours / 24);
   return `${diffDays}d ago`;
+}
+
+// ─── Custom Font Storage ────────────────────────────────────────────────────
+
+export interface CustomFontRecord {
+  name: string;
+  buffer: ArrayBuffer;
+  addedAt: number;
+}
+
+export async function saveCustomFont(name: string, buffer: ArrayBuffer): Promise<void> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CUSTOM_FONTS_STORE, 'readwrite');
+    const store = tx.objectStore(CUSTOM_FONTS_STORE);
+    const req = store.put({ name, buffer, addedAt: Date.now() });
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+export async function listCustomFonts(): Promise<CustomFontRecord[]> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CUSTOM_FONTS_STORE, 'readonly');
+    const store = tx.objectStore(CUSTOM_FONTS_STORE);
+    const req = store.getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+export async function deleteCustomFont(name: string): Promise<void> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(CUSTOM_FONTS_STORE, 'readwrite');
+    const store = tx.objectStore(CUSTOM_FONTS_STORE);
+    const req = store.delete(name);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
 }
