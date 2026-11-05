@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc -b"
   },
   "dependencies": {
     "@ffmpeg/core": "^0.12.6",
@@ -24,8 +26,10 @@
     "@types/react": "18.3.20",
     "@types/react-dom": "18.3.6",
     "@vitejs/plugin-react": "4.4.1",
+    "fake-indexeddb": "^6.0.0",
     "tailwindcss": "4.1.4",
     "typescript": "5.8.3",
-    "vite": "6.3.5"
+    "vite": "^6.4.0",
+    "vitest": "^5.1.0"
   }
 }

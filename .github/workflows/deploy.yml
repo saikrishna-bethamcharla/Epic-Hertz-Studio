@@ -30,6 +30,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Run Tests
+        run: npm run test
+
       - name: Build
         # No secrets here on purpose: anything passed as VITE_* is inlined into the public JS bundle.
         # The Gemini key lives only in Vercel (GEMINI_API_KEY) and is used by api/transcribe.js.

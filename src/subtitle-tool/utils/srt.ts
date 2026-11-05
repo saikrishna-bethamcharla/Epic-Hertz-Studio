@@ -101,6 +101,10 @@ export function toVTT(segments: Segment[]): string {
   return `WEBVTT\n\n${body}`;
 }
 
+export function toTXT(segments: Segment[]): string {
+  return segments.map((s) => s.text).join('\n');
+}
+
 // ── Download helper ──────────────────────────────────────────────────────────
 
 export function downloadText(content: string, filename: string, mime: string) {
