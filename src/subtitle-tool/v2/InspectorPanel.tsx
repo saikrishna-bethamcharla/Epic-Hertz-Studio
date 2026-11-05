@@ -16,6 +16,7 @@ import {
   Bookmark,
   ChevronDown,
   ChevronUp,
+  Wand2,
 } from 'lucide-react';
 
 import type { Segment, CaptionStyle, SegmentStyleOverride, WordTimestamp } from '../types';
@@ -25,6 +26,7 @@ import ColorPopover from './ColorPopover';
 import SavePresetModal from './SavePresetModal';
 import { formatTimecode } from '../utils/formatTime';
 import { checkReadability, getCPS, getWPM } from '../utils/readability';
+import { fixTimings } from '../utils/alignWords';
 
 interface InspectorPanelProps {
   scope: 'all' | 'caption' | 'words';
@@ -652,64 +654,115 @@ export default function InspectorPanel({
         {/* ─────────────────────────────────────────────────────────────
             TAB 3: TIMING
         ────────────────────────────────────────────────────────────── */}
-        {tab === 'timing' && activeSegment && (
+        {tab === 'timing' && (
           <div className="space-y-4">
             <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block">
-              Caption Timing & Words
+              Audio Sync & Caption Timing
             </span>
 
-            {/* Timecode Steppers */}
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="p-2 bg-[#181817] rounded-lg border border-white/5 space-y-1">
-                <span className="text-smoke text-[10px]">Start Time</span>
-                <span className="font-mono text-bone font-bold block">{formatTimecode(activeSegment.start)}</span>
+            {/* Global Voice Sync Offset Slider */}
+            <div className="p-3 bg-[#181817] rounded-xl border border-white/5 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-mist font-medium">Voice Sync Offset</span>
+                <span className="font-mono text-amber-400 font-bold">
+                  {(style.syncOffset ?? -0.35) > 0
+                    ? `+${(style.syncOffset ?? -0.35).toFixed(2)}s`
+                    : `${(style.syncOffset ?? -0.35).toFixed(2)}s`}
+                </span>
               </div>
-              <div className="p-2 bg-[#181817] rounded-lg border border-white/5 space-y-1">
-                <span className="text-smoke text-[10px]">End Time</span>
-                <span className="font-mono text-bone font-bold block">{formatTimecode(activeSegment.end)}</span>
+              <input
+                type="range"
+                min="-0.5"
+                max="0.5"
+                step="0.01"
+                value={style.syncOffset ?? -0.35}
+                onChange={(e) => onStyleChange({ ...style, syncOffset: parseFloat(e.target.value) })}
+                className="w-full accent-amber-400 cursor-pointer"
+              />
+              <div className="flex items-center justify-between text-[10px] text-smoke font-mono">
+                <span>-0.50s (Lead / Early)</span>
+                <span>0.00s</span>
+                <span>+0.50s (Lag)</span>
               </div>
+              <p className="text-[10px] text-smoke leading-relaxed">
+                Fine-tunes word highlight timing relative to voice acoustic onsets.
+              </p>
             </div>
 
-            {/* Word Timing Chips */}
-            {activeSegment.words && activeSegment.words.length > 0 && (
-              <div className="space-y-1.5">
-                <span className="text-[11px] text-smoke block">Word Chips (click to select):</span>
-                <div className="flex items-center gap-1.5 flex-wrap p-2 bg-[#181817] rounded-xl border border-white/5">
-                  {activeSegment.words.map((w, idx) => {
-                    const isSelected = selectedWordIndices.includes(idx);
-                    return (
-                      <button
-                        key={`${w.word}-${idx}`}
-                        type="button"
-                        onClick={() => onSelectWordIndex(idx)}
-                        className={`px-2 py-1 rounded-lg text-xs font-semibold transition-all ${
-                          isSelected
-                            ? 'bg-amber-400 text-black font-extrabold shadow-xs scale-105'
-                            : 'bg-white/5 text-bone hover:bg-white/10'
-                        }`}
-                      >
-                        {w.word}
-                      </button>
-                    );
-                  })}
+            {activeSegment ? (
+              <>
+                {/* Timecode Steppers */}
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="p-2 bg-[#181817] rounded-lg border border-white/5 space-y-1">
+                    <span className="text-smoke text-[10px]">Start Time</span>
+                    <span className="font-mono text-bone font-bold block">{formatTimecode(activeSegment.start)}</span>
+                  </div>
+                  <div className="p-2 bg-[#181817] rounded-lg border border-white/5 space-y-1">
+                    <span className="text-smoke text-[10px]">End Time</span>
+                    <span className="font-mono text-bone font-bold block">{formatTimecode(activeSegment.end)}</span>
+                  </div>
                 </div>
-              </div>
-            )}
 
-            {/* Diagnostics Card */}
-            {diag && (
-              <div className="p-3 bg-[#181817] rounded-xl border border-white/5 space-y-1.5 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-smoke">Reading Speed</span>
-                  <span className={`font-mono font-bold ${diag.cps > 20 ? 'text-amber-400' : 'text-emerald-400'}`}>
-                    {diag.cps.toFixed(1)} CPS · {diag.wpm.toFixed(0)} WPM
-                  </span>
-                </div>
-                {diag.warnings.length > 0 && (
-                  <div className="text-[11px] text-amber-300 font-medium">
-                    ⚠️ {diag.warnings.join(' · ')}
+                {/* Word Timing Chips */}
+                {activeSegment.words && activeSegment.words.length > 0 && (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] text-smoke block">Word Chips:</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const fixed = fixTimings(activeSegment);
+                          onUpdateActiveSegment({ words: fixed.words, start: fixed.start, end: fixed.end });
+                        }}
+                        className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1 cursor-pointer"
+                        title="Auto-align words proportionally by character length"
+                      >
+                        <Wand2 className="w-2.5 h-2.5" />
+                        <span>Fix timings</span>
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-wrap p-2 bg-[#181817] rounded-xl border border-white/5">
+                      {activeSegment.words.map((w, idx) => {
+                        const isSelected = selectedWordIndices.includes(idx);
+                        return (
+                          <button
+                            key={`${w.word}-${idx}`}
+                            type="button"
+                            onClick={() => onSelectWordIndex(idx)}
+                            className={`px-2 py-1 rounded-lg text-xs font-semibold transition-all ${
+                              isSelected
+                                ? 'bg-amber-400 text-black font-extrabold shadow-xs scale-105'
+                                : 'bg-white/5 text-bone hover:bg-white/10'
+                            }`}
+                          >
+                            {w.word}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
+
+                {/* Diagnostics Card */}
+                {diag && (
+                  <div className="p-3 bg-[#181817] rounded-xl border border-white/5 space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-smoke">Reading Speed</span>
+                      <span className={`font-mono font-bold ${diag.cps > 20 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                        {diag.cps.toFixed(1)} CPS · {diag.wpm.toFixed(0)} WPM
+                      </span>
+                    </div>
+                    {diag.warnings.length > 0 && (
+                      <div className="text-[11px] text-amber-300 font-medium">
+                        ⚠️ {diag.warnings.join(' · ')}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="p-3 bg-[#181817] rounded-xl border border-white/5 text-center text-xs text-smoke">
+                Select a caption on the left to inspect and adjust individual word timing precision.
               </div>
             )}
           </div>

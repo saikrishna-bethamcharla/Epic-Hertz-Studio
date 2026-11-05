@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { formatTimecode } from './utils/formatTime';
 import { checkReadability, getCPS } from './utils/readability';
+import { checkWordTimings, fixTimings } from './utils/alignWords';
 import { getSpeakerStyle, getSpeakerShortCode } from './utils/speakers';
 import type { Segment, ScriptOutput, SpokenLanguage, WordTimestamp, SegmentStyleOverride } from './types';
 
@@ -173,18 +174,10 @@ export default function CaptionEditor({
     }));
   };
 
-  // Auto-distribute word timings evenly across segment bounds
+  // Auto-distribute word timings proportionally based on character count
   const handleAutoDistributeWords = (seg: Segment) => {
-    const rawWords = seg.text.trim().split(/\s+/).filter(Boolean);
-    if (rawWords.length === 0) return;
-    const duration = Math.max(0.2, seg.end - seg.start);
-    const perWord = duration / rawWords.length;
-    const words: WordTimestamp[] = rawWords.map((w, i) => ({
-      word: w,
-      start: +(seg.start + i * perWord).toFixed(2),
-      end: +(seg.start + (i + 1) * perWord).toFixed(2),
-    }));
-    updateSegment(seg.id, { words });
+    const fixed = fixTimings(seg);
+    updateSegment(seg.id, { words: fixed.words, start: fixed.start, end: fixed.end });
   };
 
   // Update a single word's timing, color, or emphasis inside a segment
@@ -609,6 +602,7 @@ export default function CaptionEditor({
             const prevSeg = idx > 0 ? filteredSegments[idx - 1] : undefined;
             const nextSeg = idx < filteredSegments.length - 1 ? filteredSegments[idx + 1] : undefined;
             const issues = checkReadability(seg, prevSeg, nextSeg);
+            const wordCheck = checkWordTimings(seg.words);
             const speakerStyle = getSpeakerStyle(seg.speaker);
             const wordsList: WordTimestamp[] = seg.words && seg.words.length > 0
               ? seg.words
@@ -1034,8 +1028,8 @@ export default function CaptionEditor({
                   )}
                 </AnimatePresence>
 
-                {/* Readability Warnings Pill */}
-                {issues.length > 0 && (
+                {/* Readability & Timing Warnings Pill */}
+                {(issues.length > 0 || wordCheck.hasIssues) && (
                   <div className="mt-1.5 pt-1.5 border-t border-white/5 flex flex-wrap items-center gap-1.5 text-[10px]">
                     {issues.map((iss, iIdx) => (
                       <span
@@ -1051,6 +1045,21 @@ export default function CaptionEditor({
                         <span>{iss.message}</span>
                       </span>
                     ))}
+                    {wordCheck.hasIssues && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const fixed = fixTimings(seg);
+                          updateSegment(seg.id, { words: fixed.words, start: fixed.start, end: fixed.end });
+                        }}
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/25 transition-colors cursor-pointer"
+                        title="Word timings have collapsed or overlap. Click to auto-distribute by character count."
+                      >
+                        <Wand2 className="w-2.5 h-2.5" />
+                        <span>Fix timings ({wordCheck.collapsedCount + wordCheck.overlapCount} alerts)</span>
+                      </button>
+                    )}
                     <span className="text-smoke/60 ml-auto font-mono">
                       {getCPS(seg)} CPS
                     </span>

@@ -172,5 +172,10 @@ export async function transcribeAudio(
   onStatus?.('Finalizing caption timeline…');
   const merged = mergeSegments(results.map((r) => r ?? []));
   if (merged.length === 0) throw new Error(NO_SPEECH_MESSAGE);
-  return merged;
+
+  onStatus?.('Aligning word timings to speech onsets…');
+  const { refineSegmentsFromAudio } = await import('../utils/alignWords');
+  const aligned = await refineSegmentsFromAudio(audioBlob, merged);
+
+  return aligned;
 }
