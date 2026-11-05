@@ -10,7 +10,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Play,
   ChevronDown,
   ChevronRight,
   CheckSquare,
@@ -21,8 +20,6 @@ import {
   Wand2,
   Smile,
   Sliders,
-  Palette,
-  RotateCcw,
   Mic,
 } from 'lucide-react';
 import { formatTimecode } from './utils/formatTime';
@@ -30,22 +27,8 @@ import { checkReadability, getCPS } from './utils/readability';
 import { checkWordTimings, fixTimings } from './utils/alignWords';
 import { getSpeakerStyle, getSpeakerShortCode } from './utils/speakers';
 import type { Segment, ScriptOutput, SpokenLanguage, WordTimestamp, SegmentStyleOverride } from './types';
-
-const POPULAR_EMOJIS = [
-  { label: 'Hype', emojis: ['🔥', '⚡', '💥', '🚀', '💯', '👑', '✨', '🌟'] },
-  { label: 'Mindset', emojis: ['💡', '🧠', '🎯', '📈', '💰', '🔑', '🏆', '📌'] },
-  { label: 'Reactions', emojis: ['😂', '😱', '🤯', '🤫', '👀', '💀', '🤩', '🙌'] },
-  { label: 'Signals', emojis: ['👍', '👏', '🤝', '❤️', '🚨', '⚠️', '❌', '✅'] },
-];
-
-const PRESET_ACCENT_COLORS = [
-  { label: 'Yellow', value: '#FACC15' },
-  { label: 'Pink', value: '#EC4899' },
-  { label: 'Cyan', value: '#06B6D4' },
-  { label: 'Lime', value: '#84CC16' },
-  { label: 'Orange', value: '#FB923C' },
-  { label: 'Red', value: '#EF4444' },
-];
+import { SegmentStyleDrawer } from './editor/SegmentStyleDrawer';
+import { SegmentWordEditor } from './editor/SegmentWordEditor';
 
 interface CaptionEditorProps {
   segments: Segment[];
@@ -809,224 +792,16 @@ export default function CaptionEditor({
                   </div>
                 </div>
 
-                {/* ── Popover: Opt-In Creator Emoji Picker ──────────────────────── */}
-                <AnimatePresence>
-                  {emojiPickerSegId === seg.id && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95, y: -4 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                      className="mt-2 p-2.5 bg-[#1f1e1b] border border-amber-400/30 rounded-xl shadow-xl z-20"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="flex items-center justify-between pb-1.5 border-b border-white/10 mb-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1">
-                          <Smile className="w-3 h-3" />
-                          <span>Insert Reaction Emoji</span>
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setEmojiPickerSegId(null)}
-                          className="text-smoke hover:text-bone text-xs p-0.5 rounded"
-                        >
-                          ✕
-                        </button>
-                      </div>
-
-                      <div className="space-y-2">
-                        {POPULAR_EMOJIS.map((group) => (
-                          <div key={group.label}>
-                            <div className="text-[9px] font-semibold text-smoke/70 mb-1">{group.label}</div>
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              {group.emojis.map((emoji) => (
-                                <button
-                                  key={emoji}
-                                  type="button"
-                                  onClick={() => insertEmoji(seg.id, emoji)}
-                                  className="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-black/40 hover:bg-amber-400/20 hover:scale-120 active:scale-95 transition-all"
-                                  title={`Insert ${emoji}`}
-                                >
-                                  {emoji}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* ── Drawer: Per-Caption Style Overrides ────────────────────────── */}
-                <AnimatePresence>
-                  {styleOverrideSegIds.has(seg.id) && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="mt-2.5 p-2.5 bg-[#181715] border border-white/10 rounded-xl text-xs space-y-2"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="flex items-center justify-between text-[10px] font-bold text-amber-400 uppercase tracking-wider border-b border-white/10 pb-1">
-                        <span className="flex items-center gap-1">
-                          <Palette className="w-3 h-3" />
-                          <span>Caption Style Override</span>
-                        </span>
-                        {seg.styleOverride && (
-                          <button
-                            type="button"
-                            onClick={() => updateSegmentStyleOverride(seg.id, null)}
-                            className="flex items-center gap-1 text-[9px] text-smoke hover:text-amber-300 lowercase"
-                          >
-                            <RotateCcw className="w-2.5 h-2.5" />
-                            <span>reset</span>
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Position Override */}
-                      <div className="space-y-1.5 text-[11px]">
-                        <div className="flex items-center justify-between">
-                          <span className="text-smoke">Position (2D Anchor):</span>
-                          {(seg.styleOverride?.positionX !== undefined || seg.styleOverride?.positionY !== undefined) && (
-                            <span className="text-[10px] text-amber-300 font-mono">
-                              ({Math.round((seg.styleOverride.positionX ?? 0.5) * 100)}%,{' '}
-                              {Math.round((seg.styleOverride.positionY ?? 0.82) * 100)}%)
-                            </span>
-                          )}
-                        </div>
-                        <div className="grid grid-cols-4 gap-1">
-                          {[
-                            { label: 'Def', x: undefined, y: undefined },
-                            { label: 'Top', x: 0.5, y: 0.18 },
-                            { label: 'Mid', x: 0.5, y: 0.5 },
-                            { label: 'Bot', x: 0.5, y: 0.82 },
-                            { label: 'Top-L', x: 0.22, y: 0.18 },
-                            { label: 'Top-R', x: 0.78, y: 0.18 },
-                            { label: 'Bot-L', x: 0.22, y: 0.82 },
-                            { label: 'Bot-R', x: 0.78, y: 0.82 },
-                          ].map((opt) => {
-                            const isSelected =
-                              opt.x === undefined && opt.y === undefined
-                                ? seg.styleOverride?.positionX === undefined && seg.styleOverride?.positionY === undefined
-                                : Math.abs((seg.styleOverride?.positionX ?? 0.5) - (opt.x ?? 0.5)) < 0.05 &&
-                                  Math.abs((seg.styleOverride?.positionY ?? 0.82) - (opt.y ?? 0.82)) < 0.05;
-                            return (
-                              <button
-                                key={opt.label}
-                                type="button"
-                                onClick={() =>
-                                  updateSegmentStyleOverride(seg.id, {
-                                    positionX: opt.x,
-                                    positionY: opt.y,
-                                  })
-                                }
-                                className={`px-1.5 py-1 rounded text-[10px] font-medium transition-colors text-center ${
-                                  isSelected
-                                    ? 'bg-amber-400 text-black font-bold'
-                                    : 'bg-white/10 text-smoke hover:text-bone'
-                                }`}
-                              >
-                                {opt.label}
-                              </button>
-                            );
-                          })}
-                        </div>
-                        <p className="text-[10px] text-smoke/70 italic">
-                          💡 You can also drag this caption directly on the video player.
-                        </p>
-                      </div>
-
-                      {/* Scale Override */}
-                      <div className="flex items-center justify-between text-[11px]">
-                        <span className="text-smoke">Scale:</span>
-                        <div className="flex items-center gap-1">
-                          {[
-                            { label: '0.85x', val: 0.85 },
-                            { label: '1.0x', val: undefined },
-                            { label: '1.15x', val: 1.15 },
-                            { label: '1.3x', val: 1.3 },
-                          ].map((opt) => (
-                            <button
-                              key={opt.label}
-                              type="button"
-                              onClick={() => updateSegmentStyleOverride(seg.id, { scale: opt.val })}
-                              className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                                seg.styleOverride?.scale === opt.val
-                                  ? 'bg-amber-400 text-black font-bold'
-                                  : 'bg-white/10 text-smoke hover:text-bone'
-                              }`}
-                            >
-                              {opt.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Accent Highlight Override */}
-                      <div className="flex items-center justify-between text-[11px]">
-                        <span className="text-smoke">Accent Color:</span>
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => updateSegmentStyleOverride(seg.id, { highlightColor: undefined })}
-                            className={`w-4 h-4 rounded-full border border-white/30 text-[9px] flex items-center justify-center ${
-                              !seg.styleOverride?.highlightColor ? 'ring-2 ring-amber-400' : ''
-                            }`}
-                            title="Default Color"
-                          >
-                            ✕
-                          </button>
-                          {PRESET_ACCENT_COLORS.map((col) => (
-                            <button
-                              key={col.value}
-                              type="button"
-                              onClick={() => updateSegmentStyleOverride(seg.id, { highlightColor: col.value })}
-                              style={{ backgroundColor: col.value }}
-                              className={`w-4 h-4 rounded-full transition-transform ${
-                                seg.styleOverride?.highlightColor === col.value
-                                  ? 'ring-2 ring-white scale-110'
-                                  : 'opacity-80 hover:opacity-100 hover:scale-105'
-                              }`}
-                              title={col.label}
-                            />
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Speaker Assignment */}
-                      <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-white/5">
-                        <span className="text-smoke">Speaker:</span>
-                        <div className="flex items-center gap-1">
-                          {['Speaker 1', 'Speaker 2', 'Speaker 3', 'Speaker 4'].map((spk, i) => (
-                            <button
-                              key={spk}
-                              type="button"
-                              onClick={() => updateSegment(seg.id, { speaker: seg.speaker === spk ? undefined : spk })}
-                              className={`px-1.5 py-0.5 rounded text-[10px] font-medium font-mono transition-colors ${
-                                seg.speaker === spk
-                                  ? 'bg-amber-400 text-black font-bold'
-                                  : 'bg-white/10 text-smoke hover:text-bone'
-                              }`}
-                            >
-                              S{i + 1}
-                            </button>
-                          ))}
-                          {seg.speaker && (
-                            <button
-                              type="button"
-                              onClick={() => updateSegment(seg.id, { speaker: undefined })}
-                              className="text-smoke hover:text-bone text-[9px] px-1"
-                              title="Clear speaker"
-                            >
-                              ✕
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {/* ── Per-Caption Style & Reaction Overrides Drawer ────────────────── */}
+                <SegmentStyleDrawer
+                  segment={seg}
+                  isOpen={styleOverrideSegIds.has(seg.id)}
+                  isEmojiOpen={emojiPickerSegId === seg.id}
+                  onCloseEmoji={() => setEmojiPickerSegId(null)}
+                  onInsertEmoji={(emoji) => insertEmoji(seg.id, emoji)}
+                  onUpdateOverride={updateSegmentStyleOverride}
+                  onUpdateSpeaker={(segId, speaker) => updateSegment(segId, { speaker })}
+                />
 
                 {/* Readability & Timing Warnings Pill */}
                 {(issues.length > 0 || wordCheck.hasIssues) && (
@@ -1069,124 +844,16 @@ export default function CaptionEditor({
                 {/* ── Word-Level Timing Chip Editor ───────────────────────────── */}
                 <AnimatePresence>
                   {isWordsExpanded && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="mt-2.5 pt-2.5 border-t border-white/10"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="flex items-center justify-between mb-2 text-[10px] text-smoke">
-                        <span className="font-semibold uppercase tracking-wider text-amber-400">Word Timing Precision</span>
-                        <button
-                          type="button"
-                          onClick={() => handleAutoDistributeWords(seg)}
-                          className="flex items-center gap-1 text-mist hover:text-amber-300 px-1.5 py-0.5 rounded hover:bg-white/5 transition-colors"
-                          title="Auto distribute word timings evenly over segment duration"
-                        >
-                          <Wand2 className="w-3 h-3 text-amber-400" />
-                          <span>Sync words</span>
-                        </button>
-                      </div>
-
-                      {/* Word Chips Row */}
-                      <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
-                        {wordsList.map((w, wIdx) => {
-                          const wDuration = +(w.end - w.start).toFixed(2);
-                          const hasCustomColor = !!w.highlightColor;
-                          const hasEmphasis = w.emphasis && w.emphasis !== 'none';
-                          return (
-                            <div
-                              key={wIdx}
-                              className={`flex items-center gap-1 bg-[#151514] border rounded-lg px-2 py-1 text-xs transition-colors ${
-                                hasCustomColor
-                                  ? 'border-amber-400/50 bg-[#1c1b18]'
-                                  : 'border-white/10 hover:border-amber-400/40'
-                              }`}
-                            >
-                              {/* Word loop play button */}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  onSeek(w.start);
-                                }}
-                                aria-label={`Seek to word ${w.word}`}
-                                title={`Play word: ${w.word} (${w.start.toFixed(2)}s - ${w.end.toFixed(2)}s · ${wDuration}s)`}
-                                className="p-0.5 text-smoke hover:text-amber-400 transition-colors"
-                              >
-                                <Play className="w-2.5 h-2.5 fill-current" />
-                              </button>
-
-                              {/* Editable word text */}
-                              <input
-                                type="text"
-                                value={w.word}
-                                onChange={(e) => updateWord(seg, wIdx, { word: e.target.value })}
-                                className="bg-transparent text-bone font-medium text-[11px] w-14 focus:w-20 outline-none border-b border-transparent focus:border-amber-400 transition-all font-mono"
-                              />
-
-                              {/* Custom Color Cycle Button */}
-                              <button
-                                type="button"
-                                onClick={() => cycleWordColor(seg, wIdx)}
-                                aria-label={`Change color for word ${w.word}`}
-                                className="w-3.5 h-3.5 rounded-full flex items-center justify-center p-0.5 transition-transform hover:scale-115"
-                                title={`Highlight Color: ${w.highlightColor || 'Default'} (Click to cycle)`}
-                              >
-                                {w.highlightColor ? (
-                                  <span
-                                    className="w-2.5 h-2.5 rounded-full ring-1 ring-white/60"
-                                    style={{ backgroundColor: w.highlightColor }}
-                                  />
-                                ) : (
-                                  <span className="w-2 h-2 rounded-full border border-white/30" />
-                                )}
-                              </button>
-
-                              {/* Custom Emphasis FX Cycle Button */}
-                              <button
-                                type="button"
-                                onClick={() => cycleWordEmphasis(seg, wIdx)}
-                                aria-label={`Change emphasis for word ${w.word}`}
-                                className={`px-1 py-0.2 rounded text-[8px] font-mono font-bold tracking-tight uppercase transition-all ${
-                                  hasEmphasis
-                                    ? 'bg-amber-400 text-black shadow-xs'
-                                    : 'text-smoke/50 hover:text-smoke hover:bg-white/5'
-                                }`}
-                                title={`Animation FX: ${w.emphasis || 'None'} (Click to cycle: pop, shake, glow, underline)`}
-                              >
-                                {w.emphasis && w.emphasis !== 'none' ? w.emphasis : '+fx'}
-                              </button>
-
-                              {/* Timestamp badge */}
-                              <span className="text-[9px] font-mono text-smoke">
-                                {w.start.toFixed(2)}s
-                              </span>
-
-                              {/* Nudge buttons */}
-                              <div className="flex items-center ml-0.5">
-                                <button
-                                  type="button"
-                                  onClick={() => nudgeWord(seg, wIdx, -0.05, 0)}
-                                  className="px-1 text-[9px] text-smoke hover:text-bone hover:bg-white/10 rounded"
-                                  title="Nudge start earlier (-0.05s)"
-                                >
-                                  ◀
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => nudgeWord(seg, wIdx, 0.05, 0)}
-                                  className="px-1 text-[9px] text-smoke hover:text-bone hover:bg-white/10 rounded"
-                                  title="Nudge start later (+0.05s)"
-                                >
-                                  ▶
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </motion.div>
+                    <SegmentWordEditor
+                      segment={seg}
+                      wordsList={wordsList}
+                      onSeek={onSeek}
+                      onAutoDistribute={handleAutoDistributeWords}
+                      onUpdateWord={updateWord}
+                      onCycleWordColor={cycleWordColor}
+                      onCycleWordEmphasis={cycleWordEmphasis}
+                      onNudgeWord={nudgeWord}
+                    />
                   )}
                 </AnimatePresence>
               </motion.div>

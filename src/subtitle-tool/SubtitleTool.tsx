@@ -33,21 +33,11 @@ import {
   type WorkspaceLayout,
 } from './v2/userPresets';
 
-import { extractAudio } from './utils/extractAudio';
-import { transcribeAudio } from './api/transcribe';
 import { createDemoVideo } from './utils/createDemoVideo';
-import {
-  saveMediaAsset,
-  saveProjectMeta,
-  getSavedProjectMeta,
-  restoreFullProject,
-  clearSavedProject,
-  formatRelativeTime,
-  loadProjectWithMedia,
-  getActiveProjectId,
-  setActiveProjectId,
-  type SavedProjectMeta,
-} from './utils/projectStorage';
+import { saveMediaAsset, formatRelativeTime } from './utils/projectStorage';
+import { usePlayback } from './hooks/usePlayback';
+import { useTranscription } from './hooks/useTranscription';
+import { useProjectAutosave } from './hooks/useProjectAutosave';
 
 import type {
   AppStage,
@@ -74,25 +64,73 @@ export default function SubtitleTool() {
   const [history, setHistory] = useState<Segment[][]>([]);
   const [redoStack, setRedoStack] = useState<Segment[][]>([]);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
-  const [isProjectManagerOpen, setIsProjectManagerOpen] = useState(false);
   const [hideCaptions, setHideCaptions] = useState(false);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const isDesktop = useDesktop();
   const [mobileTab, setMobileTab] = useState<'captions' | 'styles' | 'timeline'>('captions');
   const [style, setStyle] = useState<CaptionStyle>(() => structuredClone(DEFAULT_STYLE));
-  const [savedDraft, setSavedDraft] = useState<SavedProjectMeta | null>(null);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const [layout, setLayout] = useState<WorkspaceLayout>(() => getStoredLayout());
   const [scope, setScope] = useState<'all' | 'caption' | 'words'>('all');
   const [leftTab, setLeftTab] = useState<LibraryTab>('captions');
   const [selectedWordIndices, setSelectedWordIndices] = useState<number[]>([]);
   const [projectName, setProjectName] = useState<string>('Untitled Video');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Modular custom hooks (Phase 6.2)
+  const {
+    currentTime,
+    duration,
+    setDuration,
+    isPlaying,
+    setIsPlaying,
+    activeId,
+    setActiveId,
+    handleTimeUpdate,
+    resetPlayback,
+  } = usePlayback(segments);
+
+  const { processVideo } = useTranscription({
+    setStage,
+    setStatusText,
+    setError,
+    setSegments,
+    setHistory,
+    setRedoStack,
+  });
+
+  const {
+    saveStatus,
+    lastSavedAt,
+    savedDraft,
+    isProjectManagerOpen,
+    setIsProjectManagerOpen,
+    handleResumeProject,
+    handleSelectProject,
+    handleDiscardDraft,
+    refreshDraft,
+    activeProjectId,
+  } = useProjectAutosave({
+    stage,
+    videoFile,
+    segments,
+    style,
+    spokenLanguage,
+    scriptOutput,
+    aspectRatio,
+    projectName,
+    setVideoFile,
+    setSegments,
+    setHistory,
+    setRedoStack,
+    setStyle,
+    setSpokenLanguage,
+    setScriptOutput,
+    setAspectRatio,
+    setProjectName,
+    setStage,
+    setStatusText,
+    setError,
+  });
 
   const showToast = useCallback((msg: string) => {
     setToastMessage(msg);
@@ -400,52 +438,6 @@ export default function SubtitleTool() {
     handleJumpNextCaption,
   ]);
 
-  // Check for saved project draft in IndexedDB on initial mount
-  useEffect(() => {
-    let mounted = true;
-    getSavedProjectMeta().then((meta) => {
-      if (mounted && meta && meta.segmentCount > 0) {
-        setSavedDraft(meta);
-      }
-    });
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  // Browser-side debounced autosave to IndexedDB
-  useEffect(() => {
-    if (stage !== 'editing' || !videoFile || segments.length === 0) return;
-    setSaveStatus('saving');
-    const timer = setTimeout(async () => {
-      await saveProjectMeta({
-        videoName: videoFile.name,
-        videoType: videoFile.type || 'video/mp4',
-        segmentCount: segments.length,
-        segments,
-        style,
-        spokenLanguage,
-        scriptOutput,
-        aspectRatio,
-        updatedAt: Date.now(),
-      });
-      setSaveStatus('saved');
-      setLastSavedAt(Date.now());
-    }, 800);
-    return () => clearTimeout(timer);
-  }, [stage, videoFile, segments, style, spokenLanguage, scriptOutput, aspectRatio]);
-
-  // Edits live in this browser tab and IndexedDB. Warn before an accidental reload.
-  useEffect(() => {
-    if (stage !== 'editing' && stage !== 'burning') return;
-    const warn = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = '';
-    };
-    window.addEventListener('beforeunload', warn);
-    return () => window.removeEventListener('beforeunload', warn);
-  }, [stage]);
-
   useEffect(() => {
     document.title = 'Epic Hertz | Auto-Subtitle Studio';
     try {
@@ -453,18 +445,6 @@ export default function SubtitleTool() {
       sessionStorage.removeItem('epic_gemini_api_key');
     } catch {}
   }, []);
-
-  // ── Sync Playhead Time ───────────────────────────────────────────────────
-  const handleTimeUpdate = useCallback(
-    (time: number) => {
-      setCurrentTime(time);
-      const active = segments.find(
-        (s) => time >= s.start && time <= s.end,
-      );
-      setActiveId(active?.id ?? null);
-    },
-    [segments],
-  );
 
   // ── 1. File Selected → Go to 'configuring' modal ─────────────────────────
   const handleFileDrop = useCallback((file: File) => {
@@ -479,40 +459,11 @@ export default function SubtitleTool() {
   const handleContinueProcessing = useCallback(
     async (config: { spokenLanguage: SpokenLanguage; scriptOutput: ScriptOutput }) => {
       if (!videoFile) return;
-
       setSpokenLanguage(config.spokenLanguage);
       setScriptOutput(config.scriptOutput);
-
-      try {
-        // Step A: Extract audio in-browser
-        setStage('extracting');
-        setStatusText('Extracting audio track…');
-        const audioBlob = await extractAudio(videoFile);
-
-        // Step B: Upload & Transcribe via Gemini
-        setStage('uploading');
-        setStatusText('Uploading to AI studio…');
-
-        const segs = await transcribeAudio(audioBlob, {
-          spokenLanguage: config.spokenLanguage,
-          scriptOutput: config.scriptOutput,
-          onStatus: (msg) => {
-            setStatusText(msg);
-            if (msg.toLowerCase().includes('transcrib')) setStage('transcribing');
-          },
-        });
-
-        setSegments(segs);
-        setHistory([]);
-        setRedoStack([]);
-        setStage('editing');
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        setError(msg);
-        setStage('idle');
-      }
+      await processVideo(videoFile, config);
     },
-    [videoFile],
+    [videoFile, processVideo],
   );
 
   const handleTryDemo = useCallback(async () => {
@@ -574,87 +525,17 @@ export default function SubtitleTool() {
     }
   }, []);
 
-  // ── Resume Last Project from IndexedDB ──────────────────────────────────
-  const handleResumeProject = useCallback(async () => {
-    try {
-      setStatusText('Restoring saved project draft…');
-      const project = await restoreFullProject();
-      if (!project) {
-        setError('Could not restore saved project from browser storage.');
-        setSavedDraft(null);
-        return;
-      }
-      setVideoFile(project.videoFile);
-      setSegments(project.segments);
-      setHistory([]);
-      setRedoStack([]);
-      setStyle(project.style);
-      setSpokenLanguage(project.spokenLanguage);
-      setScriptOutput(project.scriptOutput);
-      setAspectRatio(project.aspectRatio);
-      setProjectName(project.name || project.videoFile.name.replace(/\.[^/.]+$/, ''));
-      setSavedDraft(null);
-      setStage('editing');
-      setSaveStatus('saved');
-      setLastSavedAt(project.updatedAt);
-    } catch (err) {
-      console.warn('Restore failed:', err);
-      setError('Failed to restore project draft.');
-    }
-  }, []);
-
-  // ── Load Specific Project from ProjectManagerModal ───────────────────────
-  const handleSelectProject = useCallback(async (projectId: string) => {
-    try {
-      setStatusText('Loading project…');
-      setActiveProjectId(projectId);
-      const project = await loadProjectWithMedia(projectId);
-      if (!project) {
-        setError('Could not load project media from browser storage.');
-        return;
-      }
-      setVideoFile(project.videoFile);
-      setSegments(project.segments);
-      setHistory([]);
-      setRedoStack([]);
-      setStyle(project.style);
-      setSpokenLanguage(project.spokenLanguage);
-      setScriptOutput(project.scriptOutput);
-      setAspectRatio(project.aspectRatio);
-      setProjectName(project.name || project.videoFile.name.replace(/\.[^/.]+$/, ''));
-      setSavedDraft(null);
-      setStage('editing');
-      setSaveStatus('saved');
-      setLastSavedAt(project.updatedAt);
-      setIsProjectManagerOpen(false);
-    } catch (err) {
-      console.warn('Failed to load project:', err);
-      setError('Failed to load project from storage.');
-    }
-  }, []);
-
-  // ── Discard Saved Project ────────────────────────────────────────────────
-  const handleDiscardDraft = useCallback(async () => {
-    await clearSavedProject();
-    setSavedDraft(null);
-  }, []);
-
   const handleReset = useCallback(async () => {
     setStage('idle');
     setVideoFile(null);
     setSegments([]);
     setHistory([]);
     setRedoStack([]);
-    setActiveId(null);
     setError(null);
     setBurnProgress(0);
-    setCurrentTime(0);
-    setDuration(0);
-    setIsPlaying(false);
-    setSaveStatus('idle');
-    const draft = await getSavedProjectMeta();
-    setSavedDraft(draft);
-  }, []);
+    resetPlayback();
+    await refreshDraft();
+  }, [resetPlayback, refreshDraft]);
 
   const showOverlay =
     stage === 'extracting' ||
@@ -736,7 +617,7 @@ export default function SubtitleTool() {
           setIsProjectManagerOpen(false);
           handleReset();
         }}
-        currentProjectId={getActiveProjectId()}
+        currentProjectId={activeProjectId}
       />
 
       {/* ── Top Header Navigation Bar (Shown on Landing / Idle / Config Stages) ── */}
