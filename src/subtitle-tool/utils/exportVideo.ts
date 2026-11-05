@@ -201,11 +201,13 @@ export async function exportCaptionedVideo(
       if (/quota|memory|allocation|out of memory|ArrayBuffer/i.test(msg)) {
         throw new Error(
           'Out of memory during video encoding. Try selecting 1080p resolution or Standard quality.',
+          { cause: execErr },
         );
       }
       if (/encode|encoder|codec/i.test(msg)) {
         throw new Error(
           `Video hardware encoding error: ${msg}. Try exporting with Standard quality or 1080p.`,
+          { cause: execErr },
         );
       }
       throw execErr;

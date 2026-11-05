@@ -1,9 +1,8 @@
 // Preset data used by the marketing landing page showcase only.
 // (The editor itself uses the engine presets in ./engine/presets.ts.)
-import type { SubtitleStyle, SubtitlePreset } from './types';
 
 export interface PresetItem {
-  id: SubtitlePreset;
+  id: string;
   title: string;
   badge?: string;
   category: 'capcut' | 'cinematic';
@@ -11,7 +10,21 @@ export interface PresetItem {
   previewBg: string;
   previewOutline?: string;
   previewHighlight?: string;
-  config: Partial<SubtitleStyle>;
+  config: {
+    backgroundColor?: string;
+    highlightColor?: string;
+    textColor?: string;
+    fontSize?: number;
+    outlineColor?: string;
+    outlineWidth?: number;
+    fontFamily?: string;
+    uppercase?: boolean;
+    highlightCurrentWord?: boolean;
+    shadowEffect?: boolean;
+    animationEffect?: string;
+    position?: string;
+    preset?: string;
+  };
 }
 
 export const PRESET_LIBRARY: PresetItem[] = [

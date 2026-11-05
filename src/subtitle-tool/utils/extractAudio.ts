@@ -123,6 +123,7 @@ export async function extractAudio(
     console.error('Audio extraction failed:', err);
     throw new Error(
       'Could not decode audio from this video file. Ensure the video contains an uncorrupted audio track.',
+      { cause: err },
     );
   } finally {
     audioCtx.close().catch(() => {});

@@ -10,20 +10,10 @@
 // - Quick edit actions: + Text, Split, Merge, Delete, Undo/Redo, Find & Replace
 
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  Scissors,
-  Combine,
-  Trash2,
-  BookOpen,
-  Plus,
-  Undo2,
-  Redo2,
-  Magnet,
-  Link2,
-} from 'lucide-react';
 import { formatTimecode, formatRulerTick } from './utils/formatTime';
 import { getSpeakerStyle, getSpeakerShortCode } from './utils/speakers';
 import type { Segment } from './types';
+import TimelineToolbar from './editor/TimelineToolbar';
 
 interface TimelineProps {
   duration: number;
@@ -72,9 +62,6 @@ export default function Timeline({
 
   const [localHistory, setLocalHistory] = useState<Segment[][]>([]);
   const [localRedo, setLocalRedo] = useState<Segment[][]>([]);
-  const [showDictionary, setShowDictionary] = useState(false);
-  const [findWord, setFindWord] = useState('');
-  const [replaceWord, setReplaceWord] = useState('');
 
   const containerRef = useRef<HTMLDivElement>(null);
   const waveformCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -462,20 +449,6 @@ export default function Timeline({
     pushState(updated);
   };
 
-  // ── Bulk Find & Replace ───────────────────────────────────────────────────
-  const handleBulkReplace = () => {
-    if (!findWord.trim()) return;
-    const regex = new RegExp(findWord, 'gi');
-    const updated = segments.map((s) => ({
-      ...s,
-      text: s.text.replace(regex, replaceWord),
-    }));
-    pushState(updated);
-    setFindWord('');
-    setReplaceWord('');
-    setShowDictionary(false);
-  };
-
   // Ruler markers every 2 or 5 seconds based on zoom
   const rulerInterval = zoom > 70 ? 2 : 5;
   const numRulerTicks = Math.ceil(totalDuration / rulerInterval);
@@ -483,295 +456,35 @@ export default function Timeline({
   return (
     <div className="h-full w-full flex flex-col bg-[#121211] border-t border-white/10 select-none overflow-hidden">
       {/* ── Timeline Toolbar ──────────────────────────────────────────────── */}
-      <div className="shrink-0 flex items-center justify-between px-4 py-2 border-b border-white/10 text-xs">
-        {/* Left: Playhead control & current time */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onTogglePlay}
-            aria-label={isPlaying ? 'Pause playback (Space)' : 'Start playback (Space)'}
-            className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-bone flex items-center justify-center transition-colors focus-visible:ring-1 focus-visible:ring-amber-400"
-            title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
-          >
-            {isPlaying ? (
-              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-              </svg>
-            ) : (
-              <svg className="w-3.5 h-3.5 translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            )}
-          </button>
-
-          <span className="font-mono text-mist text-[11px]">
-            <span className="text-bone font-medium">{formatTimecode(currentTime)}</span>
-            <span className="text-smoke mx-1">/</span>
-            <span>{formatTimecode(totalDuration)}</span>
-          </span>
-        </div>
-
-        {/* Center: Editing tools (+ Text, Split, Merge, Delete, Snap, Ripple, Undo/Redo, Dictionary) */}
-        <div className="flex items-center gap-1 bg-[#1a1a18] p-1 rounded-xl border border-white/10">
-          {/* Add Text */}
-          <div className="relative group/tip flex items-center">
-            <button
-              onClick={handleAddText}
-              aria-label="Add text caption at playhead"
-              className="w-7 h-7 flex items-center justify-center rounded-lg bg-amber-400 text-black hover:bg-amber-300 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-400"
-            >
-              <Plus className="w-4 h-4 stroke-[2.5]" />
-            </button>
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
-              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap">
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
-                <span>Add Text</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Split */}
-          <div className="relative group/tip flex items-center">
-            <button
-              onClick={handleSplit}
-              disabled={!currentSeg}
-              aria-label="Split active caption at playhead (S)"
-              className="w-7 h-7 flex items-center justify-center rounded-lg text-bone hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-400"
-            >
-              <Scissors className="w-3.5 h-3.5 text-mist" />
-            </button>
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
-              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
-                <span>Split</span>
-                <kbd className="px-1 py-0.2 rounded bg-white/10 text-[9px] text-smoke font-mono font-semibold">
-                  S
-                </kbd>
-              </div>
-            </div>
-          </div>
-
-          {/* Merge */}
-          <div className="relative group/tip flex items-center">
-            <button
-              onClick={handleMerge}
-              disabled={!currentSeg}
-              aria-label="Merge active caption with next"
-              className="w-7 h-7 flex items-center justify-center rounded-lg text-bone hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-400"
-            >
-              <Combine className="w-3.5 h-3.5 text-mist" />
-            </button>
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
-              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap">
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
-                <span>Merge</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Delete */}
-          <div className="relative group/tip flex items-center">
-            <button
-              onClick={handleDelete}
-              disabled={!currentSeg}
-              aria-label="Delete active caption (Delete)"
-              className="w-7 h-7 flex items-center justify-center rounded-lg text-crimson-2 hover:bg-crimson/15 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-crimson-2"
-            >
-              <Trash2 className="w-3.5 h-3.5 text-crimson-2" />
-            </button>
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
-              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
-                <span>Delete</span>
-                <kbd className="px-1 py-0.2 rounded bg-white/10 text-[9px] text-smoke font-mono font-semibold">
-                  Del
-                </kbd>
-              </div>
-            </div>
-          </div>
-
-          <div className="h-4 w-px bg-white/15 mx-0.5" />
-
-          {/* Magnetic Snapping Toggle */}
-          <div className="relative group/tip flex items-center">
-            <button
-              onClick={() => setIsSnappingEnabled((s) => !s)}
-              aria-label={`Toggle magnetic snapping (${isSnappingEnabled ? 'ON' : 'OFF'})`}
-              className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors cursor-pointer ${
-                isSnappingEnabled
-                  ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40'
-                  : 'text-smoke hover:text-bone hover:bg-white/5'
-              }`}
-            >
-              <Magnet className="w-3.5 h-3.5" />
-            </button>
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
-              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
-                <span>Snap</span>
-                <span
-                  className={`text-[9px] font-bold ${isSnappingEnabled ? 'text-amber-400' : 'text-smoke'}`}
-                >
-                  {isSnappingEnabled ? 'ON' : 'OFF'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Ripple Editing Mode Toggle */}
-          <div className="relative group/tip flex items-center">
-            <button
-              onClick={() => setIsRippleEnabled((r) => !r)}
-              aria-label={`Toggle ripple editing (${isRippleEnabled ? 'ON' : 'OFF'})`}
-              className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors cursor-pointer ${
-                isRippleEnabled
-                  ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40'
-                  : 'text-smoke hover:text-bone hover:bg-white/5'
-              }`}
-            >
-              <Link2 className="w-3.5 h-3.5" />
-            </button>
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
-              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
-                <span>Ripple</span>
-                <span
-                  className={`text-[9px] font-bold ${isRippleEnabled ? 'text-amber-400' : 'text-smoke'}`}
-                >
-                  {isRippleEnabled ? 'ON' : 'OFF'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="h-4 w-px bg-white/15 mx-0.5" />
-
-          {/* Undo */}
-          <div className="relative group/tip flex items-center">
-            <button
-              onClick={handleUndo}
-              disabled={isUndoDisabled}
-              aria-label="Undo last edit (Ctrl+Z)"
-              className="w-7 h-7 flex items-center justify-center rounded-lg text-smoke hover:text-bone disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-400"
-            >
-              <Undo2 className="w-3.5 h-3.5" />
-            </button>
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
-              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
-                <span>Undo</span>
-                <kbd className="px-1 py-0.2 rounded bg-white/10 text-[9px] text-smoke font-mono font-semibold">
-                  Ctrl+Z
-                </kbd>
-              </div>
-            </div>
-          </div>
-
-          {/* Redo */}
-          <div className="relative group/tip flex items-center">
-            <button
-              onClick={handleRedo}
-              disabled={isRedoDisabled}
-              aria-label="Redo last edit (Ctrl+Shift+Z)"
-              className="w-7 h-7 flex items-center justify-center rounded-lg text-smoke hover:text-bone disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-400"
-            >
-              <Redo2 className="w-3.5 h-3.5" />
-            </button>
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
-              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
-                <span>Redo</span>
-                <kbd className="px-1 py-0.2 rounded bg-white/10 text-[9px] text-smoke font-mono font-semibold">
-                  Ctrl+Y
-                </kbd>
-              </div>
-            </div>
-          </div>
-
-          <div className="h-4 w-px bg-white/15 mx-0.5" />
-
-          {/* Find & Replace Dictionary */}
-          <div className="relative group/tip flex items-center">
-            <button
-              onClick={() => setShowDictionary(!showDictionary)}
-              aria-label="Find and replace dialogue in all captions"
-              className="w-7 h-7 flex items-center justify-center rounded-lg text-amber-300 hover:bg-amber-400/10 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-400"
-            >
-              <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-            </button>
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
-              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap">
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
-                <span>Dictionary</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: Zoom controls */}
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] text-smoke">Zoom</span>
-          <button
-            onClick={() => setZoom((z) => Math.max(30, z - 15))}
-            aria-label="Zoom out timeline"
-            className="text-smoke hover:text-bone p-1 font-bold text-sm"
-          >
-            −
-          </button>
-          <input
-            type="range"
-            min={30}
-            max={220}
-            value={zoom}
-            onChange={(e) => setZoom(Number(e.target.value))}
-            aria-label="Timeline zoom level"
-            className="w-16 h-1 accent-amber-400 bg-white/20 rounded cursor-pointer"
-          />
-          <button
-            onClick={() => setZoom((z) => Math.min(220, z + 15))}
-            aria-label="Zoom in timeline"
-            className="text-smoke hover:text-bone p-1 font-bold text-sm"
-          >
-            +
-          </button>
-        </div>
-      </div>
-
-      {/* Dictionary Modal (Find & Replace) */}
-      {showDictionary && (
-        <div className="flex items-center gap-3 px-6 py-2.5 bg-[#181816] border-b border-amber-400/20 text-xs">
-          <span className="text-amber-300 font-semibold">Bulk Replace:</span>
-          <input
-            type="text"
-            placeholder="Find word..."
-            value={findWord}
-            onChange={(e) => setFindWord(e.target.value)}
-            aria-label="Word to find"
-            className="px-2.5 py-1 bg-[#222220] border border-white/15 rounded text-bone focus:outline-none focus:border-amber-400 text-xs w-36"
-          />
-          <span className="text-smoke">with</span>
-          <input
-            type="text"
-            placeholder="Replace with..."
-            value={replaceWord}
-            onChange={(e) => setReplaceWord(e.target.value)}
-            aria-label="Replacement word"
-            className="px-2.5 py-1 bg-[#222220] border border-white/15 rounded text-bone focus:outline-none focus:border-amber-400 text-xs w-36"
-          />
-          <button
-            onClick={handleBulkReplace}
-            className="px-3 py-1 bg-amber-400 hover:bg-amber-300 text-black font-semibold rounded text-xs transition-colors"
-          >
-            Replace All
-          </button>
-          <button
-            onClick={() => setShowDictionary(false)}
-            aria-label="Close find and replace banner"
-            className="text-smoke hover:text-bone text-xs ml-auto"
-          >
-            ✕
-          </button>
-        </div>
-      )}
+      <TimelineToolbar
+        currentTime={currentTime}
+        totalDuration={totalDuration}
+        isPlaying={isPlaying}
+        onTogglePlay={onTogglePlay}
+        currentSeg={currentSeg}
+        onAddText={handleAddText}
+        onSplit={handleSplit}
+        onMerge={handleMerge}
+        onDelete={handleDelete}
+        isSnappingEnabled={isSnappingEnabled}
+        onToggleSnapping={() => setIsSnappingEnabled((s) => !s)}
+        isRippleEnabled={isRippleEnabled}
+        onToggleRipple={() => setIsRippleEnabled((r) => !r)}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        isUndoDisabled={isUndoDisabled}
+        isRedoDisabled={isRedoDisabled}
+        onBulkReplace={(find, replace) => {
+          const regex = new RegExp(find, 'gi');
+          const updated = segments.map((s) => ({
+            ...s,
+            text: s.text.replace(regex, replace),
+          }));
+          pushState(updated);
+        }}
+        zoom={zoom}
+        onZoomChange={setZoom}
+      />
 
       {/* ── Multi-Track Tracks Canvas Area ─────────────────────────────────── */}
       <div

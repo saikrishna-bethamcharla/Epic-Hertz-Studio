@@ -210,7 +210,7 @@ export default function CaptionEditor({
     const seg = segments.find((s) => s.id === segId);
     if (!seg) return;
     const textarea = document.querySelector<HTMLTextAreaElement>(`#caption-${segId} textarea`);
-    let newText = seg.text;
+    let newText: string;
     if (textarea && textarea.selectionStart !== null) {
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
@@ -282,8 +282,8 @@ export default function CaptionEditor({
         2,
       );
 
-      let words1 = target.words ? target.words.filter((w) => w.start <= splitTime) : undefined;
-      let words2 = target.words ? target.words.filter((w) => w.start > splitTime) : undefined;
+      const words1 = target.words ? target.words.filter((w) => w.start <= splitTime) : undefined;
+      const words2 = target.words ? target.words.filter((w) => w.start > splitTime) : undefined;
 
       const seg1: Segment = {
         ...target,

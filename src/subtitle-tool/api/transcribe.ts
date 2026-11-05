@@ -85,7 +85,7 @@ async function postChunk(
         await sleep(1500 * attempt);
         continue;
       }
-      throw new Error(lastMessage);
+      throw new Error(lastMessage, { cause: netErr });
     }
 
     let data: ChunkResponse = {};

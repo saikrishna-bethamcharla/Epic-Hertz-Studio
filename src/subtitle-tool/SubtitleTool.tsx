@@ -18,7 +18,6 @@ const ExportModal = lazy(() => import('./ExportModal'));
 
 import VideoPreview, { type VideoPreviewHandle } from './VideoPreview';
 import CaptionEditor from './CaptionEditor';
-import TemplateDrawer from './TemplateDrawer';
 import Timeline from './Timeline';
 import PrepareMediaModal from './PrepareMediaModal';
 import ProgressOverlay from './ProgressOverlay';
@@ -1090,7 +1089,21 @@ export default function SubtitleTool() {
                       />
                     )}
                     {mobileTab === 'styles' && (
-                      <TemplateDrawer style={style} onChange={setStyle} segments={segments} />
+                      <LibraryPanel
+                        leftTab="styles"
+                        onTabChange={() => {}}
+                        segments={segments}
+                        activeId={activeId}
+                        onSelectSegment={setActiveId}
+                        onSegmentsChange={updateSegments}
+                        onSeek={(t) => videoRef.current?.seekTo(t)}
+                        style={style}
+                        onStyleChange={setStyle}
+                        spokenLanguage={spokenLanguage}
+                        scriptOutput={scriptOutput}
+                        scope="all"
+                        onNotification={(msg) => showToast(msg)}
+                      />
                     )}
                     {mobileTab === 'timeline' && (
                       <Timeline

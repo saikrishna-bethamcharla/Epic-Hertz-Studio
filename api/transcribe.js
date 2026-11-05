@@ -44,10 +44,13 @@ const ALLOWED_ORIGINS = (
 
 // Current production Gemini models supporting audio input & structured output.
 const DEFAULT_MODELS = [
+  'gemini-3.5-flash',
+  'gemini-3.5-flash-lite',
+  'gemini-3.8-flash',
+  'gemini-3.6-flash',
+  'gemini-3.1-flash-lite',
   'gemini-2.5-flash',
   'gemini-2.5-flash-lite',
-  'gemini-2.0-flash',
-  'gemini-1.5-flash',
 ];
 const CANDIDATE_MODELS = process.env.GEMINI_MODELS
   ? process.env.GEMINI_MODELS.split(',').map((s) => s.trim()).filter(Boolean)
@@ -161,16 +164,7 @@ async function checkRateLimit(ip) {
   const day = now.toISOString().slice(0, 10);
   const minute = Math.floor(now.getTime() / 60000);
 
-  if (GLOBAL_DAILY_LIMIT > 0) {
-    const globalDayHits = await hit(`epic:rl:global:${day}`, 86400);
-    if (globalDayHits > GLOBAL_DAILY_LIMIT) {
-      throw new HttpError(
-        429,
-        'Studio daily capacity reached. Please try again tomorrow or add your own free Gemini API key to continue without limits.',
-      );
-    }
-  }
-
+  // 1. Per-IP checks run first so blocked or spam requests do not consume global daily capacity
   const perMin = await hit(`epic:rl:m:${ip}:${minute}`, 60);
   if (perMin > LIMIT_PER_MIN) {
     const wait = 61 - now.getUTCSeconds(); // seconds until the next minute bucket
@@ -178,7 +172,21 @@ async function checkRateLimit(ip) {
   }
   const perDay = await hit(`epic:rl:d:${ip}:${day}`, 86400);
   if (perDay > LIMIT_PER_DAY) {
-    throw new HttpError(429, 'Daily free limit reached. Please try again tomorrow or add your own free Gemini API key to continue without limits.');
+    throw new HttpError(
+      429,
+      'Daily free limit reached for your IP (60 requests/day). Please add your own free Gemini API key in upload settings to continue without limits.',
+    );
+  }
+
+  // 2. Check and increment global daily capacity only after per-IP validation succeeds
+  if (GLOBAL_DAILY_LIMIT > 0) {
+    const globalDayHits = await hit(`epic:rl:global:${day}`, 86400);
+    if (globalDayHits > GLOBAL_DAILY_LIMIT) {
+      throw new HttpError(
+        429,
+        'Studio daily capacity reached across all shared users. Please add your own free Gemini API key in upload settings to continue without limits.',
+      );
+    }
   }
 }
 
@@ -298,6 +306,7 @@ Output valid JSON only.`;
 
 // ─── Gemini call with model fallback and a hard deadline ────────────────────
 
+const is404 = (msg) => /404|NOT_FOUND|not found|unsupported|deprecated|unknown model/i.test(msg);
 const isOverloaded = (msg) => /503|UNAVAILABLE|overloaded|high demand|temporarily/i.test(msg);
 
 async function transcribeWithFallback(client, { base64, mimeType, prompt }, deadlineAt) {
@@ -336,11 +345,16 @@ async function transcribeWithFallback(client, { base64, mimeType, prompt }, dead
         break; // empty answer: try the next model
       } catch (err) {
         lastError = err;
+        const errStr = String(err?.message || err || '');
         if (err?.code === 'TIMEOUT') {
           timedOut = true;
           return { text: '', lastError, timedOut, model: null };
         }
-        if (isOverloaded(String(err)) && attempt === 1) {
+        if (is404(errStr)) {
+          console.warn(`[transcribe] Model ${model} is not available (404), skipping immediately.`);
+          break; // skip to next model immediately without retry
+        }
+        if (isOverloaded(errStr) && attempt === 1) {
           await sleep(1200);
           continue; // one retry on the same model
         }

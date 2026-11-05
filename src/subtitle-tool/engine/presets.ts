@@ -9,7 +9,7 @@ export type PresetGroup = 'Viral' | 'Kinetic' | 'Glow & colour' | 'Film & clean'
 export const BASE_STYLE: CaptionStyle = {
   id: 'base',
   name: 'Base',
-  syncOffset: -0.35,
+  syncOffset: 0.0,
   font: {
     family: 'montserrat',
     weight: 800,

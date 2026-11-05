@@ -25,7 +25,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { PRESET_LIBRARY } from './landingPresets';
-import type { SubtitlePreset, ScriptOutput } from './types';
+import type { ScriptOutput } from './types';
 
 interface LandingScrollCraftProps {
   onFileSelect: (file: File) => void;
@@ -59,7 +59,7 @@ const DEMO_SCRIPTS: Record<
 };
 
 const RUNWAY_STYLES: Array<{
-  id: SubtitlePreset;
+  id: string;
   title: string;
   badge: string;
   highlightColor: string;
@@ -123,7 +123,7 @@ export default function LandingScrollCraft({ onFileSelect, onTryDemo }: LandingS
   const [scriptMode, setScriptMode] = useState<ScriptOutput>('romanized');
 
   // Active style for runway
-  const [activePresetId, setActivePresetId] = useState<SubtitlePreset>('capcut-viral');
+  const [activePresetId, setActivePresetId] = useState<string>('capcut-viral');
   const [activeWordIdx, setActiveWordIdx] = useState(0);
 
   // Split-curtain state

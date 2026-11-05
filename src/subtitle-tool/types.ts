@@ -49,45 +49,8 @@ export type CaptionAnimationEffect =
   | 'cinematic-clean' // Netflix / Premiere pristine film look
   | 'none';
 
-export type SubtitlePreset =
-  | 'capcut-viral'
-  | 'hormozi-yellow'
-  | 'premiere-glow'
-  | 'mrbeast-comic'
-  | 'cinema-gold'
-  | 'neon-tokyo'
-  | 'fire-hype'
-  | 'clean-minimal'
-  | 'reel-bold'
-  | 'cinema-yellow'
-  | 'boxed'
-  | 'spotlight'
-  | 'neon-pop'
-  | 'noir'
-  | 'gold-luxe'
-  | 'punch'
-  | 'dark'
-  | 'headline';
-
 export type SubtitlePosition = 'bottom' | 'middle' | 'top';
 export type VideoAspectRatio = 'original' | '9:16' | '16:9' | '1:1';
-
-export interface SubtitleStyle {
-  preset: SubtitlePreset;
-  animationEffect: CaptionAnimationEffect;
-  fontSize: number; // in pixels
-  textColor: string; // hex
-  backgroundColor: string; // rgba or hex
-  outlineColor: string; // hex
-  outlineWidth: number; // px
-  position: SubtitlePosition;
-  fontFamily: string;
-  uppercase: boolean;
-  highlightCurrentWord?: boolean;
-  highlightColor?: string;
-  shadowEffect?: boolean;
-  syncOffset?: number; // Timing lead offset in seconds (e.g. -0.35s to pop words in tight sync with voice onset)
-}
 
 export type AppStage =
   | 'idle'

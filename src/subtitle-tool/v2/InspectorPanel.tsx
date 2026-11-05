@@ -5,28 +5,21 @@ import {
   Zap,
   Clock,
   Layout,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  Bold,
-  Italic,
-  Underline as UnderlineIcon,
   RotateCcw,
   Play,
   Bookmark,
-  ChevronDown,
   ChevronUp,
   Wand2,
 } from 'lucide-react';
 
 import type { Segment, CaptionStyle, SegmentStyleOverride, WordTimestamp } from '../types';
 import { fontById } from '../engine/spec';
-import FontPopover from './FontPopover';
-import ColorPopover from './ColorPopover';
 import SavePresetModal from './SavePresetModal';
 import { formatTimecode } from '../utils/formatTime';
 import { checkReadability, getCPS, getWPM } from '../utils/readability';
 import { fixTimings } from '../utils/alignWords';
+import InspectorTypographySection from './inspector/InspectorTypographySection';
+import InspectorEffectsSection from './inspector/InspectorEffectsSection';
 
 interface InspectorPanelProps {
   scope: 'all' | 'caption' | 'words';
@@ -62,10 +55,6 @@ export default function InspectorPanel({
 }: InspectorPanelProps) {
   const [tab, setTab] = useState<InspectorTab>('text');
   const [textSubTab, setTextSubTab] = useState<TextSubTab>('basic');
-  const [isFontPopoverOpen, setIsFontPopoverOpen] = useState(false);
-  const [activeColorTarget, setActiveColorTarget] = useState<
-    'fill' | 'stroke' | 'glow' | 'shadow' | 'plate' | 'highlight' | 'highlightText' | null
-  >(null);
   const [isSavePresetOpen, setIsSavePresetOpen] = useState(false);
   const [isResetMenuOpen, setIsResetMenuOpen] = useState(false);
 
@@ -209,419 +198,29 @@ export default function InspectorPanel({
               ))}
             </div>
 
-            {textSubTab === 'basic' && (
-              <div className="space-y-3">
-                {/* Caption Text (if scope = caption) */}
-                {scope === 'caption' && activeSegment && (
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block">
-                      Caption Text
-                    </label>
-                    <textarea
-                      value={activeSegment.text}
-                      onChange={(e) => onUpdateActiveSegment({ text: e.target.value })}
-                      rows={2}
-                      className="w-full bg-[#181817] border border-white/15 focus:border-amber-400 rounded-lg p-2 text-xs text-bone resize-none focus:outline-none"
-                    />
-                  </div>
-                )}
-
-                {/* Font Family Row */}
-                <div className="grid grid-cols-[96px_1fr] items-center text-xs relative">
-                  <span className="text-mist font-medium">Font</span>
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setIsFontPopoverOpen((p) => !p)}
-                      className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-[#181817] border border-white/10 hover:border-amber-400 text-bone text-xs font-semibold text-left transition-colors"
-                    >
-                      <span className="truncate">{fontDef.label}</span>
-                      <ChevronDown className="w-3.5 h-3.5 text-smoke ml-1 shrink-0" />
-                    </button>
-                    {isFontPopoverOpen && (
-                      <FontPopover
-                        currentFamilyId={effectiveFont}
-                        onSelectFamily={(fId) => {
-                          if (scope === 'all') {
-                            onStyleChange({ ...style, font: { ...style.font, family: fId } });
-                          } else if (
-                            scope === 'caption' &&
-                            activeSegment &&
-                            onSegmentOverrideChange
-                          ) {
-                            onSegmentOverrideChange(activeSegment.id, { fontFamily: fId });
-                          }
-                        }}
-                        onClose={() => setIsFontPopoverOpen(false)}
-                        onGoToBrand={onGoToBrand}
-                      />
-                    )}
-                  </div>
-                </div>
-
-                {/* Font Weight */}
-                <div className="grid grid-cols-[96px_1fr] items-center text-xs">
-                  <span className="text-mist font-medium">Weight</span>
-                  <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
-                    {availableWeights.map((w) => (
-                      <button
-                        key={w}
-                        type="button"
-                        onClick={() => {
-                          if (scope === 'all') {
-                            onStyleChange({ ...style, font: { ...style.font, weight: w } });
-                          } else if (
-                            scope === 'caption' &&
-                            activeSegment &&
-                            onSegmentOverrideChange
-                          ) {
-                            onSegmentOverrideChange(activeSegment.id, { fontWeight: w });
-                          }
-                        }}
-                        className={`flex-1 py-1 rounded text-[10px] font-bold transition-colors ${
-                          effectiveWeight === w
-                            ? 'bg-amber-400 text-black'
-                            : 'bg-[#181817] text-smoke hover:text-bone border border-white/5'
-                        }`}
-                      >
-                        {w}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Style Toggles: B / U / I */}
-                <div className="grid grid-cols-[96px_1fr] items-center text-xs">
-                  <span className="text-mist font-medium">Style</span>
-                  <div className="flex items-center gap-1 bg-[#181817] p-0.5 rounded-lg border border-white/5 w-fit">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const newWeight = effectiveWeight >= 800 ? 600 : 900;
-                        if (scope === 'all')
-                          onStyleChange({ ...style, font: { ...style.font, weight: newWeight } });
-                      }}
-                      className={`p-1.5 rounded ${effectiveWeight >= 800 ? 'bg-amber-400 text-black' : 'text-smoke hover:text-bone'}`}
-                      title="Bold"
-                    >
-                      <Bold className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const nextUnderline = !style.font.underline;
-                        if (scope === 'all')
-                          onStyleChange({
-                            ...style,
-                            font: { ...style.font, underline: nextUnderline },
-                          });
-                      }}
-                      className={`p-1.5 rounded ${style.font.underline ? 'bg-amber-400 text-black' : 'text-smoke hover:text-bone'}`}
-                      title="Underline"
-                    >
-                      <UnderlineIcon className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const nextItalic = !style.font.italic;
-                        if (scope === 'all')
-                          onStyleChange({ ...style, font: { ...style.font, italic: nextItalic } });
-                      }}
-                      className={`p-1.5 rounded ${style.font.italic ? 'bg-amber-400 text-black' : 'text-smoke hover:text-bone'}`}
-                      title="Italic"
-                    >
-                      <Italic className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Font Size Slider + Stepper */}
-                <div className="grid grid-cols-[96px_1fr] items-center text-xs">
-                  <span className="text-mist font-medium">Size</span>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="range"
-                      min={3}
-                      max={20}
-                      step={0.1}
-                      value={effectiveSize}
-                      onChange={(e) => {
-                        const val = parseFloat(e.target.value) / 100;
-                        if (scope === 'all')
-                          onStyleChange({ ...style, font: { ...style.font, size: val } });
-                      }}
-                      className="flex-1 accent-amber-400 cursor-pointer"
-                    />
-                    <span className="font-mono text-bone text-[11px] w-12 text-right">
-                      {effectiveSize.toFixed(1)}%
-                    </span>
-                  </div>
-                </div>
-
-                {/* Text Case Toggles */}
-                <div className="grid grid-cols-[96px_1fr] items-center text-xs">
-                  <span className="text-mist font-medium">Case</span>
-                  <div className="flex items-center gap-1 bg-[#181817] p-0.5 rounded-lg border border-white/5 w-fit">
-                    {(['none', 'upper', 'lower', 'title'] as const).map((cs) => (
-                      <button
-                        key={cs}
-                        type="button"
-                        onClick={() => {
-                          if (scope === 'all')
-                            onStyleChange({ ...style, font: { ...style.font, textCase: cs } });
-                        }}
-                        className={`px-2 py-1 rounded text-[10px] font-bold ${
-                          style.font.textCase === cs
-                            ? 'bg-amber-400 text-black'
-                            : 'text-smoke hover:text-bone'
-                        }`}
-                      >
-                        {cs === 'none'
-                          ? 'Aa'
-                          : cs === 'upper'
-                            ? 'AA'
-                            : cs === 'lower'
-                              ? 'aa'
-                              : 'Tt'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Primary Fill Color */}
-                <div className="grid grid-cols-[96px_1fr] items-center text-xs relative">
-                  <span className="text-mist font-medium">Fill Color</span>
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setActiveColorTarget(activeColorTarget === 'fill' ? null : 'fill')
-                      }
-                      className="flex items-center gap-2 px-2 py-1 rounded-lg bg-[#181817] border border-white/10 hover:border-amber-400 text-xs text-bone"
-                    >
-                      <div
-                        style={{
-                          background:
-                            typeof effectiveFill === 'string'
-                              ? effectiveFill
-                              : `linear-gradient(${effectiveFill.angle}deg, ${effectiveFill.stops[0][1]}, ${effectiveFill.stops[1][1]})`,
-                        }}
-                        className="w-4 h-4 rounded-md border border-white/20"
-                      />
-                      <span className="font-mono text-[11px]">
-                        {typeof effectiveFill === 'string' ? effectiveFill : 'Gradient'}
-                      </span>
-                    </button>
-                    {activeColorTarget === 'fill' && (
-                      <ColorPopover
-                        value={effectiveFill}
-                        onChange={(col) => {
-                          if (scope === 'all') onStyleChange({ ...style, fill: col });
-                          else if (
-                            scope === 'caption' &&
-                            activeSegment &&
-                            onSegmentOverrideChange
-                          ) {
-                            onSegmentOverrideChange(activeSegment.id, {
-                              fillColor: typeof col === 'string' ? col : col.stops[0][1],
-                            });
-                          }
-                        }}
-                        onClose={() => setActiveColorTarget(null)}
-                      />
-                    )}
-                  </div>
-                </div>
-
-                {/* Tracking (Letter Spacing) */}
-                <div className="grid grid-cols-[96px_1fr] items-center text-xs">
-                  <span className="text-mist font-medium">Tracking</span>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="range"
-                      min={-0.05}
-                      max={0.15}
-                      step={0.005}
-                      value={style.font.tracking}
-                      onChange={(e) => {
-                        const tr = parseFloat(e.target.value);
-                        onStyleChange({ ...style, font: { ...style.font, tracking: tr } });
-                      }}
-                      className="flex-1 accent-amber-400 cursor-pointer"
-                    />
-                    <span className="font-mono text-bone text-[11px] w-12 text-right">
-                      {(style.font.tracking * 100).toFixed(1)}em
-                    </span>
-                  </div>
-                </div>
-
-                {/* Alignment */}
-                <div className="grid grid-cols-[96px_1fr] items-center text-xs">
-                  <span className="text-mist font-medium">Align</span>
-                  <div className="flex items-center gap-1 bg-[#181817] p-0.5 rounded-lg border border-white/5 w-fit">
-                    {(['left', 'center', 'right'] as const).map((al) => (
-                      <button
-                        key={al}
-                        type="button"
-                        onClick={() => {
-                          onStyleChange({ ...style, layout: { ...style.layout, align: al } });
-                        }}
-                        className={`p-1.5 rounded ${
-                          style.layout.align === al
-                            ? 'bg-amber-400 text-black'
-                            : 'text-smoke hover:text-bone'
-                        }`}
-                      >
-                        {al === 'left' ? (
-                          <AlignLeft className="w-3.5 h-3.5" />
-                        ) : al === 'center' ? (
-                          <AlignCenter className="w-3.5 h-3.5" />
-                        ) : (
-                          <AlignRight className="w-3.5 h-3.5" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {textSubTab === 'fill' && (
-              <div className="space-y-3">
-                {/* Stroke (Outline) */}
-                <div className="grid grid-cols-[96px_1fr] items-center text-xs">
-                  <span className="text-mist font-medium">Outline Width</span>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="range"
-                      min={0}
-                      max={0.25}
-                      step={0.01}
-                      value={style.stroke.width}
-                      onChange={(e) => {
-                        onStyleChange({
-                          ...style,
-                          stroke: { ...style.stroke, width: parseFloat(e.target.value) },
-                        });
-                      }}
-                      className="flex-1 accent-amber-400 cursor-pointer"
-                    />
-                    <span className="font-mono text-bone text-[11px] w-12 text-right">
-                      {(style.stroke.width * 100).toFixed(0)}%
-                    </span>
-                  </div>
-                </div>
-
-                {/* Stroke Color */}
-                <div className="grid grid-cols-[96px_1fr] items-center text-xs relative">
-                  <span className="text-mist font-medium">Outline Color</span>
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setActiveColorTarget(activeColorTarget === 'stroke' ? null : 'stroke')
-                      }
-                      className="flex items-center gap-2 px-2 py-1 rounded-lg bg-[#181817] border border-white/10 hover:border-amber-400 text-xs text-bone"
-                    >
-                      <div
-                        style={{ backgroundColor: effectiveStrokeColor }}
-                        className="w-4 h-4 rounded-md border border-white/20"
-                      />
-                      <span className="font-mono text-[11px]">{effectiveStrokeColor}</span>
-                    </button>
-                    {activeColorTarget === 'stroke' && (
-                      <ColorPopover
-                        value={effectiveStrokeColor}
-                        onChange={(col) => {
-                          const c = typeof col === 'string' ? col : col.stops[0][1];
-                          onStyleChange({ ...style, stroke: { ...style.stroke, color: c } });
-                        }}
-                        onClose={() => setActiveColorTarget(null)}
-                      />
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {textSubTab === 'effects' && (
-              <div className="space-y-3">
-                {/* Glow Strength */}
-                <div className="grid grid-cols-[96px_1fr] items-center text-xs">
-                  <span className="text-mist font-medium">Glow Strength</span>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="range"
-                      min={0}
-                      max={2}
-                      step={0.1}
-                      value={style.glow.strength}
-                      onChange={(e) => {
-                        onStyleChange({
-                          ...style,
-                          glow: { ...style.glow, strength: parseFloat(e.target.value) },
-                        });
-                      }}
-                      className="flex-1 accent-amber-400 cursor-pointer"
-                    />
-                    <span className="font-mono text-bone text-[11px] w-12 text-right">
-                      {style.glow.strength.toFixed(1)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* 3D Extrude Depth */}
-                <div className="grid grid-cols-[96px_1fr] items-center text-xs">
-                  <span className="text-mist font-medium">3D Depth</span>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="range"
-                      min={0}
-                      max={0.25}
-                      step={0.01}
-                      value={style.extrude.depth}
-                      onChange={(e) => {
-                        onStyleChange({
-                          ...style,
-                          extrude: { ...style.extrude, depth: parseFloat(e.target.value) },
-                        });
-                      }}
-                      className="flex-1 accent-amber-400 cursor-pointer"
-                    />
-                    <span className="font-mono text-bone text-[11px] w-12 text-right">
-                      {(style.extrude.depth * 100).toFixed(0)}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {textSubTab === 'background' && (
-              <div className="space-y-3">
-                {/* Plate Mode */}
-                <div className="grid grid-cols-[96px_1fr] items-center text-xs">
-                  <span className="text-mist font-medium">BG Mode</span>
-                  <div className="flex items-center gap-1 bg-[#181817] p-0.5 rounded-lg border border-white/5">
-                    {(['none', 'block', 'line'] as const).map((m) => (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => {
-                          onStyleChange({ ...style, plate: { ...style.plate, mode: m } });
-                        }}
-                        className={`flex-1 py-1 rounded capitalize text-[10px] font-bold ${
-                          style.plate.mode === m
-                            ? 'bg-amber-400 text-black'
-                            : 'text-smoke hover:text-bone'
-                        }`}
-                      >
-                        {m}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
+            {textSubTab === 'basic' ? (
+              <InspectorTypographySection
+                scope={scope}
+                style={style}
+                onStyleChange={onStyleChange}
+                activeSegment={activeSegment}
+                onUpdateActiveSegment={onUpdateActiveSegment}
+                onSegmentOverrideChange={onSegmentOverrideChange}
+                effectiveFont={effectiveFont}
+                fontDef={fontDef}
+                availableWeights={availableWeights}
+                effectiveWeight={effectiveWeight}
+                effectiveSize={effectiveSize}
+                effectiveFill={effectiveFill}
+                onGoToBrand={onGoToBrand}
+              />
+            ) : (
+              <InspectorEffectsSection
+                style={style}
+                onStyleChange={onStyleChange}
+                subTab={textSubTab}
+                effectiveStrokeColor={effectiveStrokeColor}
+              />
             )}
           </div>
         )}
@@ -737,9 +336,9 @@ export default function InspectorPanel({
               <div className="flex items-center justify-between text-xs">
                 <span className="text-mist font-medium">Voice Sync Offset</span>
                 <span className="font-mono text-amber-400 font-bold">
-                  {(style.syncOffset ?? -0.35) > 0
-                    ? `+${(style.syncOffset ?? -0.35).toFixed(2)}s`
-                    : `${(style.syncOffset ?? -0.35).toFixed(2)}s`}
+                  {(style.syncOffset ?? 0) > 0
+                    ? `+${(style.syncOffset ?? 0).toFixed(2)}s`
+                    : `${(style.syncOffset ?? 0).toFixed(2)}s`}
                 </span>
               </div>
               <input
@@ -747,7 +346,7 @@ export default function InspectorPanel({
                 min="-0.5"
                 max="0.5"
                 step="0.01"
-                value={style.syncOffset ?? -0.35}
+                value={style.syncOffset ?? 0}
                 onChange={(e) =>
                   onStyleChange({ ...style, syncOffset: parseFloat(e.target.value) })
                 }

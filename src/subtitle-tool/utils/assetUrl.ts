@@ -2,7 +2,7 @@
 // Robustly resolves public assets (fonts, audio, icons, etc.) across:
 // - Localhost (/)
 // - Vercel (/)
-// - GitHub Pages (/Portfolio/ or /Epic-Hertz-Studio/)
+// - GitHub Pages (/Epic-Hertz-Studio/)
 
 export function getAssetUrl(relativePath: string): string {
   const clean = relativePath.replace(/^\/+/, '');

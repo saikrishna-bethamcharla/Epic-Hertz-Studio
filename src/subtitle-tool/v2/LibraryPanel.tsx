@@ -7,15 +7,9 @@ import {
   Zap,
   Smile,
   Palette,
-  Search,
   ChevronLeft,
   AlertTriangle,
-  Heart,
-  Upload,
-  Download,
-  Trash2,
   Ban,
-  FileJson,
 } from 'lucide-react';
 
 import type {
@@ -25,27 +19,18 @@ import type {
   ScriptOutput,
   SegmentStyleOverride,
 } from '../types';
-import { PRESETS } from '../engine/presets';
-import StyleThumbnail from './StyleThumbnail';
 import {
   getUserPresets,
   getFavoritePresetIds,
-  toggleFavoritePresetId,
   addRecentPresetId,
   getBrandColors,
-  exportUserPresetsAsJson,
-  importUserPresetsFromJson,
   type UserPreset,
 } from './userPresets';
-import {
-  listCustomFonts,
-  saveCustomFont,
-  deleteCustomFont,
-  type CustomFontRecord,
-} from '../utils/projectStorage';
-import { downloadText } from '../utils/srt';
+import { listCustomFonts, type CustomFontRecord } from '../utils/projectStorage';
 import { formatTimecode } from '../utils/formatTime';
 import { checkReadability } from '../utils/readability';
+import LibraryStylesTab from './library/LibraryStylesTab';
+import LibraryBrandTab from './library/LibraryBrandTab';
 
 export type LibraryTab = 'captions' | 'styles' | 'effects' | 'animations' | 'emoji' | 'brand';
 
@@ -202,14 +187,11 @@ export default function LibraryPanel({
   onNotification,
   onToggleCollapse,
 }: LibraryPanelProps) {
-  const [search, setSearch] = useState('');
-  const [styleCategory, setStyleCategory] = useState<string>('All');
   const [animSubTab, setAnimSubTab] = useState<'entrance' | 'exit' | 'highlight'>('entrance');
   const [favorites, setFavorites] = useState<string[]>(() => getFavoritePresetIds());
   const [userPresetsList, setUserPresetsList] = useState<UserPreset[]>(() => getUserPresets());
   const [customFonts, setCustomFonts] = useState<CustomFontRecord[]>([]);
   const [brandColors, setBrandColors] = useState<string[]>(() => getBrandColors());
-  const [hoveredPresetId, setHoveredPresetId] = useState<string | null>(null);
 
   useEffect(() => {
     void listCustomFonts().then(setCustomFonts);
@@ -423,132 +405,14 @@ export default function LibraryPanel({
             TAB 2: FULL STYLES GALLERY
         ────────────────────────────────────────────────────────────── */}
         {leftTab === 'styles' && (
-          <div className="space-y-3">
-            {/* Search Box */}
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-smoke pointer-events-none" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search styles (Pulse, Block, Neon)…"
-                className="w-full bg-[#171716] border border-white/10 focus:border-amber-400 rounded-lg pl-8 pr-3 py-1.5 text-xs text-bone placeholder:text-smoke/60 focus:outline-none"
-              />
-            </div>
-
-            {/* Category Chips */}
-            <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar shrink-0">
-              {[
-                'All',
-                'Yours',
-                'Favourites',
-                'Viral',
-                'Kinetic',
-                'Glow & colour',
-                'Film & clean',
-              ].map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setStyleCategory(cat)}
-                  className={`px-2.5 py-1 rounded-full text-[10px] font-semibold transition-colors shrink-0 ${
-                    styleCategory === cat
-                      ? 'bg-amber-400 text-black font-bold'
-                      : 'bg-white/5 text-smoke hover:text-bone hover:bg-white/10'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-
-            {/* Style Cards Grid (3-columns: small icons, 3 in a line) */}
-            <div className="grid grid-cols-3 gap-2">
-              {/* User presets if in 'All' or 'Yours' */}
-              {(styleCategory === 'All' || styleCategory === 'Yours') &&
-                userPresetsList.map((up) => (
-                  <div
-                    key={up.id}
-                    onClick={() => applyPresetToScope(up.style, up.name)}
-                    onMouseEnter={() => setHoveredPresetId(up.id)}
-                    onMouseLeave={() => setHoveredPresetId(null)}
-                    title={up.name}
-                    className="group relative rounded-lg bg-[#181817] border border-amber-400/30 hover:border-amber-400 p-1.5 cursor-pointer transition-all hover:scale-102 flex flex-col gap-1 shadow-xs"
-                  >
-                    <StyleThumbnail
-                      style={up.style}
-                      sampleSegment={sampleSegment}
-                      isHovered={hoveredPresetId === up.id}
-                    />
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="text-[11px] font-bold text-bone truncate leading-tight">
-                        {up.name}
-                      </span>
-                      <span className="text-[8px] px-1 py-0.2 rounded bg-amber-400/20 text-amber-300 font-mono shrink-0">
-                        Yours
-                      </span>
-                    </div>
-                  </div>
-                ))}
-
-              {/* Engine Presets */}
-              {PRESETS.filter((p) => {
-                const matchSearch =
-                  p.style.name.toLowerCase().includes(search.toLowerCase()) ||
-                  p.blurb.toLowerCase().includes(search.toLowerCase());
-                if (!matchSearch) return false;
-                if (styleCategory === 'All') return true;
-                if (styleCategory === 'Favourites') return favorites.includes(p.style.id);
-                if (styleCategory === 'Yours') return false;
-                return p.group.toLowerCase().includes(styleCategory.toLowerCase());
-              }).map((p) => {
-                const isFav = favorites.includes(p.style.id);
-                const isSelected = style.id === p.style.id;
-
-                return (
-                  <div
-                    key={p.style.id}
-                    onClick={() => applyPresetToScope(p.style, p.style.name)}
-                    onMouseEnter={() => setHoveredPresetId(p.style.id)}
-                    onMouseLeave={() => setHoveredPresetId(null)}
-                    title={`${p.style.name}: ${p.blurb}`}
-                    className={`group relative rounded-lg bg-[#181817] border p-1.5 cursor-pointer transition-all hover:scale-102 flex flex-col gap-1 shadow-xs ${
-                      isSelected
-                        ? 'border-amber-400 ring-1 ring-amber-400/40 bg-amber-400/10'
-                        : 'border-white/10 hover:border-white/20'
-                    }`}
-                  >
-                    <StyleThumbnail
-                      style={p.style}
-                      sampleSegment={sampleSegment}
-                      isHovered={hoveredPresetId === p.style.id}
-                    />
-
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="text-[11px] font-bold text-bone truncate leading-tight">
-                        {p.style.name}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setFavorites(toggleFavoritePresetId(p.style.id));
-                        }}
-                        className="p-0.5 rounded text-smoke hover:text-amber-400 shrink-0"
-                        title={isFav ? 'Favorited' : 'Add to favorites'}
-                      >
-                        <Heart
-                          className={`w-3 h-3 ${
-                            isFav ? 'fill-amber-400 text-amber-400' : 'text-smoke/60'
-                          }`}
-                        />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <LibraryStylesTab
+            style={style}
+            sampleSegment={sampleSegment}
+            userPresetsList={userPresetsList}
+            favorites={favorites}
+            onFavoritesChange={setFavorites}
+            onApplyPreset={applyPresetToScope}
+          />
         )}
 
         {/* ─────────────────────────────────────────────────────────────
@@ -748,141 +612,14 @@ export default function LibraryPanel({
             TAB 6: BRAND KIT
         ────────────────────────────────────────────────────────────── */}
         {leftTab === 'brand' && (
-          <div className="space-y-4">
-            <div>
-              <h4 className="text-xs font-bold text-bone mb-1">Brand Colors</h4>
-              <p className="text-[11px] text-smoke mb-2">
-                Custom palette saved across your projects:
-              </p>
-              <div className="grid grid-cols-4 gap-2">
-                {brandColors.map((hex, i) => (
-                  <div
-                    key={i}
-                    className="flex flex-col items-center gap-1 p-2 bg-[#181817] rounded-xl border border-white/5"
-                  >
-                    <div
-                      style={{ backgroundColor: hex }}
-                      className="w-8 h-8 rounded-lg border border-white/20 shadow-xs"
-                    />
-                    <span className="text-[9px] font-mono text-smoke uppercase">{hex}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-white/10">
-              <h4 className="text-xs font-bold text-bone mb-1">Custom Font Upload</h4>
-              <p className="text-[11px] text-smoke mb-2">
-                Upload your brand’s .ttf / .otf / .woff2 font file:
-              </p>
-              <label className="flex flex-col items-center justify-center p-4 border border-dashed border-white/20 hover:border-amber-400 rounded-xl cursor-pointer bg-white/5 hover:bg-white/10 transition-colors text-center">
-                <Upload className="w-5 h-5 text-amber-400 mb-1" />
-                <span className="text-xs font-semibold text-bone">Choose font file</span>
-                <span className="text-[10px] text-smoke mt-0.5">TTF, OTF, WOFF2 (up to 15MB)</span>
-                <input
-                  type="file"
-                  accept=".ttf,.otf,.woff,.woff2"
-                  className="hidden"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    try {
-                      const buffer = await file.arrayBuffer();
-                      const fontName = file.name.replace(/\.[^/.]+$/, '');
-                      const fontFace = new FontFace(fontName, buffer);
-                      await fontFace.load();
-                      document.fonts.add(fontFace);
-                      await saveCustomFont(fontName, buffer);
-                      const updated = await listCustomFonts();
-                      setCustomFonts(updated);
-                      if (onNotification) onNotification(`Saved brand font "${fontName}"`);
-                    } catch (err) {
-                      console.warn('Font upload error:', err);
-                    }
-                  }}
-                />
-              </label>
-
-              {customFonts.length > 0 && (
-                <div className="mt-3 space-y-1.5">
-                  <span className="text-[10px] font-semibold text-smoke uppercase tracking-wider">
-                    Saved Custom Fonts ({customFonts.length})
-                  </span>
-                  <div className="space-y-1">
-                    {customFonts.map((f) => (
-                      <div
-                        key={f.name}
-                        className="flex items-center justify-between p-2 rounded-lg bg-[#181817] border border-white/5 text-xs text-bone"
-                      >
-                        <span className="font-medium truncate">{f.name}</span>
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            await deleteCustomFont(f.name);
-                            setCustomFonts(await listCustomFonts());
-                            if (onNotification) onNotification(`Removed font "${f.name}"`);
-                          }}
-                          className="p-1 text-smoke hover:text-crimson-2 transition-colors cursor-pointer"
-                          title="Delete custom font"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="pt-3 border-t border-white/10">
-              <h4 className="text-xs font-bold text-bone mb-1">Preset Management</h4>
-              <p className="text-[11px] text-smoke mb-2">
-                Backup or share your creator styles across devices:
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const json = exportUserPresetsAsJson();
-                    downloadText(json, 'epic-hertz-presets.json', 'application/json');
-                    if (onNotification) onNotification('Presets exported to JSON');
-                  }}
-                  className="p-2 rounded-xl bg-[#181817] hover:bg-[#20201e] border border-white/10 hover:border-amber-400/50 flex items-center justify-center gap-1.5 text-xs font-medium text-bone transition-all cursor-pointer active:scale-95"
-                >
-                  <Download className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Export JSON</span>
-                </button>
-
-                <label className="p-2 rounded-xl bg-[#181817] hover:bg-[#20201e] border border-white/10 hover:border-amber-400/50 flex items-center justify-center gap-1.5 text-xs font-medium text-bone transition-all cursor-pointer active:scale-95 text-center">
-                  <FileJson className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Import JSON</span>
-                  <input
-                    type="file"
-                    accept=".json"
-                    className="hidden"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      try {
-                        const text = await file.text();
-                        const res = importUserPresetsFromJson(text);
-                        if (res.errors.length) {
-                          if (onNotification) onNotification(`Import failed: ${res.errors[0]}`);
-                        } else {
-                          setUserPresetsList(getUserPresets());
-                          setBrandColors(getBrandColors());
-                          if (onNotification)
-                            onNotification(`Imported ${res.importedCount} presets successfully`);
-                        }
-                      } catch (err) {
-                        console.warn('Import error:', err);
-                      }
-                    }}
-                  />
-                </label>
-              </div>
-            </div>
-          </div>
+          <LibraryBrandTab
+            brandColors={brandColors}
+            setBrandColors={setBrandColors}
+            customFonts={customFonts}
+            setCustomFonts={setCustomFonts}
+            setUserPresetsList={setUserPresetsList}
+            onNotification={onNotification}
+          />
         )}
       </div>
     </div>
