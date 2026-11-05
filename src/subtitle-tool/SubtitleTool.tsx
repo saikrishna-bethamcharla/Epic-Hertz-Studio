@@ -35,6 +35,8 @@ import {
 
 import { createDemoVideo } from './utils/createDemoVideo';
 import { saveMediaAsset, formatRelativeTime, listCustomFonts } from './utils/projectStorage';
+import { extractAudio } from './utils/extractAudio';
+import { refineSegmentsFromAudio } from './utils/alignWords';
 import { usePlayback } from './hooks/usePlayback';
 import { useTranscription } from './hooks/useTranscription';
 import { useProjectAutosave } from './hooks/useProjectAutosave';
@@ -261,6 +263,20 @@ export default function SubtitleTool() {
       setActiveId(next.id);
     }
   }, [currentTime, segments]);
+
+  const handleAutoAlignTimings = useCallback(async () => {
+    if (!videoFile || segments.length === 0) return;
+    try {
+      showToast('Extracting audio to align word timings…');
+      const audioBlob = await extractAudio(videoFile);
+      const refined = await refineSegmentsFromAudio(audioBlob, segments);
+      updateSegments(refined);
+      showToast('Word timings aligned with audio onsets!');
+    } catch (err) {
+      console.warn('Auto align failed:', err);
+      showToast('Could not align timings: ' + (err instanceof Error ? err.message : String(err)));
+    }
+  }, [videoFile, segments, updateSegments, showToast]);
 
   // Restore persisted brand fonts from IndexedDB on startup
   useEffect(() => {
@@ -983,6 +999,7 @@ export default function SubtitleTool() {
                               }
                             }}
                             onGoToBrand={() => setLeftTab('brand')}
+                            onAutoAlignTimings={videoFile ? handleAutoAlignTimings : undefined}
                           />
                         </div>
                       </>

@@ -5,6 +5,7 @@ import { useState, useCallback } from 'react';
 import type { AppStage, Segment, SpokenLanguage, ScriptOutput } from '../types';
 import { extractAudio } from '../utils/extractAudio';
 import { transcribeAudio } from '../api/transcribe';
+import { refineSegmentsFromAudio } from '../utils/alignWords';
 
 export interface TranscriptionConfig {
   spokenLanguage: SpokenLanguage;
@@ -56,7 +57,17 @@ export function useTranscription({
           },
         });
 
-        setSegments(segs);
+        // Step C: Acoustic Onset Alignment
+        // Snaps word boundaries to exact voice energy attacks in the 16kHz audio
+        let finalSegs = segs;
+        try {
+          setStatusText('Aligning word timings with speech onsets…');
+          finalSegs = await refineSegmentsFromAudio(audioBlob, segs);
+        } catch (alignErr) {
+          console.warn('[useTranscription] Acoustic alignment fallback:', alignErr);
+        }
+
+        setSegments(finalSegs);
         setHistory([]);
         setRedoStack([]);
         setStage('editing');

@@ -99,7 +99,7 @@ export function refineTimings(
 ): Segment[] {
   if (!samples || samples.length === 0 || sampleRate <= 0) return segments;
 
-  const searchWindowSec = options.searchWindowSec ?? 0.12;
+  const searchWindowSec = options.searchWindowSec ?? 0.18;
   const minWordDuration = options.minWordDurationSec ?? 0.06;
   const minSegDuration = options.minSegmentDurationSec ?? 0.35;
 
@@ -167,8 +167,9 @@ export function refineTimings(
         refinedStart = prevEnd;
       }
 
-      // Word duration must satisfy minWordDuration
-      let refinedEnd = Math.max(refinedStart + minWordDuration, w.end);
+      // Word duration: maintain estimated duration, shifted with onset, bounded by minWordDuration
+      const origDur = Math.max(minWordDuration, w.end - w.start);
+      let refinedEnd = refinedStart + origDur;
       if (refinedEnd < refinedStart + minWordDuration) {
         refinedEnd = refinedStart + minWordDuration;
       }

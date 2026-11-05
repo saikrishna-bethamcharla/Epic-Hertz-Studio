@@ -9,7 +9,7 @@ export type PresetGroup = 'Viral' | 'Kinetic' | 'Glow & colour' | 'Film & clean'
 export const BASE_STYLE: CaptionStyle = {
   id: 'base',
   name: 'Base',
-  syncOffset: 0.0,
+  syncOffset: -0.1, // Calibrated -100ms lead offset so visual pop syncs with spoken syllables
   font: {
     family: 'montserrat',
     weight: 800,

@@ -34,6 +34,7 @@ interface InspectorPanelProps {
   totalSegmentsCount: number;
   onPlayPreview?: () => void;
   onGoToBrand?: () => void;
+  onAutoAlignTimings?: () => void;
 }
 
 export type InspectorTab = 'text' | 'animation' | 'timing' | 'layout';
@@ -52,6 +53,7 @@ export default function InspectorPanel({
   totalSegmentsCount,
   onPlayPreview,
   onGoToBrand,
+  onAutoAlignTimings,
 }: InspectorPanelProps) {
   const [tab, setTab] = useState<InspectorTab>('text');
   const [textSubTab, setTextSubTab] = useState<TextSubTab>('basic');
@@ -357,10 +359,41 @@ export default function InspectorPanel({
                 <span>0.00s</span>
                 <span>+0.50s (Lag)</span>
               </div>
+              <div className="flex items-center gap-1.5 pt-1">
+                {[
+                  { label: 'Tight (-0.15s)', val: -0.15 },
+                  { label: 'Snappy (-0.08s)', val: -0.08 },
+                  { label: 'Zero (0.00s)', val: 0.0 },
+                ].map((preset) => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => onStyleChange({ ...style, syncOffset: preset.val })}
+                    className={`flex-1 py-1 rounded text-[10px] font-semibold transition-colors cursor-pointer ${
+                      Math.abs((style.syncOffset ?? 0) - preset.val) < 0.02
+                        ? 'bg-amber-400 text-black font-bold'
+                        : 'bg-white/5 text-smoke hover:text-bone hover:bg-white/10'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
               <p className="text-[10px] text-smoke leading-relaxed">
                 Fine-tunes word highlight timing relative to voice acoustic onsets.
               </p>
             </div>
+
+            {onAutoAlignTimings && (
+              <button
+                type="button"
+                onClick={onAutoAlignTimings}
+                className="w-full py-2 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-98"
+              >
+                <Wand2 className="w-3.5 h-3.5" />
+                <span>Auto-Align Words to Voice Onsets</span>
+              </button>
+            )}
 
             {activeSegment ? (
               <>
