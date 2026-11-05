@@ -7,8 +7,9 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Sparkles, CheckCircle2, Upload, RotateCcw, Trash2 } from 'lucide-react';
+import { Sparkles, CheckCircle2, Upload, RotateCcw, Trash2, FolderOpen } from 'lucide-react';
 import KeyboardShortcutsModal from './KeyboardShortcutsModal';
+import ProjectManagerModal from './v2/ProjectManagerModal';
 import { useDesktop } from './utils/useMedia';
 import { DEFAULT_STYLE } from './engine/presets';
 
@@ -42,6 +43,9 @@ import {
   restoreFullProject,
   clearSavedProject,
   formatRelativeTime,
+  loadProjectWithMedia,
+  getActiveProjectId,
+  setActiveProjectId,
   type SavedProjectMeta,
 } from './utils/projectStorage';
 
@@ -70,6 +74,7 @@ export default function SubtitleTool() {
   const [history, setHistory] = useState<Segment[][]>([]);
   const [redoStack, setRedoStack] = useState<Segment[][]>([]);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
+  const [isProjectManagerOpen, setIsProjectManagerOpen] = useState(false);
   const [hideCaptions, setHideCaptions] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
@@ -587,6 +592,7 @@ export default function SubtitleTool() {
       setSpokenLanguage(project.spokenLanguage);
       setScriptOutput(project.scriptOutput);
       setAspectRatio(project.aspectRatio);
+      setProjectName(project.name || project.videoFile.name.replace(/\.[^/.]+$/, ''));
       setSavedDraft(null);
       setStage('editing');
       setSaveStatus('saved');
@@ -594,6 +600,36 @@ export default function SubtitleTool() {
     } catch (err) {
       console.warn('Restore failed:', err);
       setError('Failed to restore project draft.');
+    }
+  }, []);
+
+  // ── Load Specific Project from ProjectManagerModal ───────────────────────
+  const handleSelectProject = useCallback(async (projectId: string) => {
+    try {
+      setStatusText('Loading project…');
+      setActiveProjectId(projectId);
+      const project = await loadProjectWithMedia(projectId);
+      if (!project) {
+        setError('Could not load project media from browser storage.');
+        return;
+      }
+      setVideoFile(project.videoFile);
+      setSegments(project.segments);
+      setHistory([]);
+      setRedoStack([]);
+      setStyle(project.style);
+      setSpokenLanguage(project.spokenLanguage);
+      setScriptOutput(project.scriptOutput);
+      setAspectRatio(project.aspectRatio);
+      setProjectName(project.name || project.videoFile.name.replace(/\.[^/.]+$/, ''));
+      setSavedDraft(null);
+      setStage('editing');
+      setSaveStatus('saved');
+      setLastSavedAt(project.updatedAt);
+      setIsProjectManagerOpen(false);
+    } catch (err) {
+      console.warn('Failed to load project:', err);
+      setError('Failed to load project from storage.');
     }
   }, []);
 
@@ -691,6 +727,18 @@ export default function SubtitleTool() {
         onClose={() => setIsShortcutsOpen(false)}
       />
 
+      {/* ── Project Manager Modal ───────────────────────────────────────── */}
+      <ProjectManagerModal
+        isOpen={isProjectManagerOpen}
+        onClose={() => setIsProjectManagerOpen(false)}
+        onSelectProject={handleSelectProject}
+        onNewProject={() => {
+          setIsProjectManagerOpen(false);
+          handleReset();
+        }}
+        currentProjectId={getActiveProjectId()}
+      />
+
       {/* ── Top Header Navigation Bar (Shown on Landing / Idle / Config Stages) ── */}
       {stage !== 'editing' && (
         <header className="h-14 shrink-0 flex items-center justify-between gap-2 px-3 sm:px-5 border-b border-white/10 bg-[#141413]/90 backdrop-blur-md z-30">
@@ -708,6 +756,15 @@ export default function SubtitleTool() {
           <div className="flex items-center gap-2 sm:gap-2.5">
             {stage === 'idle' && (
               <>
+                <button
+                  type="button"
+                  onClick={() => setIsProjectManagerOpen(true)}
+                  className="px-3 py-1.5 text-xs text-smoke hover:text-bone hover:bg-white/10 rounded-lg border border-white/10 transition-colors cursor-pointer flex items-center gap-1.5 font-medium"
+                  title="Manage all saved projects"
+                >
+                  <FolderOpen className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="hidden sm:inline">Projects</span>
+                </button>
                 {savedDraft && (
                   <button
                     type="button"
@@ -854,6 +911,7 @@ export default function SubtitleTool() {
                 saveStatus={saveStatus}
                 lastSavedAt={lastSavedAt}
                 onNewVideo={handleReset}
+                onOpenProjects={() => setIsProjectManagerOpen(true)}
                 onOpenShortcuts={() => setIsShortcutsOpen(true)}
                 onOpenExport={() => setIsExportModalOpen(true)}
               />

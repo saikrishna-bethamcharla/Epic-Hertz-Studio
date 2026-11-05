@@ -10,6 +10,7 @@ import {
   Edit2,
   Check,
   FileVideo,
+  FolderOpen,
 } from 'lucide-react';
 
 interface TopBarProps {
@@ -22,6 +23,7 @@ interface TopBarProps {
   saveStatus: 'idle' | 'saving' | 'saved' | 'error';
   lastSavedAt: number | null;
   onNewVideo?: () => void;
+  onOpenProjects?: () => void;
   onOpenShortcuts: () => void;
   onOpenExport: () => void;
 }
@@ -36,6 +38,7 @@ export default function TopBar({
   saveStatus,
   lastSavedAt,
   onNewVideo,
+  onOpenProjects,
   onOpenShortcuts,
   onOpenExport,
 }: TopBarProps) {
@@ -81,8 +84,27 @@ export default function TopBar({
 
         <div className="h-4 w-px bg-white/10 mx-0.5 shrink-0 hidden sm:block" />
 
-        {/* Project Name Editor */}
-        <div className="flex items-center min-w-0">
+        {/* Project Name Editor & Project Manager Button */}
+        <div className="flex items-center min-w-0 gap-1">
+          {onOpenProjects && (
+            <div className="relative group/tip flex items-center shrink-0">
+              <button
+                type="button"
+                onClick={onOpenProjects}
+                aria-label="Manage Projects"
+                className="w-7 h-7 flex items-center justify-center text-mist hover:text-amber-400 hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+              >
+                <FolderOpen className="w-3.5 h-3.5" />
+              </button>
+              <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
+                <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap">
+                  <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
+                  <span>Projects</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {isEditingName ? (
             <div className="flex items-center gap-1">
               <input
