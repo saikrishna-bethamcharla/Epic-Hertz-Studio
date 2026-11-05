@@ -47,6 +47,7 @@ const DEFAULT_MODELS = [
   'gemini-2.5-flash',
   'gemini-2.5-flash-lite',
   'gemini-2.0-flash',
+  'gemini-1.5-flash',
 ];
 const CANDIDATE_MODELS = process.env.GEMINI_MODELS
   ? process.env.GEMINI_MODELS.split(',').map((s) => s.trim()).filter(Boolean)
@@ -424,7 +425,17 @@ export default async function handler(req, res) {
     if (!text) {
       if (lastError) console.error('Transcription failed:', lastError?.message || lastError);
       if (timedOut) throw new HttpError(504, 'Transcription took too long. Try a shorter clip.');
-      throw new HttpError(503, 'Transcription service is busy. Please try again shortly.');
+      const errStr = String(lastError?.message || lastError || '');
+      if (/RESOURCE_EXHAUSTED|quota|rate limit|429/i.test(errStr)) {
+        throw new HttpError(
+          429,
+          'Gemini free tier quota exceeded on shared server key. Please add your own free Gemini key in upload settings, or try again shortly.',
+        );
+      }
+      throw new HttpError(
+        503,
+        'Transcription service is busy. Please try again shortly or use your own Gemini API key.',
+      );
     }
 
     const segments = parseSegmentsFromResponse(text);

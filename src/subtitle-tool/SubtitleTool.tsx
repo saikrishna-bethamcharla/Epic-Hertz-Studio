@@ -714,7 +714,7 @@ export default function SubtitleTool() {
           {/* Error Banner */}
           {error && stage === 'idle' && (
             <motion.div
-              className="m-6 rounded-xl border border-crimson/40 bg-crimson/10 px-5 py-3 text-crimson-2 text-xs flex flex-wrap items-center justify-between gap-2"
+              className="m-6 rounded-xl border border-crimson/40 bg-crimson/10 px-5 py-3 text-crimson-2 text-xs flex flex-wrap items-center justify-between gap-3"
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
@@ -723,9 +723,17 @@ export default function SubtitleTool() {
                 <strong>Error:</strong> {error}
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <button
-                  className="text-mist hover:text-bone underline text-[11px]"
+                  type="button"
+                  onClick={handleTryDemo}
+                  className="px-2.5 py-1 rounded bg-amber-400 hover:bg-amber-300 text-black font-semibold text-[11px] transition-colors cursor-pointer"
+                >
+                  Try Demo Video
+                </button>
+                <button
+                  type="button"
+                  className="text-mist hover:text-bone underline text-[11px] ml-1 cursor-pointer"
                   onClick={() => setError(null)}
                 >
                   Dismiss
