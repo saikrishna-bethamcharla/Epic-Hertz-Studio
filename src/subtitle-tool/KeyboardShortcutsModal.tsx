@@ -1,6 +1,7 @@
 // ─── Keyboard Shortcuts Cheat Sheet Modal ──────────────────────────────────
 import { motion, AnimatePresence } from 'framer-motion';
 import { Keyboard, X } from 'lucide-react';
+import { useModalA11y } from './hooks/useModalA11y';
 
 interface KeyboardShortcutsModalProps {
   isOpen: boolean;
@@ -84,6 +85,11 @@ const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
 ];
 
 export default function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsModalProps) {
+  const modalRef = useModalA11y<HTMLDivElement>({
+    isOpen,
+    onClose,
+  });
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -92,9 +98,11 @@ export default function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShor
           onClick={onClose}
         >
           <motion.div
+            ref={modalRef}
             role="dialog"
             aria-modal="true"
-            aria-label="Keyboard Shortcuts"
+            aria-labelledby="shortcuts-modal-title"
+            tabIndex={-1}
             className="w-full max-w-lg rounded-2xl bg-[#171716] border border-white/10 shadow-2xl p-6 flex flex-col max-h-[85vh] overflow-hidden"
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -108,7 +116,9 @@ export default function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShor
                   <Keyboard className="w-4 h-4" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-bone">Keyboard Shortcuts</h2>
+                  <h2 id="shortcuts-modal-title" className="text-base font-bold text-bone">
+                    Keyboard Shortcuts
+                  </h2>
                   <p className="text-xs text-smoke">Pro editing speed and navigation keys</p>
                 </div>
               </div>

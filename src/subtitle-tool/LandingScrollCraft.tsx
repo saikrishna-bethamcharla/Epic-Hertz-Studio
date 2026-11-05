@@ -7,7 +7,13 @@
 // - Sleek Engineering Architecture highlights & Magnetic Drop Zone
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
+import {
+  motion,
+  AnimatePresence,
+  useMotionValue,
+  useSpring,
+  useReducedMotion,
+} from 'framer-motion';
 import {
   Zap,
   Sparkles,
@@ -125,19 +131,23 @@ export default function LandingScrollCraft({ onFileSelect, onTryDemo }: LandingS
   const [isDraggingSplit, setIsDraggingSplit] = useState(false);
   const splitContainerRef = useRef<HTMLDivElement>(null);
 
+  // Accessibility: detect OS/browser reduced-motion setting
+  const shouldReduceMotion = useReducedMotion();
+
   // Fluid 3D tilt physics using Framer Motion springs (no React re-renders on mousemove!)
   const rotateX = useSpring(useMotionValue(0), { stiffness: 120, damping: 20 });
   const rotateY = useSpring(useMotionValue(0), { stiffness: 120, damping: 20 });
 
   const handleHeroMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
+      if (shouldReduceMotion) return;
       const rect = e.currentTarget.getBoundingClientRect();
       const x = (e.clientX - rect.left) / rect.width - 0.5; // -0.5 to 0.5
       const y = (e.clientY - rect.top) / rect.height - 0.5; // -0.5 to 0.5
       rotateX.set(-y * 14);
       rotateY.set(x * 14);
     },
-    [rotateX, rotateY],
+    [rotateX, rotateY, shouldReduceMotion],
   );
 
   const handleHeroMouseLeave = useCallback(() => {
@@ -230,7 +240,7 @@ export default function LandingScrollCraft({ onFileSelect, onTryDemo }: LandingS
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className="relative w-full h-full overflow-y-auto overflow-x-hidden bg-[#09090b] text-[#f4f4f5] font-sans selection:bg-amber-400 selection:text-black"
-      style={{ scrollBehavior: 'smooth' }}
+      style={{ scrollBehavior: shouldReduceMotion ? 'auto' : 'smooth' }}
     >
       {/* Subtle background ambient radial lighting */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
@@ -390,12 +400,16 @@ export default function LandingScrollCraft({ onFileSelect, onTryDemo }: LandingS
                         return (
                           <span
                             key={idx}
-                            className="inline-block mr-1.5 transition-all duration-150"
+                            className={`inline-block mr-1.5 ${shouldReduceMotion ? '' : 'transition-all duration-150'}`}
                             style={{
                               color: isCurrent
                                 ? activePreset.config.highlightColor || '#FFE600'
                                 : '#FFFFFF',
-                              transform: isCurrent ? 'scale(1.18) translateY(-2px)' : 'scale(1)',
+                              transform: shouldReduceMotion
+                                ? 'none'
+                                : isCurrent
+                                  ? 'scale(1.18) translateY(-2px)'
+                                  : 'scale(1)',
                               textShadow: isCurrent
                                 ? '0 0 16px rgba(255,230,0,0.8)'
                                 : '0 2px 4px rgba(0,0,0,0.9)',

@@ -11,6 +11,7 @@ import {
   mergeSegments,
   type AudioChunk,
 } from '../utils/splitAudio';
+import { refineSegmentsFromAudio } from '../utils/alignWords';
 
 const CONCURRENCY = 2;
 const MAX_ATTEMPTS = 3;
@@ -195,7 +196,6 @@ export async function transcribeAudio(
   if (merged.length === 0) throw new Error(NO_SPEECH_MESSAGE);
 
   onStatus?.('Aligning word timings to speech onsets…');
-  const { refineSegmentsFromAudio } = await import('../utils/alignWords');
   const aligned = await refineSegmentsFromAudio(audioBlob, merged);
 
   return aligned;

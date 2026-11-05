@@ -5,21 +5,22 @@
 // - Bottom multi-track audio waveform timeline with split/merge/delete/undo/redo/dictionary
 // - Export modal with lossless stream-copy MP4, hardsubbed burn MP4, SRT, VTT & TXT
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Sparkles, CheckCircle2, Upload, RotateCcw, Trash2, FolderOpen } from 'lucide-react';
-import KeyboardShortcutsModal from './KeyboardShortcutsModal';
-import ProjectManagerModal from './v2/ProjectManagerModal';
 import { useDesktop } from './utils/useMedia';
 import { DEFAULT_STYLE } from './engine/presets';
 
-import LandingScrollCraft from './LandingScrollCraft';
+const KeyboardShortcutsModal = lazy(() => import('./KeyboardShortcutsModal'));
+const ProjectManagerModal = lazy(() => import('./v2/ProjectManagerModal'));
+const LandingScrollCraft = lazy(() => import('./LandingScrollCraft'));
+const ExportModal = lazy(() => import('./ExportModal'));
+
 import VideoPreview, { type VideoPreviewHandle } from './VideoPreview';
 import CaptionEditor from './CaptionEditor';
 import TemplateDrawer from './TemplateDrawer';
 import Timeline from './Timeline';
 import PrepareMediaModal from './PrepareMediaModal';
-import ExportModal from './ExportModal';
 import ProgressOverlay from './ProgressOverlay';
 
 import TopBar from './v2/TopBar';
@@ -573,44 +574,57 @@ export default function SubtitleTool() {
       </AnimatePresence>
 
       {/* ── Export Dialog Modal ─────────────────────────────────────────── */}
-      {videoFile && (
-        <ExportModal
-          isOpen={isExportModalOpen}
-          onClose={() => setIsExportModalOpen(false)}
-          videoFile={videoFile}
-          segments={segments}
-          style={style}
-          signal={exportAbortRef.current?.signal}
-          onBurnStart={() => {
-            exportAbortRef.current = new AbortController();
-            setStage('burning');
-            setBurnProgress(0);
-            setStatusText('Exporting subtitled video…');
-          }}
-          onBurnProgress={setBurnProgress}
-          onBurnStatus={setStatusText}
-          onBurnDone={() => setStage('done')}
-          onBurnError={(msg) => {
-            setError(msg);
-            setStage('editing');
-          }}
-        />
+      {videoFile && isExportModalOpen && (
+        <Suspense fallback={null}>
+          <ExportModal
+            isOpen={isExportModalOpen}
+            onClose={() => setIsExportModalOpen(false)}
+            videoFile={videoFile}
+            segments={segments}
+            style={style}
+            signal={exportAbortRef.current?.signal}
+            onBurnStart={() => {
+              exportAbortRef.current = new AbortController();
+              setStage('burning');
+              setBurnProgress(0);
+              setStatusText('Exporting subtitled video…');
+            }}
+            onBurnProgress={setBurnProgress}
+            onBurnStatus={setStatusText}
+            onBurnDone={() => setStage('done')}
+            onBurnError={(msg) => {
+              setError(msg);
+              setStage('editing');
+            }}
+          />
+        </Suspense>
       )}
 
       {/* ── Keyboard Shortcuts Modal ───────────────────────────────────── */}
-      <KeyboardShortcutsModal isOpen={isShortcutsOpen} onClose={() => setIsShortcutsOpen(false)} />
+      {isShortcutsOpen && (
+        <Suspense fallback={null}>
+          <KeyboardShortcutsModal
+            isOpen={isShortcutsOpen}
+            onClose={() => setIsShortcutsOpen(false)}
+          />
+        </Suspense>
+      )}
 
       {/* ── Project Manager Modal ───────────────────────────────────────── */}
-      <ProjectManagerModal
-        isOpen={isProjectManagerOpen}
-        onClose={() => setIsProjectManagerOpen(false)}
-        onSelectProject={handleSelectProject}
-        onNewProject={() => {
-          setIsProjectManagerOpen(false);
-          handleReset();
-        }}
-        currentProjectId={activeProjectId}
-      />
+      {isProjectManagerOpen && (
+        <Suspense fallback={null}>
+          <ProjectManagerModal
+            isOpen={isProjectManagerOpen}
+            onClose={() => setIsProjectManagerOpen(false)}
+            onSelectProject={handleSelectProject}
+            onNewProject={() => {
+              setIsProjectManagerOpen(false);
+              handleReset();
+            }}
+            currentProjectId={activeProjectId}
+          />
+        </Suspense>
+      )}
 
       {/* ── Top Header Navigation Bar (Shown on Landing / Idle / Config Stages) ── */}
       {stage !== 'editing' && (
@@ -754,7 +768,15 @@ export default function SubtitleTool() {
               )}
 
               <div className="flex-1 min-h-0 w-full h-full overflow-hidden">
-                <LandingScrollCraft onFileSelect={handleFileDrop} onTryDemo={handleTryDemo} />
+                <Suspense
+                  fallback={
+                    <div className="h-full w-full flex items-center justify-center bg-[#09090b]">
+                      <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  }
+                >
+                  <LandingScrollCraft onFileSelect={handleFileDrop} onTryDemo={handleTryDemo} />
+                </Suspense>
               </div>
             </motion.div>
           )}

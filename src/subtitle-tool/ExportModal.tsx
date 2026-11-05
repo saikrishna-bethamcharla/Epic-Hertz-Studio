@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle } from 'lucide-react';
+import { useModalA11y } from './hooks/useModalA11y';
 import { toSRT, toVTT, downloadText, downloadBlob } from './utils/srt';
 import { burnCaptionsCanvas } from './utils/burnCaptionsCanvas';
 import {
@@ -53,6 +54,14 @@ export default function ExportModal({
     height: number;
     duration: number;
   } | null>(null);
+
+  const modalRef = useModalA11y<HTMLDivElement>({
+    isOpen,
+    onClose: () => {
+      if (!processing) onClose();
+    },
+    closeOnEscape: !processing,
+  });
 
   useEffect(() => {
     if (!videoFile) return;
@@ -218,6 +227,11 @@ export default function ExportModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
       <motion.div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="export-modal-title"
+        tabIndex={-1}
         className="w-full max-w-lg rounded-2xl bg-[#171716] border border-white/10 shadow-2xl p-6 flex flex-col"
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -225,7 +239,9 @@ export default function ExportModal({
       >
         <div className="flex items-center justify-between pb-4 border-b border-white/10">
           <div>
-            <h2 className="text-lg font-bold text-bone">Export Captioned Video</h2>
+            <h2 id="export-modal-title" className="text-lg font-bold text-bone">
+              Export Captioned Video
+            </h2>
             <p className="text-xs text-smoke mt-0.5">
               Hardware-accelerated rendering with full animation fidelity
             </p>

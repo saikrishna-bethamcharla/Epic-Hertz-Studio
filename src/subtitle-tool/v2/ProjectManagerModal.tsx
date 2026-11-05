@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { useModalA11y } from '../hooks/useModalA11y';
 import {
   FolderOpen,
   Search,
@@ -47,6 +48,12 @@ export default function ProjectManagerModal({
   const [storageInfo, setStorageInfo] = useState<{ usageMB?: number; quotaMB?: number }>({});
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+
+  const modalRef = useModalA11y<HTMLDivElement>({
+    isOpen,
+    onClose,
+    closeOnEscape: editingId === null,
+  });
 
   const refresh = async () => {
     const list = await listProjects();
@@ -107,6 +114,11 @@ export default function ProjectManagerModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
       <motion.div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="project-manager-title"
+        tabIndex={-1}
         className="w-full max-w-2xl rounded-2xl bg-[#171716] border border-white/10 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
         initial={{ opacity: 0, scale: 0.96, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -119,7 +131,9 @@ export default function ProjectManagerModal({
               <FolderOpen className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-bone">Your Projects</h2>
+              <h2 id="project-manager-title" className="text-base font-bold text-bone">
+                Your Projects
+              </h2>
               <p className="text-[11px] text-smoke">
                 Switch, duplicate, or manage saved caption workflows
               </p>

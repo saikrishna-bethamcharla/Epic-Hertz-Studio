@@ -10,6 +10,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          if (id.includes('mediabunny')) return 'mediabunny';
           if (id.includes('framer-motion')) return 'motion';
           if (id.includes('react') || id.includes('react-dom')) return 'react';
         },

@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { useModalA11y } from './hooks/useModalA11y';
 import type { SpokenLanguage, ScriptOutput } from './types';
 import { getUserApiKey, setUserApiKey } from './api/transcribe';
 
@@ -57,6 +58,11 @@ export default function PrepareMediaModal({
   const [userKey, setUserKeyState] = useState<string | null>(getUserApiKey);
   const [isKeyExpanded, setIsKeyExpanded] = useState(false);
   const [keyInput, setKeyInput] = useState('');
+
+  const modalRef = useModalA11y<HTMLDivElement>({
+    isOpen: true,
+    onClose: onCancel,
+  });
 
   const handleSaveKey = () => {
     if (keyInput.trim().length >= 20) {
@@ -168,6 +174,11 @@ export default function PrepareMediaModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
       <motion.div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="prepare-media-title"
+        tabIndex={-1}
         className="w-full max-w-md rounded-2xl bg-[#171716] border border-white/[0.12] shadow-2xl p-6 sm:p-7 flex flex-col my-auto"
         initial={{ opacity: 0, scale: 0.95, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -176,7 +187,10 @@ export default function PrepareMediaModal({
       >
         {/* Title & subtitle */}
         <div className="text-center mb-5">
-          <h2 className="text-xl sm:text-2xl font-bold text-bone tracking-tight">
+          <h2
+            id="prepare-media-title"
+            className="text-xl sm:text-2xl font-bold text-bone tracking-tight"
+          >
             Prepare your media
           </h2>
           <p className="text-sm text-smoke mt-1.5 leading-relaxed">
