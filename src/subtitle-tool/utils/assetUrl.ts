@@ -1,5 +1,5 @@
 // ─── assetUrl helper ────────────────────────────────────────────────────────
-// Robustly resolves public assets (ffmpeg, fonts, etc.) across:
+// Robustly resolves public assets (fonts, audio, icons, etc.) across:
 // - Localhost (/)
 // - Vercel (/)
 // - GitHub Pages (/Portfolio/ or /Epic-Hertz-Studio/)

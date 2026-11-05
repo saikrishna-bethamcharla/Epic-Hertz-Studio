@@ -53,16 +53,15 @@ One Canvas 2D engine (`src/subtitle-tool/engine/`) renders the live preview, the
 
 ### ⚡ Zero-Config Export
 - **Lossless Subtitles:** Download industry-standard `.srt`, `.vtt`, or clean `.txt` transcripts.
-- **Animated burn-in (default):** the caption engine draws every frame of your video, so animation, highlights and fonts are baked in exactly as previewed. It uses WebCodecs (via [Mediabunny](https://mediabunny.dev)): the source is decoded frame by frame, captions are drawn on top, and the result is hardware-encoded to H.264 MP4 with the original frame rate and audio kept. Choose Standard / High / Maximum quality and Original / up to 1080p size. It is not tied to playback, so it can run faster than real time on devices with hardware encoders.
-  - **Automatic fallbacks:** if the browser can't do this (no WebCodecs, or audio that can't be carried over), export falls back to a real-time canvas recording, and finally to static FFmpeg hard-subs. A file is never produced silently without its sound.
-- **Soft subtitles:** lossless MP4 with a subtitle track.
+- **Animated burn-in (default):** the caption engine draws every frame of your video, so animation, highlights and fonts are baked in exactly as previewed. It uses WebCodecs (via [Mediabunny](https://mediabunny.dev)): the source is decoded frame by frame, captions are drawn on top, and the result is hardware-encoded to H.264 MP4 with the original frame rate and audio kept. Choose Standard / High / Maximum quality and Original / up to 1080p size. Direct-to-disk streaming is supported in Chromium browsers via the File System Access API to avoid tab memory bloat.
+  - **Automatic fallbacks:** if the browser can't do this (no WebCodecs encoder, or audio that can't be carried over), export falls back seamlessly to a real-time canvas capture stream. A file is never produced silently without its sound.
 
 ---
 
 ## 🛠️ Tech Stack
 
 <div align="center">
-  <img src="https://skillicons.dev/icons?i=react,ts,vite,tailwind,wasm&perline=5" alt="Tech Stack Icons" />
+  <img src="https://skillicons.dev/icons?i=react,ts,vite,tailwind&perline=4" alt="Tech Stack Icons" />
 </div>
 
 <br/>
@@ -70,7 +69,7 @@ One Canvas 2D engine (`src/subtitle-tool/engine/`) renders the live preview, the
 - **Framework:** React 18, TypeScript, Vite 6
 - **Styling:** Tailwind CSS 4
 - **Motion & Interactions:** Framer Motion 11
-- **Media Processing:** Web Audio API, Canvas 2D, FFmpeg WebAssembly (`@ffmpeg/ffmpeg`)
+- **Media Processing:** WebCodecs, Mediabunny, Web Audio API, Canvas 2D
 - **AI Speech-to-Text:** Google Gemini API via Vercel Serverless proxy (`/api/transcribe`)
 
 ---
@@ -139,7 +138,7 @@ Epic-Hertz-Studio/
 ├── api/
 │   ├── transcribe.js             # Vercel serverless proxy: origin allowlist, rate limit, size cap, Gemini call
 │   └── _lib/parse.js             # Caption JSON/SRT parsing & timestamp normalisation (not deployed as an endpoint)
-├── public/                       # Static assets & FFmpeg WASM binaries
+├── public/                       # Static fonts, grain textures & web assets
 ├── src/
 │   ├── App.tsx                   # Studio root application mount
 │   ├── main.tsx                  # Application entry point & error boundary

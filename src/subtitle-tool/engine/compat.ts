@@ -1,6 +1,5 @@
 // ─── Compatibility helpers ──────────────────────────────────────────────────
-// The static ffmpeg/ASS hard-sub path (used only as a fallback) understands a handful of basic
-// fields. This maps a rich CaptionStyle onto them.
+// Maps a rich CaptionStyle onto a simplified basic styling structure.
 
 import type { CaptionStyle } from './spec';
 

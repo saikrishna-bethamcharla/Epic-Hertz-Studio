@@ -9,6 +9,7 @@ interface ProgressOverlayProps {
   stage: AppStage;
   statusText: string;
   progress?: number; // 0–100, used during 'burning'
+  onCancel?: () => void;
 }
 
 function getStageIcon(stage: AppStage) {
@@ -26,7 +27,7 @@ function getStageIcon(stage: AppStage) {
   }
 }
 
-export default function ProgressOverlay({ stage, statusText, progress }: ProgressOverlayProps) {
+export default function ProgressOverlay({ stage, statusText, progress, onCancel }: ProgressOverlayProps) {
   const showBar = stage === 'burning' && typeof progress === 'number';
 
   return (
@@ -74,6 +75,17 @@ export default function ProgressOverlay({ stage, statusText, progress }: Progres
       )}
       {showBar && (
         <p className="mt-2 text-smoke text-sm tabular-nums">{progress}%</p>
+      )}
+
+      {/* Cancel button during video export */}
+      {stage === 'burning' && onCancel && (
+        <button
+          type="button"
+          onClick={onCancel}
+          className="mt-6 px-4 py-1.5 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 text-smoke hover:text-bone text-xs font-medium transition-colors cursor-pointer"
+        >
+          Cancel Export
+        </button>
       )}
     </motion.div>
   );

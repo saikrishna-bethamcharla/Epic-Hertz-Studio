@@ -11,9 +11,6 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
-    "@ffmpeg/core": "^0.12.6",
-    "@ffmpeg/ffmpeg": "^0.12.15",
-    "@ffmpeg/util": "^0.12.2",
     "@google/genai": "^2.30.0",
     "framer-motion": "11.18.2",
     "lucide-react": "^1.66.0",

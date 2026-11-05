@@ -1,40 +1,6 @@
 // ─── Audio extraction ────────────────────────────────────────────────────────
-// 1. Primary: Lightning-fast native Web Audio API (16kHz mono PCM/WAV).
-//    Runs in ~150ms with 0MB network download, fully immune to subpath or CORS/COOP issues.
-// 2. Fallback: ffmpeg.wasm with proper subpath and CDN fallback for rare codecs.
-
-import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { fetchFile, toBlobURL } from '@ffmpeg/util';
-import { getAssetUrl } from './assetUrl';
-
-let ffmpegInstance: FFmpeg | null = null;
-
-async function getFFmpeg(): Promise<FFmpeg> {
-  if (ffmpegInstance?.loaded) return ffmpegInstance;
-
-  const ffmpeg = new FFmpeg();
-
-  // Try local relative path first, fallback to unpkg CDN
-  try {
-    const localCore = getAssetUrl('ffmpeg/ffmpeg-core.js');
-    const localWasm = getAssetUrl('ffmpeg/ffmpeg-core.wasm');
-
-    await ffmpeg.load({
-      coreURL: await toBlobURL(localCore, 'text/javascript'),
-      wasmURL: await toBlobURL(localWasm, 'application/wasm'),
-    });
-  } catch (err) {
-    console.warn('Local ffmpeg load failed, attempting CDN fallback...', err);
-    const cdnBase = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm';
-    await ffmpeg.load({
-      coreURL: await toBlobURL(`${cdnBase}/ffmpeg-core.js`, 'text/javascript'),
-      wasmURL: await toBlobURL(`${cdnBase}/ffmpeg-core.wasm`, 'application/wasm'),
-    });
-  }
-
-  ffmpegInstance = ffmpeg;
-  return ffmpeg;
-}
+// Lightning-fast native Web Audio API (16kHz mono PCM/WAV).
+// Runs in ~150ms with 0MB network download, fully immune to CORS/COOP or subpath issues.
 
 /**
  * Ensures an AudioBuffer is resampled to exactly 16,000Hz mono.
@@ -59,25 +25,6 @@ async function resampleTo16kHzMono(audioBuffer: AudioBuffer): Promise<AudioBuffe
   source.start(0);
 
   return await offlineCtx.startRendering();
-}
-
-/**
- * Native Browser Web Audio API Extractor.
- * Decodes the video file's audio stream directly in-memory, resamples to 16kHz mono,
- * and encodes a clean 16kHz mono WAV.
- */
-async function extractAudioViaWebAudio(videoFile: File): Promise<Blob> {
-  const AudioCtxClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-  const audioCtx = new AudioCtxClass();
-
-  try {
-    const arrayBuffer = await videoFile.arrayBuffer();
-    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-    const normalizedBuffer = await resampleTo16kHzMono(audioBuffer);
-    return audioBufferToWav(normalizedBuffer);
-  } finally {
-    audioCtx.close().catch(() => {});
-  }
 }
 
 /**
@@ -146,52 +93,30 @@ function writeString(view: DataView, offset: number, string: string) {
 }
 
 /**
- * Extracts audio track from video file.
- * Fast Web Audio API primary, FFmpeg fallback for exotic video formats.
+ * Extracts audio track from video file directly in-browser using Web Audio API.
+ * Resamples to 16kHz mono 16-bit PCM WAV for speech-to-text.
  */
 export async function extractAudio(
   videoFile: File,
   onProgress?: (pct: number) => void,
 ): Promise<Blob> {
-  // 1. Try native Web Audio API first (instant, 0 network, runs everywhere)
+  const AudioCtxClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+  const audioCtx = new AudioCtxClass();
+
   try {
-    onProgress?.(30);
-    const wavBlob = await extractAudioViaWebAudio(videoFile);
+    onProgress?.(25);
+    const arrayBuffer = await videoFile.arrayBuffer();
+    onProgress?.(50);
+    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    onProgress?.(75);
+    const normalizedBuffer = await resampleTo16kHzMono(audioBuffer);
+    const wavBlob = audioBufferToWav(normalizedBuffer);
     onProgress?.(100);
     return wavBlob;
-  } catch (webAudioErr) {
-    console.warn('Native Web Audio extraction failed, falling back to FFmpeg:', webAudioErr);
+  } catch (err) {
+    console.error('Audio extraction failed:', err);
+    throw new Error('Could not decode audio from this video file. Ensure the video contains an uncorrupted audio track.');
+  } finally {
+    audioCtx.close().catch(() => {});
   }
-
-  // 2. FFmpeg Fallback
-  const ffmpeg = await getFFmpeg();
-
-  ffmpeg.on('progress', ({ progress }) => {
-    onProgress?.(Math.round(progress * 100));
-  });
-
-  const inputName = 'input_video';
-  // 16 kHz mono 16-bit PCM WAV — the same shape the Web Audio path produces, so the
-  // uploader can split it at pauses and every chunk stays under the server's size cap.
-  const outputName = 'audio_out.wav';
-
-  await ffmpeg.writeFile(inputName, await fetchFile(videoFile));
-  await ffmpeg.exec([
-    '-i', inputName,
-    '-vn',                 // strip video
-    '-ac', '1',            // mono
-    '-ar', '16000',        // 16 kHz
-    '-c:a', 'pcm_s16le',   // 16-bit PCM
-    outputName,
-  ]);
-
-  const data = await ffmpeg.readFile(outputName);
-  await ffmpeg.deleteFile(inputName).catch(() => {});
-  await ffmpeg.deleteFile(outputName).catch(() => {});
-
-  return new Blob([data], { type: 'audio/wav' });
-}
-
-export function prefetchFFmpeg(): void {
-  getFFmpeg().catch(() => {});
 }

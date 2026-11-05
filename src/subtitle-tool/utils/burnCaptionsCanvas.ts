@@ -3,8 +3,8 @@
 // 1. Browsers already have full complex text shaping (HarfBuzz, Uniscribe, CoreText)
 //    built-in. Indic scripts (Telugu, Hindi, Tamil) and all Unicode scripts render
 //    100% faithfully with complete ligatures and matras.
-// 2. ffmpeg.wasm lacks HarfBuzz in standard builds, which causes broken/overlapping Indic glyphs.
-// 3. We record the video canvas + audio track directly to MP4 / WebM with zero server latency.
+// 2. We record the video canvas + audio track directly to MP4 / WebM with zero server latency.
+// 3. Fully cancellable via AbortSignal.
 
 import type { Segment, CaptionStyle } from '../types';
 import { renderCaptions } from '../engine/render';
@@ -12,16 +12,22 @@ import { ensureFonts } from '../engine/fonts';
 
 /**
  * Burns subtitles directly into video frames using HTML5 Canvas & MediaRecorder.
- * The browser renders the font natively, so Telugu and all complex scripts look perfect!
+ * Browser-native fallback for environments without WebCodecs encoder support.
  */
 export async function burnCaptionsCanvas(
   videoFile: File,
   segments: Segment[],
   style: CaptionStyle,
   onProgress?: (pct: number) => void,
+  signal?: AbortSignal,
 ): Promise<Blob> {
-  // Fonts must be loaded before the first frame is drawn, or the first seconds would use fallbacks.
+  if (signal?.aborted) {
+    throw new DOMException('Export cancelled', 'AbortError');
+  }
+
+  // Fonts must be loaded before the first frame is drawn
   await ensureFonts(style, segments.map((s) => s.text).join(' '));
+
   return new Promise((resolve, reject) => {
     const video = document.createElement('video');
     video.src = URL.createObjectURL(videoFile);
@@ -41,8 +47,37 @@ export async function burnCaptionsCanvas(
     let audioContext: AudioContext | null = null;
     let mediaRecorder: MediaRecorder | null = null;
     let animId: number | null = null;
+    let isCleanedUp = false;
+
+    const cleanup = () => {
+      if (isCleanedUp) return;
+      isCleanedUp = true;
+      if (animId) cancelAnimationFrame(animId);
+      try {
+        video.pause();
+      } catch {}
+      URL.revokeObjectURL(video.src);
+      audioContext?.close().catch(() => {});
+    };
+
+    if (signal) {
+      signal.addEventListener(
+        'abort',
+        () => {
+          cleanup();
+          if (mediaRecorder && mediaRecorder.state === 'recording') {
+            try {
+              mediaRecorder.stop();
+            } catch {}
+          }
+          reject(new DOMException('Export cancelled', 'AbortError'));
+        },
+        { once: true },
+      );
+    }
 
     video.onloadedmetadata = () => {
+      if (signal?.aborted) return;
       const width = video.videoWidth || 1920;
       const height = video.videoHeight || 1080;
       canvas.width = width;
@@ -51,12 +86,13 @@ export async function burnCaptionsCanvas(
       // Setup audio capture via Web Audio API so recorded video keeps sound
       let audioDestination: MediaStreamAudioDestinationNode | null = null;
       try {
-        const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        const AudioContextClass =
+          window.AudioContext ||
+          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
         audioContext = new AudioContextClass();
         const source = audioContext.createMediaElementSource(video);
         audioDestination = audioContext.createMediaStreamDestination();
         source.connect(audioDestination);
-        // Connect to destination only, don't blast speaker during burn
       } catch (e) {
         console.warn('Audio capture setup warning:', e);
       }
@@ -105,6 +141,7 @@ export async function burnCaptionsCanvas(
           ? new MediaRecorder(combinedStream, { mimeType: selectedMime })
           : new MediaRecorder(combinedStream);
       } catch (err) {
+        cleanup();
         reject(err);
         return;
       }
@@ -114,9 +151,8 @@ export async function burnCaptionsCanvas(
       };
 
       mediaRecorder.onstop = () => {
-        if (animId) cancelAnimationFrame(animId);
-        URL.revokeObjectURL(video.src);
-        audioContext?.close().catch(() => {});
+        cleanup();
+        if (signal?.aborted) return;
         const finalBlob = new Blob(chunks, { type: selectedMime || 'video/mp4' });
         resolve(finalBlob);
       };
@@ -131,6 +167,7 @@ export async function burnCaptionsCanvas(
       };
 
       const renderLoop = () => {
+        if (signal?.aborted) return;
         if (video.ended) {
           if (mediaRecorder && mediaRecorder.state === 'recording') {
             mediaRecorder.stop();
@@ -145,7 +182,7 @@ export async function burnCaptionsCanvas(
         // 1. Draw video frame
         ctx.drawImage(video, 0, 0, width, height);
 
-        // 2. Captions: the exact renderer the live preview uses (animation, highlight, fonts…)
+        // 2. Captions: the exact renderer the live preview uses
         renderCaptions(ctx, width, height, video.currentTime, segments, style);
 
         animId = requestAnimationFrame(renderLoop);
@@ -156,11 +193,13 @@ export async function burnCaptionsCanvas(
       video.play().then(() => {
         renderLoop();
       }).catch((err) => {
+        cleanup();
         reject(err);
       });
     };
 
     video.onerror = () => {
+      cleanup();
       reject(new Error('Failed to load video file into browser media player.'));
     };
   });

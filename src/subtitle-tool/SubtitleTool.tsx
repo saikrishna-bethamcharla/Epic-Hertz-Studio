@@ -97,6 +97,7 @@ export default function SubtitleTool() {
   }, []);
 
   const videoRef = useRef<VideoPreviewHandle>(null);
+  const exportAbortRef = useRef<AbortController | null>(null);
 
   const updateSegments = useCallback(
     (newSegments: Segment[] | ((prev: Segment[]) => Segment[]), recordUndo: boolean = true) => {
@@ -638,6 +639,12 @@ export default function SubtitleTool() {
             stage={stage}
             statusText={statusText}
             progress={burnProgress}
+            onCancel={() => {
+              exportAbortRef.current?.abort();
+              setStage('editing');
+              setStatusText('');
+              setBurnProgress(0);
+            }}
           />
         )}
       </AnimatePresence>
@@ -661,12 +668,15 @@ export default function SubtitleTool() {
           videoFile={videoFile}
           segments={segments}
           style={style}
+          signal={exportAbortRef.current?.signal}
           onBurnStart={() => {
+            exportAbortRef.current = new AbortController();
             setStage('burning');
             setBurnProgress(0);
             setStatusText('Exporting subtitled video…');
           }}
           onBurnProgress={setBurnProgress}
+          onBurnStatus={setStatusText}
           onBurnDone={() => setStage('done')}
           onBurnError={(msg) => {
             setError(msg);

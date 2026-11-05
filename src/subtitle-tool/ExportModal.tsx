@@ -1,14 +1,18 @@
 // ─── ExportModal ──────────────────────────────────────────────────────────────
-// Pro export dialog: Lossless MP4 (stream copy), Hardcoded pixel burn MP4, SRT, VTT, TXT.
+// Pro export dialog: Fast WebCodecs burn-in with real-time canvas fallback, SRT, VTT, TXT.
+// Supports direct-to-disk streaming in Chromium via File System Access API.
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { AlertTriangle } from 'lucide-react';
 import { toSRT, toVTT, downloadText, downloadBlob } from './utils/srt';
-import { burnCaptions, embedSubtitlesMP4 } from './utils/burnCaptions';
 import { burnCaptionsCanvas } from './utils/burnCaptionsCanvas';
-import { exportCaptionedVideo, type ExportQuality } from './utils/exportVideo';
+import {
+  exportCaptionedVideo,
+  estimateExportMemory,
+  type ExportQuality,
+} from './utils/exportVideo';
 import type { Segment, CaptionStyle } from './types';
-import { toBasicStyle } from './engine/compat';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -21,6 +25,7 @@ interface ExportModalProps {
   onBurnStatus?: (msg: string) => void;
   onBurnDone: () => void;
   onBurnError: (msg: string) => void;
+  signal?: AbortSignal;
 }
 
 export default function ExportModal({
@@ -34,16 +39,46 @@ export default function ExportModal({
   onBurnStatus,
   onBurnDone,
   onBurnError,
+  signal,
 }: ExportModalProps) {
-  const [exportType, setExportType] = useState<'lossless' | 'hardsub' | 'srt' | 'vtt' | 'txt'>('hardsub');
+  const [exportType, setExportType] = useState<'hardsub' | 'srt' | 'vtt' | 'txt'>('hardsub');
   const [quality, setQuality] = useState<ExportQuality>('high');
   const [resolution, setResolution] = useState<'original' | '1080'>('original');
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Video metadata for memory preflight
+  const [videoMeta, setVideoMeta] = useState<{ width: number; height: number; duration: number } | null>(null);
+
+  useEffect(() => {
+    if (!videoFile) return;
+    const v = document.createElement('video');
+    v.src = URL.createObjectURL(videoFile);
+    v.onloadedmetadata = () => {
+      setVideoMeta({
+        width: v.videoWidth || 1920,
+        height: v.videoHeight || 1080,
+        duration: v.duration || 60,
+      });
+      URL.revokeObjectURL(v.src);
+    };
+    v.onerror = () => URL.revokeObjectURL(v.src);
+  }, [videoFile]);
+
   if (!isOpen) return null;
 
   const baseName = videoFile.name.replace(/\.[^.]+$/, '');
+
+  // Pre-flight memory estimation
+  const memoryEstimate = videoMeta
+    ? estimateExportMemory(
+        videoMeta.duration,
+        videoMeta.width,
+        videoMeta.height,
+        quality,
+        resolution === '1080' ? 1080 : 0,
+      )
+    : null;
 
   const handleExport = async () => {
     setError(null);
@@ -67,50 +102,103 @@ export default function ExportModal({
         return;
       }
 
-      // MP4 exports
+      // Check if Chromium direct-to-disk streaming is available
+      let fileStream: WritableStream | undefined;
+      let streamedDirectly = false;
+      const canStreamToDisk = typeof window !== 'undefined' && 'showSaveFilePicker' in window;
+
+      if (canStreamToDisk) {
+        try {
+          const picker = (window as unknown as {
+            showSaveFilePicker: (opts: {
+              suggestedName: string;
+              types: Array<{ description: string; accept: Record<string, string[]> }>;
+            }) => Promise<{ createWritable: () => Promise<WritableStream> }>;
+          }).showSaveFilePicker;
+
+          const handle = await picker({
+            suggestedName: `${baseName}_captioned.mp4`,
+            types: [
+              {
+                description: 'MP4 Video',
+                accept: { 'video/mp4': ['.mp4'] },
+              },
+            ],
+          });
+          fileStream = await handle.createWritable();
+          streamedDirectly = true;
+        } catch (pickerErr) {
+          // If user cancels the file picker, stop cleanly without error
+          if (pickerErr instanceof DOMException && pickerErr.name === 'AbortError') {
+            setProcessing(false);
+            return;
+          }
+          // Otherwise, fall back to in-memory BufferTarget
+          fileStream = undefined;
+          streamedDirectly = false;
+        }
+      }
+
+      // Close modal and show progress overlay
       onClose();
       onBurnStart();
 
-      if (exportType === 'lossless') {
-        const srtContent = toSRT(segments);
-        const blob = await embedSubtitlesMP4(videoFile, srtContent);
-        downloadBlob(blob, `${baseName}_subtitled.mp4`);
-        onBurnDone();
-      } else if (exportType === 'hardsub') {
-        const srtContent = toSRT(segments);
-        let blob: Blob;
-        try {
-          // Fast path: WebCodecs, frame by frame, same engine as the preview, audio carried over
-          blob = await exportCaptionedVideo(
-            videoFile,
-            segments,
-            style,
-            { quality, maxShortSide: resolution === '1080' ? 1080 : 0 },
-            ({ pct, etaSec }) => {
-              onBurnProgress(pct);
-              const eta = etaSec === undefined ? '' : ` · about ${etaSec < 90 ? `${Math.max(1, Math.round(etaSec))} s` : `${Math.round(etaSec / 60)} min`} left`;
-              onBurnStatus?.(`Exporting your captioned video… ${Math.round(pct)}%${eta}`);
-            },
-          );
-        } catch (fastErr) {
-          console.warn('Fast export unavailable, using real-time export:', fastErr);
-          onBurnStatus?.('Fast export is not available in this browser. Exporting in real time…');
-          try {
-            blob = await burnCaptionsCanvas(videoFile, segments, style, (pct) => {
-              onBurnProgress(pct);
-            });
-          } catch (canvasErr) {
-            console.warn('Animated burn-in failed, falling back to static hard-subs via FFmpeg:', canvasErr);
-            blob = await burnCaptions(videoFile, srtContent, toBasicStyle(style), (pct) => {
-              onBurnProgress(pct);
-            });
-          }
+      let blob: Blob | null = null;
+      try {
+        // Tier 1: Hardware-accelerated WebCodecs frame-by-frame export
+        blob = await exportCaptionedVideo(
+          videoFile,
+          segments,
+          style,
+          {
+            quality,
+            maxShortSide: resolution === '1080' ? 1080 : 0,
+            fileStream,
+          },
+          ({ pct, etaSec }) => {
+            onBurnProgress(pct);
+            const eta =
+              etaSec === undefined
+                ? ''
+                : ` · about ${
+                    etaSec < 90
+                      ? `${Math.max(1, Math.round(etaSec))} s`
+                      : `${Math.round(etaSec / 60)} min`
+                  } left`;
+            onBurnStatus?.(`Exporting your captioned video… ${Math.round(pct)}%${eta}`);
+          },
+          signal,
+        );
+      } catch (fastErr: unknown) {
+        if (signal?.aborted || (fastErr instanceof DOMException && fastErr.name === 'AbortError')) {
+          throw fastErr;
         }
+        console.warn('Fast WebCodecs export unavailable, using real-time canvas export:', fastErr);
+        onBurnStatus?.('Fast hardware encoder unavailable in this browser. Exporting in real time…');
+
+        // Tier 2: Real-time Canvas + Web Audio MediaRecorder fallback
+        blob = await burnCaptionsCanvas(
+          videoFile,
+          segments,
+          style,
+          (pct) => {
+            onBurnProgress(pct);
+          },
+          signal,
+        );
+      }
+
+      if (!streamedDirectly && blob) {
         const ext = blob.type.includes('webm') ? 'webm' : 'mp4';
         downloadBlob(blob, `${baseName}_captioned.${ext}`);
-        onBurnDone();
       }
-    } catch (err) {
+
+      onBurnDone();
+    } catch (err: unknown) {
+      if (signal?.aborted || (err instanceof DOMException && err.name === 'AbortError')) {
+        onBurnStatus?.('Export cancelled.');
+        return;
+      }
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
       onBurnError(msg);
@@ -129,14 +217,14 @@ export default function ExportModal({
       >
         <div className="flex items-center justify-between pb-4 border-b border-white/10">
           <div>
-            <h2 className="text-lg font-bold text-bone">Export Video & Captions</h2>
-            <p className="text-xs text-smoke mt-0.5">Choose your delivery format for clients or social channels</p>
+            <h2 className="text-lg font-bold text-bone">Export Captioned Video</h2>
+            <p className="text-xs text-smoke mt-0.5">Hardware-accelerated rendering with full animation fidelity</p>
           </div>
           <button
             onClick={onClose}
             aria-label="Close export dialog"
             title="Close dialog"
-            className="text-smoke hover:text-bone text-base p-1"
+            className="text-smoke hover:text-bone text-base p-1 cursor-pointer"
           >
             ✕
           </button>
@@ -148,37 +236,22 @@ export default function ExportModal({
           </div>
         )}
 
-        {/* Export Formats Selection */}
-        <div className="space-y-3 mt-5">
-          {/* 1. Lossless Softsub MP4 */}
-          <label
-            className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
-              exportType === 'lossless'
-                ? 'bg-[#252420] border-amber-400/80 shadow-sm'
-                : 'bg-[#1c1c1a] border-white/10 hover:border-white/20'
-            }`}
-          >
-            <input
-              type="radio"
-              name="exportType"
-              checked={exportType === 'lossless'}
-              onChange={() => setExportType('lossless')}
-              className="mt-1 accent-amber-400"
-            />
+        {/* Pre-flight Memory Warning */}
+        {memoryEstimate?.isHighMemory && (
+          <div className="mt-4 p-3 rounded-xl bg-amber-500/15 border border-amber-500/40 text-xs text-amber-200 flex items-start gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-bone">Lossless MP4 + subtitle track</span>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
-                  NO RE-ENCODE
-                </span>
-              </div>
-              <p className="text-[11px] text-smoke mt-1 leading-relaxed">
-                Stream-copied MP4 with embedded forced subtitle track. 100% original video resolution & 60fps quality with zero re-encoding loss.
+              <div className="font-semibold text-amber-300">High memory footprint detected (~{(memoryEstimate.estimatedBytes / 1024 / 1024 / 1024).toFixed(1)} GB)</div>
+              <p className="text-[11px] text-amber-200/80 mt-0.5">
+                To prevent browser memory limits on long videos, we recommend selecting <strong>Up to 1080p</strong> and <strong>Standard</strong> quality.
               </p>
             </div>
-          </label>
+          </div>
+        )}
 
-          {/* 2. Animated Burn-in */}
+        {/* Export Formats Selection */}
+        <div className="space-y-3 mt-5">
+          {/* Animated Burn-in */}
           <label
             className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
               exportType === 'hardsub'
@@ -195,13 +268,13 @@ export default function ExportModal({
             />
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-bone">Animated Burn-in</span>
+                <span className="text-xs font-bold text-bone">Animated Burn-in MP4</span>
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300">
-                  RECOMMENDED · REELS / TIKTOK
+                  RECOMMENDED · REELS / TIKTOK / SHORTS
                 </span>
               </div>
               <p className="text-[11px] text-smoke mt-1 leading-relaxed">
-                Burns your styled, animated captions into the video exactly as shown in the preview. Permanent on Reels, TikTok, YouTube Shorts and WhatsApp. Processed frame by frame, usually much faster than real time, keeping your original frame rate and sound.
+                Burns your styled, animated captions into the video exactly as shown in the preview. Frame-by-frame hardware acceleration carries original sound and frame rate.
               </p>
             </div>
           </label>
@@ -210,7 +283,7 @@ export default function ExportModal({
             <div className="grid grid-cols-2 gap-3 rounded-xl border border-white/10 bg-[#1c1c1a] p-3">
               {([
                 ['Quality', quality, [['standard', 'Standard'], ['high', 'High'], ['max', 'Maximum']], (v: string) => setQuality(v as ExportQuality)],
-                ['Size', resolution, [['original', 'Original'], ['1080', 'Up to 1080p']], (v: string) => setResolution(v as 'original' | '1080')],
+                ['Resolution', resolution, [['original', 'Original'], ['1080', 'Up to 1080p']], (v: string) => setResolution(v as 'original' | '1080')],
               ] as const).map(([label, value, options, onPick]) => (
                 <div key={label}>
                   <div className="text-[10px] font-bold tracking-[0.12em] uppercase text-smoke mb-1.5">{label}</div>
@@ -221,7 +294,9 @@ export default function ExportModal({
                         type="button"
                         onClick={() => onPick(v)}
                         aria-pressed={value === v}
-                        className={`flex-1 px-1.5 py-1.5 text-[11px] font-medium transition-colors ${value === v ? 'bg-amber-400 text-black' : 'text-mist hover:text-bone hover:bg-white/5'}`}
+                        className={`flex-1 px-1.5 py-1.5 text-[11px] font-medium transition-colors cursor-pointer ${
+                          value === v ? 'bg-amber-400 text-black' : 'text-mist hover:text-bone hover:bg-white/5'
+                        }`}
                       >
                         {text}
                       </button>
@@ -232,24 +307,10 @@ export default function ExportModal({
             </div>
           )}
 
-          {/* 3. Subtitle / Transcript files */}
+          {/* Subtitle / Transcript files */}
           <div className="pt-2">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold text-bone">Subtitle & Transcript Files</span>
-              <button
-                type="button"
-                onClick={() => {
-                  downloadText(toSRT(segments), `${baseName}.srt`, 'text/plain');
-                  onClose();
-                }}
-                className="text-[11px] text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1 hover:underline cursor-pointer"
-                title="Directly download .SRT without exporting video"
-              >
-                <span>Download .SRT</span>
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-              </button>
             </div>
 
             <div className="grid grid-cols-3 gap-2">
@@ -284,7 +345,7 @@ export default function ExportModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-medium text-smoke hover:text-bone transition-colors"
+            className="px-4 py-2 text-xs font-medium text-smoke hover:text-bone transition-colors cursor-pointer"
           >
             Cancel
           </button>

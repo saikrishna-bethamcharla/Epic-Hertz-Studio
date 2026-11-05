@@ -5,7 +5,7 @@
 // source frame rate and lets us pick quality and resolution.
 //
 // If anything about the browser can't do this (no WebCodecs, no encodable codec, audio that
-// cannot be carried over) it throws, and the caller falls back to the slower real-time path.
+// cannot be carried over) it throws, and the caller falls back to the canvas path.
 // We never hand back a file that silently lost its sound.
 
 import type { Segment, CaptionStyle } from '../types';
@@ -18,6 +18,8 @@ export interface ExportOptions {
   quality: ExportQuality;
   /** Cap the SHORT side of the output (e.g. 1080). 0 / undefined keeps the source size. */
   maxShortSide?: number;
+  /** Optional file stream for direct-to-disk streaming in Chromium to eliminate RAM bloat. */
+  fileStream?: WritableStream;
 }
 
 export interface ExportProgress {
@@ -35,6 +37,39 @@ export function webCodecsSupported(): boolean {
   return typeof VideoEncoder !== 'undefined' && typeof VideoDecoder !== 'undefined';
 }
 
+/**
+ * Pre-flight memory estimator based on video duration, dimensions, and target quality.
+ * Flags scenarios above ~950MB that risk crashing browser tabs on mobile or low-RAM environments.
+ */
+export function estimateExportMemory(
+  durationSec: number,
+  srcWidth: number,
+  srcHeight: number,
+  quality: ExportQuality,
+  maxShortSide?: number,
+): { estimatedBytes: number; isHighMemory: boolean } {
+  const cap = maxShortSide ?? 0;
+  const scale = cap > 0 ? Math.min(1, cap / Math.min(srcWidth, srcHeight)) : 1;
+  const outW = srcWidth * scale;
+  const outH = srcHeight * scale;
+  const pixels = outW * outH;
+
+  // Empirical target bitrates for H.264
+  const pixelFactor = pixels / (1920 * 1080);
+  const baseBitrate = quality === 'max' ? 16_000_000 : quality === 'standard' ? 3_500_000 : 8_000_000;
+  const bitrate = baseBitrate * Math.max(0.2, pixelFactor);
+
+  const estimatedBytes = Math.round((bitrate * durationSec) / 8);
+  const isHighMemory = estimatedBytes > 950_000_000 || (pixels > 1920 * 1080 && durationSec > 180);
+
+  return { estimatedBytes, isHighMemory };
+}
+
+/**
+ * Hardware-accelerated frame-by-frame export via WebCodecs and mediabunny.
+ * When `options.fileStream` is provided (e.g. from File System Access API), streams directly to disk.
+ * Otherwise returns a standalone video Blob.
+ */
 export async function exportCaptionedVideo(
   file: File,
   segments: Segment[],
@@ -42,7 +77,8 @@ export async function exportCaptionedVideo(
   options: ExportOptions,
   onProgress?: (p: ExportProgress) => void,
   signal?: AbortSignal,
-): Promise<Blob> {
+): Promise<Blob | null> {
+  if (signal?.aborted) throw new DOMException('Export cancelled', 'AbortError');
   if (!webCodecsSupported()) throw new ExportUnsupportedError('WebCodecs is not available in this browser.');
 
   await ensureFonts(style, segments.map((s) => s.text).join(' '));
@@ -68,15 +104,27 @@ export async function exportCaptionedVideo(
     if (!useAvc && !canVp9) throw new ExportUnsupportedError('No video encoder available.');
 
     // AAC is the safest audio codec inside an MP4. Use it when the browser can encode it; sources
-    // that are already AAC are copied across untouched. (Otherwise keep the source codec.)
+    // that are already AAC are copied across untouched.
     const aacOk = useAvc && (await mb.canEncodeAudio('aac'));
 
+    const isStreaming = Boolean(options.fileStream);
+    const target = isStreaming
+      ? new mb.StreamTarget(options.fileStream!)
+      : new mb.BufferTarget();
+
     const output = new mb.Output({
-      format: useAvc ? new mb.Mp4OutputFormat({ fastStart: 'in-memory' }) : new mb.WebMOutputFormat(),
-      target: new mb.BufferTarget(),
+      format: useAvc
+        ? new mb.Mp4OutputFormat({ fastStart: isStreaming ? false : 'in-memory' })
+        : new mb.WebMOutputFormat(),
+      target,
     });
 
-    const quality = options.quality === 'max' ? mb.QUALITY_VERY_HIGH : options.quality === 'standard' ? mb.QUALITY_MEDIUM : mb.QUALITY_HIGH;
+    const quality =
+      options.quality === 'max'
+        ? mb.QUALITY_VERY_HIGH
+        : options.quality === 'standard'
+        ? mb.QUALITY_MEDIUM
+        : mb.QUALITY_HIGH;
 
     // One reusable canvas: source frame first, captions on top
     const canvas = document.createElement('canvas');
@@ -114,7 +162,9 @@ export async function exportCaptionedVideo(
 
     // The library drops tracks it cannot encode without failing. Losing the sound is not acceptable.
     const audioTracks = await input.getAudioTracks();
-    const droppedAudio = conversion.discardedTracks.some((d) => d.track.isAudioTrack() && d.reason !== 'discarded_by_user');
+    const droppedAudio = conversion.discardedTracks.some(
+      (d) => d.track.isAudioTrack() && d.reason !== 'discarded_by_user',
+    );
     if (audioTracks.length > 0 && droppedAudio) {
       throw new ExportUnsupportedError('The audio could not be carried over in this browser.');
     }
@@ -125,12 +175,46 @@ export async function exportCaptionedVideo(
       const etaSec = p > 0.04 ? Math.max(0, elapsed / p - elapsed) : undefined;
       onProgress?.({ pct: Math.min(99, p * 100), etaSec });
     };
+
     if (signal) {
       if (signal.aborted) throw new DOMException('Export cancelled', 'AbortError');
-      signal.addEventListener('abort', () => void conversion.cancel(), { once: true });
+      signal.addEventListener(
+        'abort',
+        () => {
+          void conversion.cancel();
+          if (isStreaming && options.fileStream) {
+            options.fileStream.abort().catch(() => {});
+          }
+        },
+        { once: true },
+      );
     }
 
-    await conversion.execute();
+    try {
+      await conversion.execute();
+    } catch (execErr: unknown) {
+      if (signal?.aborted || (execErr instanceof DOMException && execErr.name === 'AbortError')) {
+        throw new DOMException('Export cancelled', 'AbortError');
+      }
+      const msg = execErr instanceof Error ? execErr.message : String(execErr);
+      if (/quota|memory|allocation|out of memory|ArrayBuffer/i.test(msg)) {
+        throw new Error(
+          'Out of memory during video encoding. Try selecting 1080p resolution or Standard quality.',
+        );
+      }
+      if (/encode|encoder|codec/i.test(msg)) {
+        throw new Error(
+          `Video hardware encoding error: ${msg}. Try exporting with Standard quality or 1080p.`,
+        );
+      }
+      throw execErr;
+    }
+
+    if (isStreaming && options.fileStream) {
+      await options.fileStream.close().catch(() => {});
+      onProgress?.({ pct: 100 });
+      return null;
+    }
 
     const buffer = (output.target as InstanceType<typeof mb.BufferTarget>).buffer;
     if (!buffer) throw new Error('The encoder produced no data.');
