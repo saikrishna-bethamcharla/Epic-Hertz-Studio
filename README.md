@@ -46,7 +46,7 @@ One Canvas 2D engine (`src/subtitle-tool/engine/`) renders the live preview, the
 
 ### 🎬 Pro 3-Column Studio Editor
 - **Caption Editor:** Word-level timestamp precision, split/merge segments, inline search, and hotkeys.
-- **Center Reel Player:** 60fps `requestAnimationFrame` sync loop, `-0.35s` timing lead offset to eliminate vocal lag, and safe-zone overlays for Instagram Reels, TikTok, and YouTube Shorts.
+- **Center Reel Player:** 60fps `requestAnimationFrame` sync loop, per-video acoustic onset calibrated timing lead (with presets and manual override slider) to eliminate vocal lag, and safe-zone overlays for Instagram Reels, TikTok, and YouTube Shorts.
 - **Multi-Track Timeline:** Waveform visualizer, zoom, split, trim, and scrub playhead.
 - **Style panel:** a live preset gallery plus a Customize tab (text, colour, highlight, effects, motion, position & timing).
 - **Responsive:** on phones the editor switches to a preview-on-top layout with Captions / Styles / Timeline tabs.

@@ -36,7 +36,7 @@ import {
 import { createDemoVideo } from './utils/createDemoVideo';
 import { saveMediaAsset, formatRelativeTime, listCustomFonts } from './utils/projectStorage';
 import { extractAudio } from './utils/extractAudio';
-import { refineSegmentsFromAudio } from './utils/alignWords';
+import { refineSegmentsFromAudioWithMetrics } from './utils/alignWords';
 import { usePlayback } from './hooks/usePlayback';
 import { useTranscription } from './hooks/useTranscription';
 import { useProjectAutosave } from './hooks/useProjectAutosave';
@@ -98,6 +98,7 @@ export default function SubtitleTool() {
     setSegments,
     setHistory,
     setRedoStack,
+    onMeasuredSyncOffset: (offset) => setStyle((s) => ({ ...s, syncOffset: offset })),
   });
 
   const {
@@ -269,9 +270,16 @@ export default function SubtitleTool() {
     try {
       showToast('Extracting audio to align word timings…');
       const audioBlob = await extractAudio(videoFile);
-      const refined = await refineSegmentsFromAudio(audioBlob, segments);
-      updateSegments(refined);
-      showToast('Word timings aligned with audio onsets!');
+      const res = await refineSegmentsFromAudioWithMetrics(audioBlob, segments);
+      updateSegments(res.segments);
+      if (res.metrics.sampleCount > 0) {
+        setStyle((s) => ({ ...s, syncOffset: res.metrics.measuredSyncOffset }));
+        showToast(
+          `Aligned! Measured lag: ${(res.metrics.medianLagSec * 1000).toFixed(0)}ms (syncOffset: ${res.metrics.measuredSyncOffset}s)`,
+        );
+      } else {
+        showToast('Word timings aligned with audio onsets!');
+      }
     } catch (err) {
       console.warn('Auto align failed:', err);
       showToast('Could not align timings: ' + (err instanceof Error ? err.message : String(err)));

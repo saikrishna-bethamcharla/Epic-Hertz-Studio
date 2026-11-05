@@ -88,18 +88,49 @@ export function fixTimings(segment: Segment): Segment {
   };
 }
 
+export interface WordLagDetail {
+  word: string;
+  rawStart: number;
+  onsetStart: number;
+  lagSec: number;
+}
+
+export interface AlignmentMetrics {
+  medianLagSec: number;
+  meanLagSec: number;
+  measuredSyncOffset: number;
+  sampleCount: number;
+  details: WordLagDetail[];
+}
+
+export interface RefineTimingsResult {
+  segments: Segment[];
+  metrics: AlignmentMetrics;
+}
+
 /**
- * Snaps word onsets to audio energy peaks (10 ms hop envelope) within searchWindowSec.
+ * Snaps word onsets to audio energy peaks (10 ms hop envelope) within searchWindowSec,
+ * while measuring empirical lag between model timestamps and physical acoustic onsets.
  */
-export function refineTimings(
+export function refineTimingsWithMetrics(
   samples: Float32Array | Int16Array,
   sampleRate: number,
   segments: Segment[],
   options: AlignmentOptions = {},
-): Segment[] {
-  if (!samples || samples.length === 0 || sampleRate <= 0) return segments;
+): RefineTimingsResult {
+  const emptyMetrics: AlignmentMetrics = {
+    medianLagSec: 0,
+    meanLagSec: 0,
+    measuredSyncOffset: -0.1,
+    sampleCount: 0,
+    details: [],
+  };
 
-  const searchWindowSec = options.searchWindowSec ?? 0.18;
+  if (!samples || samples.length === 0 || sampleRate <= 0) {
+    return { segments, metrics: emptyMetrics };
+  }
+
+  const searchWindowSec = options.searchWindowSec ?? 0.2;
   const minWordDuration = options.minWordDurationSec ?? 0.06;
   const minSegDuration = options.minSegmentDurationSec ?? 0.35;
 
@@ -107,7 +138,7 @@ export function refineTimings(
   const winSize = hopSize * 2; // 20 ms window
   const numHops = Math.floor((samples.length - winSize) / hopSize);
 
-  if (numHops <= 0) return segments;
+  if (numHops <= 0) return { segments, metrics: emptyMetrics };
 
   // 1. Calculate RMS energy envelope
   const isInt16 = samples instanceof Int16Array;
@@ -136,9 +167,10 @@ export function refineTimings(
   const onsetThreshold = avgFlux * 0.4;
 
   const searchHops = Math.round((searchWindowSec * sampleRate) / hopSize);
+  const details: WordLagDetail[] = [];
 
   // 3. Refine word timestamps
-  return segments.map((seg) => {
+  const refinedSegments = segments.map((seg) => {
     if (!seg.words || seg.words.length === 0) return seg;
 
     let prevEnd = seg.start;
@@ -151,12 +183,17 @@ export function refineTimings(
       const endHop = Math.min(numHops - 1, targetHop + searchHops);
 
       let bestHop = targetHop;
-      let maxStrength = -1;
+      let bestScore = -1;
 
       for (let h = startHop; h <= endHop; h++) {
-        if (onsetFlux[h] > maxStrength && onsetFlux[h] >= onsetThreshold) {
-          maxStrength = onsetFlux[h];
-          bestHop = h;
+        if (onsetFlux[h] >= onsetThreshold) {
+          // Weight onset flux by proximity to target timestamp so adjacent word onsets aren't favored
+          const proximity = 1.0 - (0.5 * Math.abs(h - targetHop)) / searchHops;
+          const score = onsetFlux[h] * proximity;
+          if (score > bestScore) {
+            bestScore = score;
+            bestHop = h;
+          }
         }
       }
 
@@ -176,10 +213,21 @@ export function refineTimings(
 
       prevEnd = refinedEnd;
 
+      const roundedStart = +refinedStart.toFixed(2);
+      const roundedEnd = +refinedEnd.toFixed(2);
+      const lagSec = +(w.start - roundedStart).toFixed(3);
+
+      details.push({
+        word: w.word,
+        rawStart: w.start,
+        onsetStart: roundedStart,
+        lagSec,
+      });
+
       refinedWords.push({
         word: w.word,
-        start: +refinedStart.toFixed(2),
-        end: +refinedEnd.toFixed(2),
+        start: roundedStart,
+        end: roundedEnd,
       });
     }
 
@@ -193,6 +241,68 @@ export function refineTimings(
       words: refinedWords,
     };
   });
+
+  const lags = details.map((d) => d.lagSec).sort((a, b) => a - b);
+  const sampleCount = lags.length;
+  const medianLagSec = sampleCount > 0 ? lags[Math.floor(sampleCount / 2)] : 0;
+  const meanLagSec =
+    sampleCount > 0 ? +(lags.reduce((a, b) => a + b, 0) / sampleCount).toFixed(3) : 0;
+
+  // Measure per-video sync offset based on real median lag.
+  // If median lag is positive (model timestamps lagged voice), apply a lead offset matching the lag.
+  const measuredSyncOffset =
+    sampleCount > 0 ? -+Math.max(0.0, Math.min(0.35, medianLagSec)).toFixed(2) : -0.1;
+
+  const metrics: AlignmentMetrics = {
+    medianLagSec,
+    meanLagSec,
+    measuredSyncOffset,
+    sampleCount,
+    details,
+  };
+
+  return { segments: refinedSegments, metrics };
+}
+
+/**
+ * Snaps word onsets to audio energy peaks (10 ms hop envelope) within searchWindowSec.
+ */
+export function refineTimings(
+  samples: Float32Array | Int16Array,
+  sampleRate: number,
+  segments: Segment[],
+  options: AlignmentOptions = {},
+): Segment[] {
+  return refineTimingsWithMetrics(samples, sampleRate, segments, options).segments;
+}
+
+/**
+ * Helper to refine segments directly from a 16kHz mono WAV Blob or ArrayBuffer and calculate lag metrics.
+ */
+export async function refineSegmentsFromAudioWithMetrics(
+  audio: Blob | ArrayBuffer,
+  segments: Segment[],
+  options: AlignmentOptions = {},
+): Promise<RefineTimingsResult> {
+  const emptyMetrics: AlignmentMetrics = {
+    medianLagSec: 0,
+    meanLagSec: 0,
+    measuredSyncOffset: -0.1,
+    sampleCount: 0,
+    details: [],
+  };
+
+  try {
+    const buf = audio instanceof Blob ? await audio.arrayBuffer() : audio;
+    const info = parseWav(buf);
+    if (!info) return { segments, metrics: emptyMetrics };
+
+    const samples = new Int16Array(buf, info.dataOffset, Math.floor(info.dataSize / 2));
+    return refineTimingsWithMetrics(samples, info.sampleRate, segments, options);
+  } catch (err) {
+    console.warn('Audio timing alignment skipped:', err);
+    return { segments, metrics: emptyMetrics };
+  }
 }
 
 /**
@@ -201,16 +311,8 @@ export function refineTimings(
 export async function refineSegmentsFromAudio(
   audio: Blob | ArrayBuffer,
   segments: Segment[],
+  options: AlignmentOptions = {},
 ): Promise<Segment[]> {
-  try {
-    const buf = audio instanceof Blob ? await audio.arrayBuffer() : audio;
-    const info = parseWav(buf);
-    if (!info) return segments;
-
-    const samples = new Int16Array(buf, info.dataOffset, Math.floor(info.dataSize / 2));
-    return refineTimings(samples, info.sampleRate, segments);
-  } catch (err) {
-    console.warn('Audio timing alignment skipped:', err);
-    return segments;
-  }
+  const res = await refineSegmentsFromAudioWithMetrics(audio, segments, options);
+  return res.segments;
 }

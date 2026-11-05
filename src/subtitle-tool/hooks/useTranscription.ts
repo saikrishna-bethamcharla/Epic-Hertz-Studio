@@ -5,7 +5,7 @@ import { useState, useCallback } from 'react';
 import type { AppStage, Segment, SpokenLanguage, ScriptOutput } from '../types';
 import { extractAudio } from '../utils/extractAudio';
 import { transcribeAudio } from '../api/transcribe';
-import { refineSegmentsFromAudio } from '../utils/alignWords';
+import { refineSegmentsFromAudioWithMetrics } from '../utils/alignWords';
 
 export interface TranscriptionConfig {
   spokenLanguage: SpokenLanguage;
@@ -19,6 +19,7 @@ export interface UseTranscriptionOptions {
   setSegments: (segments: Segment[]) => void;
   setHistory: (history: Segment[][]) => void;
   setRedoStack: (redo: Segment[][]) => void;
+  onMeasuredSyncOffset?: (offset: number) => void;
 }
 
 export function useTranscription({
@@ -28,6 +29,7 @@ export function useTranscription({
   setSegments,
   setHistory,
   setRedoStack,
+  onMeasuredSyncOffset,
 }: UseTranscriptionOptions) {
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -58,11 +60,21 @@ export function useTranscription({
         });
 
         // Step C: Acoustic Onset Alignment
-        // Snaps word boundaries to exact voice energy attacks in the 16kHz audio
+        // Snaps word boundaries to exact voice energy attacks in the 16kHz audio,
+        // and measures per-video empirical lag to calibrate default sync offset.
         let finalSegs = segs;
         try {
           setStatusText('Aligning word timings with speech onsets…');
-          finalSegs = await refineSegmentsFromAudio(audioBlob, segs);
+          const res = await refineSegmentsFromAudioWithMetrics(audioBlob, segs);
+          finalSegs = res.segments;
+          if (res.metrics.sampleCount > 0) {
+            console.info(
+              `[useTranscription] Acoustic analysis: measured median lag = ${res.metrics.medianLagSec}s, applying per-video syncOffset = ${res.metrics.measuredSyncOffset}s`,
+            );
+            if (onMeasuredSyncOffset) {
+              onMeasuredSyncOffset(res.metrics.measuredSyncOffset);
+            }
+          }
         } catch (alignErr) {
           console.warn('[useTranscription] Acoustic alignment fallback:', alignErr);
         }
@@ -79,7 +91,15 @@ export function useTranscription({
         setIsProcessing(false);
       }
     },
-    [setStage, setStatusText, setError, setSegments, setHistory, setRedoStack],
+    [
+      setStage,
+      setStatusText,
+      setError,
+      setSegments,
+      setHistory,
+      setRedoStack,
+      onMeasuredSyncOffset,
+    ],
   );
 
   return {
