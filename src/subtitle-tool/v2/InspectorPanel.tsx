@@ -63,7 +63,9 @@ export default function InspectorPanel({
   const [tab, setTab] = useState<InspectorTab>('text');
   const [textSubTab, setTextSubTab] = useState<TextSubTab>('basic');
   const [isFontPopoverOpen, setIsFontPopoverOpen] = useState(false);
-  const [activeColorTarget, setActiveColorTarget] = useState<'fill' | 'stroke' | 'glow' | 'shadow' | 'plate' | 'highlight' | 'highlightText' | null>(null);
+  const [activeColorTarget, setActiveColorTarget] = useState<
+    'fill' | 'stroke' | 'glow' | 'shadow' | 'plate' | 'highlight' | 'highlightText' | null
+  >(null);
   const [isSavePresetOpen, setIsSavePresetOpen] = useState(false);
   const [isResetMenuOpen, setIsResetMenuOpen] = useState(false);
 
@@ -79,9 +81,9 @@ export default function InspectorPanel({
   const effectiveSize =
     activeSegment?.styleOverride?.fontSize !== undefined
       ? activeSegment.styleOverride.fontSize * 100
-      : (activeSegment?.styleOverride?.scale !== undefined
-          ? style.font.size * activeSegment.styleOverride.scale * 100
-          : style.font.size * 100);
+      : activeSegment?.styleOverride?.scale !== undefined
+        ? style.font.size * activeSegment.styleOverride.scale * 100
+        : style.font.size * 100;
 
   const effectiveFill = activeSegment?.styleOverride?.fillColor || style.fill;
   const effectiveStrokeColor = activeSegment?.styleOverride?.strokeColor || style.stroke.color;
@@ -118,9 +120,7 @@ export default function InspectorPanel({
                 type="button"
                 onClick={() => onScopeChange(sc)}
                 className={`px-2 py-0.5 rounded text-[10px] font-bold capitalize transition-colors ${
-                  scope === sc
-                    ? 'bg-amber-400 text-black shadow-xs'
-                    : 'text-smoke hover:text-bone'
+                  scope === sc ? 'bg-amber-400 text-black shadow-xs' : 'text-smoke hover:text-bone'
                 }`}
               >
                 {sc === 'all' ? 'All' : sc === 'caption' ? 'Caption' : 'Words'}
@@ -135,12 +135,12 @@ export default function InspectorPanel({
             {scope === 'all'
               ? `All ${totalSegmentsCount} captions`
               : scope === 'caption'
-              ? activeSegment
-                ? `Caption #${activeSegment.index} (${formatTimecode(activeSegment.start)})`
-                : 'Select a caption'
-              : activeWord
-              ? `Word: "${activeWord.word}"`
-              : 'Select a word chip'}
+                ? activeSegment
+                  ? `Caption #${activeSegment.index} (${formatTimecode(activeSegment.start)})`
+                  : 'Select a caption'
+                : activeWord
+                  ? `Word: "${activeWord.word}"`
+                  : 'Select a word chip'}
           </span>
           {scope === 'caption' && activeSegment?.styleOverride && (
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 font-mono">
@@ -193,10 +193,18 @@ export default function InspectorPanel({
                   type="button"
                   onClick={() => setTextSubTab(st)}
                   className={`flex-1 py-1 rounded capitalize font-medium transition-colors ${
-                    textSubTab === st ? 'bg-white/10 text-amber-300 font-bold' : 'text-smoke hover:text-bone'
+                    textSubTab === st
+                      ? 'bg-white/10 text-amber-300 font-bold'
+                      : 'text-smoke hover:text-bone'
                   }`}
                 >
-                  {st === 'basic' ? 'Basic' : st === 'fill' ? 'Fill' : st === 'effects' ? 'Effects' : 'BG'}
+                  {st === 'basic'
+                    ? 'Basic'
+                    : st === 'fill'
+                      ? 'Fill'
+                      : st === 'effects'
+                        ? 'Effects'
+                        : 'BG'}
                 </button>
               ))}
             </div>
@@ -236,7 +244,11 @@ export default function InspectorPanel({
                         onSelectFamily={(fId) => {
                           if (scope === 'all') {
                             onStyleChange({ ...style, font: { ...style.font, family: fId } });
-                          } else if (scope === 'caption' && activeSegment && onSegmentOverrideChange) {
+                          } else if (
+                            scope === 'caption' &&
+                            activeSegment &&
+                            onSegmentOverrideChange
+                          ) {
                             onSegmentOverrideChange(activeSegment.id, { fontFamily: fId });
                           }
                         }}
@@ -258,7 +270,11 @@ export default function InspectorPanel({
                         onClick={() => {
                           if (scope === 'all') {
                             onStyleChange({ ...style, font: { ...style.font, weight: w } });
-                          } else if (scope === 'caption' && activeSegment && onSegmentOverrideChange) {
+                          } else if (
+                            scope === 'caption' &&
+                            activeSegment &&
+                            onSegmentOverrideChange
+                          ) {
                             onSegmentOverrideChange(activeSegment.id, { fontWeight: w });
                           }
                         }}
@@ -282,7 +298,8 @@ export default function InspectorPanel({
                       type="button"
                       onClick={() => {
                         const newWeight = effectiveWeight >= 800 ? 600 : 900;
-                        if (scope === 'all') onStyleChange({ ...style, font: { ...style.font, weight: newWeight } });
+                        if (scope === 'all')
+                          onStyleChange({ ...style, font: { ...style.font, weight: newWeight } });
                       }}
                       className={`p-1.5 rounded ${effectiveWeight >= 800 ? 'bg-amber-400 text-black' : 'text-smoke hover:text-bone'}`}
                       title="Bold"
@@ -293,7 +310,11 @@ export default function InspectorPanel({
                       type="button"
                       onClick={() => {
                         const nextUnderline = !style.font.underline;
-                        if (scope === 'all') onStyleChange({ ...style, font: { ...style.font, underline: nextUnderline } });
+                        if (scope === 'all')
+                          onStyleChange({
+                            ...style,
+                            font: { ...style.font, underline: nextUnderline },
+                          });
                       }}
                       className={`p-1.5 rounded ${style.font.underline ? 'bg-amber-400 text-black' : 'text-smoke hover:text-bone'}`}
                       title="Underline"
@@ -304,7 +325,8 @@ export default function InspectorPanel({
                       type="button"
                       onClick={() => {
                         const nextItalic = !style.font.italic;
-                        if (scope === 'all') onStyleChange({ ...style, font: { ...style.font, italic: nextItalic } });
+                        if (scope === 'all')
+                          onStyleChange({ ...style, font: { ...style.font, italic: nextItalic } });
                       }}
                       className={`p-1.5 rounded ${style.font.italic ? 'bg-amber-400 text-black' : 'text-smoke hover:text-bone'}`}
                       title="Italic"
@@ -326,7 +348,8 @@ export default function InspectorPanel({
                       value={effectiveSize}
                       onChange={(e) => {
                         const val = parseFloat(e.target.value) / 100;
-                        if (scope === 'all') onStyleChange({ ...style, font: { ...style.font, size: val } });
+                        if (scope === 'all')
+                          onStyleChange({ ...style, font: { ...style.font, size: val } });
                       }}
                       className="flex-1 accent-amber-400 cursor-pointer"
                     />
@@ -345,13 +368,22 @@ export default function InspectorPanel({
                         key={cs}
                         type="button"
                         onClick={() => {
-                          if (scope === 'all') onStyleChange({ ...style, font: { ...style.font, textCase: cs } });
+                          if (scope === 'all')
+                            onStyleChange({ ...style, font: { ...style.font, textCase: cs } });
                         }}
                         className={`px-2 py-1 rounded text-[10px] font-bold ${
-                          style.font.textCase === cs ? 'bg-amber-400 text-black' : 'text-smoke hover:text-bone'
+                          style.font.textCase === cs
+                            ? 'bg-amber-400 text-black'
+                            : 'text-smoke hover:text-bone'
                         }`}
                       >
-                        {cs === 'none' ? 'Aa' : cs === 'upper' ? 'AA' : cs === 'lower' ? 'aa' : 'Tt'}
+                        {cs === 'none'
+                          ? 'Aa'
+                          : cs === 'upper'
+                            ? 'AA'
+                            : cs === 'lower'
+                              ? 'aa'
+                              : 'Tt'}
                       </button>
                     ))}
                   </div>
@@ -363,7 +395,9 @@ export default function InspectorPanel({
                   <div className="relative">
                     <button
                       type="button"
-                      onClick={() => setActiveColorTarget(activeColorTarget === 'fill' ? null : 'fill')}
+                      onClick={() =>
+                        setActiveColorTarget(activeColorTarget === 'fill' ? null : 'fill')
+                      }
                       className="flex items-center gap-2 px-2 py-1 rounded-lg bg-[#181817] border border-white/10 hover:border-amber-400 text-xs text-bone"
                     >
                       <div
@@ -384,7 +418,11 @@ export default function InspectorPanel({
                         value={effectiveFill}
                         onChange={(col) => {
                           if (scope === 'all') onStyleChange({ ...style, fill: col });
-                          else if (scope === 'caption' && activeSegment && onSegmentOverrideChange) {
+                          else if (
+                            scope === 'caption' &&
+                            activeSegment &&
+                            onSegmentOverrideChange
+                          ) {
                             onSegmentOverrideChange(activeSegment.id, {
                               fillColor: typeof col === 'string' ? col : col.stops[0][1],
                             });
@@ -430,10 +468,18 @@ export default function InspectorPanel({
                           onStyleChange({ ...style, layout: { ...style.layout, align: al } });
                         }}
                         className={`p-1.5 rounded ${
-                          style.layout.align === al ? 'bg-amber-400 text-black' : 'text-smoke hover:text-bone'
+                          style.layout.align === al
+                            ? 'bg-amber-400 text-black'
+                            : 'text-smoke hover:text-bone'
                         }`}
                       >
-                        {al === 'left' ? <AlignLeft className="w-3.5 h-3.5" /> : al === 'center' ? <AlignCenter className="w-3.5 h-3.5" /> : <AlignRight className="w-3.5 h-3.5" />}
+                        {al === 'left' ? (
+                          <AlignLeft className="w-3.5 h-3.5" />
+                        ) : al === 'center' ? (
+                          <AlignCenter className="w-3.5 h-3.5" />
+                        ) : (
+                          <AlignRight className="w-3.5 h-3.5" />
+                        )}
                       </button>
                     ))}
                   </div>
@@ -473,10 +519,15 @@ export default function InspectorPanel({
                   <div className="relative">
                     <button
                       type="button"
-                      onClick={() => setActiveColorTarget(activeColorTarget === 'stroke' ? null : 'stroke')}
+                      onClick={() =>
+                        setActiveColorTarget(activeColorTarget === 'stroke' ? null : 'stroke')
+                      }
                       className="flex items-center gap-2 px-2 py-1 rounded-lg bg-[#181817] border border-white/10 hover:border-amber-400 text-xs text-bone"
                     >
-                      <div style={{ backgroundColor: effectiveStrokeColor }} className="w-4 h-4 rounded-md border border-white/20" />
+                      <div
+                        style={{ backgroundColor: effectiveStrokeColor }}
+                        className="w-4 h-4 rounded-md border border-white/20"
+                      />
                       <span className="font-mono text-[11px]">{effectiveStrokeColor}</span>
                     </button>
                     {activeColorTarget === 'stroke' && (
@@ -560,7 +611,9 @@ export default function InspectorPanel({
                           onStyleChange({ ...style, plate: { ...style.plate, mode: m } });
                         }}
                         className={`flex-1 py-1 rounded capitalize text-[10px] font-bold ${
-                          style.plate.mode === m ? 'bg-amber-400 text-black' : 'text-smoke hover:text-bone'
+                          style.plate.mode === m
+                            ? 'bg-amber-400 text-black'
+                            : 'text-smoke hover:text-bone'
                         }`}
                       >
                         {m}
@@ -584,7 +637,19 @@ export default function InspectorPanel({
                 Entrance Animation
               </span>
               <div className="grid grid-cols-3 gap-1">
-                {(['pop', 'slide-up', 'slide-down', 'zoom', 'blur', 'typewriter', 'glitch', 'fade', 'none'] as const).map((ea) => (
+                {(
+                  [
+                    'pop',
+                    'slide-up',
+                    'slide-down',
+                    'zoom',
+                    'blur',
+                    'typewriter',
+                    'glitch',
+                    'fade',
+                    'none',
+                  ] as const
+                ).map((ea) => (
                   <button
                     key={ea}
                     type="button"
@@ -592,7 +657,9 @@ export default function InspectorPanel({
                       onStyleChange({ ...style, motion: { ...style.motion, in: ea } });
                     }}
                     className={`py-1.5 px-2 rounded-lg text-[10px] font-semibold capitalize transition-colors ${
-                      style.motion.in === ea ? 'bg-amber-400 text-black font-bold' : 'bg-[#181817] text-smoke hover:text-bone border border-white/5'
+                      style.motion.in === ea
+                        ? 'bg-amber-400 text-black font-bold'
+                        : 'bg-[#181817] text-smoke hover:text-bone border border-white/5'
                     }`}
                   >
                     {ea}
@@ -615,7 +682,9 @@ export default function InspectorPanel({
                       onStyleChange({ ...style, highlight: { ...style.highlight, mode: hl } });
                     }}
                     className={`py-1.5 px-2 rounded-lg text-[10px] font-semibold capitalize transition-colors ${
-                      style.highlight.mode === hl ? 'bg-amber-400 text-black font-bold' : 'bg-[#181817] text-smoke hover:text-bone border border-white/5'
+                      style.highlight.mode === hl
+                        ? 'bg-amber-400 text-black font-bold'
+                        : 'bg-[#181817] text-smoke hover:text-bone border border-white/5'
                     }`}
                   >
                     {hl}
@@ -630,7 +699,10 @@ export default function InspectorPanel({
                 type="checkbox"
                 checked={style.highlight.keep}
                 onChange={(e) => {
-                  onStyleChange({ ...style, highlight: { ...style.highlight, keep: e.target.checked } });
+                  onStyleChange({
+                    ...style,
+                    highlight: { ...style.highlight, keep: e.target.checked },
+                  });
                 }}
                 className="rounded border-white/20 text-amber-400 focus:ring-0 bg-transparent cursor-pointer"
               />
@@ -676,7 +748,9 @@ export default function InspectorPanel({
                 max="0.5"
                 step="0.01"
                 value={style.syncOffset ?? -0.35}
-                onChange={(e) => onStyleChange({ ...style, syncOffset: parseFloat(e.target.value) })}
+                onChange={(e) =>
+                  onStyleChange({ ...style, syncOffset: parseFloat(e.target.value) })
+                }
                 className="w-full accent-amber-400 cursor-pointer"
               />
               <div className="flex items-center justify-between text-[10px] text-smoke font-mono">
@@ -695,11 +769,15 @@ export default function InspectorPanel({
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="p-2 bg-[#181817] rounded-lg border border-white/5 space-y-1">
                     <span className="text-smoke text-[10px]">Start Time</span>
-                    <span className="font-mono text-bone font-bold block">{formatTimecode(activeSegment.start)}</span>
+                    <span className="font-mono text-bone font-bold block">
+                      {formatTimecode(activeSegment.start)}
+                    </span>
                   </div>
                   <div className="p-2 bg-[#181817] rounded-lg border border-white/5 space-y-1">
                     <span className="text-smoke text-[10px]">End Time</span>
-                    <span className="font-mono text-bone font-bold block">{formatTimecode(activeSegment.end)}</span>
+                    <span className="font-mono text-bone font-bold block">
+                      {formatTimecode(activeSegment.end)}
+                    </span>
                   </div>
                 </div>
 
@@ -712,7 +790,11 @@ export default function InspectorPanel({
                         type="button"
                         onClick={() => {
                           const fixed = fixTimings(activeSegment);
-                          onUpdateActiveSegment({ words: fixed.words, start: fixed.start, end: fixed.end });
+                          onUpdateActiveSegment({
+                            words: fixed.words,
+                            start: fixed.start,
+                            end: fixed.end,
+                          });
                         }}
                         className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1 cursor-pointer"
                         title="Auto-align words proportionally by character length"
@@ -748,7 +830,9 @@ export default function InspectorPanel({
                   <div className="p-3 bg-[#181817] rounded-xl border border-white/5 space-y-1.5 text-xs">
                     <div className="flex items-center justify-between">
                       <span className="text-smoke">Reading Speed</span>
-                      <span className={`font-mono font-bold ${diag.cps > 20 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                      <span
+                        className={`font-mono font-bold ${diag.cps > 20 ? 'text-amber-400' : 'text-emerald-400'}`}
+                      >
                         {diag.cps.toFixed(1)} CPS · {diag.wpm.toFixed(0)} WPM
                       </span>
                     </div>
@@ -796,9 +880,15 @@ export default function InspectorPanel({
                     type="button"
                     onClick={() => {
                       if (scope === 'all') {
-                        onStyleChange({ ...style, layout: { ...style.layout, x: anchor.x, y: anchor.y } });
+                        onStyleChange({
+                          ...style,
+                          layout: { ...style.layout, x: anchor.x, y: anchor.y },
+                        });
                       } else if (scope === 'caption' && activeSegment && onSegmentOverrideChange) {
-                        onSegmentOverrideChange(activeSegment.id, { positionX: anchor.x, positionY: anchor.y });
+                        onSegmentOverrideChange(activeSegment.id, {
+                          positionX: anchor.x,
+                          positionY: anchor.y,
+                        });
                       }
                     }}
                     className="p-1.5 rounded-lg bg-[#181817] hover:bg-white/10 text-smoke hover:text-bone text-[10px] font-semibold border border-white/5"
@@ -857,7 +947,8 @@ export default function InspectorPanel({
               <button
                 type="button"
                 onClick={() => {
-                  if (activeSegment && onSegmentOverrideChange) onSegmentOverrideChange(activeSegment.id, null);
+                  if (activeSegment && onSegmentOverrideChange)
+                    onSegmentOverrideChange(activeSegment.id, null);
                   setIsResetMenuOpen(false);
                 }}
                 className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/10 text-[11px]"

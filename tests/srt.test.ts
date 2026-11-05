@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { toSRTTime, toVTTTime, parseTimestamp, toSRT, toVTT, toTXT, buildSegments } from '../src/subtitle-tool/utils/srt';
+import {
+  toSRTTime,
+  toVTTTime,
+  parseTimestamp,
+  toSRT,
+  toVTT,
+  toTXT,
+  buildSegments,
+} from '../src/subtitle-tool/utils/srt';
 import type { Segment, WordTimestamp } from '../src/subtitle-tool/types';
 
 describe('SRT & VTT Utilities', () => {
@@ -36,9 +44,7 @@ describe('SRT & VTT Utilities', () => {
   });
 
   it('serializes segments to VTT format with WEBVTT header', () => {
-    const segments: Segment[] = [
-      { id: '1', index: 1, start: 0, end: 1.5, text: 'Hello world' },
-    ];
+    const segments: Segment[] = [{ id: '1', index: 1, start: 0, end: 1.5, text: 'Hello world' }];
     const vtt = toVTT(segments);
     expect(vtt.startsWith('WEBVTT\n\n')).toBe(true);
     expect(vtt).toContain('00:00:00.000 --> 00:00:01.500\nHello world');

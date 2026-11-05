@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { parseWav, shiftSegments, mergeSegments, splitWavForUpload } from '../src/subtitle-tool/utils/splitAudio';
+import {
+  parseWav,
+  shiftSegments,
+  mergeSegments,
+  splitWavForUpload,
+} from '../src/subtitle-tool/utils/splitAudio';
 import type { Segment } from '../src/subtitle-tool/types';
 
 function createDummyWav(
@@ -8,7 +13,7 @@ function createDummyWav(
   bitsPerSample: number = 16,
   format: number = 1,
   dataSizeOverride?: number,
-  numFrames: number = 1000
+  numFrames: number = 1000,
 ): ArrayBuffer {
   const bytesPerFrame = channels * (bitsPerSample / 8);
   const pcmBytes = numFrames * bytesPerFrame;

@@ -30,12 +30,48 @@ function addRecentColor(hex: string) {
 }
 
 const PRESET_GRADIENTS: GradientPaint[] = [
-  { angle: 90, stops: [[0, '#FFE14D'], [1, '#FF7A00']] },
-  { angle: 90, stops: [[0, '#00F2FE'], [1, '#4FACFE']] },
-  { angle: 90, stops: [[0, '#FA709A'], [1, '#FEE140']] },
-  { angle: 90, stops: [[0, '#FF0844'], [1, '#FFB199']] },
-  { angle: 90, stops: [[0, '#F5576C'], [1, '#F093FB']] },
-  { angle: 90, stops: [[0, '#43E97B'], [1, '#38F9D7']] },
+  {
+    angle: 90,
+    stops: [
+      [0, '#FFE14D'],
+      [1, '#FF7A00'],
+    ],
+  },
+  {
+    angle: 90,
+    stops: [
+      [0, '#00F2FE'],
+      [1, '#4FACFE'],
+    ],
+  },
+  {
+    angle: 90,
+    stops: [
+      [0, '#FA709A'],
+      [1, '#FEE140'],
+    ],
+  },
+  {
+    angle: 90,
+    stops: [
+      [0, '#FF0844'],
+      [1, '#FFB199'],
+    ],
+  },
+  {
+    angle: 90,
+    stops: [
+      [0, '#F5576C'],
+      [1, '#F093FB'],
+    ],
+  },
+  {
+    angle: 90,
+    stops: [
+      [0, '#43E97B'],
+      [1, '#38F9D7'],
+    ],
+  },
 ];
 
 export default function ColorPopover({ value, onChange, onClose }: ColorPopoverProps) {
@@ -116,7 +152,13 @@ export default function ColorPopover({ value, onChange, onClose }: ColorPopoverP
             onClick={() => {
               setTab('gradient');
               if (!isGrad) {
-                onChange({ angle: 90, stops: [[0, solidHex], [1, '#FF7A00']] });
+                onChange({
+                  angle: 90,
+                  stops: [
+                    [0, solidHex],
+                    [1, '#FF7A00'],
+                  ],
+                });
               }
             }}
             className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
@@ -170,9 +212,18 @@ export default function ColorPopover({ value, onChange, onClose }: ColorPopoverP
           {/* Quick Palette Swatches */}
           <div className="grid grid-cols-8 gap-1 pt-1">
             {[
-              '#FFFFFF', '#FFE14D', '#FFB703', '#FB8500',
-              '#EF4444', '#EC4899', '#8B5CF6', '#3B82F6',
-              '#06B6D4', '#10B981', '#84CC16', '#000000',
+              '#FFFFFF',
+              '#FFE14D',
+              '#FFB703',
+              '#FB8500',
+              '#EF4444',
+              '#EC4899',
+              '#8B5CF6',
+              '#3B82F6',
+              '#06B6D4',
+              '#10B981',
+              '#84CC16',
+              '#000000',
             ].map((hex) => (
               <button
                 key={hex}
@@ -215,7 +266,9 @@ export default function ColorPopover({ value, onChange, onClose }: ColorPopoverP
 
           {/* Recent Colors Section */}
           <div className="pt-2 border-t border-white/10">
-            <div className="text-[10px] text-smoke uppercase font-semibold mb-1.5">Recently Used</div>
+            <div className="text-[10px] text-smoke uppercase font-semibold mb-1.5">
+              Recently Used
+            </div>
             <div className="flex items-center gap-1.5 flex-wrap">
               {recentColors.map((hex, idx) => (
                 <button

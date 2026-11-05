@@ -48,7 +48,11 @@ export default function ExportModal({
   const [error, setError] = useState<string | null>(null);
 
   // Video metadata for memory preflight
-  const [videoMeta, setVideoMeta] = useState<{ width: number; height: number; duration: number } | null>(null);
+  const [videoMeta, setVideoMeta] = useState<{
+    width: number;
+    height: number;
+    duration: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!videoFile) return;
@@ -109,12 +113,14 @@ export default function ExportModal({
 
       if (canStreamToDisk) {
         try {
-          const picker = (window as unknown as {
-            showSaveFilePicker: (opts: {
-              suggestedName: string;
-              types: Array<{ description: string; accept: Record<string, string[]> }>;
-            }) => Promise<{ createWritable: () => Promise<WritableStream> }>;
-          }).showSaveFilePicker;
+          const picker = (
+            window as unknown as {
+              showSaveFilePicker: (opts: {
+                suggestedName: string;
+                types: Array<{ description: string; accept: Record<string, string[]> }>;
+              }) => Promise<{ createWritable: () => Promise<WritableStream> }>;
+            }
+          ).showSaveFilePicker;
 
           const handle = await picker({
             suggestedName: `${baseName}_captioned.mp4`,
@@ -174,7 +180,9 @@ export default function ExportModal({
           throw fastErr;
         }
         console.warn('Fast WebCodecs export unavailable, using real-time canvas export:', fastErr);
-        onBurnStatus?.('Fast hardware encoder unavailable in this browser. Exporting in real time…');
+        onBurnStatus?.(
+          'Fast hardware encoder unavailable in this browser. Exporting in real time…',
+        );
 
         // Tier 2: Real-time Canvas + Web Audio MediaRecorder fallback
         blob = await burnCaptionsCanvas(
@@ -218,7 +226,9 @@ export default function ExportModal({
         <div className="flex items-center justify-between pb-4 border-b border-white/10">
           <div>
             <h2 className="text-lg font-bold text-bone">Export Captioned Video</h2>
-            <p className="text-xs text-smoke mt-0.5">Hardware-accelerated rendering with full animation fidelity</p>
+            <p className="text-xs text-smoke mt-0.5">
+              Hardware-accelerated rendering with full animation fidelity
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -241,9 +251,13 @@ export default function ExportModal({
           <div className="mt-4 p-3 rounded-xl bg-amber-500/15 border border-amber-500/40 text-xs text-amber-200 flex items-start gap-2.5">
             <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
             <div>
-              <div className="font-semibold text-amber-300">High memory footprint detected (~{(memoryEstimate.estimatedBytes / 1024 / 1024 / 1024).toFixed(1)} GB)</div>
+              <div className="font-semibold text-amber-300">
+                High memory footprint detected (~
+                {(memoryEstimate.estimatedBytes / 1024 / 1024 / 1024).toFixed(1)} GB)
+              </div>
               <p className="text-[11px] text-amber-200/80 mt-0.5">
-                To prevent browser memory limits on long videos, we recommend selecting <strong>Up to 1080p</strong> and <strong>Standard</strong> quality.
+                To prevent browser memory limits on long videos, we recommend selecting{' '}
+                <strong>Up to 1080p</strong> and <strong>Standard</strong> quality.
               </p>
             </div>
           </div>
@@ -274,20 +288,46 @@ export default function ExportModal({
                 </span>
               </div>
               <p className="text-[11px] text-smoke mt-1 leading-relaxed">
-                Burns your styled, animated captions into the video exactly as shown in the preview. Frame-by-frame hardware acceleration carries original sound and frame rate.
+                Burns your styled, animated captions into the video exactly as shown in the preview.
+                Frame-by-frame hardware acceleration carries original sound and frame rate.
               </p>
             </div>
           </label>
 
           {exportType === 'hardsub' && (
             <div className="grid grid-cols-2 gap-3 rounded-xl border border-white/10 bg-[#1c1c1a] p-3">
-              {([
-                ['Quality', quality, [['standard', 'Standard'], ['high', 'High'], ['max', 'Maximum']], (v: string) => setQuality(v as ExportQuality)],
-                ['Resolution', resolution, [['original', 'Original'], ['1080', 'Up to 1080p']], (v: string) => setResolution(v as 'original' | '1080')],
-              ] as const).map(([label, value, options, onPick]) => (
+              {(
+                [
+                  [
+                    'Quality',
+                    quality,
+                    [
+                      ['standard', 'Standard'],
+                      ['high', 'High'],
+                      ['max', 'Maximum'],
+                    ],
+                    (v: string) => setQuality(v as ExportQuality),
+                  ],
+                  [
+                    'Resolution',
+                    resolution,
+                    [
+                      ['original', 'Original'],
+                      ['1080', 'Up to 1080p'],
+                    ],
+                    (v: string) => setResolution(v as 'original' | '1080'),
+                  ],
+                ] as const
+              ).map(([label, value, options, onPick]) => (
                 <div key={label}>
-                  <div className="text-[10px] font-bold tracking-[0.12em] uppercase text-smoke mb-1.5">{label}</div>
-                  <div className="flex rounded-lg overflow-hidden border border-white/10" role="group" aria-label={label}>
+                  <div className="text-[10px] font-bold tracking-[0.12em] uppercase text-smoke mb-1.5">
+                    {label}
+                  </div>
+                  <div
+                    className="flex rounded-lg overflow-hidden border border-white/10"
+                    role="group"
+                    aria-label={label}
+                  >
                     {options.map(([v, text]) => (
                       <button
                         key={v}
@@ -295,7 +335,9 @@ export default function ExportModal({
                         onClick={() => onPick(v)}
                         aria-pressed={value === v}
                         className={`flex-1 px-1.5 py-1.5 text-[11px] font-medium transition-colors cursor-pointer ${
-                          value === v ? 'bg-amber-400 text-black' : 'text-mist hover:text-bone hover:bg-white/5'
+                          value === v
+                            ? 'bg-amber-400 text-black'
+                            : 'text-mist hover:text-bone hover:bg-white/5'
                         }`}
                       >
                         {text}
@@ -359,13 +401,18 @@ export default function ExportModal({
               {exportType === 'srt'
                 ? 'Download .SRT'
                 : exportType === 'vtt'
-                ? 'Download .VTT'
-                : exportType === 'txt'
-                ? 'Download .TXT'
-                : 'Export Video'}
+                  ? 'Download .VTT'
+                  : exportType === 'txt'
+                    ? 'Download .TXT'
+                    : 'Export Video'}
             </span>
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.2}
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+              />
             </svg>
           </button>
         </div>

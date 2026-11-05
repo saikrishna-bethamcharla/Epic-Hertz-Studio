@@ -15,7 +15,7 @@ export interface BasicStyle {
 }
 
 export function toBasicStyle(s: CaptionStyle): BasicStyle {
-  const fill = typeof s.fill === 'string' ? s.fill : s.fill.stops[0]?.[1] ?? '#FFFFFF';
+  const fill = typeof s.fill === 'string' ? s.fill : (s.fill.stops[0]?.[1] ?? '#FFFFFF');
   const hex = (c: string, fallback: string) => (/^#[0-9a-f]{6}$/i.test(c) ? c : fallback);
   return {
     position: s.layout.y < 0.34 ? 'top' : s.layout.y < 0.62 ? 'middle' : 'bottom',

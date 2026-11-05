@@ -84,7 +84,17 @@ export default function StyleThumbnail({
         canvas.height = Math.round(cssH * dpr);
       }
       c.clearRect(0, 0, canvas.width, canvas.height);
-      c.drawImage(offscreenCanvas!, 0, (VH - CROP_H) / 2, VW, CROP_H, 0, 0, canvas.width, canvas.height);
+      c.drawImage(
+        offscreenCanvas!,
+        0,
+        (VH - CROP_H) / 2,
+        VW,
+        CROP_H,
+        0,
+        0,
+        canvas.width,
+        canvas.height,
+      );
     };
 
     if (isHovered) {

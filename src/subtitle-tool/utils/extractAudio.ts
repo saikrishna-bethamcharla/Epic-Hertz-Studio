@@ -13,10 +13,14 @@ async function resampleTo16kHzMono(audioBuffer: AudioBuffer): Promise<AudioBuffe
     return audioBuffer;
   }
 
-  const targetLength = Math.max(1, Math.round((audioBuffer.length * targetSampleRate) / audioBuffer.sampleRate));
+  const targetLength = Math.max(
+    1,
+    Math.round((audioBuffer.length * targetSampleRate) / audioBuffer.sampleRate),
+  );
   const OfflineCtxClass =
     window.OfflineAudioContext ||
-    (window as unknown as { webkitOfflineAudioContext: typeof OfflineAudioContext }).webkitOfflineAudioContext;
+    (window as unknown as { webkitOfflineAudioContext: typeof OfflineAudioContext })
+      .webkitOfflineAudioContext;
   const offlineCtx = new OfflineCtxClass(1, targetLength, targetSampleRate);
 
   const source = offlineCtx.createBufferSource();
@@ -64,13 +68,13 @@ function audioBufferToWav(buffer: AudioBuffer): Blob {
 
   // fmt sub-chunk
   writeString(view, 12, 'fmt ');
-  view.setUint32(16, 16, true);          // SubChunk1Size (16 for PCM)
-  view.setUint16(20, 1, true);           // AudioFormat (1 = PCM)
+  view.setUint32(16, 16, true); // SubChunk1Size (16 for PCM)
+  view.setUint16(20, 1, true); // AudioFormat (1 = PCM)
   view.setUint16(22, numChannels, true); // NumChannels
-  view.setUint32(24, sampleRate, true);  // SampleRate
-  view.setUint32(28, byteRate, true);    // ByteRate
-  view.setUint16(32, blockAlign, true);  // BlockAlign
-  view.setUint16(34, bitDepth, true);    // BitsPerSample
+  view.setUint32(24, sampleRate, true); // SampleRate
+  view.setUint32(28, byteRate, true); // ByteRate
+  view.setUint16(32, blockAlign, true); // BlockAlign
+  view.setUint16(34, bitDepth, true); // BitsPerSample
 
   // data sub-chunk
   writeString(view, 36, 'data');
@@ -100,7 +104,9 @@ export async function extractAudio(
   videoFile: File,
   onProgress?: (pct: number) => void,
 ): Promise<Blob> {
-  const AudioCtxClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+  const AudioCtxClass =
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
   const audioCtx = new AudioCtxClass();
 
   try {
@@ -115,7 +121,9 @@ export async function extractAudio(
     return wavBlob;
   } catch (err) {
     console.error('Audio extraction failed:', err);
-    throw new Error('Could not decode audio from this video file. Ensure the video contains an uncorrupted audio track.');
+    throw new Error(
+      'Could not decode audio from this video file. Ensure the video contains an uncorrupted audio track.',
+    );
   } finally {
     audioCtx.close().catch(() => {});
   }

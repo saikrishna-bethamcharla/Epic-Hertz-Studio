@@ -74,15 +74,19 @@ export default function DropZone({ onFile }: DropZoneProps) {
         className={`
           relative w-full max-w-2xl rounded-2xl border-2 border-dashed transition-colors duration-200
           flex flex-col items-center justify-center gap-5 px-8 py-16 cursor-pointer
-          ${dragging
-            ? 'border-crimson bg-crimson/5 scale-[1.01]'
-            : 'border-white/20 bg-white/[0.03] hover:border-white/40 hover:bg-white/[0.05]'
+          ${
+            dragging
+              ? 'border-crimson bg-crimson/5 scale-[1.01]'
+              : 'border-white/20 bg-white/[0.03] hover:border-white/40 hover:bg-white/[0.05]'
           }
         `}
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
         onClick={() => inputRef.current?.click()}
@@ -94,7 +98,10 @@ export default function DropZone({ onFile }: DropZoneProps) {
         {/* Icon */}
         <svg
           className={`w-16 h-16 transition-colors ${dragging ? 'text-crimson' : 'text-mist'}`}
-          fill="none" viewBox="0 0 64 64" stroke="currentColor" strokeWidth={1.5}
+          fill="none"
+          viewBox="0 0 64 64"
+          stroke="currentColor"
+          strokeWidth={1.5}
         >
           <rect x="6" y="14" width="52" height="36" rx="6" strokeLinejoin="round" />
           <circle cx="32" cy="32" r="9" />
@@ -106,7 +113,8 @@ export default function DropZone({ onFile }: DropZoneProps) {
             {dragging ? 'Release to drop' : 'Drag & drop a video here'}
           </p>
           <p className="text-mist text-sm mt-1">
-            or <span className="text-crimson-2 underline underline-offset-2">browse your files</span>
+            or{' '}
+            <span className="text-crimson-2 underline underline-offset-2">browse your files</span>
           </p>
           <p className="text-smoke text-xs mt-3">Supports MP4, MOV, WebM, MKV · up to 2 GB</p>
         </div>
@@ -126,7 +134,8 @@ export default function DropZone({ onFile }: DropZoneProps) {
       {error && (
         <motion.div
           className="mt-4 text-crimson-2 text-sm flex items-center justify-center gap-1.5"
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
         >
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{error}</span>
@@ -136,10 +145,12 @@ export default function DropZone({ onFile }: DropZoneProps) {
       {/* Footnote */}
       <motion.p
         className="mt-8 text-smoke text-xs text-center max-w-sm"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4 }}
       >
-        Your video stays in your browser. Nothing is sent to any server except
-        the extracted audio, which goes to Gemini for transcription.
+        Your video stays in your browser. Nothing is sent to any server except the extracted audio,
+        which goes to Gemini for transcription.
       </motion.p>
     </div>
   );

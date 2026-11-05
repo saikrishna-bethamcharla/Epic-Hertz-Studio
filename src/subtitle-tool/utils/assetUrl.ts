@@ -12,7 +12,8 @@ export function getAssetUrl(relativePath: string): string {
     if (!url.pathname.endsWith('/') && !url.pathname.includes('.')) {
       url.pathname += '/';
     }
-    const base = document.querySelector('base')?.getAttribute('href') || import.meta.env.BASE_URL || './';
+    const base =
+      document.querySelector('base')?.getAttribute('href') || import.meta.env.BASE_URL || './';
     return new URL(clean, new URL(base, url.href)).href;
   } catch {
     return `/${clean}`;

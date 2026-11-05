@@ -56,7 +56,8 @@ export function estimateExportMemory(
 
   // Empirical target bitrates for H.264
   const pixelFactor = pixels / (1920 * 1080);
-  const baseBitrate = quality === 'max' ? 16_000_000 : quality === 'standard' ? 3_500_000 : 8_000_000;
+  const baseBitrate =
+    quality === 'max' ? 16_000_000 : quality === 'standard' ? 3_500_000 : 8_000_000;
   const bitrate = baseBitrate * Math.max(0.2, pixelFactor);
 
   const estimatedBytes = Math.round((bitrate * durationSec) / 8);
@@ -79,7 +80,8 @@ export async function exportCaptionedVideo(
   signal?: AbortSignal,
 ): Promise<Blob | null> {
   if (signal?.aborted) throw new DOMException('Export cancelled', 'AbortError');
-  if (!webCodecsSupported()) throw new ExportUnsupportedError('WebCodecs is not available in this browser.');
+  if (!webCodecsSupported())
+    throw new ExportUnsupportedError('WebCodecs is not available in this browser.');
 
   await ensureFonts(style, segments.map((s) => s.text).join(' '));
   const mb = await import('mediabunny');
@@ -108,9 +110,7 @@ export async function exportCaptionedVideo(
     const aacOk = useAvc && (await mb.canEncodeAudio('aac'));
 
     const isStreaming = Boolean(options.fileStream);
-    const target = isStreaming
-      ? new mb.StreamTarget(options.fileStream!)
-      : new mb.BufferTarget();
+    const target = isStreaming ? new mb.StreamTarget(options.fileStream!) : new mb.BufferTarget();
 
     const output = new mb.Output({
       format: useAvc
@@ -123,8 +123,8 @@ export async function exportCaptionedVideo(
       options.quality === 'max'
         ? mb.QUALITY_VERY_HIGH
         : options.quality === 'standard'
-        ? mb.QUALITY_MEDIUM
-        : mb.QUALITY_HIGH;
+          ? mb.QUALITY_MEDIUM
+          : mb.QUALITY_HIGH;
 
     // One reusable canvas: source frame first, captions on top
     const canvas = document.createElement('canvas');
@@ -158,7 +158,8 @@ export async function exportCaptionedVideo(
       },
     });
 
-    if (!conversion.isValid) throw new ExportUnsupportedError('This video cannot be exported in this browser.');
+    if (!conversion.isValid)
+      throw new ExportUnsupportedError('This video cannot be exported in this browser.');
 
     // The library drops tracks it cannot encode without failing. Losing the sound is not acceptable.
     const audioTracks = await input.getAudioTracks();

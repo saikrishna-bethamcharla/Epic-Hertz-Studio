@@ -120,7 +120,9 @@ export default function ProjectManagerModal({
             </div>
             <div>
               <h2 className="text-base font-bold text-bone">Your Projects</h2>
-              <p className="text-[11px] text-smoke">Switch, duplicate, or manage saved caption workflows</p>
+              <p className="text-[11px] text-smoke">
+                Switch, duplicate, or manage saved caption workflows
+              </p>
             </div>
           </div>
 
@@ -221,7 +223,9 @@ export default function ProjectManagerModal({
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-xs text-bone truncate">{proj.name}</span>
+                        <span className="font-semibold text-xs text-bone truncate">
+                          {proj.name}
+                        </span>
                         {isCurrent && (
                           <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-300 font-mono shrink-0">
                             Current
@@ -239,7 +243,9 @@ export default function ProjectManagerModal({
                     )}
 
                     <div className="flex items-center gap-2 mt-1 text-[11px] text-smoke font-mono">
-                      <span className="truncate max-w-[160px] sm:max-w-xs text-smoke/80">{proj.videoName}</span>
+                      <span className="truncate max-w-[160px] sm:max-w-xs text-smoke/80">
+                        {proj.videoName}
+                      </span>
                       <span>·</span>
                       <span>{proj.segmentCount} captions</span>
                       <span>·</span>

@@ -117,9 +117,7 @@ export function SegmentWordEditor({
               </button>
 
               {/* Timestamp badge */}
-              <span className="text-[9px] font-mono text-smoke">
-                {w.start.toFixed(2)}s
-              </span>
+              <span className="text-[9px] font-mono text-smoke">{w.start.toFixed(2)}s</span>
 
               {/* Nudge buttons */}
               <div className="flex items-center ml-0.5">

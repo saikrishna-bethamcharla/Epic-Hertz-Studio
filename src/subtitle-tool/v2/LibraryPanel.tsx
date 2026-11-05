@@ -15,7 +15,13 @@ import {
   Ban,
 } from 'lucide-react';
 
-import type { Segment, CaptionStyle, SpokenLanguage, ScriptOutput, SegmentStyleOverride } from '../types';
+import type {
+  Segment,
+  CaptionStyle,
+  SpokenLanguage,
+  ScriptOutput,
+  SegmentStyleOverride,
+} from '../types';
 import { PRESETS } from '../engine/presets';
 import StyleThumbnail from './StyleThumbnail';
 import {
@@ -103,7 +109,14 @@ const LOOK_PRESETS: Array<{ id: string; name: string; look: Partial<CaptionStyle
     id: 'gold-foil',
     name: 'Gold Foil',
     look: {
-      fill: { angle: 45, stops: [[0, '#FFE885'], [0.5, '#F59E0B'], [1, '#B45309']] },
+      fill: {
+        angle: 45,
+        stops: [
+          [0, '#FFE885'],
+          [0.5, '#F59E0B'],
+          [1, '#B45309'],
+        ],
+      },
       stroke: { width: 0.06, color: '#1A1408' },
       shadow: { x: 0, y: 0.04, blur: 0.1, color: 'rgba(0,0,0,0.6)' },
       glow: { color: '#F59E0B', blur: 0.15, strength: 0.8 },
@@ -217,7 +230,10 @@ export default function LibraryPanel({
         strokeColor: targetStyle.stroke.color,
         highlightColor: targetStyle.highlight.color,
       });
-      if (onNotification) onNotification(`Applied "${presetName}" to Caption #${segments.findIndex((s) => s.id === activeId) + 1}`);
+      if (onNotification)
+        onNotification(
+          `Applied "${presetName}" to Caption #${segments.findIndex((s) => s.id === activeId) + 1}`,
+        );
     }
   };
 
@@ -226,7 +242,10 @@ export default function LibraryPanel({
     const isNone = name === 'None';
     if (scope === 'all' || !activeId) {
       onStyleChange({ ...style, ...look });
-      if (onNotification) onNotification(isNone ? 'Reset text effects on all captions' : `Applied "${name}" look to all captions`);
+      if (onNotification)
+        onNotification(
+          isNone ? 'Reset text effects on all captions' : `Applied "${name}" look to all captions`,
+        );
     } else if (scope === 'caption' && onSegmentOverrideChange) {
       if (isNone) {
         onSegmentOverrideChange(activeId, {
@@ -240,7 +259,12 @@ export default function LibraryPanel({
           strokeColor: look.stroke?.color,
         });
       }
-      if (onNotification) onNotification(isNone ? 'Removed text effect from selected caption' : `Applied "${name}" look to selected caption`);
+      if (onNotification)
+        onNotification(
+          isNone
+            ? 'Removed text effect from selected caption'
+            : `Applied "${name}" look to selected caption`,
+        );
     }
   };
 
@@ -264,7 +288,9 @@ export default function LibraryPanel({
               type="button"
               onClick={() => onTabChange(tab.id as LibraryTab)}
               className={`min-w-[54px] flex-1 py-2 flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-colors relative ${
-                isActive ? 'text-amber-300 bg-white/5' : 'text-smoke hover:text-bone hover:bg-white/5'
+                isActive
+                  ? 'text-amber-300 bg-white/5'
+                  : 'text-smoke hover:text-bone hover:bg-white/5'
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -361,7 +387,7 @@ export default function LibraryPanel({
                       value={seg.text}
                       onChange={(e) => {
                         const updated = segments.map((s) =>
-                          s.id === seg.id ? { ...s, text: e.target.value } : s
+                          s.id === seg.id ? { ...s, text: e.target.value } : s,
                         );
                         onSegmentsChange(updated);
                       }}
@@ -395,7 +421,15 @@ export default function LibraryPanel({
 
             {/* Category Chips */}
             <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar shrink-0">
-              {['All', 'Yours', 'Favourites', 'Viral', 'Kinetic', 'Glow & colour', 'Film & clean'].map((cat) => (
+              {[
+                'All',
+                'Yours',
+                'Favourites',
+                'Viral',
+                'Kinetic',
+                'Glow & colour',
+                'Film & clean',
+              ].map((cat) => (
                 <button
                   key={cat}
                   type="button"
@@ -430,7 +464,9 @@ export default function LibraryPanel({
                       isHovered={hoveredPresetId === up.id}
                     />
                     <div className="flex items-center justify-between gap-1">
-                      <span className="text-[11px] font-bold text-bone truncate leading-tight">{up.name}</span>
+                      <span className="text-[11px] font-bold text-bone truncate leading-tight">
+                        {up.name}
+                      </span>
                       <span className="text-[8px] px-1 py-0.2 rounded bg-amber-400/20 text-amber-300 font-mono shrink-0">
                         Yours
                       </span>
@@ -472,7 +508,9 @@ export default function LibraryPanel({
                     />
 
                     <div className="flex items-center justify-between gap-1">
-                      <span className="text-[11px] font-bold text-bone truncate leading-tight">{p.style.name}</span>
+                      <span className="text-[11px] font-bold text-bone truncate leading-tight">
+                        {p.style.name}
+                      </span>
                       <button
                         type="button"
                         onClick={(e) => {
@@ -502,7 +540,8 @@ export default function LibraryPanel({
         {leftTab === 'effects' && (
           <div className="space-y-3">
             <p className="text-[11px] text-smoke">
-              Applies styling treatment (fill, outline, shadow, glow, 3D) without changing your chosen font or animation.
+              Applies styling treatment (fill, outline, shadow, glow, 3D) without changing your
+              chosen font or animation.
             </p>
             <div className="grid grid-cols-3 gap-1.5">
               {/* None / Reset tile: symbol only, no text label */}
@@ -672,7 +711,7 @@ export default function LibraryPanel({
                       onClick={() => {
                         if (!activeId) return;
                         const next = segments.map((s) =>
-                          s.id === activeId ? { ...s, text: `${s.text} ${emoji}`.trim() } : s
+                          s.id === activeId ? { ...s, text: `${s.text} ${emoji}`.trim() } : s,
                         );
                         onSegmentsChange(next);
                         if (onNotification) onNotification(`Added ${emoji} to caption`);
@@ -700,8 +739,14 @@ export default function LibraryPanel({
               </p>
               <div className="grid grid-cols-4 gap-2">
                 {brandColors.map((hex, i) => (
-                  <div key={i} className="flex flex-col items-center gap-1 p-2 bg-[#181817] rounded-xl border border-white/5">
-                    <div style={{ backgroundColor: hex }} className="w-8 h-8 rounded-lg border border-white/20 shadow-xs" />
+                  <div
+                    key={i}
+                    className="flex flex-col items-center gap-1 p-2 bg-[#181817] rounded-xl border border-white/5"
+                  >
+                    <div
+                      style={{ backgroundColor: hex }}
+                      className="w-8 h-8 rounded-lg border border-white/20 shadow-xs"
+                    />
                     <span className="text-[9px] font-mono text-smoke uppercase">{hex}</span>
                   </div>
                 ))}

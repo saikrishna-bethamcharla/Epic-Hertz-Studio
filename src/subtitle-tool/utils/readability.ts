@@ -30,7 +30,11 @@ export function getWPM(seg: Segment): number {
 /**
  * Evaluates a segment and returns any readability warnings.
  */
-export function checkReadability(seg: Segment, prevSeg?: Segment, nextSeg?: Segment): ReadabilityIssue[] {
+export function checkReadability(
+  seg: Segment,
+  prevSeg?: Segment,
+  nextSeg?: Segment,
+): ReadabilityIssue[] {
   const issues: ReadabilityIssue[] = [];
   const duration = seg.end - seg.start;
   const cps = getCPS(seg);

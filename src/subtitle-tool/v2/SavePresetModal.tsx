@@ -12,12 +12,7 @@ interface SavePresetModalProps {
   onSaved?: () => void;
 }
 
-export default function SavePresetModal({
-  isOpen,
-  onClose,
-  style,
-  onSaved,
-}: SavePresetModalProps) {
+export default function SavePresetModal({ isOpen, onClose, style, onSaved }: SavePresetModalProps) {
   const [name, setName] = useState('');
   const [category, setCategory] = useState<'Yours' | 'Viral' | 'Kinetic' | 'Clean'>('Yours');
   const [includeLayout, setIncludeLayout] = useState(false);
@@ -126,7 +121,8 @@ export default function SavePresetModal({
                 className="rounded border-white/20 text-amber-400 focus:ring-0 bg-transparent cursor-pointer"
               />
               <span className="text-[11px] text-mist">
-                Include custom position ({Math.round(style.layout.x * 100)}%, {Math.round(style.layout.y * 100)}%)
+                Include custom position ({Math.round(style.layout.x * 100)}%,{' '}
+                {Math.round(style.layout.y * 100)}%)
               </span>
             </label>
           </div>

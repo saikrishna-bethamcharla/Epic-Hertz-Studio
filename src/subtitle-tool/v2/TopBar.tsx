@@ -236,7 +236,9 @@ export default function TopBar({
             <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
               <div className="absolute -top-1 right-3 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
               <span>Shortcuts</span>
-              <kbd className="px-1 py-0.2 rounded bg-white/10 text-[9px] text-smoke font-mono font-semibold">?</kbd>
+              <kbd className="px-1 py-0.2 rounded bg-white/10 text-[9px] text-smoke font-mono font-semibold">
+                ?
+              </kbd>
             </div>
           </div>
         </div>

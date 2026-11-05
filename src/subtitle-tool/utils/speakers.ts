@@ -3,11 +3,11 @@
 
 export interface SpeakerPalette {
   name: string;
-  color: string;       // Primary highlight / accent hex
-  bg: string;          // Tailwind background class
-  text: string;        // Tailwind text class
-  border: string;      // Tailwind border class
-  darkBorder: string;  // Hex for canvas/timeline borders
+  color: string; // Primary highlight / accent hex
+  bg: string; // Tailwind background class
+  text: string; // Tailwind text class
+  border: string; // Tailwind border class
+  darkBorder: string; // Hex for canvas/timeline borders
 }
 
 export const SPEAKER_PALETTES: SpeakerPalette[] = [

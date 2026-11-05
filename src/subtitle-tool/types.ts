@@ -4,7 +4,7 @@ export type { CaptionStyle, TextCase } from './engine/spec';
 export interface WordTimestamp {
   word: string;
   start: number; // seconds
-  end: number;   // seconds
+  end: number; // seconds
   highlightColor?: string; // custom highlight color override
   emphasis?: 'none' | 'pop' | 'shake' | 'glow' | 'underline';
 }
@@ -26,10 +26,10 @@ export interface SegmentStyleOverride {
 }
 
 export interface Segment {
-  id: string;      // uuid-like key for React
-  index: number;   // 1-based SRT index
-  start: number;   // seconds
-  end: number;     // seconds
+  id: string; // uuid-like key for React
+  index: number; // 1-based SRT index
+  start: number; // seconds
+  end: number; // seconds
   text: string;
   speaker?: string; // e.g. 'Speaker 1', 'Speaker 2', 'Guest', 'Host'
   words?: WordTimestamp[];
@@ -38,24 +38,14 @@ export interface Segment {
 
 export type ScriptOutput = 'romanized' | 'native'; // e.g. 'Tanglish' vs 'తెలుగు లిపి'
 export type SpokenLanguage =
-  | 'auto'
-  | 'te'
-  | 'hi'
-  | 'en'
-  | 'ta'
-  | 'kn'
-  | 'ml'
-  | 'mr'
-  | 'bn'
-  | 'es'
-  | 'fr';
+  'auto' | 'te' | 'hi' | 'en' | 'ta' | 'kn' | 'ml' | 'mr' | 'bn' | 'es' | 'fr';
 
 export type CaptionAnimationEffect =
-  | 'capcut-bounce'   // CapCut signature bounce pop & tilt
-  | 'hormozi-box'     // Alex Hormozi jumping word highlight badge
-  | 'premiere-glow'   // Premiere Pro electric neon glow & scale
-  | 'comic-pop'       // MrBeast 3D comic shadow & energetic pop
-  | 'fire-flame'      // Flame gradient & hype jump
+  | 'capcut-bounce' // CapCut signature bounce pop & tilt
+  | 'hormozi-box' // Alex Hormozi jumping word highlight badge
+  | 'premiere-glow' // Premiere Pro electric neon glow & scale
+  | 'comic-pop' // MrBeast 3D comic shadow & energetic pop
+  | 'fire-flame' // Flame gradient & hype jump
   | 'cinematic-clean' // Netflix / Premiere pristine film look
   | 'none';
 
@@ -85,11 +75,11 @@ export type VideoAspectRatio = 'original' | '9:16' | '16:9' | '1:1';
 export interface SubtitleStyle {
   preset: SubtitlePreset;
   animationEffect: CaptionAnimationEffect;
-  fontSize: number;          // in pixels
-  textColor: string;        // hex
-  backgroundColor: string;  // rgba or hex
-  outlineColor: string;     // hex
-  outlineWidth: number;     // px
+  fontSize: number; // in pixels
+  textColor: string; // hex
+  backgroundColor: string; // rgba or hex
+  outlineColor: string; // hex
+  outlineWidth: number; // px
   position: SubtitlePosition;
   fontFamily: string;
   uppercase: boolean;
@@ -101,10 +91,10 @@ export interface SubtitleStyle {
 
 export type AppStage =
   | 'idle'
-  | 'configuring'  // "Prepare your media" modal (Replix-style)
-  | 'extracting'   // pulling audio out of the video
-  | 'uploading'    // sending chunked audio to serverless transcription proxy
+  | 'configuring' // "Prepare your media" modal (Replix-style)
+  | 'extracting' // pulling audio out of the video
+  | 'uploading' // sending chunked audio to serverless transcription proxy
   | 'transcribing' // waiting for speech-to-text
-  | 'editing'      // 3-column Replix editor layout
-  | 'burning'      // burning subtitles into MP4
-  | 'done';        // export finished
+  | 'editing' // 3-column Replix editor layout
+  | 'burning' // burning subtitles into MP4
+  | 'done'; // export finished

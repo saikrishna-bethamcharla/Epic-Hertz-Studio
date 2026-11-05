@@ -26,7 +26,13 @@ import { formatTimecode } from './utils/formatTime';
 import { checkReadability, getCPS } from './utils/readability';
 import { checkWordTimings, fixTimings } from './utils/alignWords';
 import { getSpeakerStyle, getSpeakerShortCode } from './utils/speakers';
-import type { Segment, ScriptOutput, SpokenLanguage, WordTimestamp, SegmentStyleOverride } from './types';
+import type {
+  Segment,
+  ScriptOutput,
+  SpokenLanguage,
+  WordTimestamp,
+  SegmentStyleOverride,
+} from './types';
 import { SegmentStyleDrawer } from './editor/SegmentStyleDrawer';
 import { SegmentWordEditor } from './editor/SegmentWordEditor';
 
@@ -77,18 +83,14 @@ export default function CaptionEditor({
 
   const updateSegment = useCallback(
     (id: string, patch: Partial<Segment>) => {
-      onSegmentsChange(
-        segments.map((s) => (s.id === id ? { ...s, ...patch } : s)),
-      );
+      onSegmentsChange(segments.map((s) => (s.id === id ? { ...s, ...patch } : s)));
     },
     [segments, onSegmentsChange],
   );
 
   const deleteSegment = useCallback(
     (id: string) => {
-      const next = segments
-        .filter((s) => s.id !== id)
-        .map((s, i) => ({ ...s, index: i + 1 }));
+      const next = segments.filter((s) => s.id !== id).map((s, i) => ({ ...s, index: i + 1 }));
       onSegmentsChange(next);
       setSelectedIds((prev) => {
         const copy = new Set(prev);
@@ -106,7 +108,9 @@ export default function CaptionEditor({
       const prev = segments[idx];
       const next = segments[idx + 1];
       const newStart = +(prev.end + 0.05).toFixed(2);
-      const newEnd = next ? +Math.min(next.start - 0.05, newStart + 2).toFixed(2) : +(newStart + 2).toFixed(2);
+      const newEnd = next
+        ? +Math.min(next.start - 0.05, newStart + 2).toFixed(2)
+        : +(newStart + 2).toFixed(2);
       const newSeg: Segment = {
         id: `seg-${Date.now()}`,
         index: idx + 2,
@@ -114,11 +118,9 @@ export default function CaptionEditor({
         end: newEnd,
         text: '',
       };
-      const updated = [
-        ...segments.slice(0, idx + 1),
-        newSeg,
-        ...segments.slice(idx + 1),
-      ].map((s, i) => ({ ...s, index: i + 1 }));
+      const updated = [...segments.slice(0, idx + 1), newSeg, ...segments.slice(idx + 1)].map(
+        (s, i) => ({ ...s, index: i + 1 }),
+      );
       onSegmentsChange(updated);
     },
     [segments, onSegmentsChange],
@@ -185,7 +187,13 @@ export default function CaptionEditor({
   const cycleWordEmphasis = (seg: Segment, wordIdx: number) => {
     const currentWords = getOrInitWords(seg);
     const curr = currentWords[wordIdx]?.emphasis || 'none';
-    const modes: ('none' | 'pop' | 'shake' | 'glow' | 'underline')[] = ['none', 'pop', 'shake', 'glow', 'underline'];
+    const modes: ('none' | 'pop' | 'shake' | 'glow' | 'underline')[] = [
+      'none',
+      'pop',
+      'shake',
+      'glow',
+      'underline',
+    ];
     const next = modes[(modes.indexOf(curr) + 1) % modes.length];
     updateWord(seg, wordIdx, { emphasis: next });
   };
@@ -206,7 +214,11 @@ export default function CaptionEditor({
     if (textarea && textarea.selectionStart !== null) {
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
-      newText = seg.text.slice(0, start) + emoji + (start < seg.text.length && seg.text[start] !== ' ' ? ' ' : '') + seg.text.slice(end);
+      newText =
+        seg.text.slice(0, start) +
+        emoji +
+        (start < seg.text.length && seg.text[start] !== ' ' ? ' ' : '') +
+        seg.text.slice(end);
     } else {
       newText = `${seg.text} ${emoji}`;
     }
@@ -214,7 +226,10 @@ export default function CaptionEditor({
     setEmojiPickerSegId(null);
   };
 
-  const updateSegmentStyleOverride = (segId: string, override: Partial<SegmentStyleOverride> | null) => {
+  const updateSegmentStyleOverride = (
+    segId: string,
+    override: Partial<SegmentStyleOverride> | null,
+  ) => {
     const seg = segments.find((s) => s.id === segId);
     if (!seg) return;
     if (override === null) {
@@ -263,7 +278,9 @@ export default function CaptionEditor({
 
       const ratio = beforeText.length / (beforeText.length + afterText.length);
       const span = target.end - target.start;
-      const splitTime = +(target.start + Math.max(0.2, Math.min(span - 0.2, span * ratio))).toFixed(2);
+      const splitTime = +(target.start + Math.max(0.2, Math.min(span - 0.2, span * ratio))).toFixed(
+        2,
+      );
 
       let words1 = target.words ? target.words.filter((w) => w.start <= splitTime) : undefined;
       let words2 = target.words ? target.words.filter((w) => w.start > splitTime) : undefined;
@@ -285,12 +302,9 @@ export default function CaptionEditor({
         words: words2,
       };
 
-      const updated = [
-        ...segments.slice(0, idx),
-        seg1,
-        seg2,
-        ...segments.slice(idx + 1),
-      ].map((s, i) => ({ ...s, index: i + 1 }));
+      const updated = [...segments.slice(0, idx), seg1, seg2, ...segments.slice(idx + 1)].map(
+        (s, i) => ({ ...s, index: i + 1 }),
+      );
 
       onSegmentsChange(updated);
 
@@ -313,7 +327,8 @@ export default function CaptionEditor({
       const curr = segments[idx];
 
       const mergedText = `${prev.text.trim()} ${curr.text.trim()}`.trim();
-      const mergedWords = prev.words || curr.words ? [...(prev.words || []), ...(curr.words || [])] : undefined;
+      const mergedWords =
+        prev.words || curr.words ? [...(prev.words || []), ...(curr.words || [])] : undefined;
 
       const mergedSeg: Segment = {
         ...prev,
@@ -322,17 +337,17 @@ export default function CaptionEditor({
         words: mergedWords,
       };
 
-      const updated = [
-        ...segments.slice(0, idx - 1),
-        mergedSeg,
-        ...segments.slice(idx + 1),
-      ].map((s, i) => ({ ...s, index: i + 1 }));
+      const updated = [...segments.slice(0, idx - 1), mergedSeg, ...segments.slice(idx + 1)].map(
+        (s, i) => ({ ...s, index: i + 1 }),
+      );
 
       onSegmentsChange(updated);
 
       // Position cursor at junction point in the merged textarea
       setTimeout(() => {
-        const prevInput = document.querySelector<HTMLTextAreaElement>(`#caption-${prev.id} textarea`);
+        const prevInput = document.querySelector<HTMLTextAreaElement>(
+          `#caption-${prev.id} textarea`,
+        );
         if (prevInput) {
           prevInput.focus();
           const junction = prev.text.trim().length + 1;
@@ -379,7 +394,9 @@ export default function CaptionEditor({
   // Bulk actions
   const handleBulkDelete = () => {
     if (selectedIds.size === 0) return;
-    const next = segments.filter((s) => !selectedIds.has(s.id)).map((s, i) => ({ ...s, index: i + 1 }));
+    const next = segments
+      .filter((s) => !selectedIds.has(s.id))
+      .map((s, i) => ({ ...s, index: i + 1 }));
     onSegmentsChange(next);
     setSelectedIds(new Set());
   };
@@ -391,7 +408,10 @@ export default function CaptionEditor({
 
     const first = selectedList[0];
     const last = selectedList[selectedList.length - 1];
-    const mergedText = selectedList.map((s) => s.text.trim()).filter(Boolean).join(' ');
+    const mergedText = selectedList
+      .map((s) => s.text.trim())
+      .filter(Boolean)
+      .join(' ');
     const allWords = selectedList.flatMap((s) => s.words || []);
 
     const mergedSeg: Segment = {
@@ -404,11 +424,9 @@ export default function CaptionEditor({
     const firstIdx = segments.findIndex((s) => s.id === first.id);
     const filtered = segments.filter((s) => !selectedIds.has(s.id));
     const targetIdx = Math.max(0, Math.min(filtered.length, firstIdx));
-    const updated = [
-      ...filtered.slice(0, targetIdx),
-      mergedSeg,
-      ...filtered.slice(targetIdx),
-    ].map((s: Segment, i: number) => ({ ...s, index: i + 1 }));
+    const updated = [...filtered.slice(0, targetIdx), mergedSeg, ...filtered.slice(targetIdx)].map(
+      (s: Segment, i: number) => ({ ...s, index: i + 1 }),
+    );
 
     onSegmentsChange(updated);
     setSelectedIds(new Set([mergedSeg.id]));
@@ -456,9 +474,7 @@ export default function CaptionEditor({
           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/30">
             {scriptBadgeText}
           </span>
-          <span className="text-smoke text-xs ml-auto font-mono">
-            {segments.length}
-          </span>
+          <span className="text-smoke text-xs ml-auto font-mono">{segments.length}</span>
         </div>
 
         <div className="flex items-center justify-between">
@@ -583,16 +599,26 @@ export default function CaptionEditor({
             const isSelected = selectedIds.has(seg.id);
             const isWordsExpanded = expandedWordIds.has(seg.id);
             const prevSeg = idx > 0 ? filteredSegments[idx - 1] : undefined;
-            const nextSeg = idx < filteredSegments.length - 1 ? filteredSegments[idx + 1] : undefined;
+            const nextSeg =
+              idx < filteredSegments.length - 1 ? filteredSegments[idx + 1] : undefined;
             const issues = checkReadability(seg, prevSeg, nextSeg);
             const wordCheck = checkWordTimings(seg.words);
             const speakerStyle = getSpeakerStyle(seg.speaker);
-            const wordsList: WordTimestamp[] = seg.words && seg.words.length > 0
-              ? seg.words
-              : seg.text.trim().split(/\s+/).filter(Boolean).map((w, i, arr) => {
-                  const per = Math.max(0.1, seg.end - seg.start) / Math.max(1, arr.length);
-                  return { word: w, start: +(seg.start + i * per).toFixed(2), end: +(seg.start + (i + 1) * per).toFixed(2) };
-                });
+            const wordsList: WordTimestamp[] =
+              seg.words && seg.words.length > 0
+                ? seg.words
+                : seg.text
+                    .trim()
+                    .split(/\s+/)
+                    .filter(Boolean)
+                    .map((w, i, arr) => {
+                      const per = Math.max(0.1, seg.end - seg.start) / Math.max(1, arr.length);
+                      return {
+                        word: w,
+                        start: +(seg.start + i * per).toFixed(2),
+                        end: +(seg.start + (i + 1) * per).toFixed(2),
+                      };
+                    });
 
             return (
               <motion.div
@@ -606,13 +632,17 @@ export default function CaptionEditor({
                   handleSelectRow(seg.id, e);
                   onSeek(seg.start);
                 }}
-                style={speakerStyle ? { borderLeftColor: speakerStyle.darkBorder, borderLeftWidth: 3 } : undefined}
+                style={
+                  speakerStyle
+                    ? { borderLeftColor: speakerStyle.darkBorder, borderLeftWidth: 3 }
+                    : undefined
+                }
                 className={`group relative rounded-xl p-3 border transition-colors duration-150 cursor-pointer ${
                   isActive
                     ? 'border-amber-400/80 bg-[#252420] shadow-md ring-1 ring-amber-400/40'
                     : isSelected
-                    ? 'border-amber-400/40 bg-[#1e1e1b] ring-1 ring-amber-400/20'
-                    : 'border-white/[0.08] bg-[#1a1a18] hover:border-white/20 hover:bg-[#20201d]'
+                      ? 'border-amber-400/40 bg-[#1e1e1b] ring-1 ring-amber-400/20'
+                      : 'border-white/[0.08] bg-[#1a1a18] hover:border-white/20 hover:bg-[#20201d]'
                 }`}
               >
                 <div className="flex items-start gap-2.5">
@@ -631,10 +661,16 @@ export default function CaptionEditor({
                     }}
                     aria-label={`Select caption ${seg.index}`}
                     className={`mt-0.5 p-0.5 text-smoke hover:text-amber-400 transition-colors ${
-                      isSelected ? 'text-amber-400 opacity-100' : 'opacity-30 group-hover:opacity-80'
+                      isSelected
+                        ? 'text-amber-400 opacity-100'
+                        : 'opacity-30 group-hover:opacity-80'
                     }`}
                   >
-                    {isSelected ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
+                    {isSelected ? (
+                      <CheckSquare className="w-3.5 h-3.5" />
+                    ) : (
+                      <Square className="w-3.5 h-3.5" />
+                    )}
                   </button>
 
                   {/* Timestamp pill with sub-second precision */}
@@ -669,7 +705,8 @@ export default function CaptionEditor({
                   </button>
 
                   {/* Custom Position Indicator */}
-                  {(seg.styleOverride?.positionX !== undefined || seg.styleOverride?.positionY !== undefined) && (
+                  {(seg.styleOverride?.positionX !== undefined ||
+                    seg.styleOverride?.positionY !== undefined) && (
                     <span
                       className="text-[10px] text-amber-400 font-mono flex items-center shrink-0 cursor-help"
                       title={`Custom Position: (${Math.round((seg.styleOverride.positionX ?? 0.5) * 100)}%, ${Math.round((seg.styleOverride.positionY ?? 0.82) * 100)}%)`}
@@ -716,7 +753,9 @@ export default function CaptionEditor({
                       }}
                       aria-label={`Insert emoji into caption ${seg.index}`}
                       className={`p-1 rounded hover:bg-white/10 transition-colors ${
-                        emojiPickerSegId === seg.id ? 'text-amber-400 bg-white/10' : 'text-smoke hover:text-bone'
+                        emojiPickerSegId === seg.id
+                          ? 'text-amber-400 bg-white/10'
+                          : 'text-smoke hover:text-bone'
                       }`}
                       title="Insert emoji"
                     >
@@ -732,7 +771,9 @@ export default function CaptionEditor({
                       }}
                       aria-label={`Customize style for caption ${seg.index}`}
                       className={`p-1 rounded hover:bg-white/10 transition-colors relative ${
-                        styleOverrideSegIds.has(seg.id) ? 'text-amber-400 bg-white/10' : 'text-smoke hover:text-bone'
+                        styleOverrideSegIds.has(seg.id)
+                          ? 'text-amber-400 bg-white/10'
+                          : 'text-smoke hover:text-bone'
                       }`}
                       title="Custom caption style override (Position, scale, accent color)"
                     >
@@ -755,7 +796,11 @@ export default function CaptionEditor({
                       }`}
                       title="Word-level timing & emphasis editor"
                     >
-                      {isWordsExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                      {isWordsExpanded ? (
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      ) : (
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      )}
                     </button>
 
                     {/* Add Segment After */}
@@ -769,8 +814,18 @@ export default function CaptionEditor({
                       className="p-1 hover:text-amber-300 rounded hover:bg-white/10 transition-colors"
                       title="Add segment after (+)"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      <svg
+                        className="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 4v16m8-8H4"
+                        />
                       </svg>
                     </button>
 
@@ -785,8 +840,18 @@ export default function CaptionEditor({
                       className="p-1 hover:text-crimson-2 rounded hover:bg-crimson/10 transition-colors"
                       title="Delete segment"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      <svg
+                        className="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
                       </svg>
                     </button>
                   </div>
@@ -826,18 +891,22 @@ export default function CaptionEditor({
                         onClick={(e) => {
                           e.stopPropagation();
                           const fixed = fixTimings(seg);
-                          updateSegment(seg.id, { words: fixed.words, start: fixed.start, end: fixed.end });
+                          updateSegment(seg.id, {
+                            words: fixed.words,
+                            start: fixed.start,
+                            end: fixed.end,
+                          });
                         }}
                         className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/25 transition-colors cursor-pointer"
                         title="Word timings have collapsed or overlap. Click to auto-distribute by character count."
                       >
                         <Wand2 className="w-2.5 h-2.5" />
-                        <span>Fix timings ({wordCheck.collapsedCount + wordCheck.overlapCount} alerts)</span>
+                        <span>
+                          Fix timings ({wordCheck.collapsedCount + wordCheck.overlapCount} alerts)
+                        </span>
                       </button>
                     )}
-                    <span className="text-smoke/60 ml-auto font-mono">
-                      {getCPS(seg)} CPS
-                    </span>
+                    <span className="text-smoke/60 ml-auto font-mono">{getCPS(seg)} CPS</span>
                   </div>
                 )}
 

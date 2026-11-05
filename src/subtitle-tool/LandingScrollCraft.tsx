@@ -108,10 +108,7 @@ const RUNWAY_STYLES: Array<{
   },
 ];
 
-export default function LandingScrollCraft({
-  onFileSelect,
-  onTryDemo,
-}: LandingScrollCraftProps) {
+export default function LandingScrollCraft({ onFileSelect, onTryDemo }: LandingScrollCraftProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -132,13 +129,16 @@ export default function LandingScrollCraft({
   const rotateX = useSpring(useMotionValue(0), { stiffness: 120, damping: 20 });
   const rotateY = useSpring(useMotionValue(0), { stiffness: 120, damping: 20 });
 
-  const handleHeroMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width - 0.5; // -0.5 to 0.5
-    const y = (e.clientY - rect.top) / rect.height - 0.5; // -0.5 to 0.5
-    rotateX.set(-y * 14);
-    rotateY.set(x * 14);
-  }, [rotateX, rotateY]);
+  const handleHeroMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width - 0.5; // -0.5 to 0.5
+      const y = (e.clientY - rect.top) / rect.height - 0.5; // -0.5 to 0.5
+      rotateX.set(-y * 14);
+      rotateY.set(x * 14);
+    },
+    [rotateX, rotateY],
+  );
 
   const handleHeroMouseLeave = useCallback(() => {
     rotateX.set(0);
@@ -204,7 +204,11 @@ export default function LandingScrollCraft({
     const files = e.dataTransfer.files;
     if (files?.[0]) {
       const file = files[0];
-      if (file.type.startsWith('video/') || file.type.startsWith('audio/') || file.name.match(/\.(mp4|mov|webm|m4v|mkv)$/i)) {
+      if (
+        file.type.startsWith('video/') ||
+        file.type.startsWith('audio/') ||
+        file.name.match(/\.(mp4|mov|webm|m4v|mkv)$/i)
+      ) {
         onFileSelect(file);
       }
     }
@@ -233,7 +237,8 @@ export default function LandingScrollCraft({
         <div
           className="absolute -top-[15%] left-1/2 -translate-x-1/2 w-[800px] h-[500px] rounded-full blur-[120px] opacity-20"
           style={{
-            background: 'radial-gradient(circle, #f59e0b 0%, rgba(217, 167, 74, 0.1) 60%, transparent 80%)',
+            background:
+              'radial-gradient(circle, #f59e0b 0%, rgba(217, 167, 74, 0.1) 60%, transparent 80%)',
           }}
         />
         <div
@@ -257,7 +262,9 @@ export default function LandingScrollCraft({
               <Zap className="w-8 h-8" />
             </div>
             <h2 className="text-xl font-bold text-white">Release to Caption Video</h2>
-            <p className="text-zinc-400 text-xs mt-1">Instant word-level sync in Telugu, Hindi, Tamil & English</p>
+            <p className="text-zinc-400 text-xs mt-1">
+              Instant word-level sync in Telugu, Hindi, Tamil & English
+            </p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -288,11 +295,16 @@ export default function LandingScrollCraft({
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.08]">
-              Subtitles that <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-500">hold attention</span> until the last second.
+              Subtitles that{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-500">
+                hold attention
+              </span>{' '}
+              until the last second.
             </h1>
 
             <p className="text-zinc-400 text-base sm:text-lg leading-relaxed max-w-lg">
-              Studio-grade kinetic captions for Reels, Shorts, and ads. Natural Tanglish, Hinglish, and native Indic scripts with 60fps word-by-word karaoke sync.
+              Studio-grade kinetic captions for Reels, Shorts, and ads. Natural Tanglish, Hinglish,
+              and native Indic scripts with 60fps word-by-word karaoke sync.
             </p>
 
             {/* Clean Actions Bar */}
@@ -368,19 +380,25 @@ export default function LandingScrollCraft({
                 <div className="relative z-20 my-auto text-center px-1">
                   <div
                     className="inline-block px-3.5 py-2.5 rounded-xl backdrop-blur-md shadow-2xl transition-all"
-                    style={{ backgroundColor: activePreset.config.backgroundColor || 'rgba(0,0,0,0.7)' }}
+                    style={{
+                      backgroundColor: activePreset.config.backgroundColor || 'rgba(0,0,0,0.7)',
+                    }}
                   >
                     <div className="text-base sm:text-lg font-black tracking-tight leading-snug">
                       {DEMO_SCRIPTS.te.romanized.map((word, idx) => {
-                        const isCurrent = idx === (activeWordIdx % DEMO_SCRIPTS.te.romanized.length);
+                        const isCurrent = idx === activeWordIdx % DEMO_SCRIPTS.te.romanized.length;
                         return (
                           <span
                             key={idx}
                             className="inline-block mr-1.5 transition-all duration-150"
                             style={{
-                              color: isCurrent ? (activePreset.config.highlightColor || '#FFE600') : '#FFFFFF',
+                              color: isCurrent
+                                ? activePreset.config.highlightColor || '#FFE600'
+                                : '#FFFFFF',
                               transform: isCurrent ? 'scale(1.18) translateY(-2px)' : 'scale(1)',
-                              textShadow: isCurrent ? '0 0 16px rgba(255,230,0,0.8)' : '0 2px 4px rgba(0,0,0,0.9)',
+                              textShadow: isCurrent
+                                ? '0 0 16px rgba(255,230,0,0.8)'
+                                : '0 2px 4px rgba(0,0,0,0.9)',
                             }}
                           >
                             {word}
@@ -420,7 +438,8 @@ export default function LandingScrollCraft({
               Drag the Curtain. See the Contrast.
             </h2>
             <p className="text-zinc-400 text-xs sm:text-sm">
-              Drag the handle to compare plain, delayed captions with the word-by-word kinetic style Epic Hertz generates.
+              Drag the handle to compare plain, delayed captions with the word-by-word kinetic style
+              Epic Hertz generates.
             </p>
           </div>
 
@@ -529,7 +548,8 @@ export default function LandingScrollCraft({
               Colloquial Regional Dialects & Native Scripts
             </h2>
             <p className="text-zinc-400 text-xs sm:text-sm">
-              Social media audiences read natural Tanglish and Hinglish. Switch between conversational Romanized scripts and authentic native typography.
+              Social media audiences read natural Tanglish and Hinglish. Switch between
+              conversational Romanized scripts and authentic native typography.
             </p>
           </div>
 
@@ -692,7 +712,8 @@ export default function LandingScrollCraft({
               </div>
               <h3 className="text-sm font-bold text-white">Instant Audio Extraction</h3>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Uses the browser-native Web Audio API to decode and downmix audio to 16kHz in under 150ms without multi-megabyte binary stalls.
+                Uses the browser-native Web Audio API to decode and downmix audio to 16kHz in under
+                150ms without multi-megabyte binary stalls.
               </p>
             </div>
 
@@ -703,7 +724,8 @@ export default function LandingScrollCraft({
               </div>
               <h3 className="text-sm font-bold text-white">Sub-Word Karaoke Sync</h3>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Captures start and end timestamps per vocal syllable, illuminating words synchronously with vocal breaths rather than laggy block chunks.
+                Captures start and end timestamps per vocal syllable, illuminating words
+                synchronously with vocal breaths rather than laggy block chunks.
               </p>
             </div>
 
@@ -714,7 +736,8 @@ export default function LandingScrollCraft({
               </div>
               <h3 className="text-sm font-bold text-white">100% Private Video</h3>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Video files never leave your device. Only the extracted 16kHz audio track is sent to the AI endpoint, preserving bandwidth and privacy.
+                Video files never leave your device. Only the extracted 16kHz audio track is sent to
+                the AI endpoint, preserving bandwidth and privacy.
               </p>
             </div>
           </div>

@@ -42,7 +42,10 @@ interface VideoPreviewProps {
   segments: Segment[];
   style: CaptionStyle;
   onStyleChange?: (style: CaptionStyle) => void;
-  onSegmentOverrideChange?: (segmentId: string, override: Partial<SegmentStyleOverride> | null) => void;
+  onSegmentOverrideChange?: (
+    segmentId: string,
+    override: Partial<SegmentStyleOverride> | null,
+  ) => void;
   aspectRatio?: VideoAspectRatio;
   onAspectRatioChange?: (ratio: VideoAspectRatio) => void;
   onTimeUpdate: (time: number) => void;
@@ -109,7 +112,8 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
     }, [segments, currentTime, style.syncOffset]);
 
     const hasCustomPos =
-      activeSeg?.styleOverride?.positionX !== undefined || activeSeg?.styleOverride?.positionY !== undefined;
+      activeSeg?.styleOverride?.positionX !== undefined ||
+      activeSeg?.styleOverride?.positionY !== undefined;
 
     useEffect(() => {
       return () => {
@@ -166,31 +170,35 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
     }, []);
 
     // Expose methods to parent (Timeline & Caption editor clicks)
-    useImperativeHandle(ref, () => ({
-      seekTo(time: number) {
-        if (videoRef.current) {
-          const maxDur = videoRef.current.duration || duration || time;
-          const target = Math.max(0, Math.min(maxDur, time));
-          videoRef.current.currentTime = target;
-          setCurrentTime(target);
-        }
-      },
-      play() {
-        safePlay();
-      },
-      pause() {
-        safePause();
-      },
-      togglePlay() {
-        togglePlay();
-      },
-      getCurrentTime() {
-        return videoRef.current?.currentTime || 0;
-      },
-      toggleFullscreen() {
-        toggleFullscreen();
-      },
-    }), [safePlay, safePause, togglePlay, toggleFullscreen, duration]);
+    useImperativeHandle(
+      ref,
+      () => ({
+        seekTo(time: number) {
+          if (videoRef.current) {
+            const maxDur = videoRef.current.duration || duration || time;
+            const target = Math.max(0, Math.min(maxDur, time));
+            videoRef.current.currentTime = target;
+            setCurrentTime(target);
+          }
+        },
+        play() {
+          safePlay();
+        },
+        pause() {
+          safePause();
+        },
+        togglePlay() {
+          togglePlay();
+        },
+        getCurrentTime() {
+          return videoRef.current?.currentTime || 0;
+        },
+        toggleFullscreen() {
+          toggleFullscreen();
+        },
+      }),
+      [safePlay, safePause, togglePlay, toggleFullscreen, duration],
+    );
 
     const handleTimeUpdate = useCallback(() => {
       if (videoRef.current) {
@@ -282,10 +290,16 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
                 className="p-1.5 rounded-lg bg-[#1b1b19] border border-white/10 text-smoke hover:text-bone hover:bg-white/10 transition-colors"
                 title={isLeftCollapsed ? 'Expand Library panel ([)' : 'Collapse Library panel ([)'}
               >
-                {isLeftCollapsed ? <PanelLeftOpen className="w-3.5 h-3.5" /> : <PanelLeftClose className="w-3.5 h-3.5" />}
+                {isLeftCollapsed ? (
+                  <PanelLeftOpen className="w-3.5 h-3.5" />
+                ) : (
+                  <PanelLeftClose className="w-3.5 h-3.5" />
+                )}
               </button>
             )}
-            <span className="text-xs font-bold text-bone tracking-tight hidden sm:inline">Preview</span>
+            <span className="text-xs font-bold text-bone tracking-tight hidden sm:inline">
+              Preview
+            </span>
           </div>
 
           {/* Center: Aspect Ratio & Safe Zones */}
@@ -302,7 +316,13 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
                       : 'text-smoke hover:text-bone'
                   }`}
                 >
-                  {ratio === '9:16' ? '9:16 Reel' : ratio === '16:9' ? '16:9' : ratio === '1:1' ? '1:1' : 'Fit'}
+                  {ratio === '9:16'
+                    ? '9:16 Reel'
+                    : ratio === '16:9'
+                      ? '16:9'
+                      : ratio === '1:1'
+                        ? '1:1'
+                        : 'Fit'}
                 </button>
               ))}
             </div>
@@ -351,7 +371,11 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
                   : 'bg-[#1b1b19] border-white/10 text-smoke hover:text-bone'
               }`}
             >
-              {hideCaptions || localHideCaptions ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              {hideCaptions || localHideCaptions ? (
+                <EyeOff className="w-3.5 h-3.5" />
+              ) : (
+                <Eye className="w-3.5 h-3.5" />
+              )}
             </button>
 
             <button
@@ -370,7 +394,11 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
                 className="p-1.5 rounded-lg bg-[#1b1b19] border border-white/10 text-smoke hover:text-bone hover:bg-white/10 transition-colors"
                 title={isRightCollapsed ? 'Expand Inspector (])' : 'Collapse Inspector (])'}
               >
-                {isRightCollapsed ? <PanelRightOpen className="w-3.5 h-3.5" /> : <PanelRightClose className="w-3.5 h-3.5" />}
+                {isRightCollapsed ? (
+                  <PanelRightOpen className="w-3.5 h-3.5" />
+                ) : (
+                  <PanelRightClose className="w-3.5 h-3.5" />
+                )}
               </button>
             )}
           </div>
@@ -386,7 +414,8 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             <div
               className="absolute inset-0 pointer-events-none opacity-40 blur-2xl scale-110"
               style={{
-                background: 'radial-gradient(ellipse at center, rgba(217, 167, 74, 0.22) 0%, rgba(20, 20, 19, 0.85) 75%, transparent 100%)',
+                background:
+                  'radial-gradient(ellipse at center, rgba(217, 167, 74, 0.22) 0%, rgba(20, 20, 19, 0.85) 75%, transparent 100%)',
               }}
               aria-hidden="true"
             />
@@ -397,8 +426,17 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             <div className="absolute inset-0 pointer-events-none z-25 flex flex-col justify-between p-4 overflow-hidden select-none">
               {/* Top Danger Guideline */}
               <div className="flex items-center justify-between text-[10px] text-red-400/90 px-2 py-1 border-b border-dashed border-red-500/50 bg-red-950/40 backdrop-blur-xs rounded">
-                <span>✕ {safePlatform === 'tiktok' ? 'LIVE · Following · For You' : safePlatform === 'shorts' ? 'Shorts Search & Camera' : 'Header / Search Area'}</span>
-                <span className="font-mono text-[9px] uppercase tracking-wider">{safePlatform.toUpperCase()} SAFE ZONE</span>
+                <span>
+                  ✕{' '}
+                  {safePlatform === 'tiktok'
+                    ? 'LIVE · Following · For You'
+                    : safePlatform === 'shorts'
+                      ? 'Shorts Search & Camera'
+                      : 'Header / Search Area'}
+                </span>
+                <span className="font-mono text-[9px] uppercase tracking-wider">
+                  {safePlatform.toUpperCase()} SAFE ZONE
+                </span>
               </div>
 
               {/* Right Side Social Action Bar */}
@@ -502,9 +540,13 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
               <div className="w-3/4 space-y-1.5 pb-2 border-t border-dashed border-red-500/50 bg-red-950/40 p-2 rounded backdrop-blur-xs">
                 <div className="flex items-center gap-1.5 text-[11px] font-bold text-white/90">
                   <span>@epic_creator</span>
-                  <span className={`px-1.5 py-0.2 rounded text-[9px] font-semibold ${
-                    safePlatform === 'shorts' ? 'bg-red-600 text-white' : 'bg-amber-400 text-black'
-                  }`}>
+                  <span
+                    className={`px-1.5 py-0.2 rounded text-[9px] font-semibold ${
+                      safePlatform === 'shorts'
+                        ? 'bg-red-600 text-white'
+                        : 'bg-amber-400 text-black'
+                    }`}
+                  >
                     {safePlatform === 'shorts' ? 'Subscribe' : 'Follow'}
                   </span>
                 </div>
@@ -603,7 +645,10 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
                     });
                   }
                   if (onSegmentOverrideChange) {
-                    onSegmentOverrideChange(activeSeg.id, { positionX: undefined, positionY: undefined });
+                    onSegmentOverrideChange(activeSeg.id, {
+                      positionX: undefined,
+                      positionY: undefined,
+                    });
                   }
                 }}
                 className="px-2 py-0.5 rounded-md bg-amber-400/20 hover:bg-amber-400 text-amber-300 hover:text-black font-semibold text-[10px] transition-colors"
@@ -615,7 +660,10 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
                 type="button"
                 onClick={() => {
                   if (onSegmentOverrideChange) {
-                    onSegmentOverrideChange(activeSeg.id, { positionX: undefined, positionY: undefined });
+                    onSegmentOverrideChange(activeSeg.id, {
+                      positionX: undefined,
+                      positionY: undefined,
+                    });
                   }
                 }}
                 className="px-1.5 py-0.5 rounded-md bg-white/10 hover:bg-white/20 text-smoke hover:text-bone text-[10px] transition-colors"
@@ -732,12 +780,27 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             >
               {isMuted || volume === 0 ? (
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"
+                  />
                 </svg>
               ) : (
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+                  />
                 </svg>
               )}
             </button>

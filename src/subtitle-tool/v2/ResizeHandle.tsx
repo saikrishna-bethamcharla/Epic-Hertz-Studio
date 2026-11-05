@@ -8,7 +8,12 @@ interface ResizeHandleProps {
   title?: string;
 }
 
-export default function ResizeHandle({ direction, onResize, onReset, title = 'Drag to resize, double-click to reset' }: ResizeHandleProps) {
+export default function ResizeHandle({
+  direction,
+  onResize,
+  onReset,
+  title = 'Drag to resize, double-click to reset',
+}: ResizeHandleProps) {
   const [isDragging, setIsDragging] = useState(false);
   const startPos = useRef<number>(0);
 
@@ -60,9 +65,7 @@ export default function ResizeHandle({ direction, onResize, onReset, title = 'Dr
     >
       <div
         className={`transition-colors rounded-full ${
-          direction === 'horizontal'
-            ? 'w-[2px] h-full'
-            : 'h-[2px] w-full'
+          direction === 'horizontal' ? 'w-[2px] h-full' : 'h-[2px] w-full'
         } ${
           isDragging
             ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]'

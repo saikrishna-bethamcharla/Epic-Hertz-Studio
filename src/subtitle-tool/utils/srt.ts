@@ -3,7 +3,7 @@ import type { Segment, WordTimestamp } from '../types';
 
 // ── Segment grouping ─────────────────────────────────────────────────────────
 
-const MAX_WORDS = 8;      // maximum words per caption segment
+const MAX_WORDS = 8; // maximum words per caption segment
 const MAX_DURATION = 4.5; // seconds – cap long silences
 
 /**
@@ -22,7 +22,10 @@ export function buildSegments(words: WordTimestamp[]): Segment[] {
       index: idx++,
       start: buffer[0].start,
       end: buffer[buffer.length - 1].end,
-      text: buffer.map((w) => w.word).join(' ').trim(),
+      text: buffer
+        .map((w) => w.word)
+        .join(' ')
+        .trim(),
     });
     buffer = [];
   };
@@ -53,11 +56,11 @@ export function toSRTTime(seconds: number): string {
   const m = Math.floor((seconds % 3600) / 60);
   const s = Math.floor(seconds % 60);
   const ms = Math.round((seconds - Math.floor(seconds)) * 1000);
-  return [
-    String(h).padStart(2, '0'),
-    String(m).padStart(2, '0'),
-    String(s).padStart(2, '0'),
-  ].join(':') + ',' + String(ms).padStart(3, '0');
+  return (
+    [String(h).padStart(2, '0'), String(m).padStart(2, '0'), String(s).padStart(2, '0')].join(':') +
+    ',' +
+    String(ms).padStart(3, '0')
+  );
 }
 
 /**
@@ -82,10 +85,7 @@ export function parseTimestamp(ts: string): number {
 
 export function toSRT(segments: Segment[]): string {
   return segments
-    .map(
-      (seg) =>
-        `${seg.index}\n${toSRTTime(seg.start)} --> ${toSRTTime(seg.end)}\n${seg.text}`,
-    )
+    .map((seg) => `${seg.index}\n${toSRTTime(seg.start)} --> ${toSRTTime(seg.end)}\n${seg.text}`)
     .join('\n\n');
 }
 
@@ -93,10 +93,7 @@ export function toSRT(segments: Segment[]): string {
 
 export function toVTT(segments: Segment[]): string {
   const body = segments
-    .map(
-      (seg) =>
-        `${toVTTTime(seg.start)} --> ${toVTTTime(seg.end)}\n${seg.text}`,
-    )
+    .map((seg) => `${toVTTTime(seg.start)} --> ${toVTTTime(seg.end)}\n${seg.text}`)
     .join('\n\n');
   return `WEBVTT\n\n${body}`;
 }

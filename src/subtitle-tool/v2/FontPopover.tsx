@@ -147,7 +147,8 @@ export default function FontPopover({
         {activeGroup === 'Indic' ? (
           <div className="space-y-1.5">
             <p className="text-[10px] text-smoke italic px-1">
-              Indic script typography auto-activates when subtitles contain Telugu, Hindi, Tamil, Kannada, Malayalam, or Bengali characters:
+              Indic script typography auto-activates when subtitles contain Telugu, Hindi, Tamil,
+              Kannada, Malayalam, or Bengali characters:
             </p>
             {SCRIPT_FONTS.map((sf) => (
               <div

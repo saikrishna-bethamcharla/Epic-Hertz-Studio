@@ -46,13 +46,18 @@ function loadFile(css: string, f: FontFile): Promise<void> {
 
 function nearestFile(files: FontFile[], weight: number, italic: boolean): FontFile | undefined {
   const style = italic ? 'italic' : 'normal';
-  const pool = files.some((f) => f.style === style) ? files.filter((f) => f.style === style) : files;
+  const pool = files.some((f) => f.style === style)
+    ? files.filter((f) => f.style === style)
+    : files;
   return [...pool].sort((a, b) => Math.abs(a.weight - weight) - Math.abs(b.weight - weight))[0];
 }
 
 /** The weight actually used when drawing (never asks for a weight we can't supply). */
 export function effectiveWeight(style: CaptionStyle): number {
-  return nearestFile(fontById(style.font.family).files, style.font.weight, style.font.italic)?.weight ?? style.font.weight;
+  return (
+    nearestFile(fontById(style.font.family).files, style.font.weight, style.font.italic)?.weight ??
+    style.font.weight
+  );
 }
 
 export function fontStack(style: CaptionStyle): string {

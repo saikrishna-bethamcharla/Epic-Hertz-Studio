@@ -9,10 +9,7 @@ import { getUserApiKey, setUserApiKey } from './api/transcribe';
 
 interface PrepareMediaModalProps {
   videoFile: File;
-  onContinue: (config: {
-    spokenLanguage: SpokenLanguage;
-    scriptOutput: ScriptOutput;
-  }) => void;
+  onContinue: (config: { spokenLanguage: SpokenLanguage; scriptOutput: ScriptOutput }) => void;
   onCancel: () => void;
 }
 
@@ -237,7 +234,12 @@ export default function PrepareMediaModal({
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-smoke">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </div>
             </div>
@@ -248,9 +250,7 @@ export default function PrepareMediaModal({
 
           {/* Caption Output Toggle (Tanglish vs Native Script) */}
           <div>
-            <label className="text-xs text-mist block mb-2 font-medium">
-              Caption output
-            </label>
+            <label className="text-xs text-mist block mb-2 font-medium">Caption output</label>
             <div className="grid grid-cols-2 p-1 rounded-xl bg-[#121211] border border-white/10 gap-1">
               <button
                 type="button"
@@ -290,7 +290,9 @@ export default function PrepareMediaModal({
                 onClick={() => setIsKeyExpanded(!isKeyExpanded)}
                 className="text-[11px] font-medium text-mist hover:text-amber-300 transition-colors flex items-center gap-1.5 cursor-pointer"
               >
-                <span>{userKey ? '🔑 Custom Gemini Key' : '🔑 Use your own Gemini key (Optional)'}</span>
+                <span>
+                  {userKey ? '🔑 Custom Gemini Key' : '🔑 Use your own Gemini key (Optional)'}
+                </span>
                 <span className="text-[10px] text-smoke">{isKeyExpanded ? '▲' : '▼'}</span>
               </button>
               {userKey && (
@@ -303,7 +305,8 @@ export default function PrepareMediaModal({
             {isKeyExpanded && (
               <div className="mt-2.5 p-3 rounded-xl bg-[#141413] border border-white/10 space-y-2">
                 <p className="text-[10px] text-smoke leading-relaxed">
-                  Your key is stored strictly in your browser&apos;s localStorage and sent only with transcription requests. It bypasses shared daily limits.
+                  Your key is stored strictly in your browser&apos;s localStorage and sent only with
+                  transcription requests. It bypasses shared daily limits.
                 </p>
                 {userKey ? (
                   <div className="flex items-center justify-between gap-2 pt-1">
@@ -351,7 +354,12 @@ export default function PrepareMediaModal({
           >
             <span>Continue</span>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.2}
+                d="M14 5l7 7m0 0l-7 7m7-7H3"
+              />
             </svg>
           </button>
 

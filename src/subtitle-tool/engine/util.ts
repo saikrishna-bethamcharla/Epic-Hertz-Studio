@@ -54,7 +54,11 @@ export function parseColor(input: string): RGBA {
   if (s === 'transparent') out = [0, 0, 0, 0];
   else if (s[0] === '#') {
     let h = s.slice(1);
-    if (h.length === 3 || h.length === 4) h = h.split('').map((c) => c + c).join('');
+    if (h.length === 3 || h.length === 4)
+      h = h
+        .split('')
+        .map((c) => c + c)
+        .join('');
     if (h.length === 6 || h.length === 8) {
       out = [
         parseInt(h.slice(0, 2), 16),
@@ -83,7 +87,12 @@ export function mixColor(a: string, b: string, t: number): string {
   if (t >= 1) return b;
   const ca = parseColor(a);
   const cb = parseColor(b);
-  return rgba([lerp(ca[0], cb[0], t), lerp(ca[1], cb[1], t), lerp(ca[2], cb[2], t), lerp(ca[3], cb[3], t)]);
+  return rgba([
+    lerp(ca[0], cb[0], t),
+    lerp(ca[1], cb[1], t),
+    lerp(ca[2], cb[2], t),
+    lerp(ca[3], cb[3], t),
+  ]);
 }
 
 /** Deterministic 0..1 pseudo-random from two numbers (stable across frames/exports). */

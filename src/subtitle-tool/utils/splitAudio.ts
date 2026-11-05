@@ -44,7 +44,8 @@ const DEFAULTS: Required<SplitOptions> = {
 export function parseWav(buf: ArrayBuffer): WavInfo | null {
   if (buf.byteLength < 44) return null;
   const v = new DataView(buf);
-  const tag = (o: number) => String.fromCharCode(v.getUint8(o), v.getUint8(o + 1), v.getUint8(o + 2), v.getUint8(o + 3));
+  const tag = (o: number) =>
+    String.fromCharCode(v.getUint8(o), v.getUint8(o + 1), v.getUint8(o + 2), v.getUint8(o + 3));
   if (tag(0) !== 'RIFF' || tag(8) !== 'WAVE') return null;
 
   let sampleRate = 0;
@@ -97,7 +98,13 @@ function buildWav(pcm: ArrayBuffer, info: Pick<WavInfo, 'sampleRate' | 'channels
 }
 
 /** Index (in frames) of the quietest 50 ms window within [from, to). */
-function quietestFrame(samples: Int16Array, channels: number, sampleRate: number, from: number, to: number): number {
+function quietestFrame(
+  samples: Int16Array,
+  channels: number,
+  sampleRate: number,
+  from: number,
+  to: number,
+): number {
   const win = Math.max(1, Math.floor(sampleRate * 0.05)); // 50 ms in frames
   let bestPos = Math.floor((from + to) / 2);
   let bestEnergy = Infinity;
@@ -119,7 +126,10 @@ function quietestFrame(samples: Int16Array, channels: number, sampleRate: number
  * Split a WAV blob into upload-sized chunks. Returns a single chunk (the
  * original blob) when it already fits, or when the input is not 16-bit PCM WAV.
  */
-export async function splitWavForUpload(wav: Blob, options: SplitOptions = {}): Promise<AudioChunk[]> {
+export async function splitWavForUpload(
+  wav: Blob,
+  options: SplitOptions = {},
+): Promise<AudioChunk[]> {
   const opt = { ...DEFAULTS, ...options };
   const buf = await wav.arrayBuffer();
   const info = parseWav(buf);
@@ -151,7 +161,10 @@ export async function splitWavForUpload(wav: Blob, options: SplitOptions = {}): 
 
   while ((totalFrames - startFrame) / info.sampleRate > targetSec + winSec + tailSec) {
     const centre = startFrame + Math.floor(targetSec * info.sampleRate);
-    const lo = Math.max(startFrame + Math.floor(info.sampleRate * 5), centre - Math.floor(winSec * info.sampleRate));
+    const lo = Math.max(
+      startFrame + Math.floor(info.sampleRate * 5),
+      centre - Math.floor(winSec * info.sampleRate),
+    );
     const hi = Math.min(totalFrames, centre + Math.floor(winSec * info.sampleRate));
     const cut = quietestFrame(samples, info.channels, info.sampleRate, lo, hi);
 
@@ -162,7 +175,12 @@ export async function splitWavForUpload(wav: Blob, options: SplitOptions = {}): 
   return chunks;
 }
 
-function makeChunk(pcm: ArrayBuffer, info: WavInfo, startFrame: number, endFrame: number): AudioChunk {
+function makeChunk(
+  pcm: ArrayBuffer,
+  info: WavInfo,
+  startFrame: number,
+  endFrame: number,
+): AudioChunk {
   const frameBytes = info.channels * 2;
   const slice = pcm.slice(startFrame * frameBytes, endFrame * frameBytes);
   return {

@@ -271,7 +271,9 @@ export async function saveProjectRecord(project: ProjectRecord): Promise<void> {
       req.onsuccess = () => resolve();
       req.onerror = () => {
         if (req.error?.name === 'QuotaExceededError') {
-          reject(new Error('Browser storage is full. Please delete old projects to free up space.'));
+          reject(
+            new Error('Browser storage is full. Please delete old projects to free up space.'),
+          );
         } else {
           reject(req.error);
         }
@@ -305,7 +307,11 @@ export async function saveProjectMedia(id: string, file: File | Blob, name: stri
       req.onsuccess = () => resolve();
       req.onerror = () => {
         if (req.error?.name === 'QuotaExceededError') {
-          reject(new Error('Browser storage quota exceeded while saving video. Consider using a shorter or lower resolution video.'));
+          reject(
+            new Error(
+              'Browser storage quota exceeded while saving video. Consider using a shorter or lower resolution video.',
+            ),
+          );
         } else {
           reject(req.error);
         }
@@ -445,7 +451,10 @@ export async function saveMediaAsset(file: File | Blob, name: string): Promise<v
 }
 
 export async function saveProjectMeta(
-  meta: Omit<ProjectRecord, 'id' | 'schemaVersion' | 'createdAt' | 'name'> & { id?: string; name?: string },
+  meta: Omit<ProjectRecord, 'id' | 'schemaVersion' | 'createdAt' | 'name'> & {
+    id?: string;
+    name?: string;
+  },
 ): Promise<void> {
   const id = meta.id || activeProjectId;
   const existing = await getProject(id);
@@ -453,7 +462,10 @@ export async function saveProjectMeta(
 
   const record: ProjectRecord = {
     id,
-    name: meta.name || existing?.name || (meta.videoName ? meta.videoName.replace(/\.[^.]+$/, '') : 'Untitled Video'),
+    name:
+      meta.name ||
+      existing?.name ||
+      (meta.videoName ? meta.videoName.replace(/\.[^.]+$/, '') : 'Untitled Video'),
     videoName: meta.videoName,
     videoType: meta.videoType,
     thumbnail: meta.thumbnail || existing?.thumbnail,

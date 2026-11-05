@@ -122,7 +122,8 @@ export function SegmentStyleDrawer({
             <div className="space-y-1.5 text-[11px]">
               <div className="flex items-center justify-between">
                 <span className="text-smoke">Position (2D Anchor):</span>
-                {(segment.styleOverride?.positionX !== undefined || segment.styleOverride?.positionY !== undefined) && (
+                {(segment.styleOverride?.positionX !== undefined ||
+                  segment.styleOverride?.positionY !== undefined) && (
                   <span className="text-[10px] text-amber-300 font-mono">
                     ({Math.round((segment.styleOverride.positionX ?? 0.5) * 100)}%,{' '}
                     {Math.round((segment.styleOverride.positionY ?? 0.82) * 100)}%)
@@ -142,9 +143,12 @@ export function SegmentStyleDrawer({
                 ].map((opt) => {
                   const isSelected =
                     opt.x === undefined && opt.y === undefined
-                      ? segment.styleOverride?.positionX === undefined && segment.styleOverride?.positionY === undefined
-                      : Math.abs((segment.styleOverride?.positionX ?? 0.5) - (opt.x ?? 0.5)) < 0.05 &&
-                        Math.abs((segment.styleOverride?.positionY ?? 0.82) - (opt.y ?? 0.82)) < 0.05;
+                      ? segment.styleOverride?.positionX === undefined &&
+                        segment.styleOverride?.positionY === undefined
+                      : Math.abs((segment.styleOverride?.positionX ?? 0.5) - (opt.x ?? 0.5)) <
+                          0.05 &&
+                        Math.abs((segment.styleOverride?.positionY ?? 0.82) - (opt.y ?? 0.82)) <
+                          0.05;
                   return (
                     <button
                       key={opt.label}
@@ -247,7 +251,9 @@ export function SegmentStyleDrawer({
                   <button
                     key={spk}
                     type="button"
-                    onClick={() => onUpdateSpeaker(segment.id, segment.speaker === spk ? undefined : spk)}
+                    onClick={() =>
+                      onUpdateSpeaker(segment.id, segment.speaker === spk ? undefined : spk)
+                    }
                     className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold transition-colors cursor-pointer ${
                       segment.speaker === spk
                         ? 'bg-amber-400 text-black'

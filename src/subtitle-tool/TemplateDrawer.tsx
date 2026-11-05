@@ -40,13 +40,22 @@ function buildSample(segments?: Segment[]): Segment {
   const src = segments?.find((s) => s.text.trim().split(/\s+/).length >= 3) ?? segments?.[0];
   if (!src) return FALLBACK_SAMPLE;
   const words = src.text.trim().split(/\s+/).slice(0, 5);
-  const timed = src.words && src.words.length >= words.length ? src.words.slice(0, words.length) : null;
+  const timed =
+    src.words && src.words.length >= words.length ? src.words.slice(0, words.length) : null;
   const t0 = timed ? timed[0].start : 0;
   const list = words.map((w, i) => {
-    if (timed) return { word: w, start: 0.1 + (timed[i].start - t0), end: 0.1 + (timed[i].end - t0) };
+    if (timed)
+      return { word: w, start: 0.1 + (timed[i].start - t0), end: 0.1 + (timed[i].end - t0) };
     return { word: w, start: 0.1 + i * 0.45, end: 0.1 + (i + 1) * 0.45 };
   });
-  return { id: 'sample', index: 1, start: 0, end: list[list.length - 1].end + 0.5, text: words.join(' '), words: list };
+  return {
+    id: 'sample',
+    index: 1,
+    start: 0,
+    end: list[list.length - 1].end + 0.5,
+    text: words.join(' '),
+    words: list,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -81,7 +90,11 @@ function drawThumb(canvas: HTMLCanvasElement, preset: CaptionStyle, sample: Segm
   o.fillStyle = r;
   o.fillRect(0, 0, VW, VH);
 
-  const st: CaptionStyle = { ...preset, syncOffset: 0, layout: { ...preset.layout, x: 0.5, y: 0.5 } };
+  const st: CaptionStyle = {
+    ...preset,
+    syncOffset: 0,
+    layout: { ...preset.layout, x: 0.5, y: 0.5 },
+  };
   renderCaptions(o, VW, VH, t, [sample], st);
 
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -125,7 +138,8 @@ const PresetCard = memo(function PresetCard({
   useEffect(() => {
     let cancelled = false;
     const paint = () => {
-      if (!cancelled && ref.current && !animate) drawThumb(ref.current, def.style, sample, peakTime(def.style, sample));
+      if (!cancelled && ref.current && !animate)
+        drawThumb(ref.current, def.style, sample, peakTime(def.style, sample));
     };
     void ensureFonts(def.style, sample.text).then(paint);
     paint();
@@ -163,7 +177,9 @@ const PresetCard = memo(function PresetCard({
       aria-label={`Preset ${def.style.name}: ${def.blurb}`}
       title={def.blurb}
       className={`group text-left rounded-xl overflow-hidden border transition-all ${
-        selected ? 'border-amber-400 ring-1 ring-amber-400/60 bg-[#211f1a]' : 'border-white/10 hover:border-white/30 bg-[#1a1a18]'
+        selected
+          ? 'border-amber-400 ring-1 ring-amber-400/60 bg-[#211f1a]'
+          : 'border-white/10 hover:border-white/30 bg-[#1a1a18]'
       }`}
     >
       <canvas ref={ref} className="block w-full" style={{ aspectRatio: `${VW} / ${CROP_H}` }} />
@@ -228,7 +244,17 @@ function toHex(c: [number, number, number, number]) {
   return `#${[c[0], c[1], c[2]].map((v) => Math.round(v).toString(16).padStart(2, '0')).join('')}`;
 }
 
-function ColorField({ label, value, onChange, alpha }: { label: string; value: string; onChange: (v: string) => void; alpha?: boolean }) {
+function ColorField({
+  label,
+  value,
+  onChange,
+  alpha,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  alpha?: boolean;
+}) {
   const c = parseColor(value);
   const hex = toHex(c);
   const emit = (h: string, a: number) => {
@@ -274,7 +300,11 @@ function Seg<T extends string | number>({
   onChange: (v: T) => void;
 }) {
   const body = (
-    <div className="flex rounded-lg overflow-hidden border border-white/10 bg-[#1a1a18]" role="group" aria-label={label}>
+    <div
+      className="flex rounded-lg overflow-hidden border border-white/10 bg-[#1a1a18]"
+      role="group"
+      aria-label={label}
+    >
       {options.map(([v, text]) => (
         <button
           key={String(v)}
@@ -322,16 +352,37 @@ function SelectField<T extends string>({
   );
 }
 
-function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+function Toggle({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
   return (
     <label className="flex items-center justify-between py-1.5 cursor-pointer">
       <span className="text-[11px] text-mist">{label}</span>
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="accent-amber-400 w-3.5 h-3.5" />
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="accent-amber-400 w-3.5 h-3.5"
+      />
     </label>
   );
 }
 
-function Section({ title, children, open = false }: { title: string; children: ReactNode; open?: boolean }) {
+function Section({
+  title,
+  children,
+  open = false,
+}: {
+  title: string;
+  children: ReactNode;
+  open?: boolean;
+}) {
   return (
     <details open={open} className="group border-b border-white/10">
       <summary className="flex items-center justify-between cursor-pointer list-none py-2.5 text-[11px] font-bold tracking-[0.12em] uppercase text-amber-300/90 select-none">
@@ -350,11 +401,20 @@ function Section({ title, children, open = false }: { title: string; children: R
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 const em = (v: number) => `${v.toFixed(2)}em`;
 
-function Customize({ style, update, onReset }: { style: CaptionStyle; update: (fn: (d: CaptionStyle) => void) => void; onReset: () => void }) {
+function Customize({
+  style,
+  update,
+  onReset,
+}: {
+  style: CaptionStyle;
+  update: (fn: (d: CaptionStyle) => void) => void;
+  onReset: () => void;
+}) {
   const fam = fontById(style.font.family);
   const weights = [...new Set(fam.files.map((f) => f.weight))];
   const hasItalic = fam.files.some((f) => f.style === 'italic');
-  const gradient: Extract<Paint, object> | null = typeof style.fill === 'string' ? null : style.fill;
+  const gradient: Extract<Paint, object> | null =
+    typeof style.fill === 'string' ? null : style.fill;
   const hl = style.highlight;
   const m = style.motion;
 
@@ -370,22 +430,67 @@ function Customize({ style, update, onReset }: { style: CaptionStyle; update: (f
             update((d) => {
               d.font.family = id;
               const f = fontById(id);
-              d.font.weight = f.files.reduce((best, x) => (Math.abs(x.weight - d.font.weight) < Math.abs(best - d.font.weight) ? x.weight : best), f.files[0].weight);
+              d.font.weight = f.files.reduce(
+                (best, x) =>
+                  Math.abs(x.weight - d.font.weight) < Math.abs(best - d.font.weight)
+                    ? x.weight
+                    : best,
+                f.files[0].weight,
+              );
               if (!f.files.some((x) => x.style === 'italic')) d.font.italic = false;
             });
           }}
         />
         {weights.length > 1 && (
-          <Seg label="Weight" value={style.font.weight} options={weights.map((w) => [w, String(w)] as [number, string])} onChange={(v) => update((d) => void (d.font.weight = v))} />
+          <Seg
+            label="Weight"
+            value={style.font.weight}
+            options={weights.map((w) => [w, String(w)] as [number, string])}
+            onChange={(v) => update((d) => void (d.font.weight = v))}
+          />
         )}
-        {hasItalic && <Toggle label="Italic" checked={style.font.italic} onChange={(v) => update((d) => void (d.font.italic = v))} />}
-        <Slider label="Size" value={style.font.size} min={0.03} max={0.2} step={0.002} fmt={pct} onChange={(v) => update((d) => void (d.font.size = v))} />
-        <Slider label="Tracking" value={style.font.tracking} min={-0.05} max={0.15} step={0.005} fmt={em} onChange={(v) => update((d) => void (d.font.tracking = v))} />
-        <Slider label="Line height" value={style.font.lineHeight} min={0.8} max={1.7} step={0.01} onChange={(v) => update((d) => void (d.font.lineHeight = v))} />
+        {hasItalic && (
+          <Toggle
+            label="Italic"
+            checked={style.font.italic}
+            onChange={(v) => update((d) => void (d.font.italic = v))}
+          />
+        )}
+        <Slider
+          label="Size"
+          value={style.font.size}
+          min={0.03}
+          max={0.2}
+          step={0.002}
+          fmt={pct}
+          onChange={(v) => update((d) => void (d.font.size = v))}
+        />
+        <Slider
+          label="Tracking"
+          value={style.font.tracking}
+          min={-0.05}
+          max={0.15}
+          step={0.005}
+          fmt={em}
+          onChange={(v) => update((d) => void (d.font.tracking = v))}
+        />
+        <Slider
+          label="Line height"
+          value={style.font.lineHeight}
+          min={0.8}
+          max={1.7}
+          step={0.01}
+          onChange={(v) => update((d) => void (d.font.lineHeight = v))}
+        />
         <Seg
           label="Case"
           value={style.font.textCase}
-          options={[['none', 'Aa'], ['upper', 'AA'], ['lower', 'aa'], ['title', 'Title']]}
+          options={[
+            ['none', 'Aa'],
+            ['upper', 'AA'],
+            ['lower', 'aa'],
+            ['title', 'Title'],
+          ]}
           onChange={(v) => update((d) => void (d.font.textCase = v))}
         />
         <Slider
@@ -397,20 +502,56 @@ function Customize({ style, update, onReset }: { style: CaptionStyle; update: (f
           fmt={(v) => (v === 0 ? 'All' : String(v))}
           onChange={(v) => update((d) => void (d.layout.wordsPerPage = v))}
         />
-        <Slider label="Max lines" value={style.layout.maxLines} min={1} max={3} step={1} onChange={(v) => update((d) => void (d.layout.maxLines = v))} />
-        <Seg label="Align" value={style.layout.align} options={[['left', 'Left'], ['center', 'Centre'], ['right', 'Right']]} onChange={(v) => update((d) => void (d.layout.align = v))} />
-        <Slider label="Max width" value={style.layout.widthPct} min={0.3} max={0.98} step={0.01} fmt={pct} onChange={(v) => update((d) => void (d.layout.widthPct = v))} />
+        <Slider
+          label="Max lines"
+          value={style.layout.maxLines}
+          min={1}
+          max={3}
+          step={1}
+          onChange={(v) => update((d) => void (d.layout.maxLines = v))}
+        />
+        <Seg
+          label="Align"
+          value={style.layout.align}
+          options={[
+            ['left', 'Left'],
+            ['center', 'Centre'],
+            ['right', 'Right'],
+          ]}
+          onChange={(v) => update((d) => void (d.layout.align = v))}
+        />
+        <Slider
+          label="Max width"
+          value={style.layout.widthPct}
+          min={0.3}
+          max={0.98}
+          step={0.01}
+          fmt={pct}
+          onChange={(v) => update((d) => void (d.layout.widthPct = v))}
+        />
       </Section>
 
       <Section title="Colour">
         <Seg
           label="Fill"
           value={gradient ? 'gradient' : 'solid'}
-          options={[['solid', 'Solid'], ['gradient', 'Gradient']]}
+          options={[
+            ['solid', 'Solid'],
+            ['gradient', 'Gradient'],
+          ]}
           onChange={(v) =>
             update((d) => {
               const base = typeof d.fill === 'string' ? d.fill : d.fill.stops[0][1];
-              d.fill = v === 'solid' ? base : { angle: 90, stops: [[0, base], [1, '#FF4E50']] };
+              d.fill =
+                v === 'solid'
+                  ? base
+                  : {
+                      angle: 90,
+                      stops: [
+                        [0, base],
+                        [1, '#FF4E50'],
+                      ],
+                    };
             })
           }
         />
@@ -443,48 +584,198 @@ function Customize({ style, update, onReset }: { style: CaptionStyle; update: (f
             />
           </>
         ) : (
-          <ColorField label="Text colour" value={style.fill as string} onChange={(v) => update((d) => void (d.fill = v))} />
+          <ColorField
+            label="Text colour"
+            value={style.fill as string}
+            onChange={(v) => update((d) => void (d.fill = v))}
+          />
         )}
-        <Slider label="Outline" value={style.stroke.width} min={0} max={0.14} step={0.005} fmt={em} onChange={(v) => update((d) => void (d.stroke.width = v))} />
-        {style.stroke.width > 0 && <ColorField label="Outline colour" value={style.stroke.color} alpha onChange={(v) => update((d) => void (d.stroke.color = v))} />}
+        <Slider
+          label="Outline"
+          value={style.stroke.width}
+          min={0}
+          max={0.14}
+          step={0.005}
+          fmt={em}
+          onChange={(v) => update((d) => void (d.stroke.width = v))}
+        />
+        {style.stroke.width > 0 && (
+          <ColorField
+            label="Outline colour"
+            value={style.stroke.color}
+            alpha
+            onChange={(v) => update((d) => void (d.stroke.color = v))}
+          />
+        )}
       </Section>
 
       <Section title="Highlight">
         <Seg
           label="Active word"
           value={hl.mode}
-          options={[['none', 'None'], ['color', 'Colour'], ['box', 'Box'], ['underline', 'Line'], ['sweep', 'Sweep']]}
+          options={[
+            ['none', 'None'],
+            ['color', 'Colour'],
+            ['box', 'Box'],
+            ['underline', 'Line'],
+            ['sweep', 'Sweep'],
+          ]}
           onChange={(v) => update((d) => void (d.highlight.mode = v))}
         />
-        {hl.mode !== 'none' && <ColorField label="Highlight colour" value={hl.color} onChange={(v) => update((d) => void (d.highlight.color = v))} />}
-        {hl.mode === 'box' && <ColorField label="Text on box" value={hl.textColor || '#0A0A0A'} onChange={(v) => update((d) => void (d.highlight.textColor = v))} />}
-        <Slider label="Pop size" value={hl.scale} min={1} max={1.4} step={0.01} fmt={(v) => `${v.toFixed(2)}×`} onChange={(v) => update((d) => void (d.highlight.scale = v))} />
-        {(hl.mode === 'color' || hl.mode === 'sweep' || hl.mode === 'underline') && (
-          <Toggle label="Keep spoken words highlighted" checked={hl.keep} onChange={(v) => update((d) => void (d.highlight.keep = v))} />
+        {hl.mode !== 'none' && (
+          <ColorField
+            label="Highlight colour"
+            value={hl.color}
+            onChange={(v) => update((d) => void (d.highlight.color = v))}
+          />
         )}
-        <Slider label="Upcoming words" value={style.reveal.dimUnspoken} min={0.15} max={1} step={0.05} fmt={pct} onChange={(v) => update((d) => void (d.reveal.dimUnspoken = v))} />
+        {hl.mode === 'box' && (
+          <ColorField
+            label="Text on box"
+            value={hl.textColor || '#0A0A0A'}
+            onChange={(v) => update((d) => void (d.highlight.textColor = v))}
+          />
+        )}
+        <Slider
+          label="Pop size"
+          value={hl.scale}
+          min={1}
+          max={1.4}
+          step={0.01}
+          fmt={(v) => `${v.toFixed(2)}×`}
+          onChange={(v) => update((d) => void (d.highlight.scale = v))}
+        />
+        {(hl.mode === 'color' || hl.mode === 'sweep' || hl.mode === 'underline') && (
+          <Toggle
+            label="Keep spoken words highlighted"
+            checked={hl.keep}
+            onChange={(v) => update((d) => void (d.highlight.keep = v))}
+          />
+        )}
+        <Slider
+          label="Upcoming words"
+          value={style.reveal.dimUnspoken}
+          min={0.15}
+          max={1}
+          step={0.05}
+          fmt={pct}
+          onChange={(v) => update((d) => void (d.reveal.dimUnspoken = v))}
+        />
       </Section>
 
       <Section title="Effects">
-        <Slider label="Shadow blur" value={style.shadow.blur} min={0} max={0.4} step={0.01} fmt={em} onChange={(v) => update((d) => void (d.shadow.blur = v))} />
-        <Slider label="Shadow offset" value={style.shadow.y} min={0} max={0.2} step={0.005} fmt={em} onChange={(v) => update((d) => void (d.shadow.y = v))} />
-        <ColorField label="Shadow colour" value={style.shadow.color} alpha onChange={(v) => update((d) => void (d.shadow.color = v))} />
-        <Slider label="Glow" value={style.glow.strength} min={0} max={3} step={1} fmt={(v) => (v === 0 ? 'Off' : String(v))} onChange={(v) => update((d) => void (d.glow.strength = v))} />
+        <Slider
+          label="Shadow blur"
+          value={style.shadow.blur}
+          min={0}
+          max={0.4}
+          step={0.01}
+          fmt={em}
+          onChange={(v) => update((d) => void (d.shadow.blur = v))}
+        />
+        <Slider
+          label="Shadow offset"
+          value={style.shadow.y}
+          min={0}
+          max={0.2}
+          step={0.005}
+          fmt={em}
+          onChange={(v) => update((d) => void (d.shadow.y = v))}
+        />
+        <ColorField
+          label="Shadow colour"
+          value={style.shadow.color}
+          alpha
+          onChange={(v) => update((d) => void (d.shadow.color = v))}
+        />
+        <Slider
+          label="Glow"
+          value={style.glow.strength}
+          min={0}
+          max={3}
+          step={1}
+          fmt={(v) => (v === 0 ? 'Off' : String(v))}
+          onChange={(v) => update((d) => void (d.glow.strength = v))}
+        />
         {style.glow.strength > 0 && (
           <>
-            <Slider label="Glow spread" value={style.glow.blur} min={0.05} max={0.5} step={0.01} fmt={em} onChange={(v) => update((d) => void (d.glow.blur = v))} />
-            <ColorField label="Glow colour" value={style.glow.color} onChange={(v) => update((d) => void (d.glow.color = v))} />
+            <Slider
+              label="Glow spread"
+              value={style.glow.blur}
+              min={0.05}
+              max={0.5}
+              step={0.01}
+              fmt={em}
+              onChange={(v) => update((d) => void (d.glow.blur = v))}
+            />
+            <ColorField
+              label="Glow colour"
+              value={style.glow.color}
+              onChange={(v) => update((d) => void (d.glow.color = v))}
+            />
           </>
         )}
-        <Slider label="3-D depth" value={style.extrude.depth} min={0} max={0.2} step={0.005} fmt={em} onChange={(v) => update((d) => void (d.extrude.depth = v))} />
-        {style.extrude.depth > 0 && <ColorField label="3-D colour" value={style.extrude.color} onChange={(v) => update((d) => void (d.extrude.color = v))} />}
-        <Seg label="Background" value={style.plate.mode} options={[['none', 'None'], ['block', 'Block'], ['line', 'Lines']]} onChange={(v) => update((d) => void (d.plate.mode = v))} />
+        <Slider
+          label="3-D depth"
+          value={style.extrude.depth}
+          min={0}
+          max={0.2}
+          step={0.005}
+          fmt={em}
+          onChange={(v) => update((d) => void (d.extrude.depth = v))}
+        />
+        {style.extrude.depth > 0 && (
+          <ColorField
+            label="3-D colour"
+            value={style.extrude.color}
+            onChange={(v) => update((d) => void (d.extrude.color = v))}
+          />
+        )}
+        <Seg
+          label="Background"
+          value={style.plate.mode}
+          options={[
+            ['none', 'None'],
+            ['block', 'Block'],
+            ['line', 'Lines'],
+          ]}
+          onChange={(v) => update((d) => void (d.plate.mode = v))}
+        />
         {style.plate.mode !== 'none' && (
           <>
-            <ColorField label="Background colour" value={style.plate.color} alpha onChange={(v) => update((d) => void (d.plate.color = v))} />
-            <Slider label="Padding X" value={style.plate.padX} min={0} max={1} step={0.01} fmt={em} onChange={(v) => update((d) => void (d.plate.padX = v))} />
-            <Slider label="Padding Y" value={style.plate.padY} min={0} max={0.6} step={0.01} fmt={em} onChange={(v) => update((d) => void (d.plate.padY = v))} />
-            <Slider label="Corner radius" value={style.plate.radius} min={0} max={0.8} step={0.01} fmt={em} onChange={(v) => update((d) => void (d.plate.radius = v))} />
+            <ColorField
+              label="Background colour"
+              value={style.plate.color}
+              alpha
+              onChange={(v) => update((d) => void (d.plate.color = v))}
+            />
+            <Slider
+              label="Padding X"
+              value={style.plate.padX}
+              min={0}
+              max={1}
+              step={0.01}
+              fmt={em}
+              onChange={(v) => update((d) => void (d.plate.padX = v))}
+            />
+            <Slider
+              label="Padding Y"
+              value={style.plate.padY}
+              min={0}
+              max={0.6}
+              step={0.01}
+              fmt={em}
+              onChange={(v) => update((d) => void (d.plate.padY = v))}
+            />
+            <Slider
+              label="Corner radius"
+              value={style.plate.radius}
+              min={0}
+              max={0.8}
+              step={0.01}
+              fmt={em}
+              onChange={(v) => update((d) => void (d.plate.radius = v))}
+            />
           </>
         )}
       </Section>
@@ -494,41 +785,161 @@ function Customize({ style, update, onReset }: { style: CaptionStyle; update: (f
           label="Entrance"
           value={m.in}
           options={[
-            ['none', 'None'], ['fade', 'Fade'], ['pop', 'Pop'], ['slide-up', 'Slide up'], ['slide-down', 'Slide down'],
-            ['zoom', 'Zoom slam'], ['blur', 'Blur in'], ['mask-up', 'Mask reveal'], ['drop', 'Drop'], ['typewriter', 'Typewriter'], ['glitch', 'Glitch'],
+            ['none', 'None'],
+            ['fade', 'Fade'],
+            ['pop', 'Pop'],
+            ['slide-up', 'Slide up'],
+            ['slide-down', 'Slide down'],
+            ['zoom', 'Zoom slam'],
+            ['blur', 'Blur in'],
+            ['mask-up', 'Mask reveal'],
+            ['drop', 'Drop'],
+            ['typewriter', 'Typewriter'],
+            ['glitch', 'Glitch'],
           ]}
           onChange={(v) => update((d) => void (d.motion.in = v))}
         />
-        <SelectField label="Exit" value={m.out} options={[['none', 'None'], ['fade', 'Fade'], ['slide-down', 'Slide down'], ['shrink', 'Shrink']]} onChange={(v) => update((d) => void (d.motion.out = v))} />
-        <Seg label="Animate by" value={m.unit} options={[['line', 'Line'], ['word', 'Word'], ['char', 'Letter']]} onChange={(v) => update((d) => void (d.motion.unit = v))} />
-        <Slider label="Entrance time" value={m.inMs} min={1} max={1200} step={10} fmt={(v) => `${Math.round(v)} ms`} onChange={(v) => update((d) => void (d.motion.inMs = v))} />
-        <Slider label="Stagger" value={m.stagger} min={0} max={200} step={5} fmt={(v) => `${Math.round(v)} ms`} onChange={(v) => update((d) => void (d.motion.stagger = v))} />
+        <SelectField
+          label="Exit"
+          value={m.out}
+          options={[
+            ['none', 'None'],
+            ['fade', 'Fade'],
+            ['slide-down', 'Slide down'],
+            ['shrink', 'Shrink'],
+          ]}
+          onChange={(v) => update((d) => void (d.motion.out = v))}
+        />
+        <Seg
+          label="Animate by"
+          value={m.unit}
+          options={[
+            ['line', 'Line'],
+            ['word', 'Word'],
+            ['char', 'Letter'],
+          ]}
+          onChange={(v) => update((d) => void (d.motion.unit = v))}
+        />
+        <Slider
+          label="Entrance time"
+          value={m.inMs}
+          min={1}
+          max={1200}
+          step={10}
+          fmt={(v) => `${Math.round(v)} ms`}
+          onChange={(v) => update((d) => void (d.motion.inMs = v))}
+        />
+        <Slider
+          label="Stagger"
+          value={m.stagger}
+          min={0}
+          max={200}
+          step={5}
+          fmt={(v) => `${Math.round(v)} ms`}
+          onChange={(v) => update((d) => void (d.motion.stagger = v))}
+        />
         <SelectField
           label="Easing"
           value={m.ease}
-          options={[['spring', 'Spring'], ['back', 'Overshoot'], ['out', 'Smooth'], ['expo', 'Snappy'], ['inout', 'Ease in-out'], ['linear', 'Linear']]}
+          options={[
+            ['spring', 'Spring'],
+            ['back', 'Overshoot'],
+            ['out', 'Smooth'],
+            ['expo', 'Snappy'],
+            ['inout', 'Ease in-out'],
+            ['linear', 'Linear'],
+          ]}
           onChange={(v) => update((d) => void (d.motion.ease = v))}
         />
-        {(m.ease === 'spring' || m.ease === 'back') && <Slider label="Bounce" value={m.bounce} min={0} max={1} step={0.05} fmt={pct} onChange={(v) => update((d) => void (d.motion.bounce = v))} />}
-        <Slider label="Tilt" value={m.wobble} min={0} max={6} step={0.1} fmt={(v) => `${v.toFixed(1)}°`} onChange={(v) => update((d) => void (d.motion.wobble = v))} />
-        <Seg label="Words appear" value={style.reveal.mode} options={[['page', 'Together'], ['spoken', 'As spoken']]} onChange={(v) => update((d) => void (d.reveal.mode = v))} />
+        {(m.ease === 'spring' || m.ease === 'back') && (
+          <Slider
+            label="Bounce"
+            value={m.bounce}
+            min={0}
+            max={1}
+            step={0.05}
+            fmt={pct}
+            onChange={(v) => update((d) => void (d.motion.bounce = v))}
+          />
+        )}
+        <Slider
+          label="Tilt"
+          value={m.wobble}
+          min={0}
+          max={6}
+          step={0.1}
+          fmt={(v) => `${v.toFixed(1)}°`}
+          onChange={(v) => update((d) => void (d.motion.wobble = v))}
+        />
+        <Seg
+          label="Words appear"
+          value={style.reveal.mode}
+          options={[
+            ['page', 'Together'],
+            ['spoken', 'As spoken'],
+          ]}
+          onChange={(v) => update((d) => void (d.reveal.mode = v))}
+        />
       </Section>
 
       <Section title="Position & timing">
-        <Slider label="Horizontal" value={style.layout.x} min={0.05} max={0.95} step={0.005} fmt={pct} onChange={(v) => update((d) => void (d.layout.x = v))} />
-        <Slider label="Vertical" value={style.layout.y} min={0.05} max={0.95} step={0.005} fmt={pct} onChange={(v) => update((d) => void (d.layout.y = v))} />
+        <Slider
+          label="Horizontal"
+          value={style.layout.x}
+          min={0.05}
+          max={0.95}
+          step={0.005}
+          fmt={pct}
+          onChange={(v) => update((d) => void (d.layout.x = v))}
+        />
+        <Slider
+          label="Vertical"
+          value={style.layout.y}
+          min={0.05}
+          max={0.95}
+          step={0.005}
+          fmt={pct}
+          onChange={(v) => update((d) => void (d.layout.y = v))}
+        />
         <div className="flex gap-1.5 py-1">
-          {([['Top', 0.18], ['Middle', 0.5], ['Lower third', 0.74], ['Bottom', 0.87]] as const).map(([label, y]) => (
-            <button key={label} type="button" onClick={() => update((d) => void ((d.layout.y = y), (d.layout.x = 0.5)))} className="flex-1 px-1 py-1 text-[10px] rounded-md border border-white/10 text-mist hover:text-bone hover:border-white/30">
+          {(
+            [
+              ['Top', 0.18],
+              ['Middle', 0.5],
+              ['Lower third', 0.74],
+              ['Bottom', 0.87],
+            ] as const
+          ).map(([label, y]) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() => update((d) => void ((d.layout.y = y), (d.layout.x = 0.5)))}
+              className="flex-1 px-1 py-1 text-[10px] rounded-md border border-white/10 text-mist hover:text-bone hover:border-white/30"
+            >
               {label}
             </button>
           ))}
         </div>
-        <p className="text-[10px] text-smoke leading-snug py-1">Tip: you can also drag the captions directly in the preview. They snap to the centre lines.</p>
-        <Slider label="Timing offset" value={style.syncOffset} min={-1} max={0.5} step={0.05} fmt={(v) => `${v > 0 ? '+' : ''}${v.toFixed(2)} s`} onChange={(v) => update((d) => void (d.syncOffset = v))} />
+        <p className="text-[10px] text-smoke leading-snug py-1">
+          Tip: you can also drag the captions directly in the preview. They snap to the centre
+          lines.
+        </p>
+        <Slider
+          label="Timing offset"
+          value={style.syncOffset}
+          min={-1}
+          max={0.5}
+          step={0.05}
+          fmt={(v) => `${v > 0 ? '+' : ''}${v.toFixed(2)} s`}
+          onChange={(v) => update((d) => void (d.syncOffset = v))}
+        />
       </Section>
 
-      <button type="button" onClick={onReset} className="mt-4 w-full py-2 rounded-lg border border-white/15 text-[12px] text-mist hover:text-bone hover:border-white/30 transition-colors">
+      <button
+        type="button"
+        onClick={onReset}
+        className="mt-4 w-full py-2 rounded-lg border border-white/15 text-[12px] text-mist hover:text-bone hover:border-white/30 transition-colors"
+      >
         Reset to preset
       </button>
     </div>
@@ -543,7 +954,9 @@ const GROUPS: PresetGroup[] = ['Viral', 'Kinetic', 'Glow & colour', 'Film & clea
 
 export default function TemplateDrawer({ style, onChange, segments }: TemplateDrawerProps) {
   const [tab, setTab] = useState<'presets' | 'customize'>('presets');
-  const baseId = useRef(PRESETS.find((p) => p.style.id === style.id)?.style.id ?? PRESETS[0].style.id);
+  const baseId = useRef(
+    PRESETS.find((p) => p.style.id === style.id)?.style.id ?? PRESETS[0].style.id,
+  );
   const sample = useMemo(() => buildSample(segments), [segments]);
 
   const choose = useCallback(
@@ -577,10 +990,17 @@ export default function TemplateDrawer({ style, onChange, segments }: TemplateDr
     <div className="h-full flex flex-col bg-[#131312] border-l border-white/10">
       <div className="shrink-0 px-3.5 pt-3 pb-2.5 border-b border-white/10">
         <div className="flex items-center justify-between mb-2.5">
-          <h3 className="text-[11px] font-bold tracking-[0.14em] uppercase text-mist">Caption style</h3>
-          <span className="text-[10px] text-amber-300/90 font-medium truncate max-w-[55%]">{style.name}</span>
+          <h3 className="text-[11px] font-bold tracking-[0.14em] uppercase text-mist">
+            Caption style
+          </h3>
+          <span className="text-[10px] text-amber-300/90 font-medium truncate max-w-[55%]">
+            {style.name}
+          </span>
         </div>
-        <div role="tablist" className="grid grid-cols-2 rounded-lg overflow-hidden border border-white/10 bg-[#1a1a18]">
+        <div
+          role="tablist"
+          className="grid grid-cols-2 rounded-lg overflow-hidden border border-white/10 bg-[#1a1a18]"
+        >
           {(['presets', 'customize'] as const).map((t) => (
             <button
               key={t}
@@ -600,15 +1020,26 @@ export default function TemplateDrawer({ style, onChange, segments }: TemplateDr
           <div className="px-3.5 pt-3 pb-6 space-y-5">
             {GROUPS.map((g) => (
               <div key={g}>
-                <div className="text-[10px] font-bold tracking-[0.14em] uppercase text-amber-300/80 mb-2">{g}</div>
+                <div className="text-[10px] font-bold tracking-[0.14em] uppercase text-amber-300/80 mb-2">
+                  {g}
+                </div>
                 <div className="grid grid-cols-2 gap-2.5">
                   {PRESETS.filter((p) => p.group === g).map((def) => (
-                    <PresetCard key={def.style.id} def={def} sample={sample} selected={style.id === def.style.id} onSelect={() => choose(def)} />
+                    <PresetCard
+                      key={def.style.id}
+                      def={def}
+                      sample={sample}
+                      selected={style.id === def.style.id}
+                      onSelect={() => choose(def)}
+                    />
                   ))}
                 </div>
               </div>
             ))}
-            <p className="text-[10px] text-smoke leading-snug">Hover a style to see it move. Previews use your own captions. Switch to Customize to fine-tune anything.</p>
+            <p className="text-[10px] text-smoke leading-snug">
+              Hover a style to see it move. Previews use your own captions. Switch to Customize to
+              fine-tune anything.
+            </p>
           </div>
         ) : (
           <Customize style={style} update={update} onReset={reset} />

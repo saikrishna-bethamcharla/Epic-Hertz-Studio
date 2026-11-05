@@ -50,7 +50,13 @@ export default function CaptionCanvas({
   const geomVersion = useRef(0);
   const bounds = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
   const hover = useRef(false);
-  const drag = useRef<{ x: number; y: number; snapX: boolean; snapY: boolean; segId?: string } | null>(null);
+  const drag = useRef<{
+    x: number;
+    y: number;
+    snapX: boolean;
+    snapY: boolean;
+    segId?: string;
+  } | null>(null);
 
   // ── Fonts: make sure the chosen family (and any Indic script in the text) is loaded
   const allText = useMemo(() => segments.map((s) => s.text).join(' '), [segments]);
@@ -100,7 +106,15 @@ export default function CaptionCanvas({
   // ── Render loop: draws only when something actually changed
   useEffect(() => {
     let raf = 0;
-    let last = { t: -1, style: null as CaptionStyle | null, segs: null as Segment[] | null, g: -1, f: -1, drag: false, hover: false };
+    let last = {
+      t: -1,
+      style: null as CaptionStyle | null,
+      segs: null as Segment[] | null,
+      g: -1,
+      f: -1,
+      drag: false,
+      hover: false,
+    };
 
     const tick = () => {
       raf = requestAnimationFrame(tick);
@@ -149,7 +163,15 @@ export default function CaptionCanvas({
         !!dragging !== last.drag ||
         hover.current !== last.hover;
       if (!changed && !dragging) return;
-      last = { t, style: effStyle, segs: effSegs, g: geomVersion.current, f: fontsVersion(), drag: !!dragging, hover: hover.current };
+      last = {
+        t,
+        style: effStyle,
+        segs: effSegs,
+        g: geomVersion.current,
+        f: fontsVersion(),
+        drag: !!dragging,
+        hover: hover.current,
+      };
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const res = renderCaptions(ctx, canvas.width, canvas.height, t, effSegs, effStyle);
@@ -223,7 +245,11 @@ export default function CaptionCanvas({
 
     const toCanvas = (e: PointerEvent) => {
       const r = canvas.getBoundingClientRect();
-      return { x: ((e.clientX - r.left) / r.width) * canvas.width, y: ((e.clientY - r.top) / r.height) * canvas.height, r };
+      return {
+        x: ((e.clientX - r.left) / r.width) * canvas.width,
+        y: ((e.clientY - r.top) / r.height) * canvas.height,
+        r,
+      };
     };
     const hit = (e: PointerEvent) => {
       const b = bounds.current;
@@ -275,8 +301,14 @@ export default function CaptionCanvas({
       const activeSeg = findSegment(segs, t);
       const isShiftOrAlt = e.shiftKey || e.altKey;
 
-      const initX = activeSeg?.styleOverride?.positionX !== undefined ? activeSeg.styleOverride.positionX : st.layout.x;
-      const initY = activeSeg?.styleOverride?.positionY !== undefined ? activeSeg.styleOverride.positionY : st.layout.y;
+      const initX =
+        activeSeg?.styleOverride?.positionX !== undefined
+          ? activeSeg.styleOverride.positionX
+          : st.layout.x;
+      const initY =
+        activeSeg?.styleOverride?.positionY !== undefined
+          ? activeSeg.styleOverride.positionY
+          : st.layout.y;
 
       start = {
         cx: e.clientX,
@@ -307,7 +339,8 @@ export default function CaptionCanvas({
       const { style: st, onStyleChange: commit, onSegmentOverrideChange: commitSeg } = live.current;
       if (start.moved) suppressClick = true;
       if (d && start.moved) {
-        const applyToAll = start.isShiftOrAlt || (e && (e.shiftKey || e.altKey)) || !commitSeg || !start.segId;
+        const applyToAll =
+          start.isShiftOrAlt || (e && (e.shiftKey || e.altKey)) || !commitSeg || !start.segId;
         if (applyToAll && commit) {
           commit({ ...st, layout: { ...st.layout, x: d.x, y: d.y } });
         } else if (commitSeg && start.segId) {

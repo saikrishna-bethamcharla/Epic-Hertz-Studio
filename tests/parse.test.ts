@@ -54,7 +54,8 @@ describe('api/_lib/parse.js: parseSegmentsFromResponse', () => {
   });
 
   it('extracts JSON surrounded by AI conversational chatter', () => {
-    const raw = 'Here are your requested captions:\n\n[{"start": "00:01.00", "end": "00:03.50", "text": "Chatter text"}]\n\nHope this helps!';
+    const raw =
+      'Here are your requested captions:\n\n[{"start": "00:01.00", "end": "00:03.50", "text": "Chatter text"}]\n\nHope this helps!';
     const segs = parseSegmentsFromResponse(raw);
     expect(segs.length).toBe(1);
     expect(segs[0].text).toBe('Chatter text');

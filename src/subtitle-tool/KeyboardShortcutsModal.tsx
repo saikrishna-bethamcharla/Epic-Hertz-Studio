@@ -45,14 +45,29 @@ const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
   {
     title: 'Precision Timing & Styling Overrides',
     items: [
-      { keys: ['Mic / +S pill'], description: 'Cycle or assign speaker (S1, S2, S3...) with distinct color coding' },
-      { keys: ['Word chips'], description: 'Nudge ±0.05s, cycle color & animation FX (pop, shake, glow, bar)' },
-      { keys: ['Drag on video'], description: 'Reposition active caption freely (Hold Shift to move all captions)' },
-      { keys: ['Sliders icon'], description: 'Per-caption overrides (2D position anchor, scale, custom color)' },
+      {
+        keys: ['Mic / +S pill'],
+        description: 'Cycle or assign speaker (S1, S2, S3...) with distinct color coding',
+      },
+      {
+        keys: ['Word chips'],
+        description: 'Nudge ±0.05s, cycle color & animation FX (pop, shake, glow, bar)',
+      },
+      {
+        keys: ['Drag on video'],
+        description: 'Reposition active caption freely (Hold Shift to move all captions)',
+      },
+      {
+        keys: ['Sliders icon'],
+        description: 'Per-caption overrides (2D position anchor, scale, custom color)',
+      },
       { keys: ['Smile icon'], description: 'Insert creator emojis into dialogue' },
       { keys: ['Drag edge'], description: 'Trim caption start / end boundary' },
       { keys: ['Snap button'], description: 'Toggle magnetic snapping to playhead & edges' },
-      { keys: ['Ripple button'], description: 'Toggle ripple editing (subsequent captions follow)' },
+      {
+        keys: ['Ripple button'],
+        description: 'Toggle ripple editing (subsequent captions follow)',
+      },
     ],
   },
   {
@@ -140,7 +155,13 @@ export default function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShor
 
             {/* Footer */}
             <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs text-smoke shrink-0">
-              <span>Press <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-bone font-mono text-[10px]">?</kbd> anytime to view</span>
+              <span>
+                Press{' '}
+                <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-bone font-mono text-[10px]">
+                  ?
+                </kbd>{' '}
+                anytime to view
+              </span>
               <button
                 type="button"
                 onClick={onClose}

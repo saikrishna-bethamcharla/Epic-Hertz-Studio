@@ -231,12 +231,9 @@ export default function SubtitleTool() {
       words: target.words ? target.words.filter((w) => w.start >= curTime) : undefined,
     };
 
-    const updated = [
-      ...segments.slice(0, idx),
-      newSeg1,
-      newSeg2,
-      ...segments.slice(idx + 1),
-    ].map((s, i) => ({ ...s, index: i + 1 }));
+    const updated = [...segments.slice(0, idx), newSeg1, newSeg2, ...segments.slice(idx + 1)].map(
+      (s, i) => ({ ...s, index: i + 1 }),
+    );
 
     updateSegments(updated);
     setActiveId(newId);
@@ -244,9 +241,7 @@ export default function SubtitleTool() {
 
   const handleDeleteActive = useCallback(() => {
     if (!activeId) return;
-    const next = segments
-      .filter((s) => s.id !== activeId)
-      .map((s, i) => ({ ...s, index: i + 1 }));
+    const next = segments.filter((s) => s.id !== activeId).map((s, i) => ({ ...s, index: i + 1 }));
     updateSegments(next);
     setActiveId(null);
   }, [activeId, segments, updateSegments]);
@@ -376,14 +371,14 @@ export default function SubtitleTool() {
 
       if (e.key === 'ArrowLeft') {
         e.preventDefault();
-        const step = e.shiftKey ? 1.0 : (1 / 30);
+        const step = e.shiftKey ? 1.0 : 1 / 30;
         videoRef.current?.seekTo(Math.max(0, currentTime - step));
         return;
       }
 
       if (e.key === 'ArrowRight') {
         e.preventDefault();
-        const step = e.shiftKey ? 1.0 : (1 / 30);
+        const step = e.shiftKey ? 1.0 : 1 / 30;
         videoRef.current?.seekTo(Math.min(duration || 0, currentTime + step));
         return;
       }
@@ -603,10 +598,7 @@ export default function SubtitleTool() {
       )}
 
       {/* ── Keyboard Shortcuts Modal ───────────────────────────────────── */}
-      <KeyboardShortcutsModal
-        isOpen={isShortcutsOpen}
-        onClose={() => setIsShortcutsOpen(false)}
-      />
+      <KeyboardShortcutsModal isOpen={isShortcutsOpen} onClose={() => setIsShortcutsOpen(false)} />
 
       {/* ── Project Manager Modal ───────────────────────────────────────── */}
       <ProjectManagerModal
@@ -666,9 +658,7 @@ export default function SubtitleTool() {
                   <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                   <span>Try Demo</span>
                 </button>
-                <label
-                  className="px-4 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-semibold text-xs tracking-wide shadow-sm active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
-                >
+                <label className="px-4 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-semibold text-xs tracking-wide shadow-sm active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer">
                   <Upload className="w-3.5 h-3.5 text-black" />
                   <span>Upload Video</span>
                   <input
@@ -737,7 +727,8 @@ export default function SubtitleTool() {
                       {savedDraft.videoName}
                     </span>
                     <span className="text-mist hidden sm:inline">
-                      ({savedDraft.segmentCount} captions · saved {formatRelativeTime(savedDraft.updatedAt)})
+                      ({savedDraft.segmentCount} captions · saved{' '}
+                      {formatRelativeTime(savedDraft.updatedAt)})
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -763,10 +754,7 @@ export default function SubtitleTool() {
               )}
 
               <div className="flex-1 min-h-0 w-full h-full overflow-hidden">
-                <LandingScrollCraft
-                  onFileSelect={handleFileDrop}
-                  onTryDemo={handleTryDemo}
-                />
+                <LandingScrollCraft onFileSelect={handleFileDrop} onTryDemo={handleTryDemo} />
               </div>
             </motion.div>
           )}
@@ -930,7 +918,7 @@ export default function SubtitleTool() {
                             onUpdateActiveSegment={(override) => {
                               if (!activeId) return;
                               const updated = segments.map((s) =>
-                                s.id === activeId ? { ...s, ...override } : s
+                                s.id === activeId ? { ...s, ...override } : s,
                               );
                               updateSegments(updated);
                             }}
@@ -976,7 +964,10 @@ export default function SubtitleTool() {
                   />
 
                   {/* Zone 4: Bottom Multi-track Audio Timeline */}
-                  <div style={{ height: `${layout.timelineHeight}px` }} className="shrink-0 w-full overflow-hidden bg-[#121211]">
+                  <div
+                    style={{ height: `${layout.timelineHeight}px` }}
+                    className="shrink-0 w-full overflow-hidden bg-[#121211]"
+                  >
                     <Timeline
                       duration={duration}
                       currentTime={currentTime}
@@ -1018,7 +1009,11 @@ export default function SubtitleTool() {
                     />
                   </div>
 
-                  <div role="tablist" aria-label="Editor panels" className="shrink-0 grid grid-cols-3 border-y border-white/10 bg-[#141413]">
+                  <div
+                    role="tablist"
+                    aria-label="Editor panels"
+                    className="shrink-0 grid grid-cols-3 border-y border-white/10 bg-[#141413]"
+                  >
                     {(['captions', 'styles', 'timeline'] as const).map((tab) => (
                       <button
                         key={tab}
@@ -1047,7 +1042,9 @@ export default function SubtitleTool() {
                         onSeek={(t) => videoRef.current?.seekTo(t)}
                       />
                     )}
-                    {mobileTab === 'styles' && <TemplateDrawer style={style} onChange={setStyle} segments={segments} />}
+                    {mobileTab === 'styles' && (
+                      <TemplateDrawer style={style} onChange={setStyle} segments={segments} />
+                    )}
                     {mobileTab === 'timeline' && (
                       <Timeline
                         duration={duration}

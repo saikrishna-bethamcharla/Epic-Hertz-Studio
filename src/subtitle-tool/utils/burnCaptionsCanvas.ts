@@ -114,10 +114,7 @@ export async function burnCaptionsCanvas(
         }
       }
 
-      const combinedStream = new MediaStream([
-        ...canvasStream.getVideoTracks(),
-        ...audioTracks,
-      ]);
+      const combinedStream = new MediaStream([...canvasStream.getVideoTracks(), ...audioTracks]);
 
       // Determine best supported MIME type (prefer MP4, fallback to WebM)
       const mimeTypes = [
@@ -190,12 +187,15 @@ export async function burnCaptionsCanvas(
 
       // Start recording
       mediaRecorder.start(250);
-      video.play().then(() => {
-        renderLoop();
-      }).catch((err) => {
-        cleanup();
-        reject(err);
-      });
+      video
+        .play()
+        .then(() => {
+          renderLoop();
+        })
+        .catch((err) => {
+          cleanup();
+          reject(err);
+        });
     };
 
     video.onerror = () => {

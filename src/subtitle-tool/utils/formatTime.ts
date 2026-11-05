@@ -5,7 +5,10 @@
  * Formats a time in seconds into mm:ss.SS (or hh:mm:ss.SS for long videos)
  * e.g., 4.25 -> "0:04.25", 74.8 -> "1:14.80"
  */
-export function formatTimecode(secs: number, options: { decimals?: boolean; padMinutes?: boolean } = {}): string {
+export function formatTimecode(
+  secs: number,
+  options: { decimals?: boolean; padMinutes?: boolean } = {},
+): string {
   const { decimals = true, padMinutes = false } = options;
   if (!Number.isFinite(secs) || secs < 0) secs = 0;
 

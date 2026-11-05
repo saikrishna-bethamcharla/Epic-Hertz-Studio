@@ -27,7 +27,12 @@ function getStageIcon(stage: AppStage) {
   }
 }
 
-export default function ProgressOverlay({ stage, statusText, progress, onCancel }: ProgressOverlayProps) {
+export default function ProgressOverlay({
+  stage,
+  statusText,
+  progress,
+  onCancel,
+}: ProgressOverlayProps) {
   const showBar = stage === 'burning' && typeof progress === 'number';
 
   return (
@@ -73,9 +78,7 @@ export default function ProgressOverlay({ stage, statusText, progress, onCancel 
           />
         </div>
       )}
-      {showBar && (
-        <p className="mt-2 text-smoke text-sm tabular-nums">{progress}%</p>
-      )}
+      {showBar && <p className="mt-2 text-smoke text-sm tabular-nums">{progress}%</p>}
 
       {/* Cancel button during video export */}
       {stage === 'burning' && onCancel && (

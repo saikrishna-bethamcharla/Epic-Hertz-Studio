@@ -65,7 +65,13 @@ export interface CaptionStyle {
   shadow: { x: number; y: number; blur: number; color: string };
   glow: { color: string; blur: number; strength: number };
   extrude: { depth: number; color: string; angle: number };
-  plate: { mode: 'none' | 'block' | 'line'; color: string; padX: number; padY: number; radius: number };
+  plate: {
+    mode: 'none' | 'block' | 'line';
+    color: string;
+    padX: number;
+    padY: number;
+    radius: number;
+  };
 
   highlight: {
     mode: HighlightMode;
@@ -120,52 +126,142 @@ export interface FontFamilyDef {
 }
 
 export const FONT_FAMILIES: FontFamilyDef[] = [
-  { id: 'montserrat', label: 'Montserrat', css: 'Montserrat', group: 'Sans', files: [
-    { weight: 800, style: 'normal', file: 'montserrat-latin-800-normal.woff2' },
-    { weight: 900, style: 'normal', file: 'montserrat-latin-900-normal.woff2' } ] },
-  { id: 'poppins', label: 'Poppins', css: 'Poppins', group: 'Sans', files: [
-    { weight: 600, style: 'normal', file: 'poppins-latin-600-normal.woff2' },
-    { weight: 800, style: 'normal', file: 'poppins-latin-800-normal.woff2' } ] },
-  { id: 'inter', label: 'Inter', css: 'Inter', group: 'Sans', files: [
-    { weight: 600, style: 'normal', file: 'inter-latin-600-normal.woff2' },
-    { weight: 800, style: 'normal', file: 'inter-latin-800-normal.woff2' } ] },
-  { id: 'anton', label: 'Anton', css: 'Anton', group: 'Display', files: [
-    { weight: 400, style: 'normal', file: 'anton-latin-400-normal.woff2' } ] },
-  { id: 'bebas', label: 'Bebas Neue', css: 'Bebas Neue', group: 'Display', files: [
-    { weight: 400, style: 'normal', file: 'bebas-neue-latin-400-normal.woff2' } ] },
-  { id: 'oswald', label: 'Oswald', css: 'Oswald', group: 'Display', files: [
-    { weight: 600, style: 'normal', file: 'oswald-latin-600-normal.woff2' } ] },
-  { id: 'archivo', label: 'Archivo Black', css: 'Archivo Black', group: 'Display', files: [
-    { weight: 400, style: 'normal', file: 'archivo-black-latin-400-normal.woff2' } ] },
-  { id: 'playfair', label: 'Playfair Display', css: 'Playfair Display', group: 'Serif', files: [
-    { weight: 700, style: 'normal', file: 'playfair-display-latin-700-normal.woff2' },
-    { weight: 700, style: 'italic', file: 'playfair-display-latin-700-italic.woff2' } ] },
-  { id: 'bangers', label: 'Bangers', css: 'Bangers', group: 'Comic', files: [
-    { weight: 400, style: 'normal', file: 'bangers-latin-400-normal.woff2' } ] },
+  {
+    id: 'montserrat',
+    label: 'Montserrat',
+    css: 'Montserrat',
+    group: 'Sans',
+    files: [
+      { weight: 800, style: 'normal', file: 'montserrat-latin-800-normal.woff2' },
+      { weight: 900, style: 'normal', file: 'montserrat-latin-900-normal.woff2' },
+    ],
+  },
+  {
+    id: 'poppins',
+    label: 'Poppins',
+    css: 'Poppins',
+    group: 'Sans',
+    files: [
+      { weight: 600, style: 'normal', file: 'poppins-latin-600-normal.woff2' },
+      { weight: 800, style: 'normal', file: 'poppins-latin-800-normal.woff2' },
+    ],
+  },
+  {
+    id: 'inter',
+    label: 'Inter',
+    css: 'Inter',
+    group: 'Sans',
+    files: [
+      { weight: 600, style: 'normal', file: 'inter-latin-600-normal.woff2' },
+      { weight: 800, style: 'normal', file: 'inter-latin-800-normal.woff2' },
+    ],
+  },
+  {
+    id: 'anton',
+    label: 'Anton',
+    css: 'Anton',
+    group: 'Display',
+    files: [{ weight: 400, style: 'normal', file: 'anton-latin-400-normal.woff2' }],
+  },
+  {
+    id: 'bebas',
+    label: 'Bebas Neue',
+    css: 'Bebas Neue',
+    group: 'Display',
+    files: [{ weight: 400, style: 'normal', file: 'bebas-neue-latin-400-normal.woff2' }],
+  },
+  {
+    id: 'oswald',
+    label: 'Oswald',
+    css: 'Oswald',
+    group: 'Display',
+    files: [{ weight: 600, style: 'normal', file: 'oswald-latin-600-normal.woff2' }],
+  },
+  {
+    id: 'archivo',
+    label: 'Archivo Black',
+    css: 'Archivo Black',
+    group: 'Display',
+    files: [{ weight: 400, style: 'normal', file: 'archivo-black-latin-400-normal.woff2' }],
+  },
+  {
+    id: 'playfair',
+    label: 'Playfair Display',
+    css: 'Playfair Display',
+    group: 'Serif',
+    files: [
+      { weight: 700, style: 'normal', file: 'playfair-display-latin-700-normal.woff2' },
+      { weight: 700, style: 'italic', file: 'playfair-display-latin-700-italic.woff2' },
+    ],
+  },
+  {
+    id: 'bangers',
+    label: 'Bangers',
+    css: 'Bangers',
+    group: 'Comic',
+    files: [{ weight: 400, style: 'normal', file: 'bangers-latin-400-normal.woff2' }],
+  },
 ];
 
-export const fontById = (id: string): FontFamilyDef => FONT_FAMILIES.find((f) => f.id === id) ?? FONT_FAMILIES[0];
+export const fontById = (id: string): FontFamilyDef =>
+  FONT_FAMILIES.find((f) => f.id === id) ?? FONT_FAMILIES[0];
 
 /** Indic scripts: Noto Sans faces, loaded only when the captions contain that script. */
 export const SCRIPT_FONTS: Array<{ name: string; css: string; test: RegExp; files: FontFile[] }> = [
-  { name: 'telugu', css: 'Noto Sans Telugu', test: /[\u0C00-\u0C7F]/, files: [
-    { weight: 700, style: 'normal', file: 'noto-sans-telugu-telugu-700-normal.woff2' },
-    { weight: 900, style: 'normal', file: 'noto-sans-telugu-telugu-900-normal.woff2' } ] },
-  { name: 'devanagari', css: 'Noto Sans Devanagari', test: /[\u0900-\u097F]/, files: [
-    { weight: 700, style: 'normal', file: 'noto-sans-devanagari-devanagari-700-normal.woff2' },
-    { weight: 900, style: 'normal', file: 'noto-sans-devanagari-devanagari-900-normal.woff2' } ] },
-  { name: 'tamil', css: 'Noto Sans Tamil', test: /[\u0B80-\u0BFF]/, files: [
-    { weight: 700, style: 'normal', file: 'noto-sans-tamil-tamil-700-normal.woff2' },
-    { weight: 900, style: 'normal', file: 'noto-sans-tamil-tamil-900-normal.woff2' } ] },
-  { name: 'kannada', css: 'Noto Sans Kannada', test: /[\u0C80-\u0CFF]/, files: [
-    { weight: 700, style: 'normal', file: 'noto-sans-kannada-kannada-700-normal.woff2' },
-    { weight: 900, style: 'normal', file: 'noto-sans-kannada-kannada-900-normal.woff2' } ] },
-  { name: 'malayalam', css: 'Noto Sans Malayalam', test: /[\u0D00-\u0D7F]/, files: [
-    { weight: 700, style: 'normal', file: 'noto-sans-malayalam-malayalam-700-normal.woff2' },
-    { weight: 900, style: 'normal', file: 'noto-sans-malayalam-malayalam-900-normal.woff2' } ] },
-  { name: 'bengali', css: 'Noto Sans Bengali', test: /[\u0980-\u09FF]/, files: [
-    { weight: 700, style: 'normal', file: 'noto-sans-bengali-bengali-700-normal.woff2' },
-    { weight: 900, style: 'normal', file: 'noto-sans-bengali-bengali-900-normal.woff2' } ] },
+  {
+    name: 'telugu',
+    css: 'Noto Sans Telugu',
+    test: /[\u0C00-\u0C7F]/,
+    files: [
+      { weight: 700, style: 'normal', file: 'noto-sans-telugu-telugu-700-normal.woff2' },
+      { weight: 900, style: 'normal', file: 'noto-sans-telugu-telugu-900-normal.woff2' },
+    ],
+  },
+  {
+    name: 'devanagari',
+    css: 'Noto Sans Devanagari',
+    test: /[\u0900-\u097F]/,
+    files: [
+      { weight: 700, style: 'normal', file: 'noto-sans-devanagari-devanagari-700-normal.woff2' },
+      { weight: 900, style: 'normal', file: 'noto-sans-devanagari-devanagari-900-normal.woff2' },
+    ],
+  },
+  {
+    name: 'tamil',
+    css: 'Noto Sans Tamil',
+    test: /[\u0B80-\u0BFF]/,
+    files: [
+      { weight: 700, style: 'normal', file: 'noto-sans-tamil-tamil-700-normal.woff2' },
+      { weight: 900, style: 'normal', file: 'noto-sans-tamil-tamil-900-normal.woff2' },
+    ],
+  },
+  {
+    name: 'kannada',
+    css: 'Noto Sans Kannada',
+    test: /[\u0C80-\u0CFF]/,
+    files: [
+      { weight: 700, style: 'normal', file: 'noto-sans-kannada-kannada-700-normal.woff2' },
+      { weight: 900, style: 'normal', file: 'noto-sans-kannada-kannada-900-normal.woff2' },
+    ],
+  },
+  {
+    name: 'malayalam',
+    css: 'Noto Sans Malayalam',
+    test: /[\u0D00-\u0D7F]/,
+    files: [
+      { weight: 700, style: 'normal', file: 'noto-sans-malayalam-malayalam-700-normal.woff2' },
+      { weight: 900, style: 'normal', file: 'noto-sans-malayalam-malayalam-900-normal.woff2' },
+    ],
+  },
+  {
+    name: 'bengali',
+    css: 'Noto Sans Bengali',
+    test: /[\u0980-\u09FF]/,
+    files: [
+      { weight: 700, style: 'normal', file: 'noto-sans-bengali-bengali-700-normal.woff2' },
+      { weight: 900, style: 'normal', file: 'noto-sans-bengali-bengali-900-normal.woff2' },
+    ],
+  },
 ];
 
 /** Any Indic script — these must not be split into characters or tracked out. */

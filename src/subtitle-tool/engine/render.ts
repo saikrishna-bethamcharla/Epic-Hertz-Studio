@@ -9,7 +9,13 @@
 // Tamil… render with correct conjuncts; those scripts are never split into characters.
 
 import type { Segment } from '../types';
-import { COMPLEX_SCRIPT, type CaptionStyle, type GradientPaint, type InAnim, type Paint } from './spec';
+import {
+  COMPLEX_SCRIPT,
+  type CaptionStyle,
+  type GradientPaint,
+  type InAnim,
+  type Paint,
+} from './spec';
 import { canvasFont, fontsVersion } from './fonts';
 import { clamp01, ease, hash01, lerp, mixColor, spring } from './util';
 import { getSpeakerStyle } from '../utils/speakers';
@@ -36,7 +42,10 @@ interface Page {
 
 const norm = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
 
-const wordsCache = new WeakMap<Segment, { text: string; words: WordTiming[]; timedRef?: unknown }>();
+const wordsCache = new WeakMap<
+  Segment,
+  { text: string; words: WordTiming[]; timedRef?: unknown }
+>();
 
 export function segmentWords(seg: Segment): WordTiming[] {
   const hit = wordsCache.get(seg);
@@ -46,7 +55,11 @@ export function segmentWords(seg: Segment): WordTiming[] {
   let words: WordTiming[] = [];
   if (raw.length) {
     const timed = seg.words;
-    if (timed && timed.length === raw.length && timed.every((w, i) => norm(w.word) === norm(raw[i]))) {
+    if (
+      timed &&
+      timed.length === raw.length &&
+      timed.every((w, i) => norm(w.word) === norm(raw[i]))
+    ) {
       words = timed.map((w, i) => ({
         text: raw[i],
         start: w.start,
@@ -57,7 +70,11 @@ export function segmentWords(seg: Segment): WordTiming[] {
     } else {
       // Edited text no longer matches model timings → spread evenly over the segment.
       const per = Math.max(0.1, seg.end - seg.start) / raw.length;
-      words = raw.map((text, i) => ({ text, start: seg.start + i * per, end: seg.start + (i + 1) * per }));
+      words = raw.map((text, i) => ({
+        text,
+        start: seg.start + i * per,
+        end: seg.start + (i + 1) * per,
+      }));
     }
   }
   wordsCache.set(seg, { text: seg.text, words, timedRef: seg.words });
@@ -129,7 +146,19 @@ const layoutKeyCache = new WeakMap<CaptionStyle, string>();
 function styleLayoutKey(style: CaptionStyle): string {
   let k = layoutKeyCache.get(style);
   if (!k) {
-    k = JSON.stringify([style.font, style.layout.wordsPerPage, style.layout.maxLines, style.layout.widthPct, style.layout.align, style.motion.unit, style.motion.in, style.highlight.scale, style.highlight.mode, style.highlight.boxPadX, style.stroke.width]);
+    k = JSON.stringify([
+      style.font,
+      style.layout.wordsPerPage,
+      style.layout.maxLines,
+      style.layout.widthPct,
+      style.layout.align,
+      style.motion.unit,
+      style.motion.in,
+      style.highlight.scale,
+      style.highlight.mode,
+      style.highlight.boxPadX,
+      style.stroke.width,
+    ]);
     layoutKeyCache.set(style, k);
   }
   return k;
@@ -137,13 +166,21 @@ function styleLayoutKey(style: CaptionStyle): string {
 
 const hasLetterSpacing = (ctx: CanvasRenderingContext2D) => 'letterSpacing' in ctx;
 function setSpacing(ctx: CanvasRenderingContext2D, px: number) {
-  if (hasLetterSpacing(ctx)) (ctx as unknown as { letterSpacing: string }).letterSpacing = `${px.toFixed(2)}px`;
+  if (hasLetterSpacing(ctx))
+    (ctx as unknown as { letterSpacing: string }).letterSpacing = `${px.toFixed(2)}px`;
 }
 
 let segmenter: { segment: (s: string) => Iterable<{ segment: string }> } | null | undefined;
 function graphemes(text: string): string[] {
   if (segmenter === undefined) {
-    const I = (Intl as unknown as { Segmenter?: new (l?: string, o?: object) => { segment: (s: string) => Iterable<{ segment: string }> } }).Segmenter;
+    const I = (
+      Intl as unknown as {
+        Segmenter?: new (
+          l?: string,
+          o?: object,
+        ) => { segment: (s: string) => Iterable<{ segment: string }> };
+      }
+    ).Segmenter;
     segmenter = I ? new I(undefined, { granularity: 'grapheme' }) : null;
   }
   return segmenter ? Array.from(segmenter.segment(text), (x) => x.segment) : Array.from(text);
@@ -172,11 +209,13 @@ function layoutPage(
   for (let attempt = 0; attempt < 10; attempt++) {
     ctx.font = canvasFont(style, px);
     setSpacing(ctx, tracking * px);
-    spaceW = (ctx.measureText(' ').width || px * 0.3) + Math.max(0, style.highlight.scale - 1) * px * 0.25;
+    spaceW =
+      (ctx.measureText(' ').width || px * 0.3) + Math.max(0, style.highlight.scale - 1) * px * 0.25;
     // The outline is drawn centred on the glyph edge, so it eats into the space from both sides.
     spaceW += style.stroke.width * px * 1.3;
     // A highlight box pads out past the word on both sides — keep it clear of the neighbours.
-    if (style.highlight.mode === 'box') spaceW = Math.max(spaceW, style.highlight.boxPadX * px * 1.9);
+    if (style.highlight.mode === 'box')
+      spaceW = Math.max(spaceW, style.highlight.boxPadX * px * 1.9);
     widths = texts.map((t) => ctx.measureText(t).width);
 
     lines = [];
@@ -205,7 +244,13 @@ function layoutPage(
 
   const lineW = lines.map((idx) => idx.reduce((s, i, k) => s + widths[i] + (k ? spaceW : 0), 0));
   const blockW = Math.max(...lineW, 1);
-  const lineX = lineW.map((w) => (style.layout.align === 'center' ? (blockW - w) / 2 : style.layout.align === 'right' ? blockW - w : 0));
+  const lineX = lineW.map((w) =>
+    style.layout.align === 'center'
+      ? (blockW - w) / 2
+      : style.layout.align === 'right'
+        ? blockW - w
+        : 0,
+  );
 
   const words: WordLayout[] = new Array(texts.length);
   const charMode = style.motion.unit === 'char' && !complex;
@@ -228,7 +273,19 @@ function layoutPage(
     });
   });
 
-  return { px, words, lineX, lineW, w: blockW, h: lines.length * lineBox, lineBox, baseline, asc, desc, tracking };
+  return {
+    px,
+    words,
+    lineX,
+    lineW,
+    w: blockW,
+    h: lines.length * lineBox,
+    lineBox,
+    baseline,
+    asc,
+    desc,
+    tracking,
+  };
 }
 
 function getLayout(
@@ -264,7 +321,13 @@ interface Tx {
   clipBelow: boolean;
 }
 
-function inTransform(kind: InAnim, p: number, px: number, lineBox: number, style: CaptionStyle): Tx {
+function inTransform(
+  kind: InAnim,
+  p: number,
+  px: number,
+  lineBox: number,
+  style: CaptionStyle,
+): Tx {
   const tx: Tx = { alpha: 1, scale: 1, dx: 0, dy: 0, blur: 0, glitch: 0, clipBelow: false };
   if (kind === 'none') return tx;
   const e = ease(style.motion.ease, p, style.motion.bounce);
@@ -321,7 +384,14 @@ function isGradient(p: Paint): p is GradientPaint {
   return typeof p !== 'string';
 }
 
-function makeFill(ctx: CanvasRenderingContext2D, paint: Paint, x: number, y: number, w: number, h: number): string | CanvasGradient {
+function makeFill(
+  ctx: CanvasRenderingContext2D,
+  paint: Paint,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): string | CanvasGradient {
   if (!isGradient(paint)) return paint;
   const a = (paint.angle * Math.PI) / 180;
   const dx = Math.cos(a);
@@ -334,7 +404,14 @@ function makeFill(ctx: CanvasRenderingContext2D, paint: Paint, x: number, y: num
   return g;
 }
 
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+function roundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+) {
   const rr = Math.max(0, Math.min(r, w / 2, h / 2));
   ctx.beginPath();
   if (ctx.roundRect) ctx.roundRect(x, y, w, h, rr);
@@ -353,7 +430,15 @@ interface DrawOpts {
   jitter: number;
 }
 
-function drawText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, px: number, style: CaptionStyle, o: DrawOpts) {
+function drawText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  px: number,
+  style: CaptionStyle,
+  o: DrawOpts,
+) {
   const { stroke, shadow, glow, extrude } = style;
   const strokeW = stroke.width * px * 2; // centred stroke; the fill hides the inner half
 
@@ -524,14 +609,23 @@ export function renderCaptions(
         ...activeStyle.font,
         family: ov.fontFamily || activeStyle.font.family,
         weight: ov.fontWeight || activeStyle.font.weight,
-        size: ov.fontSize !== undefined ? ov.fontSize : (ov.scale !== undefined ? activeStyle.font.size * ov.scale : activeStyle.font.size),
+        size:
+          ov.fontSize !== undefined
+            ? ov.fontSize
+            : ov.scale !== undefined
+              ? activeStyle.font.size * ov.scale
+              : activeStyle.font.size,
         underline: ov.underline !== undefined ? ov.underline : activeStyle.font.underline,
         italic: ov.italic !== undefined ? ov.italic : activeStyle.font.italic,
         textCase: ov.textCase !== undefined ? ov.textCase : activeStyle.font.textCase,
       },
       fill: ov.fillColor || activeStyle.fill,
-      stroke: ov.strokeColor ? { ...activeStyle.stroke, color: ov.strokeColor } : activeStyle.stroke,
-      highlight: ov.highlightColor ? { ...activeStyle.highlight, color: ov.highlightColor } : activeStyle.highlight,
+      stroke: ov.strokeColor
+        ? { ...activeStyle.stroke, color: ov.strokeColor }
+        : activeStyle.stroke,
+      highlight: ov.highlightColor
+        ? { ...activeStyle.highlight, color: ov.highlightColor }
+        : activeStyle.highlight,
     };
   }
 
@@ -645,7 +739,14 @@ export function renderCaptions(
     ctx.fillStyle = pl.color;
     const rects =
       pl.mode === 'block'
-        ? [{ x: bx - pl.padX * px, y: by - pl.padY * px, w: L.w + pl.padX * 2 * px, h: L.h + pl.padY * 2 * px }]
+        ? [
+            {
+              x: bx - pl.padX * px,
+              y: by - pl.padY * px,
+              w: L.w + pl.padX * 2 * px,
+              h: L.h + pl.padY * 2 * px,
+            },
+          ]
         : L.lineW.map((lw, li) => ({
             x: bx + L.lineX[li] - pl.padX * px,
             y: lineTop(li) + (L.lineBox - px * 1.18) / 2 - pl.padY * px,
@@ -664,7 +765,14 @@ export function renderCaptions(
     const cur = wordRect(active);
     const prev = active > 0 ? wordRect(active - 1) : null;
     const slide = ease('out', clamp01((t - page.words[active].start) / 0.11));
-    const r = prev ? { x: lerp(prev.x, cur.x, slide), y: lerp(prev.y, cur.y, slide), w: lerp(prev.w, cur.w, slide), h: lerp(prev.h, cur.h, slide) } : cur;
+    const r = prev
+      ? {
+          x: lerp(prev.x, cur.x, slide),
+          y: lerp(prev.y, cur.y, slide),
+          w: lerp(prev.w, cur.w, slide),
+          h: lerp(prev.h, cur.h, slide),
+        }
+      : cur;
     const enter = prev ? 1 : ease('out', clamp01((t - page.words[0].start) / 0.12));
     ctx.save();
     ctx.globalAlpha *= enter;
@@ -719,7 +827,16 @@ export function renderCaptions(
     let tint: DrawOpts['tint'];
     const hasWordHl = !!w.highlightColor;
     if (hl.mode === 'color' || (hl.mode === 'sweep' && hl.keep && t > w.end) || hasWordHl) {
-      const amt = hl.mode === 'sweep' ? (t > w.end ? 1 : 0) : hasWordHl ? (isActive || (hl.keep && t > w.end) ? 1 : colourAmt) : colourAmt;
+      const amt =
+        hl.mode === 'sweep'
+          ? t > w.end
+            ? 1
+            : 0
+          : hasWordHl
+            ? isActive || (hl.keep && t > w.end)
+              ? 1
+              : colourAmt
+            : colourAmt;
       if (!isGradient(activeStyle.fill)) fill = mixColor(activeStyle.fill, wordHlColor, amt);
       else tint = { color: wordHlColor, amount: amt };
     } else if (hl.mode === 'box' && hl.textColor) {
@@ -784,14 +901,24 @@ export function renderCaptions(
 
       const fillStyle = makeFill(ctx, fill, bx, lineTop(wl.line), L.w, L.lineBox);
       const jitter = hash01(Math.floor(t * 30), i * 7 + k);
-      drawText(ctx, u.t, ux, y0, px, activeStyle, { fill: fillStyle, tint, glitch: tx.glitch, jitter });
+      drawText(ctx, u.t, ux, y0, px, activeStyle, {
+        fill: fillStyle,
+        tint,
+        glitch: tx.glitch,
+        jitter,
+      });
 
       // Karaoke sweep: re-draw the word in the highlight colour, clipped to its progress
       if (hl.mode === 'sweep' && isActive && p >= 0 && t <= w.end + 0.02) {
         const prog = clamp01((t - w.start) / Math.max(0.08, w.end - w.start));
         ctx.save();
         ctx.beginPath();
-        ctx.rect(x0 - px * 0.2, y0 - L.asc - px * 0.3, wl.w * prog + px * 0.2, L.asc + L.desc + px * 0.6);
+        ctx.rect(
+          x0 - px * 0.2,
+          y0 - L.asc - px * 0.3,
+          wl.w * prog + px * 0.2,
+          L.asc + L.desc + px * 0.6,
+        );
         ctx.clip();
         ctx.fillStyle = wordHlColor;
         ctx.fillText(u.t, ux, y0);
@@ -802,9 +929,17 @@ export function renderCaptions(
     charCounter += units.length;
 
     // Underline accent (from font style or highlight mode or word emphasis)
-    const hasUnderline = activeStyle.font.underline || hl.mode === 'underline' || w.emphasis === 'underline';
-    if (hasUnderline && started && (isActive || activeStyle.font.underline || (hl.keep && t > w.end))) {
-      const prog = (hl.keep && t > w.end) || activeStyle.font.underline ? 1 : ease('out', clamp01((t - w.start) / 0.16));
+    const hasUnderline =
+      activeStyle.font.underline || hl.mode === 'underline' || w.emphasis === 'underline';
+    if (
+      hasUnderline &&
+      started &&
+      (isActive || activeStyle.font.underline || (hl.keep && t > w.end))
+    ) {
+      const prog =
+        (hl.keep && t > w.end) || activeStyle.font.underline
+          ? 1
+          : ease('out', clamp01((t - w.start) / 0.16));
       const thick = Math.max(2, px * 0.085);
       ctx.save();
       ctx.fillStyle = wordHlColor;

@@ -16,7 +16,9 @@ export async function createDemoVideo(): Promise<File> {
   let audioStreamTracks: MediaStreamTrack[] = [];
   let audioCtx: AudioContext | null = null;
   try {
-    const AudioCtxClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const AudioCtxClass =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     audioCtx = new AudioCtxClass();
     const dest = audioCtx.createMediaStreamDestination();
     const osc = audioCtx.createOscillator();
@@ -33,17 +35,9 @@ export async function createDemoVideo(): Promise<File> {
   }
 
   const canvasStream = canvas.captureStream(30);
-  const stream = new MediaStream([
-    ...canvasStream.getVideoTracks(),
-    ...audioStreamTracks,
-  ]);
+  const stream = new MediaStream([...canvasStream.getVideoTracks(), ...audioStreamTracks]);
 
-  const mimeTypes = [
-    'video/mp4;codecs=avc1',
-    'video/mp4',
-    'video/webm;codecs=vp9',
-    'video/webm',
-  ];
+  const mimeTypes = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
   let selectedMime = '';
   for (const mime of mimeTypes) {
     if (MediaRecorder.isTypeSupported(mime)) {
@@ -99,12 +93,12 @@ export async function createDemoVideo(): Promise<File> {
       const bars = 18;
       const barWidth = 14;
       const spacing = 10;
-      const startX = 360 - ((bars * (barWidth + spacing)) / 2);
+      const startX = 360 - (bars * (barWidth + spacing)) / 2;
       ctx.fillStyle = '#FFE600';
       for (let i = 0; i < bars; i++) {
-        const height = Math.abs(Math.sin((frame * 0.1) + (i * 0.35))) * 110 + 20;
-        const x = startX + (i * (barWidth + spacing));
-        const y = 640 - (height / 2) + shift;
+        const height = Math.abs(Math.sin(frame * 0.1 + i * 0.35)) * 110 + 20;
+        const x = startX + i * (barWidth + spacing);
+        const y = 640 - height / 2 + shift;
         ctx.beginPath();
         if (ctx.roundRect) {
           ctx.roundRect(x, y, barWidth, height, 6);

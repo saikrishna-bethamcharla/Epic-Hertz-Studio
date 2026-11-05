@@ -10,7 +10,17 @@
 // - Quick edit actions: + Text, Split, Merge, Delete, Undo/Redo, Find & Replace
 
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import { Scissors, Combine, Trash2, BookOpen, Plus, Undo2, Redo2, Magnet, Link2 } from 'lucide-react';
+import {
+  Scissors,
+  Combine,
+  Trash2,
+  BookOpen,
+  Plus,
+  Undo2,
+  Redo2,
+  Magnet,
+  Link2,
+} from 'lucide-react';
 import { formatTimecode, formatRulerTick } from './utils/formatTime';
 import { getSpeakerStyle, getSpeakerShortCode } from './utils/speakers';
 import type { Segment } from './types';
@@ -72,15 +82,18 @@ export default function Timeline({
   const dragStateRef = useRef<DragState | null>(null);
 
   // Push state to undo history
-  const pushState = useCallback((newSegments: Segment[]) => {
-    if (onUndo) {
-      onSegmentsChange(newSegments);
-    } else {
-      setLocalHistory((prev) => [...prev.slice(-25), segments]);
-      setLocalRedo([]);
-      onSegmentsChange(newSegments);
-    }
-  }, [segments, onSegmentsChange, onUndo]);
+  const pushState = useCallback(
+    (newSegments: Segment[]) => {
+      if (onUndo) {
+        onSegmentsChange(newSegments);
+      } else {
+        setLocalHistory((prev) => [...prev.slice(-25), segments]);
+        setLocalRedo([]);
+        onSegmentsChange(newSegments);
+      }
+    },
+    [segments, onSegmentsChange, onUndo],
+  );
 
   const handleUndo = () => {
     if (onUndo) {
@@ -116,8 +129,10 @@ export default function Timeline({
 
   // Active segment
   const currentSeg = useMemo(() => {
-    return segments.find((s) => s.id === activeId) ||
-      segments.find((s) => currentTime >= s.start && currentTime <= s.end);
+    return (
+      segments.find((s) => s.id === activeId) ||
+      segments.find((s) => currentTime >= s.start && currentTime <= s.end)
+    );
   }, [segments, activeId, currentTime]);
 
   // ── Render Waveform Canvas ────────────────────────────────────────────────
@@ -151,7 +166,9 @@ export default function Timeline({
 
       // Pseudo-random speech amplitude modulation
       const noise = Math.sin(i * 0.28) * Math.cos(i * 0.12) * Math.sin(i * 0.05);
-      const baseAmp = inSpeech ? 0.35 + Math.abs(noise) * 0.55 : 0.08 + Math.abs(Math.sin(i * 0.5)) * 0.08;
+      const baseAmp = inSpeech
+        ? 0.35 + Math.abs(noise) * 0.55
+        : 0.08 + Math.abs(Math.sin(i * 0.5)) * 0.08;
       const barH = Math.max(3, baseAmp * (canvas.height - 8));
 
       ctx.globalAlpha = inSpeech ? 0.85 : 0.3;
@@ -175,7 +192,9 @@ export default function Timeline({
     // Snap playhead to segment edges if enabled
     if (isSnappingEnabled) {
       const threshold = 8 / zoom;
-      const nearestEdge = segments.flatMap((s) => [s.start, s.end]).find((t) => Math.abs(t - seekTime) < threshold);
+      const nearestEdge = segments
+        .flatMap((s) => [s.start, s.end])
+        .find((t) => Math.abs(t - seekTime) < threshold);
       if (nearestEdge !== undefined) seekTime = nearestEdge;
     }
 
@@ -189,7 +208,9 @@ export default function Timeline({
 
       if (isSnappingEnabled) {
         const threshold = 8 / zoom;
-        const nearestEdge = segments.flatMap((s) => [s.start, s.end]).find((edge) => Math.abs(edge - t) < threshold);
+        const nearestEdge = segments
+          .flatMap((s) => [s.start, s.end])
+          .find((edge) => Math.abs(edge - t) < threshold);
         if (nearestEdge !== undefined) t = nearestEdge;
       }
 
@@ -255,13 +276,17 @@ export default function Timeline({
             guide = newEnd;
           } else {
             // Snap to neighbors
-            const prev = segments.find((s) => s.id !== state.segId && Math.abs(s.end - newStart) < snapThreshold);
+            const prev = segments.find(
+              (s) => s.id !== state.segId && Math.abs(s.end - newStart) < snapThreshold,
+            );
             if (prev) {
               newStart = prev.end;
               newEnd = +(newStart + span).toFixed(2);
               guide = newStart;
             } else {
-              const next = segments.find((s) => s.id !== state.segId && Math.abs(s.start - newEnd) < snapThreshold);
+              const next = segments.find(
+                (s) => s.id !== state.segId && Math.abs(s.start - newEnd) < snapThreshold,
+              );
               if (next) {
                 newEnd = next.start;
                 newStart = Math.max(0, +(newEnd - span).toFixed(2));
@@ -271,13 +296,18 @@ export default function Timeline({
           }
         }
       } else if (state.type === 'trim-start') {
-        newStart = Math.max(0, Math.min(state.initialEnd - 0.2, +(state.initialStart + deltaSec).toFixed(2)));
+        newStart = Math.max(
+          0,
+          Math.min(state.initialEnd - 0.2, +(state.initialStart + deltaSec).toFixed(2)),
+        );
         if (isSnappingEnabled) {
           if (Math.abs(newStart - currentTime) < snapThreshold) {
             newStart = Math.min(state.initialEnd - 0.2, currentTime);
             guide = newStart;
           } else {
-            const prev = segments.find((s) => s.id !== state.segId && Math.abs(s.end - newStart) < snapThreshold);
+            const prev = segments.find(
+              (s) => s.id !== state.segId && Math.abs(s.end - newStart) < snapThreshold,
+            );
             if (prev) {
               newStart = Math.min(state.initialEnd - 0.2, prev.end);
               guide = newStart;
@@ -291,7 +321,9 @@ export default function Timeline({
             newEnd = Math.max(state.initialStart + 0.2, currentTime);
             guide = newEnd;
           } else {
-            const next = segments.find((s) => s.id !== state.segId && Math.abs(s.start - newEnd) < snapThreshold);
+            const next = segments.find(
+              (s) => s.id !== state.segId && Math.abs(s.start - newEnd) < snapThreshold,
+            );
             if (next) {
               newEnd = Math.max(state.initialStart + 0.2, next.start);
               guide = newEnd;
@@ -303,7 +335,8 @@ export default function Timeline({
       setSnapGuide(guide);
 
       // Apply update (with ripple if enabled)
-      const shiftDelta = state.type === 'move' ? newStart - state.initialStart : newEnd - state.initialEnd;
+      const shiftDelta =
+        state.type === 'move' ? newStart - state.initialStart : newEnd - state.initialEnd;
 
       const updated = segments.map((s, idx) => {
         if (s.id === state.segId) {
@@ -379,14 +412,13 @@ export default function Timeline({
       ...currentSeg,
       end: nextSeg.end,
       text: `${currentSeg.text.trim()} ${nextSeg.text.trim()}`.trim(),
-      words: currentSeg.words && nextSeg.words ? [...currentSeg.words, ...nextSeg.words] : undefined,
+      words:
+        currentSeg.words && nextSeg.words ? [...currentSeg.words, ...nextSeg.words] : undefined,
     };
 
-    const updated = [
-      ...segments.slice(0, idx),
-      mergedSeg,
-      ...segments.slice(idx + 2),
-    ].map((s, i) => ({ ...s, index: i + 1 }));
+    const updated = [...segments.slice(0, idx), mergedSeg, ...segments.slice(idx + 2)].map(
+      (s, i) => ({ ...s, index: i + 1 }),
+    );
 
     pushState(updated);
   };
@@ -411,7 +443,9 @@ export default function Timeline({
       end,
       text: 'New Caption',
     };
-    const updated = [...segments, newSeg].sort((a, b) => a.start - b.start).map((s, i) => ({ ...s, index: i + 1 }));
+    const updated = [...segments, newSeg]
+      .sort((a, b) => a.start - b.start)
+      .map((s, i) => ({ ...s, index: i + 1 }));
     pushState(updated);
     onSelectSegment?.(newSeg.id);
   };
@@ -509,7 +543,9 @@ export default function Timeline({
               <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
                 <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
                 <span>Split</span>
-                <kbd className="px-1 py-0.2 rounded bg-white/10 text-[9px] text-smoke font-mono font-semibold">S</kbd>
+                <kbd className="px-1 py-0.2 rounded bg-white/10 text-[9px] text-smoke font-mono font-semibold">
+                  S
+                </kbd>
               </div>
             </div>
           </div>
@@ -546,7 +582,9 @@ export default function Timeline({
               <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
                 <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
                 <span>Delete</span>
-                <kbd className="px-1 py-0.2 rounded bg-white/10 text-[9px] text-smoke font-mono font-semibold">Del</kbd>
+                <kbd className="px-1 py-0.2 rounded bg-white/10 text-[9px] text-smoke font-mono font-semibold">
+                  Del
+                </kbd>
               </div>
             </div>
           </div>
@@ -559,7 +597,9 @@ export default function Timeline({
               onClick={() => setIsSnappingEnabled((s) => !s)}
               aria-label={`Toggle magnetic snapping (${isSnappingEnabled ? 'ON' : 'OFF'})`}
               className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors cursor-pointer ${
-                isSnappingEnabled ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40' : 'text-smoke hover:text-bone hover:bg-white/5'
+                isSnappingEnabled
+                  ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40'
+                  : 'text-smoke hover:text-bone hover:bg-white/5'
               }`}
             >
               <Magnet className="w-3.5 h-3.5" />
@@ -568,7 +608,9 @@ export default function Timeline({
               <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
                 <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
                 <span>Snap</span>
-                <span className={`text-[9px] font-bold ${isSnappingEnabled ? 'text-amber-400' : 'text-smoke'}`}>
+                <span
+                  className={`text-[9px] font-bold ${isSnappingEnabled ? 'text-amber-400' : 'text-smoke'}`}
+                >
                   {isSnappingEnabled ? 'ON' : 'OFF'}
                 </span>
               </div>
@@ -581,7 +623,9 @@ export default function Timeline({
               onClick={() => setIsRippleEnabled((r) => !r)}
               aria-label={`Toggle ripple editing (${isRippleEnabled ? 'ON' : 'OFF'})`}
               className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors cursor-pointer ${
-                isRippleEnabled ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40' : 'text-smoke hover:text-bone hover:bg-white/5'
+                isRippleEnabled
+                  ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40'
+                  : 'text-smoke hover:text-bone hover:bg-white/5'
               }`}
             >
               <Link2 className="w-3.5 h-3.5" />
@@ -590,7 +634,9 @@ export default function Timeline({
               <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
                 <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
                 <span>Ripple</span>
-                <span className={`text-[9px] font-bold ${isRippleEnabled ? 'text-amber-400' : 'text-smoke'}`}>
+                <span
+                  className={`text-[9px] font-bold ${isRippleEnabled ? 'text-amber-400' : 'text-smoke'}`}
+                >
                   {isRippleEnabled ? 'ON' : 'OFF'}
                 </span>
               </div>
@@ -613,7 +659,9 @@ export default function Timeline({
               <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
                 <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
                 <span>Undo</span>
-                <kbd className="px-1 py-0.2 rounded bg-white/10 text-[9px] text-smoke font-mono font-semibold">Ctrl+Z</kbd>
+                <kbd className="px-1 py-0.2 rounded bg-white/10 text-[9px] text-smoke font-mono font-semibold">
+                  Ctrl+Z
+                </kbd>
               </div>
             </div>
           </div>
@@ -632,7 +680,9 @@ export default function Timeline({
               <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
                 <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
                 <span>Redo</span>
-                <kbd className="px-1 py-0.2 rounded bg-white/10 text-[9px] text-smoke font-mono font-semibold">Ctrl+Y</kbd>
+                <kbd className="px-1 py-0.2 rounded bg-white/10 text-[9px] text-smoke font-mono font-semibold">
+                  Ctrl+Y
+                </kbd>
               </div>
             </div>
           </div>
