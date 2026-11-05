@@ -100,12 +100,45 @@ Open [http://localhost:5173/](http://localhost:5173/) in your browser.
 
 `npm run dev` serves only the front end. To exercise `/api/transcribe` locally, run `npx vercel dev` with a `.env.local` copied from `.env.example`.
 
-### Production Build
+### Production Build & Tests
 
 ```bash
+# Run unit test suite (Vitest)
+npm run test
+
+# Typecheck TypeScript definitions
+npm run typecheck
+
+# Format code with Prettier
+npm run format
+
+# Production build & preview
 npm run build
 npm run preview
 ```
+
+---
+
+## 🌐 Browser Support Matrix
+
+Epic Hertz Studio runs 100% in-browser without server-side video rendering.
+
+| Browser / Platform | Video Export Engine | Direct-to-Disk Streaming | Audio Extraction |
+| :--- | :--- | :--- | :--- |
+| **Google Chrome (Desktop)** | WebCodecs Hardware Accel (`mediabunny`) | Supported (`showSaveFilePicker`) | Native Web Audio API |
+| **Microsoft Edge (Desktop)** | WebCodecs Hardware Accel (`mediabunny`) | Supported (`showSaveFilePicker`) | Native Web Audio API |
+| **Apple Safari (macOS & iOS)** | WebCodecs Hardware Accel (`mediabunny`) | In-Memory (`BufferTarget`) | Native Web Audio API |
+| **Mozilla Firefox** | Real-Time Canvas Capture Fallback | In-Memory (`BufferTarget`) | Native Web Audio API |
+| **Chrome / Android** | WebCodecs Hardware Accel (`mediabunny`) | In-Memory (`BufferTarget`) | Native Web Audio API |
+
+---
+
+## 🔑 Bring Your Own Key (BYOK)
+
+Users can provide their personal Google Gemini API key directly in the UI:
+- Click **"Use your own Gemini key"** inside the *Prepare Media* modal.
+- Key is stored exclusively in browser `localStorage` (`epic_gemini_api_key_custom`) and sent directly as the `x-gemini-api-key` header to bypass shared community rate limits.
+- Keys are **never** logged, persisted to server disks, or exposed in public bundles.
 
 ---
 
@@ -124,8 +157,9 @@ npm run preview
 | `ALLOWED_ORIGINS` | no | Comma-separated origins allowed to call the API (defaults: production, GitHub Pages, localhost). Add preview URLs here. |
 | `UPSTASH_REDIS_REST_URL` / `_TOKEN` | recommended | Shared rate-limit store. Without it, limits apply per serverless instance only. |
 | `RATE_LIMIT_PER_MIN` / `RATE_LIMIT_PER_DAY` | no | Per-IP request limits (defaults 8 / 60). One request ≈ 2 minutes of audio. |
+| `GLOBAL_DAILY_LIMIT` | no | Hard cap on total daily serverless API requests to safeguard budget. |
 | `MAX_AUDIO_BYTES` | no | Per-request audio cap (default 4.4 MB, just under Vercel's body limit). |
-| `GEMINI_MODELS` | no | Comma-separated model fallback order. |
+| `DEFAULT_MODELS` | no | Comma-separated model fallback order (`gemini-2.5-flash`, `gemini-2.5-flash-lite`, `gemini-2.0-flash`). |
 
 **How long videos work:** the browser extracts 16 kHz mono audio, splits it at the quietest moment near every ~100 s, sends the pieces two at a time, then stitches the captions back onto one timeline. Rate-limit and overload responses are retried automatically.
 
@@ -136,7 +170,7 @@ npm run preview
 ```
 Epic-Hertz-Studio/
 ├── api/
-│   ├── transcribe.js             # Vercel serverless proxy: origin allowlist, rate limit, size cap, Gemini call
+│   ├── transcribe.js             # Vercel serverless proxy: origin allowlist, rate limit, BYOK, Gemini models
 │   └── _lib/parse.js             # Caption JSON/SRT parsing & timestamp normalisation (not deployed as an endpoint)
 ├── public/                       # Static fonts, grain textures & web assets
 ├── src/
@@ -151,17 +185,31 @@ Epic-Hertz-Studio/
 │   │   ├── Timeline.tsx          # Multi-track audio waveform timeline
 │   │   ├── PrepareMediaModal.tsx # Pre-processing language & script selector
 │   │   ├── ExportModal.tsx       # Export options (SRT, VTT, TXT, Hardsub MP4)
-│   │   ├── v2/                   # v2 Studio UI (LibraryPanel, InspectorPanel, TopBar)
+│   │   ├── editor/               # SegmentStyleDrawer & SegmentWordEditor sub-components
+│   │   ├── hooks/                # Modular hooks (usePlayback, useTranscription, useProjectAutosave)
+│   │   ├── v2/                   # v2 Studio UI (LibraryPanel, InspectorPanel, TopBar, ProjectManagerModal)
 │   │   ├── api/
-│   │   │   └── transcribe.ts     # Chunked upload, retries, timeline stitching
+│   │   │   └── transcribe.ts     # Chunked upload, retries, acoustic onset alignment, timeline stitching
 │   │   ├── engine/               # Caption engine: render.ts, presets.ts, spec.ts, fonts.ts, util.ts, compat.ts
 │   │   ├── CaptionCanvas.tsx     # Preview overlay: follows the video rect, drag-to-position
 │   │   └── utils/
+│   │       ├── alignWords.ts     # Acoustic short-time energy onset alignment (±120ms) & anomaly detection
 │   │       ├── burnCaptionsCanvas.ts # Real-time canvas fallback
-│   │       ├── exportVideo.ts    # WebCodecs + Mediabunny hardware-accelerated MP4 encoder
-│   │       ├── extractAudio.ts   # Client-side audio track extractor (always 16 kHz mono WAV)
+│   │       ├── exportVideo.ts    # WebCodecs + Mediabunny hardware-accelerated MP4 encoder (direct-to-disk streaming)
+│   │       ├── extractAudio.ts   # Client-side 16kHz mono WAV resampler (Web Audio API)
+│   │       ├── projectStorage.ts # IndexedDB v2 multi-project database (projects + media stores)
+│   │       ├── readability.ts    # CPS/WPM, length & reading pacing diagnostics
+│   │       ├── speakers.ts       # Speaker tagging & badge styling
 │   │       ├── splitAudio.ts     # Silence-aware chunking + timeline merge
 │   │       └── srt.ts            # Subtitle format serializers
+├── tests/                        # Vitest automated test suites (52 unit tests)
+│   ├── alignWords.test.ts        # Synthetic audio onset alignment tests
+│   ├── export.test.ts           # Pre-flight memory estimation tests
+│   ├── parse.test.ts            # Gemini JSON & time parser tests
+│   ├── projectStorage.test.ts   # Multi-project IndexedDB v2 & legacy migration tests
+│   ├── readability.test.ts      # Subtitle reading speed & duration tests
+│   ├── splitAudio.test.ts       # WAV silence detection & chunk splitting tests
+│   └── srt.test.ts              # SRT/VTT formatting & round-trip tests
 ```
 
 ---
