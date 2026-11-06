@@ -551,7 +551,13 @@ export function findSegment(segments: Segment[], t: number): Segment | undefined
   return hit;
 }
 
-const supportsFilter = (ctx: CanvasRenderingContext2D) => 'filter' in ctx;
+function supportsFilter(ctx: CanvasRenderingContext2D): boolean {
+  try {
+    return 'filter' in ctx && typeof (ctx as any).filter === 'string';
+  } catch {
+    return false;
+  }
+}
 
 export function renderCaptions(
   ctx: CanvasRenderingContext2D,
@@ -887,7 +893,19 @@ export function renderCaptions(
         ctx.scale(tx.scale, tx.scale);
         ctx.translate(-upx, -pivotY);
       }
-      if (tx.blur > 0.3 && filterOK) ctx.filter = `blur(${tx.blur.toFixed(2)}px)`;
+      if (tx.blur > 0.3) {
+        if (filterOK) {
+          try {
+            ctx.filter = `blur(${tx.blur.toFixed(2)}px)`;
+          } catch {
+            ctx.shadowBlur = Math.min(20, tx.blur * 2);
+            ctx.shadowColor = 'rgba(0,0,0,0.4)';
+          }
+        } else {
+          ctx.shadowBlur = Math.min(20, tx.blur * 2);
+          ctx.shadowColor = 'rgba(0,0,0,0.4)';
+        }
+      }
 
       // Per-word glow accent
       if (w.emphasis === 'glow' && (isActive || (t >= w.start && t <= w.end))) {

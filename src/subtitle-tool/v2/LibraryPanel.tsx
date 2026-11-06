@@ -5,7 +5,6 @@ import {
   Type,
   Sparkles,
   Zap,
-  Smile,
   Palette,
   ChevronLeft,
   AlertTriangle,
@@ -32,7 +31,7 @@ import { checkReadability } from '../utils/readability';
 import LibraryStylesTab from './library/LibraryStylesTab';
 import LibraryBrandTab from './library/LibraryBrandTab';
 
-export type LibraryTab = 'captions' | 'styles' | 'effects' | 'animations' | 'emoji' | 'brand';
+export type LibraryTab = 'captions' | 'styles' | 'effects' | 'animations' | 'brand';
 
 interface LibraryPanelProps {
   leftTab: LibraryTab;
@@ -159,16 +158,6 @@ const LOOK_PRESETS: Array<{ id: string; name: string; look: Partial<CaptionStyle
   },
 ];
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Emoji Library categorized
-// ─────────────────────────────────────────────────────────────────────────────
-const EMOJI_CATEGORIES = [
-  { name: 'Hype', items: ['🔥', '⚡', '🚀', '💥', '🏆', '💯', '✨', '👑', '🎯', '🎬'] },
-  { name: 'Mindset', items: ['💡', '🧠', '💰', '📈', '🔑', '💎', '⏳', '📌', '🤝', '⭐'] },
-  { name: 'Reactions', items: ['😂', '😮', '🤯', '😱', '🤫', '👀', '😎', '🫡', '🙏', '🙌'] },
-  { name: 'Signals', items: ['👇', '👉', '⚠️', '❌', '✅', '🚨', '🛑', '🔊', '🔔', '📣'] },
-];
-
 export default function LibraryPanel({
   leftTab,
   onTabChange,
@@ -276,7 +265,6 @@ export default function LibraryPanel({
           { id: 'styles', label: 'Styles', icon: Type },
           { id: 'effects', label: 'Effects', icon: Sparkles },
           { id: 'animations', label: 'Anim', icon: Zap },
-          { id: 'emoji', label: 'Emoji', icon: Smile },
           { id: 'brand', label: 'Brand', icon: Palette },
         ].map((tab) => {
           const Icon = tab.icon;
@@ -412,6 +400,8 @@ export default function LibraryPanel({
             favorites={favorites}
             onFavoritesChange={setFavorites}
             onApplyPreset={applyPresetToScope}
+            onUserPresetsChange={setUserPresetsList}
+            onNotification={onNotification}
           />
         )}
 
@@ -572,44 +562,7 @@ export default function LibraryPanel({
         )}
 
         {/* ─────────────────────────────────────────────────────────────
-            TAB 5: EMOJI PALETTE
-        ────────────────────────────────────────────────────────────── */}
-        {leftTab === 'emoji' && (
-          <div className="space-y-3">
-            <p className="text-[11px] text-smoke">
-              Click any creator emoji to append to the active caption text.
-            </p>
-            {EMOJI_CATEGORIES.map((cat) => (
-              <div key={cat.name} className="space-y-1.5">
-                <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">
-                  {cat.name}
-                </span>
-                <div className="grid grid-cols-5 gap-1.5 p-2 bg-[#181817] rounded-xl border border-white/5">
-                  {cat.items.map((emoji) => (
-                    <button
-                      key={emoji}
-                      type="button"
-                      onClick={() => {
-                        if (!activeId) return;
-                        const next = segments.map((s) =>
-                          s.id === activeId ? { ...s, text: `${s.text} ${emoji}`.trim() } : s,
-                        );
-                        onSegmentsChange(next);
-                        if (onNotification) onNotification(`Added ${emoji} to caption`);
-                      }}
-                      className="h-10 rounded-lg hover:bg-white/10 text-xl flex items-center justify-center transition-transform hover:scale-115 active:scale-95"
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* ─────────────────────────────────────────────────────────────
-            TAB 6: BRAND KIT
+            TAB 5: BRAND KIT
         ────────────────────────────────────────────────────────────── */}
         {leftTab === 'brand' && (
           <LibraryBrandTab

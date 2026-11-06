@@ -1,5 +1,8 @@
 // ─── User Presets & Brand Storage — Epic Hertz Studio v2 ──────────────────────
 import type { CaptionStyle, LowerThirdSpec } from '../engine/spec';
+import type { CaptionTemplate } from '../engine/templateSchema';
+import { validateTemplatePack, templateToStyle } from '../engine/templateSchema';
+import { CAPTION_TEMPLATES } from '../engine/templateCatalog';
 
 const STORAGE_KEY_LOWER_THIRD_PRESETS = 'ehs.lower_third_presets.v2';
 
@@ -239,6 +242,50 @@ export function importUserPresetsFromJson(jsonStr: string): {
     return {
       importedCount: 0,
       errors: [err instanceof Error ? err.message : 'Invalid JSON file structure.'],
+    };
+  }
+}
+
+export function exportTemplatePackAsJson(templates?: CaptionTemplate[]): string {
+  const pack = {
+    app: 'Epic Hertz Studio',
+    format: 'caption-template-pack',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    templates: templates || CAPTION_TEMPLATES,
+  };
+  return JSON.stringify(pack, null, 2);
+}
+
+export function importTemplatePackFromJson(jsonStr: string): {
+  importedCount: number;
+  errors: string[];
+} {
+  try {
+    const raw = JSON.parse(jsonStr);
+    const val = validateTemplatePack(raw);
+    if (!val.success) {
+      return { importedCount: 0, errors: val.errors };
+    }
+
+    let count = 0;
+    for (const t of val.data) {
+      const style = templateToStyle(t);
+      saveUserPreset({
+        id: 'tpl_' + t.id + '_' + Date.now(),
+        name: t.name,
+        category: t.category,
+        style,
+        createdAt: Date.now(),
+      });
+      count++;
+    }
+
+    return { importedCount: count, errors: [] };
+  } catch (err) {
+    return {
+      importedCount: 0,
+      errors: [err instanceof Error ? err.message : 'Invalid JSON file.'],
     };
   }
 }

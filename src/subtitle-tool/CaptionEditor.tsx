@@ -21,6 +21,7 @@ import {
   Smile,
   Sliders,
   Mic,
+  MapPin,
 } from 'lucide-react';
 import { formatTimecode } from './utils/formatTime';
 import { checkReadability, getCPS } from './utils/readability';
@@ -711,7 +712,7 @@ export default function CaptionEditor({
                       className="text-[10px] text-amber-400 font-mono flex items-center shrink-0 cursor-help"
                       title={`Custom Position: (${Math.round((seg.styleOverride.positionX ?? 0.5) * 100)}%, ${Math.round((seg.styleOverride.positionY ?? 0.82) * 100)}%)`}
                     >
-                      📍
+                      <MapPin className="w-2.5 h-2.5" />
                     </span>
                   )}
 

@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { Key } from 'lucide-react';
 import { useModalA11y } from './hooks/useModalA11y';
 import type { SpokenLanguage, ScriptOutput } from './types';
 import { getUserApiKey, setUserApiKey } from './api/transcribe';
@@ -304,8 +305,9 @@ export default function PrepareMediaModal({
                 onClick={() => setIsKeyExpanded(!isKeyExpanded)}
                 className="text-[11px] font-medium text-mist hover:text-amber-300 transition-colors flex items-center gap-1.5 cursor-pointer"
               >
-                <span>
-                  {userKey ? '🔑 Custom Gemini Key' : '🔑 Use your own Gemini key (Optional)'}
+                <span className="flex items-center gap-1.5">
+                  <Key className="w-3 h-3 text-amber-400" />
+                  {userKey ? 'Custom Gemini Key' : 'Use your own Gemini key (Optional)'}
                 </span>
                 <span className="text-[10px] text-smoke">{isKeyExpanded ? '▲' : '▼'}</span>
               </button>

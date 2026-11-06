@@ -5,11 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Palette, RotateCcw, Smile } from 'lucide-react';
 import type { Segment, SegmentStyleOverride } from '../types';
 
-export const POPULAR_EMOJIS = [
-  { label: 'Reactions', emojis: ['🔥', '😂', '🤯', '❤️', '👏', '🚀'] },
-  { label: 'Emphasis', emojis: ['⚡', '✨', '⭐', '💥', '🎯', '💯'] },
-  { label: 'Expressions', emojis: ['👀', '🤫', '😎', '💡', '⚠️', '🚨'] },
-];
+export const POPULAR_EMOJIS: Array<{ label: string; emojis: string[] }> = [];
 
 export const PRESET_ACCENT_COLORS = [
   { label: 'Yellow', value: '#FACC15' },
@@ -171,7 +167,7 @@ export function SegmentStyleDrawer({
                 })}
               </div>
               <p className="text-[10px] text-smoke/70 italic">
-                💡 You can also drag this caption directly on the video player.
+                Tip: You can also drag this caption directly on the video player.
               </p>
             </div>
 
