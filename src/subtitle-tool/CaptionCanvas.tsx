@@ -48,8 +48,24 @@ export default function CaptionCanvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Latest props, readable from the animation loop without re-subscribing
-  const live = useRef({ segments, style, lowerThirds, photoCache, onStyleChange, onSegmentOverrideChange, visible });
-  live.current = { segments, style, lowerThirds, photoCache, onStyleChange, onSegmentOverrideChange, visible };
+  const live = useRef({
+    segments,
+    style,
+    lowerThirds,
+    photoCache,
+    onStyleChange,
+    onSegmentOverrideChange,
+    visible,
+  });
+  live.current = {
+    segments,
+    style,
+    lowerThirds,
+    photoCache,
+    onStyleChange,
+    onSegmentOverrideChange,
+    visible,
+  };
 
   const geom = useRef<Geometry>({ cssW: 0, cssH: 0, left: 0, top: 0, dpr: 1 });
   const geomVersion = useRef(0);
@@ -181,7 +197,14 @@ export default function CaptionCanvas({
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const res = renderCaptions(ctx, canvas.width, canvas.height, t, effSegs, effStyle);
-      renderLowerThirds(ctx, canvas.width, canvas.height, t, live.current.lowerThirds, live.current.photoCache);
+      renderLowerThirds(
+        ctx,
+        canvas.width,
+        canvas.height,
+        t,
+        live.current.lowerThirds,
+        live.current.photoCache,
+      );
       bounds.current = res.bounds;
 
       // Editing aids: bounding box on hover/drag, centre guides while dragging

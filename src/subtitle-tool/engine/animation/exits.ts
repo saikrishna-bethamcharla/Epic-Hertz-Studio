@@ -74,7 +74,8 @@ export function calculateExitTransform(
     }
 
     case 'typewriter-erase':
-      tx.alpha = normP >= 1 ? 0 : 1 - normP;
+      tx.clip = { wipeProgress: 1 - normP, rect: true };
+      tx.alpha = normP >= 1 ? 0 : 1;
       break;
 
     case 'drop-out': {

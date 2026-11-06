@@ -96,9 +96,7 @@ export const LibraryStylesTab: React.FC<LibraryStylesTabProps> = ({
     return PRESETS.filter((p) => {
       const q = search.toLowerCase().trim();
       const matchSearch =
-        !q ||
-        p.style.name.toLowerCase().includes(q) ||
-        p.blurb.toLowerCase().includes(q);
+        !q || p.style.name.toLowerCase().includes(q) || p.blurb.toLowerCase().includes(q);
       if (!matchSearch) return false;
 
       if (styleCategory === 'All') return true;

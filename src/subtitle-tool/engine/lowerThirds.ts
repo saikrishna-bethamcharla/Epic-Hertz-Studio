@@ -250,8 +250,22 @@ export function drawVariant1(
   const roleSize = nameSize * 0.62;
 
   const maxBlockW = w * 0.82;
-  const effNameSize = fitFontSize(ctx, spec.name, maxBlockW - 32, nameSize, spec.font.family, spec.font.weight);
-  const effRoleSize = fitFontSize(ctx, spec.role + (spec.handle ? ` · ${spec.handle}` : ''), maxBlockW - 28, roleSize, spec.font.family, 600);
+  const effNameSize = fitFontSize(
+    ctx,
+    spec.name,
+    maxBlockW - 32,
+    nameSize,
+    spec.font.family,
+    spec.font.weight,
+  );
+  const effRoleSize = fitFontSize(
+    ctx,
+    spec.role + (spec.handle ? ` · ${spec.handle}` : ''),
+    maxBlockW - 28,
+    roleSize,
+    spec.font.family,
+    600,
+  );
 
   ctx.font = lowerThirdFont(spec.font.family, spec.font.weight, effNameSize);
   const nameWidth = ctx.measureText(spec.name).width;
@@ -333,7 +347,14 @@ export function drawVariant2(
   const roleSize = nameSize * 0.58;
 
   const maxW = w * 0.8;
-  const effNameSize = fitFontSize(ctx, spec.name, maxW, nameSize, spec.font.family, spec.font.weight);
+  const effNameSize = fitFontSize(
+    ctx,
+    spec.name,
+    maxW,
+    nameSize,
+    spec.font.family,
+    spec.font.weight,
+  );
   const roleText = spec.handle ? `${spec.role}   ${spec.handle}` : spec.role;
   const effRoleSize = fitFontSize(ctx, roleText, maxW, roleSize, spec.font.family, 600);
 
@@ -406,7 +427,14 @@ export function drawVariant3(
   const roleSize = nameSize * 0.6;
 
   const maxTextW = w * 0.7 - photoSize;
-  const effNameSize = fitFontSize(ctx, spec.name, maxTextW, nameSize, spec.font.family, spec.font.weight);
+  const effNameSize = fitFontSize(
+    ctx,
+    spec.name,
+    maxTextW,
+    nameSize,
+    spec.font.family,
+    spec.font.weight,
+  );
   const effRoleSize = fitFontSize(ctx, spec.role, maxTextW, roleSize, spec.font.family, 600);
 
   ctx.font = lowerThirdFont(spec.font.family, spec.font.weight, effNameSize);
@@ -499,7 +527,14 @@ export function drawVariant4(
   const roleSize = nameSize * 0.6;
 
   const maxW = w * 0.75;
-  const effNameSize = fitFontSize(ctx, spec.name, maxW, nameSize, spec.font.family, spec.font.weight);
+  const effNameSize = fitFontSize(
+    ctx,
+    spec.name,
+    maxW,
+    nameSize,
+    spec.font.family,
+    spec.font.weight,
+  );
   const roleText = spec.handle ? `${spec.role}  |  ${spec.handle}` : spec.role;
   const effRoleSize = fitFontSize(ctx, roleText, maxW, roleSize, spec.font.family, 600);
 
@@ -566,7 +601,14 @@ export function drawVariant5(
   const roleSize = nameSize * 0.62;
 
   const maxW = w * 0.78;
-  const effNameSize = fitFontSize(ctx, spec.name, maxW, nameSize, spec.font.family, spec.font.weight);
+  const effNameSize = fitFontSize(
+    ctx,
+    spec.name,
+    maxW,
+    nameSize,
+    spec.font.family,
+    spec.font.weight,
+  );
   const effRoleSize = fitFontSize(ctx, spec.role, maxW, roleSize, spec.font.family, 700);
 
   ctx.font = lowerThirdFont(spec.font.family, spec.font.weight, effNameSize);
@@ -655,7 +697,14 @@ export function drawVariant6(
   const roleSize = nameSize * 0.6;
 
   const maxW = w * 0.78;
-  const effNameSize = fitFontSize(ctx, spec.name, maxW, nameSize, spec.font.family, spec.font.weight);
+  const effNameSize = fitFontSize(
+    ctx,
+    spec.name,
+    maxW,
+    nameSize,
+    spec.font.family,
+    spec.font.weight,
+  );
   const roleText = spec.handle ? `${spec.role}  //  ${spec.handle}` : spec.role;
   const effRoleSize = fitFontSize(ctx, roleText, maxW, roleSize, spec.font.family, 600);
 
@@ -742,7 +791,14 @@ export function drawVariant7(
   const roleSize = nameSize * 0.65;
 
   const maxW = w * 0.78;
-  const effNameSize = fitFontSize(ctx, spec.name, maxW * 0.6, nameSize, spec.font.family, spec.font.weight);
+  const effNameSize = fitFontSize(
+    ctx,
+    spec.name,
+    maxW * 0.6,
+    nameSize,
+    spec.font.family,
+    spec.font.weight,
+  );
   const effRoleSize = fitFontSize(ctx, spec.role, maxW * 0.4, roleSize, spec.font.family, 600);
 
   ctx.font = lowerThirdFont(spec.font.family, spec.font.weight, effNameSize);
@@ -784,7 +840,11 @@ export function drawVariant7(
     ctx.font = `800 ${(badgeSize * 0.45).toFixed(1)}px sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(spec.name.trim().charAt(0).toUpperCase() || 'E', badgeX + badgeSize / 2, badgeY + badgeSize / 2);
+    ctx.fillText(
+      spec.name.trim().charAt(0).toUpperCase() || 'E',
+      badgeX + badgeSize / 2,
+      badgeY + badgeSize / 2,
+    );
   }
 
   // Name & Role text inside pill
@@ -838,7 +898,14 @@ export function drawVariant8(
   const roleSize = nameSize * 0.58;
 
   const maxW = w * 0.8;
-  const effNameSize = fitFontSize(ctx, spec.name, maxW, nameSize, spec.font.family, spec.font.weight);
+  const effNameSize = fitFontSize(
+    ctx,
+    spec.name,
+    maxW,
+    nameSize,
+    spec.font.family,
+    spec.font.weight,
+  );
   const roleText = spec.handle ? `${spec.role}  ·  ${spec.handle}` : spec.role;
   const effRoleSize = fitFontSize(ctx, roleText, maxW, roleSize, spec.font.family, 600);
 

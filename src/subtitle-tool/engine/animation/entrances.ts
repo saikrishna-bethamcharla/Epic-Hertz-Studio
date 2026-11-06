@@ -79,6 +79,10 @@ export function calculateEntranceTransform(
 
     case 'typewriter':
       tx.alpha = normP > 0 ? 1 : 0;
+      tx.clip = {
+        wipeProgress: normP,
+        rect: true,
+      };
       break;
 
     case 'bounce-in': {

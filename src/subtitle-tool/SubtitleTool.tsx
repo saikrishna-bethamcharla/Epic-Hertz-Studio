@@ -193,16 +193,18 @@ export default function SubtitleTool() {
     if (lowerThirds.length === 0) return;
     lowerThirds.forEach((lt) => {
       if (lt.photoBlobId && !photoCache.has(lt.photoBlobId)) {
-        getPhotoBlob(lt.photoBlobId).then((blob) => {
-          if (!blob) return;
-          const url = URL.createObjectURL(blob);
-          const img = new Image();
-          img.onload = () => {
-            setPhotoCache((prev) => new Map(prev).set(lt.photoBlobId!, img));
-            URL.revokeObjectURL(url);
-          };
-          img.src = url;
-        }).catch((e) => console.warn('Failed to load photo blob:', e));
+        getPhotoBlob(lt.photoBlobId)
+          .then((blob) => {
+            if (!blob) return;
+            const url = URL.createObjectURL(blob);
+            const img = new Image();
+            img.onload = () => {
+              setPhotoCache((prev) => new Map(prev).set(lt.photoBlobId!, img));
+              URL.revokeObjectURL(url);
+            };
+            img.src = url;
+          })
+          .catch((e) => console.warn('Failed to load photo blob:', e));
       }
     });
   }, [lowerThirds, photoCache]);

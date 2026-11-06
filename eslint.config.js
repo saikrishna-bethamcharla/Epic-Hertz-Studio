@@ -10,6 +10,7 @@ export default tseslint.config(
       'public/**',
       '**/*.d.ts',
       'api/**', // API is plain JS for Vercel functions
+      'scripts/**',
     ],
   },
   js.configs.recommended,

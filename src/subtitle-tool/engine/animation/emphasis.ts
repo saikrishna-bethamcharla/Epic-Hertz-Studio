@@ -71,7 +71,11 @@ export function calculateEmphasisTransform(
       // Immediate high-contrast chromatic flip
       const speed = params.speed ?? 4;
       tx.colorMix = clamp01(normP * speed);
-      tx.scale = 1 + (params.scale ? (params.scale - 1) * Math.sin(normP * Math.PI) : 0.08 * Math.sin(normP * Math.PI));
+      tx.scale =
+        1 +
+        (params.scale
+          ? (params.scale - 1) * Math.sin(normP * Math.PI)
+          : 0.08 * Math.sin(normP * Math.PI));
       break;
     }
 

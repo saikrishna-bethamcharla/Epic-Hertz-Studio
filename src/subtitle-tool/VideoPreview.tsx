@@ -31,7 +31,13 @@ import {
   SkipBack,
   SkipForward,
 } from 'lucide-react';
-import type { Segment, CaptionStyle, VideoAspectRatio, SegmentStyleOverride, LowerThirdSpec } from './types';
+import type {
+  Segment,
+  CaptionStyle,
+  VideoAspectRatio,
+  SegmentStyleOverride,
+  LowerThirdSpec,
+} from './types';
 import CaptionCanvas from './CaptionCanvas';
 import { formatTimecode } from './utils/formatTime';
 

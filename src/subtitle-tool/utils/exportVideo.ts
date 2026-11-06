@@ -157,7 +157,14 @@ export async function exportCaptionedVideo(
           }
           sample.draw(ctx, 0, 0);
           renderCaptions(ctx, canvas.width, canvas.height, sample.timestamp, segments, style);
-          renderLowerThirds(ctx, canvas.width, canvas.height, sample.timestamp, options.lowerThirds, options.photoCache);
+          renderLowerThirds(
+            ctx,
+            canvas.width,
+            canvas.height,
+            sample.timestamp,
+            options.lowerThirds,
+            options.photoCache,
+          );
           return canvas;
         },
         processedWidth: outW,

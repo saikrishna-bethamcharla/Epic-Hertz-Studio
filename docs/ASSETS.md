@@ -2,29 +2,31 @@
 
 All font assets bundled in Epic Hertz Studio are self-hosted in `public/fonts` as `.woff2` files and licensed under the **SIL Open Font License 1.1 (OFL-1.1)** or equivalent open-source licenses. No proprietary, marketplace, or hotlinked third-party fonts are used during runtime or video export.
 
+Each typeface includes its full upstream license file and copyright notice under [`public/fonts/licenses/`](file:///d:/krishna/epic-hertz/public/fonts/licenses/).
+
 ---
 
 ## Font Inventory & Verification
 
-| Font Family | Weights / Styles | Upstream Source | License | Date Verified |
-|-------------|------------------|-----------------|---------|---------------|
-| **Albert Sans** | 600, 800 normal | [Google Fonts / Andreas Rasmussen](https://github.com/kalapi/Albert-Sans) | SIL OFL 1.1 | 2026-11-06 |
-| **Unbounded** | 700, 900 normal | [Google Fonts / Studio Feixen](https://github.com/googlefonts/unbounded) | SIL OFL 1.1 | 2026-11-06 |
-| **Anton** | 400 normal | [Google Fonts / Vernon Adams](https://github.com/googlefonts/AntonFont) | SIL OFL 1.1 | 2026-11-06 |
-| **Archivo Black** | 400 normal | [Google Fonts / Omnibus-Type](https://github.com/Omnibus-Type/ArchivoBlack) | SIL OFL 1.1 | 2026-11-06 |
-| **Bangers** | 400 normal | [Google Fonts / Vernon Adams](https://github.com/googlefonts/bangers) | SIL OFL 1.1 | 2026-11-06 |
-| **Bebas Neue** | 400 normal | [Google Fonts / Ryoichi Tsunekawa](https://github.com/dharmatype/Bebas-Neue) | SIL OFL 1.1 | 2026-11-06 |
-| **Inter** | 600, 800 normal | [Google Fonts / Rasmus Andersson](https://github.com/rsms/inter) | SIL OFL 1.1 | 2026-11-06 |
-| **Montserrat** | 800, 900 normal | [Google Fonts / Julieta Ulanovsky](https://github.com/JulietaUla/Montserrat) | SIL OFL 1.1 | 2026-11-06 |
-| **Oswald** | 600 normal | [Google Fonts / Vernon Adams](https://github.com/googlefonts/OswaldFont) | SIL OFL 1.1 | 2026-11-06 |
-| **Playfair Display** | 700 normal, 700 italic | [Google Fonts / Claus Eggers Sørensen](https://github.com/clauseggers/Playfair) | SIL OFL 1.1 | 2026-11-06 |
-| **Poppins** | 600, 800 normal | [Google Fonts / Indian Type Foundry](https://github.com/itfoundry/Poppins) | SIL OFL 1.1 | 2026-11-06 |
-| **Noto Sans Telugu** | 700, 900 normal | [Google Fonts / Google Noto Fonts](https://github.com/notofonts/telugu) | SIL OFL 1.1 | 2026-11-06 |
-| **Noto Sans Devanagari** | 700, 900 normal | [Google Fonts / Google Noto Fonts](https://github.com/notofonts/devanagari) | SIL OFL 1.1 | 2026-11-06 |
-| **Noto Sans Tamil** | 700, 900 normal | [Google Fonts / Google Noto Fonts](https://github.com/notofonts/tamil) | SIL OFL 1.1 | 2026-11-06 |
-| **Noto Sans Kannada** | 700, 900 normal | [Google Fonts / Google Noto Fonts](https://github.com/notofonts/kannada) | SIL OFL 1.1 | 2026-11-06 |
-| **Noto Sans Malayalam** | 700, 900 normal | [Google Fonts / Google Noto Fonts](https://github.com/notofonts/malayalam) | SIL OFL 1.1 | 2026-11-06 |
-| **Noto Sans Bengali** | 700, 900 normal | [Google Fonts / Google Noto Fonts](https://github.com/notofonts/bengali) | SIL OFL 1.1 | 2026-11-06 |
+| Font Family | Weights / Styles | Upstream Source | Local License File | License | Date Verified |
+|-------------|------------------|-----------------|--------------------|---------|---------------|
+| **Albert Sans** | 600, 800 normal | [Google Fonts / Andreas Rasmussen](https://github.com/kalapi/Albert-Sans) | [OFL.txt](file:///d:/krishna/epic-hertz/public/fonts/licenses/albert-sans/OFL.txt) | SIL OFL 1.1 | 2026-11-06 |
+| **Unbounded** | 700, 900 normal | [Google Fonts / Studio Feixen](https://github.com/googlefonts/unbounded) | [OFL.txt](file:///d:/krishna/epic-hertz/public/fonts/licenses/unbounded/OFL.txt) | SIL OFL 1.1 | 2026-11-06 |
+| **Anton** | 400 normal | [Google Fonts / Vernon Adams](https://github.com/googlefonts/AntonFont) | [OFL.txt](file:///d:/krishna/epic-hertz/public/fonts/licenses/anton/OFL.txt) | SIL OFL 1.1 | 2026-11-06 |
+| **Archivo Black** | 400 normal | [Google Fonts / Omnibus-Type](https://github.com/Omnibus-Type/ArchivoBlack) | [OFL.txt](file:///d:/krishna/epic-hertz/public/fonts/licenses/archivo-black/OFL.txt) | SIL OFL 1.1 | 2026-11-06 |
+| **Bangers** | 400 normal | [Google Fonts / Vernon Adams](https://github.com/googlefonts/bangers) | [OFL.txt](file:///d:/krishna/epic-hertz/public/fonts/licenses/bangers/OFL.txt) | SIL OFL 1.1 | 2026-11-06 |
+| **Bebas Neue** | 400 normal | [Google Fonts / Ryoichi Tsunekawa](https://github.com/dharmatype/Bebas-Neue) | [OFL.txt](file:///d:/krishna/epic-hertz/public/fonts/licenses/bebas-neue/OFL.txt) | SIL OFL 1.1 | 2026-11-06 |
+| **Inter** | 600, 800 normal | [Google Fonts / Rasmus Andersson](https://github.com/rsms/inter) | [OFL.txt](file:///d:/krishna/epic-hertz/public/fonts/licenses/inter/OFL.txt) | SIL OFL 1.1 | 2026-11-06 |
+| **Montserrat** | 800, 900 normal | [Google Fonts / Julieta Ulanovsky](https://github.com/JulietaUla/Montserrat) | [OFL.txt](file:///d:/krishna/epic-hertz/public/fonts/licenses/montserrat/OFL.txt) | SIL OFL 1.1 | 2026-11-06 |
+| **Oswald** | 600 normal | [Google Fonts / Vernon Adams](https://github.com/googlefonts/OswaldFont) | [OFL.txt](file:///d:/krishna/epic-hertz/public/fonts/licenses/oswald/OFL.txt) | SIL OFL 1.1 | 2026-11-06 |
+| **Playfair Display** | 700 normal, 700 italic | [Google Fonts / Claus Eggers Sørensen](https://github.com/clauseggers/Playfair) | [OFL.txt](file:///d:/krishna/epic-hertz/public/fonts/licenses/playfair-display/OFL.txt) | SIL OFL 1.1 | 2026-11-06 |
+| **Poppins** | 600, 800 normal | [Google Fonts / Indian Type Foundry](https://github.com/itfoundry/Poppins) | [OFL.txt](file:///d:/krishna/epic-hertz/public/fonts/licenses/poppins/OFL.txt) | SIL OFL 1.1 | 2026-11-06 |
+| **Noto Sans Telugu** | 700, 900 normal | [Google Fonts / Google Noto Fonts](https://github.com/notofonts/telugu) | [OFL.txt](file:///d:/krishna/epic-hertz/public/fonts/licenses/noto-sans-telugu/OFL.txt) | SIL OFL 1.1 | 2026-11-06 |
+| **Noto Sans Devanagari** | 700, 900 normal | [Google Fonts / Google Noto Fonts](https://github.com/notofonts/devanagari) | [OFL.txt](file:///d:/krishna/epic-hertz/public/fonts/licenses/noto-sans-devanagari/OFL.txt) | SIL OFL 1.1 | 2026-11-06 |
+| **Noto Sans Tamil** | 700, 900 normal | [Google Fonts / Google Noto Fonts](https://github.com/notofonts/tamil) | [OFL.txt](file:///d:/krishna/epic-hertz/public/fonts/licenses/noto-sans-tamil/OFL.txt) | SIL OFL 1.1 | 2026-11-06 |
+| **Noto Sans Kannada** | 700, 900 normal | [Google Fonts / Google Noto Fonts](https://github.com/notofonts/kannada) | [OFL.txt](file:///d:/krishna/epic-hertz/public/fonts/licenses/noto-sans-kannada/OFL.txt) | SIL OFL 1.1 | 2026-11-06 |
+| **Noto Sans Malayalam** | 700, 900 normal | [Google Fonts / Google Noto Fonts](https://github.com/notofonts/malayalam) | [OFL.txt](file:///d:/krishna/epic-hertz/public/fonts/licenses/noto-sans-malayalam/OFL.txt) | SIL OFL 1.1 | 2026-11-06 |
+| **Noto Sans Bengali** | 700, 900 normal | [Google Fonts / Google Noto Fonts](https://github.com/notofonts/bengali) | [OFL.txt](file:///d:/krishna/epic-hertz/public/fonts/licenses/noto-sans-bengali/OFL.txt) | SIL OFL 1.1 | 2026-11-06 |
 
 ---
 

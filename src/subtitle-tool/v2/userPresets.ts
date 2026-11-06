@@ -220,7 +220,9 @@ export function importUserPresetsFromJson(jsonStr: string): {
   try {
     const data = JSON.parse(jsonStr);
     const presets: UserPreset[] = Array.isArray(data.presets) ? data.presets : [];
-    const ltPresets: LowerThirdPreset[] = Array.isArray(data.lowerThirdPresets) ? data.lowerThirdPresets : [];
+    const ltPresets: LowerThirdPreset[] = Array.isArray(data.lowerThirdPresets)
+      ? data.lowerThirdPresets
+      : [];
     if (!presets.length && !ltPresets.length && !Array.isArray(data.brandColors)) {
       return { importedCount: 0, errors: ['No valid presets or brand colors found in file.'] };
     }

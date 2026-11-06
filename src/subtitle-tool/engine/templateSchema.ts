@@ -11,7 +11,11 @@ import type { EntranceType, EmphasisType, ExitType } from './animation';
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const captionTemplateSchema = z.object({
-  id: z.string().min(1).max(64).regex(/^[a-z0-9_-]+$/i, 'Template ID must be alphanumeric'),
+  id: z
+    .string()
+    .min(1)
+    .max(64)
+    .regex(/^[a-z0-9_-]+$/i, 'Template ID must be alphanumeric'),
   name: z.string().min(1).max(100),
   version: z.number().int().min(1).default(1),
   category: z.string().min(1).max(50),
@@ -223,9 +227,7 @@ export function validateCaptionTemplate(
     return { success: true, data: result.data };
   }
   const issues = (result.error as any).issues || (result.error as any).errors || [];
-  const errors = issues.map(
-    (e: any) => `${e.path?.join('.') || 'root'}: ${e.message}`,
-  );
+  const errors = issues.map((e: any) => `${e.path?.join('.') || 'root'}: ${e.message}`);
   return { success: false, errors };
 }
 
@@ -253,7 +255,9 @@ export function validateTemplatePack(
     if (res.success) {
       validated.push(res.data);
     } else {
-      errors.push(`Template #${i + 1} (${items[i]?.name || items[i]?.id || 'untitled'}): ${res.errors.join(', ')}`);
+      errors.push(
+        `Template #${i + 1} (${items[i]?.name || items[i]?.id || 'untitled'}): ${res.errors.join(', ')}`,
+      );
     }
   }
 
@@ -272,69 +276,8 @@ export function validateTemplatePack(
  * Compiles a data-driven CaptionTemplate into a renderable CaptionStyle.
  */
 export function templateToStyle(t: CaptionTemplate): CaptionStyle {
-  // Map entrance type to InAnim
-  let inAnim: CaptionStyle['motion']['in'] = 'fade';
-  switch (t.entrance.type) {
-    case 'fade':
-      inAnim = 'fade';
-      break;
-    case 'slide-up':
-      inAnim = 'slide-up';
-      break;
-    case 'slide-left':
-    case 'slide-right':
-      inAnim = 'slide-up';
-      break;
-    case 'scale-pop':
-    case 'bounce-in':
-      inAnim = 'pop';
-      break;
-    case 'rotate-in':
-      inAnim = 'pop';
-      break;
-    case 'blur-in':
-      inAnim = 'blur';
-      break;
-    case 'typewriter':
-      inAnim = 'typewriter';
-      break;
-    case 'wave':
-      inAnim = 'slide-up';
-      break;
-    case 'flip-in':
-      inAnim = 'mask-up';
-      break;
-    case 'drop-in':
-      inAnim = 'drop';
-      break;
-    case 'clip-reveal':
-      inAnim = 'mask-up';
-      break;
-    default:
-      inAnim = 'pop';
-      break;
-  }
-
-  // Map exit type to OutAnim
-  let outAnim: CaptionStyle['motion']['out'] = 'none';
-  switch (t.exit.type) {
-    case 'fade':
-      outAnim = 'fade';
-      break;
-    case 'slide-down':
-    case 'drop-out':
-      outAnim = 'slide-down';
-      break;
-    case 'scale-out':
-      outAnim = 'shrink';
-      break;
-    default:
-      outAnim = 'fade';
-      break;
-  }
-
   // Map highlight mode
-  let hlMode: CaptionStyle['highlight']['mode'] = 'none';
+  let hlMode: CaptionStyle['highlight']['mode'];
   switch (t.emphasis.type) {
     case 'pop':
     case 'scale-slam':
@@ -372,9 +315,10 @@ export function templateToStyle(t: CaptionTemplate): CaptionStyle {
   const staggerUnit = t.stagger.unit === 'letter' ? 'char' : t.stagger.unit;
 
   // Easing mapping
-  let easeName: CaptionStyle['motion']['ease'] = 'spring';
+  let easeName: CaptionStyle['motion']['ease'];
   if (t.entrance.easing === 'linear') easeName = 'linear';
-  else if (t.entrance.easing === 'easeOutQuad' || t.entrance.easing === 'easeOutCubic') easeName = 'out';
+  else if (t.entrance.easing === 'easeOutQuad' || t.entrance.easing === 'easeOutCubic')
+    easeName = 'out';
   else if (t.entrance.easing === 'easeInOutCubic') easeName = 'inout';
   else if (t.entrance.easing === 'easeOutExpo') easeName = 'expo';
   else if (t.entrance.easing === 'easeOutBack') easeName = 'back';
@@ -439,14 +383,16 @@ export function templateToStyle(t: CaptionTemplate): CaptionStyle {
       boxPadX: (t.emphasis.params as Record<string, any>)?.boxPadX ?? 0.22,
       boxPadY: (t.emphasis.params as Record<string, any>)?.boxPadY ?? 0.08,
       boxRadius: (t.emphasis.params as Record<string, any>)?.boxRadius ?? 0.24,
+      emphasisType: t.emphasis.type,
+      emphasisParams: t.emphasis.params,
     },
     reveal: {
       mode: 'page',
       dimUnspoken: 1,
     },
     motion: {
-      in: inAnim,
-      out: outAnim,
+      in: t.entrance.type,
+      out: t.exit.type,
       inMs: Math.round(t.entrance.duration * 1000),
       outMs: Math.round(t.exit.duration * 1000),
       stagger: Math.round(t.stagger.delay * 1000),
@@ -454,6 +400,11 @@ export function templateToStyle(t: CaptionTemplate): CaptionStyle {
       ease: easeName,
       bounce: (t.entrance.params as Record<string, any>)?.bounce ?? 0.55,
       wobble: (t.emphasis.params as Record<string, any>)?.wobble ?? 0,
+      entranceType: t.entrance.type,
+      exitType: t.exit.type,
+      entranceParams: t.entrance.params,
+      exitParams: t.exit.params,
+      easing: t.entrance.easing,
     },
   };
 }

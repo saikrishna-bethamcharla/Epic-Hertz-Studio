@@ -3,6 +3,7 @@
 // drives the live preview, the gallery thumbnails and the exported video.
 
 import type { EaseName } from './util';
+import type { EntranceType, EmphasisType, ExitType, AnimationEasing } from './animation/types';
 
 export interface GradientPaint {
   /** Degrees. 90 = top → bottom, 0 = left → right. */
@@ -22,8 +23,9 @@ export type InAnim =
   | 'mask-up'
   | 'drop'
   | 'typewriter'
-  | 'glitch';
-export type OutAnim = 'none' | 'fade' | 'slide-down' | 'shrink';
+  | 'glitch'
+  | EntranceType;
+export type OutAnim = 'none' | 'fade' | 'slide-down' | 'shrink' | ExitType;
 export type HighlightMode = 'none' | 'color' | 'box' | 'underline' | 'sweep';
 export type TextCase = 'none' | 'upper' | 'lower' | 'title';
 export type MotionUnit = 'line' | 'word' | 'char';
@@ -85,6 +87,8 @@ export interface CaptionStyle {
     boxPadX: number;
     boxPadY: number;
     boxRadius: number;
+    emphasisType?: EmphasisType;
+    emphasisParams?: Record<string, any>;
   };
 
   reveal: {
@@ -107,6 +111,11 @@ export interface CaptionStyle {
     bounce: number;
     /** Random tilt per word, degrees. */
     wobble: number;
+    entranceType?: EntranceType;
+    exitType?: ExitType;
+    entranceParams?: Record<string, any>;
+    exitParams?: Record<string, any>;
+    easing?: AnimationEasing;
   };
 }
 
@@ -346,4 +355,3 @@ export const DEFAULT_LOWER_THIRD: Omit<LowerThirdSpec, 'id' | 'start' | 'end'> =
   introDuration: 0.7,
   outroDuration: 0.6,
 };
-

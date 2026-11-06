@@ -10,16 +10,7 @@
 // - Save as reusable preset
 
 import React, { useRef, useState } from 'react';
-import {
-  Trash2,
-  Bookmark,
-  Upload,
-  User,
-  Clock,
-  Layout,
-  Palette,
-  Type,
-} from 'lucide-react';
+import { Trash2, Bookmark, Upload, User, Clock, Layout, Palette, Type } from 'lucide-react';
 import type { LowerThirdSpec, LowerThirdVariant } from '../../types';
 import { FONT_FAMILIES } from '../../engine/spec';
 import { savePhotoBlob, deletePhotoBlob } from '../../utils/projectStorage';
@@ -112,7 +103,10 @@ export default function LowerThirdInspector({
 
   // Save current style as preset
   const handleSavePreset = () => {
-    const presetName = prompt('Enter a name for this Lower Third preset:', `${spec.name || 'Custom'} Preset`);
+    const presetName = prompt(
+      'Enter a name for this Lower Third preset:',
+      `${spec.name || 'Custom'} Preset`,
+    );
     if (!presetName) return;
 
     const { id, start, end, ...styleSpec } = spec;
@@ -522,7 +516,12 @@ export default function LowerThirdInspector({
                 <button
                   key={align}
                   type="button"
-                  onClick={() => updatePosition({ align, x: align === 'center' ? 0.5 : align === 'right' ? 0.85 : 0.08 })}
+                  onClick={() =>
+                    updatePosition({
+                      align,
+                      x: align === 'center' ? 0.5 : align === 'right' ? 0.85 : 0.08,
+                    })
+                  }
                   className={`flex-1 py-1 rounded text-center text-[10px] font-medium transition-colors ${
                     isSel
                       ? 'bg-amber-400/20 text-amber-300 font-semibold'
@@ -588,7 +587,9 @@ export default function LowerThirdInspector({
               min={spec.start + 0.5}
               value={spec.end}
               onChange={(e) =>
-                updateSpec({ end: Math.max(spec.start + 0.5, parseFloat(e.target.value) || spec.start + 1) })
+                updateSpec({
+                  end: Math.max(spec.start + 0.5, parseFloat(e.target.value) || spec.start + 1),
+                })
               }
               className="mt-1 w-full px-2 py-1.5 rounded-lg bg-[#1a1a18] border border-white/10 text-bone font-mono text-xs focus:border-amber-400 focus:outline-none"
             />

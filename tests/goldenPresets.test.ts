@@ -13,7 +13,10 @@ describe('Phase A: Golden Snapshot Tests for Existing Presets', () => {
       beginPath: () => log.push({ op: 'beginPath', args: [] }),
       closePath: () => log.push({ op: 'closePath', args: [] }),
       rect: (x: number, y: number, w: number, h: number) =>
-        log.push({ op: 'rect', args: [Math.round(x), Math.round(y), Math.round(w), Math.round(h)] }),
+        log.push({
+          op: 'rect',
+          args: [Math.round(x), Math.round(y), Math.round(w), Math.round(h)],
+        }),
       roundRect: (x: number, y: number, w: number, h: number, r: number) =>
         log.push({
           op: 'roundRect',

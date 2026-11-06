@@ -5,7 +5,13 @@
 // finished loading so cached layouts are rebuilt.
 
 import { getAssetUrl } from '../utils/assetUrl';
-import { fontById, SCRIPT_FONTS, type CaptionStyle, type FontFile, type LowerThirdSpec } from './spec';
+import {
+  fontById,
+  SCRIPT_FONTS,
+  type CaptionStyle,
+  type FontFile,
+  type LowerThirdSpec,
+} from './spec';
 
 let version = 0;
 const listeners = new Set<() => void>();

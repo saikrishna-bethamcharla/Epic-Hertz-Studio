@@ -116,7 +116,17 @@ export function useProjectAutosave({
       }
     }, 800);
     return () => clearTimeout(timer);
-  }, [stage, videoFile, segments, style, spokenLanguage, scriptOutput, aspectRatio, projectName, lowerThirds]);
+  }, [
+    stage,
+    videoFile,
+    segments,
+    style,
+    spokenLanguage,
+    scriptOutput,
+    aspectRatio,
+    projectName,
+    lowerThirds,
+  ]);
 
   // Explicitly flush active project to IndexedDB immediately (e.g. before navigating to Home)
   const flushAutosaveNow = useCallback(async () => {
@@ -140,7 +150,17 @@ export function useProjectAutosave({
     } catch (err) {
       console.warn('Manual save before exit failed:', err);
     }
-  }, [stage, videoFile, segments, style, spokenLanguage, scriptOutput, aspectRatio, projectName, lowerThirds]);
+  }, [
+    stage,
+    videoFile,
+    segments,
+    style,
+    spokenLanguage,
+    scriptOutput,
+    aspectRatio,
+    projectName,
+    lowerThirds,
+  ]);
 
   // Edits live in this browser tab and IndexedDB. Warn before an accidental reload.
   useEffect(() => {

@@ -1,14 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import {
-  CAPTION_TEMPLATES,
-  getTemplateById,
-} from '../src/subtitle-tool/engine/templateCatalog';
+import { CAPTION_TEMPLATES } from '../src/subtitle-tool/engine/templateCatalog';
 import {
   captionTemplateSchema,
   validateCaptionTemplate,
   validateTemplatePack,
   templateToStyle,
-  styleToTemplate,
 } from '../src/subtitle-tool/engine/templateSchema';
 
 describe('Phase B & D: Caption Template Catalog (40 Templates)', () => {

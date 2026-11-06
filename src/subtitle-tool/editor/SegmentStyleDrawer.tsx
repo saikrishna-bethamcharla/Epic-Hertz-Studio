@@ -5,7 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Palette, RotateCcw, Smile } from 'lucide-react';
 import type { Segment, SegmentStyleOverride } from '../types';
 
-export const POPULAR_EMOJIS: Array<{ label: string; emojis: string[] }> = [];
+export const POPULAR_EMOJIS = [
+  { label: 'Reactions', emojis: ['🔥', '😂', '🤯', '❤️', '👏', '🚀'] },
+  { label: 'Emphasis', emojis: ['⚡', '✨', '⭐', '💥', '🎯', '💯'] },
+  { label: 'Expressions', emojis: ['👀', '🤫', '😎', '💡', '⚠️', '🚨'] },
+];
 
 export const PRESET_ACCENT_COLORS = [
   { label: 'Yellow', value: '#FACC15' },

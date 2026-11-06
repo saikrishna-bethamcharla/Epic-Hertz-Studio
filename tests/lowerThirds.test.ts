@@ -161,6 +161,7 @@ describe('Lower Thirds: Multilingual Text Fitting & Font Scaling', () => {
       font: '',
       measureText: (text: string) => {
         // Approximate character width per script: Indic conjuncts are typically wider
+        // eslint-disable-next-line no-misleading-character-class
         const pxPerChar = /[\u0C00-\u0C7F\u0900-\u097F]/.test(text) ? 18 : 12;
         return {
           width: text.length * pxPerChar,

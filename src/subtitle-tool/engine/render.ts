@@ -10,6 +10,14 @@
 
 import type { Segment } from '../types';
 import {
+  calculateEntranceTransform,
+  calculateEmphasisTransform,
+  calculateExitTransform,
+  type TransformState,
+  type EntranceType,
+  type ExitType,
+} from './animation';
+import {
   COMPLEX_SCRIPT,
   type CaptionStyle,
   type GradientPaint,
@@ -253,7 +261,7 @@ function layoutPage(
   );
 
   const words: WordLayout[] = new Array(texts.length);
-  const charMode = style.motion.unit === 'char' && !complex;
+  const charMode = style.motion.unit === 'char';
   lines.forEach((idx, li) => {
     let x = lineX[li];
     idx.forEach((i) => {
@@ -314,11 +322,15 @@ function getLayout(
 interface Tx {
   alpha: number;
   scale: number;
+  scaleX?: number;
+  scaleY?: number;
   dx: number;
   dy: number;
+  rotation?: number;
   blur: number;
   glitch: number;
   clipBelow: boolean;
+  clip?: TransformState['clip'];
 }
 
 function inTransform(
@@ -674,16 +686,53 @@ export function renderCaptions(
   let pageAlpha = 1;
   let pageScale = 1;
   let pageDy = 0;
+  let pageDx = 0;
+  let pageRotation = 0;
+  let pageBlur = 0;
+  let pageClip: TransformState['clip'] | undefined;
+
+  const exitType = m.exitType ?? (m.out as ExitType);
+  const isCustomExit =
+    m.exitType !== undefined ||
+    [
+      'slide-left',
+      'slide-right',
+      'scale-out',
+      'blur-out',
+      'clip-hide',
+      'typewriter-erase',
+      'drop-out',
+      'glitch-out',
+    ].includes(m.out as string);
+
   if (m.out !== 'none') {
-    const pOut = ease('out', 1 - clamp01((visEnd - t) / Math.max(0.001, m.outMs / 1000)));
-    if (m.out === 'fade') pageAlpha = 1 - pOut;
-    if (m.out === 'slide-down') {
-      pageDy = pOut * px * 0.3;
-      pageAlpha = 1 - pOut;
-    }
-    if (m.out === 'shrink') {
-      pageScale = 1 - 0.14 * pOut;
-      pageAlpha = 1 - pOut;
+    const pOutRaw = 1 - clamp01((visEnd - t) / Math.max(0.001, m.outMs / 1000));
+    if (isCustomExit && exitType) {
+      const exitTx = calculateExitTransform(
+        exitType,
+        pOutRaw,
+        px,
+        m.easing ?? 'easeOutCubic',
+        m.exitParams,
+      );
+      pageAlpha = exitTx.alpha;
+      pageScale = exitTx.scale;
+      pageDx = exitTx.dx;
+      pageDy = exitTx.dy;
+      pageRotation = exitTx.rotation ?? 0;
+      pageBlur = exitTx.blur ?? 0;
+      pageClip = exitTx.clip;
+    } else {
+      const pOut = ease('out', pOutRaw);
+      if (m.out === 'fade') pageAlpha = 1 - pOut;
+      if (m.out === 'slide-down') {
+        pageDy = pOut * px * 0.3;
+        pageAlpha = 1 - pOut;
+      }
+      if (m.out === 'shrink') {
+        pageScale = 1 - 0.14 * pOut;
+        pageAlpha = 1 - pOut;
+      }
     }
   }
   if (pageAlpha <= 0.002) {
@@ -691,12 +740,26 @@ export function renderCaptions(
     return NOTHING;
   }
   ctx.globalAlpha = pageAlpha;
-  if (pageScale !== 1 || pageDy !== 0) {
+  if (pageScale !== 1 || pageDy !== 0 || pageDx !== 0 || pageRotation !== 0) {
     const cx = bx + L.w / 2;
     const cy = by + L.h / 2;
-    ctx.translate(cx, cy + pageDy);
+    ctx.translate(cx + pageDx, cy + pageDy);
+    if (pageRotation) ctx.rotate((pageRotation * Math.PI) / 180);
     ctx.scale(pageScale, pageScale);
     ctx.translate(-cx, -cy);
+  }
+  if (pageClip?.rect) {
+    const wipe = pageClip.wipeProgress ?? 1;
+    ctx.beginPath();
+    ctx.rect(bx - px, by - px, (L.w + px * 2) * wipe, L.h + px * 2);
+    ctx.clip();
+  }
+  if (pageBlur > 0.3 && filterOK) {
+    try {
+      ctx.filter = `blur(${pageBlur.toFixed(2)}px)`;
+    } catch {
+      // safe fallback
+    }
   }
 
   // ── Active word
@@ -767,7 +830,7 @@ export function renderCaptions(
   }
 
   // ── Sliding highlight box (under the text)
-  if (hl.mode === 'box' && active >= 0) {
+  if ((hl.mode === 'box' || hl.emphasisType === 'highlight-box-sweep') && active >= 0) {
     const cur = wordRect(active);
     const prev = active > 0 ? wordRect(active - 1) : null;
     const slide = ease('out', clamp01((t - page.words[active].start) / 0.11));
@@ -816,12 +879,37 @@ export function renderCaptions(
     const isActive = i === active;
     const wordHlColor = w.highlightColor || hl.color;
     let emphScale = emph[i];
-    if (w.emphasis === 'pop' && (isActive || (t >= w.start && t <= w.end))) {
-      emphScale *= 1.28;
+    let emphDx = 0;
+    let emphDy = 0;
+    let emphRotation = 0;
+    let emphBlur = 0;
+    let emphColorMix = colourAmt;
+
+    if (hl.emphasisType && (isActive || (t >= w.start && t <= w.end))) {
+      const wordProg = clamp01((t - w.start) / Math.max(0.06, w.end - w.start));
+      const emphTx = calculateEmphasisTransform(
+        hl.emphasisType,
+        wordProg,
+        px,
+        'spring',
+        hl.emphasisParams,
+      );
+      emphScale = emphTx.scale;
+      emphDx = emphTx.dx;
+      emphDy = emphTx.dy;
+      emphRotation = emphTx.rotation ?? 0;
+      emphBlur = emphTx.blur ?? 0;
+      emphColorMix = Math.max(colourAmt, emphTx.colorMix ?? 0);
+    } else {
+      if (w.emphasis === 'pop' && (isActive || (t >= w.start && t <= w.end))) {
+        emphScale *= 1.28;
+      }
+      const isShake = w.emphasis === 'shake' && (isActive || (t >= w.start && t <= w.end));
+      if (isShake) {
+        emphDx = Math.sin(t * 70 + i * 5) * px * 0.08;
+        emphDy = Math.cos(t * 60 + i * 7) * px * 0.06;
+      }
     }
-    const isShake = w.emphasis === 'shake' && (isActive || (t >= w.start && t <= w.end));
-    const shakeDx = isShake ? Math.sin(t * 70 + i * 5) * px * 0.08 : 0;
-    const shakeDy = isShake ? Math.cos(t * 60 + i * 7) * px * 0.06 : 0;
 
     let dimAlpha = 1;
     if (activeStyle.reveal.dimUnspoken < 1 && activeStyle.reveal.mode === 'page') {
@@ -832,7 +920,12 @@ export function renderCaptions(
     let fill: Paint = activeStyle.fill;
     let tint: DrawOpts['tint'];
     const hasWordHl = !!w.highlightColor;
-    if (hl.mode === 'color' || (hl.mode === 'sweep' && hl.keep && t > w.end) || hasWordHl) {
+    if (
+      hl.mode === 'color' ||
+      (hl.mode === 'sweep' && hl.keep && t > w.end) ||
+      hasWordHl ||
+      hl.emphasisType
+    ) {
       const amt =
         hl.mode === 'sweep'
           ? t > w.end
@@ -841,8 +934,8 @@ export function renderCaptions(
           : hasWordHl
             ? isActive || (hl.keep && t > w.end)
               ? 1
-              : colourAmt
-            : colourAmt;
+              : emphColorMix
+            : emphColorMix;
       if (!isGradient(activeStyle.fill)) fill = mixColor(activeStyle.fill, wordHlColor, amt);
       else tint = { color: wordHlColor, amount: amt };
     } else if (hl.mode === 'box' && hl.textColor) {
@@ -864,13 +957,83 @@ export function renderCaptions(
       const local = t - base;
       if (local < 0) return;
       const p = m.in === 'none' ? 1 : clamp01(local / inDur);
-      const tx = inTransform(m.in, p, px, L.lineBox, activeStyle);
+      const entranceType = m.entranceType ?? (m.in as EntranceType);
+      const isCustomEntrance =
+        m.entranceType !== undefined ||
+        [
+          'scale-pop',
+          'rotate-in',
+          'blur-in',
+          'bounce-in',
+          'wave',
+          'flip-in',
+          'drop-in',
+          'clip-reveal',
+          'slide-left',
+          'slide-right',
+        ].includes(m.in as string);
+
+      let tx: {
+        alpha: number;
+        scale: number;
+        scaleX?: number;
+        scaleY?: number;
+        dx: number;
+        dy: number;
+        rotation?: number;
+        blur: number;
+        glitch: number;
+        clipBelow?: boolean;
+        clip?: TransformState['clip'];
+      };
+
+      if (isCustomEntrance && entranceType) {
+        const entTx = calculateEntranceTransform(
+          entranceType,
+          p,
+          px,
+          L.lineBox,
+          m.easing ?? 'easeOutCubic',
+          m.entranceParams,
+        );
+        tx = {
+          alpha: entTx.alpha,
+          scale: entTx.scale,
+          scaleX: entTx.scaleX,
+          scaleY: entTx.scaleY,
+          dx: entTx.dx,
+          dy: entTx.dy,
+          rotation: entTx.rotation ?? 0,
+          blur: entTx.blur ?? 0,
+          glitch: entTx.glitch ?? 0,
+          clip: entTx.clip,
+        };
+      } else {
+        tx = inTransform(m.in as InAnim, p, px, L.lineBox, activeStyle);
+      }
+      if (emphBlur > 0) {
+        tx.blur = Math.max(tx.blur, emphBlur);
+      }
+
       if (tx.alpha <= 0.003) return;
 
       ctx.save();
       ctx.globalAlpha *= tx.alpha * dimAlpha;
 
-      if (tx.clipBelow) {
+      const ux = x0 + u.x;
+      const upx = ux + u.w / 2;
+
+      if (tx.clip?.rect) {
+        const wipe = tx.clip.wipeProgress ?? 1;
+        ctx.beginPath();
+        ctx.rect(
+          ux - px * 0.1,
+          y0 - L.asc - px * 0.2,
+          (u.w + px * 0.2) * wipe,
+          L.asc + L.desc + px * 0.4,
+        );
+        ctx.clip();
+      } else if (tx.clipBelow) {
         const edge = lineTop(wl.line) + L.lineBox + px * 0.05;
         ctx.beginPath();
         ctx.rect(bx - px, by - px * 2, L.w + px * 2, edge - (by - px * 2));
@@ -878,19 +1041,26 @@ export function renderCaptions(
       }
 
       // word-level emphasis transform (shared by all of a word's characters)
-      if (emphScale !== 1 || wobbleDeg || isShake) {
-        ctx.translate(pivotX + shakeDx, pivotY + shakeDy);
-        if (wobbleDeg) ctx.rotate((wobbleDeg * Math.PI) / 180);
+      if (emphScale !== 1 || wobbleDeg || emphRotation !== 0 || emphDx !== 0 || emphDy !== 0) {
+        ctx.translate(pivotX + emphDx, pivotY + emphDy);
+        if (wobbleDeg || emphRotation) ctx.rotate(((wobbleDeg + emphRotation) * Math.PI) / 180);
         ctx.scale(emphScale, emphScale);
         ctx.translate(-pivotX, -pivotY);
       }
 
-      const ux = x0 + u.x;
-      const upx = ux + u.w / 2;
       ctx.translate(tx.dx, tx.dy);
-      if (tx.scale !== 1) {
+
+      if (tx.rotation) {
         ctx.translate(upx, pivotY);
-        ctx.scale(tx.scale, tx.scale);
+        ctx.rotate((tx.rotation * Math.PI) / 180);
+        ctx.translate(-upx, -pivotY);
+      }
+
+      const sx = (tx.scaleX ?? 1) * tx.scale;
+      const sy = (tx.scaleY ?? 1) * tx.scale;
+      if (sx !== 1 || sy !== 1) {
+        ctx.translate(upx, pivotY);
+        ctx.scale(sx, sy);
         ctx.translate(-upx, -pivotY);
       }
       if (tx.blur > 0.3) {
@@ -948,7 +1118,10 @@ export function renderCaptions(
 
     // Underline accent (from font style or highlight mode or word emphasis)
     const hasUnderline =
-      activeStyle.font.underline || hl.mode === 'underline' || w.emphasis === 'underline';
+      activeStyle.font.underline ||
+      hl.mode === 'underline' ||
+      w.emphasis === 'underline' ||
+      hl.emphasisType === 'underline-draw';
     if (
       hasUnderline &&
       started &&
