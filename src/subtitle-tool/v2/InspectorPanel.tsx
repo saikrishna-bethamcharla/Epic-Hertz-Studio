@@ -1,5 +1,5 @@
 // ─── Contextual Inspector Panel — Epic Hertz Studio v2 ────────────────────────
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback, memo } from 'react';
 import {
   Type,
   Zap,
@@ -21,7 +21,7 @@ import type {
 } from '../types';
 import LowerThirdInspector from './inspector/LowerThirdInspector';
 import { Plus } from 'lucide-react';
-import { fontById } from '../engine/spec';
+import { fontById, getEffectiveCaptionStyle } from '../engine/spec';
 import SavePresetModal from './SavePresetModal';
 import { formatTimecode } from '../utils/formatTime';
 import { checkReadability, getCPS, getWPM } from '../utils/readability';
@@ -52,12 +52,13 @@ interface InspectorPanelProps {
   photoCache?: Map<string, HTMLImageElement>;
   onPhotoUploaded?: (photoBlobId: string, img: HTMLImageElement) => void;
   onPhotoRemoved?: (photoBlobId: string) => void;
+  onClearAllOverrides?: () => void;
 }
 
 export type InspectorTab = 'text' | 'animation' | 'timing' | 'layout';
 export type TextSubTab = 'basic' | 'fill' | 'effects' | 'background';
 
-export default function InspectorPanel({
+function InspectorPanel({
   scope,
   onScopeChange,
   style,
@@ -80,6 +81,7 @@ export default function InspectorPanel({
   photoCache,
   onPhotoUploaded,
   onPhotoRemoved,
+  onClearAllOverrides,
 }: InspectorPanelProps) {
   const [tab, setTab] = useState<InspectorTab>('text');
   const [textSubTab, setTextSubTab] = useState<TextSubTab>('basic');
@@ -87,23 +89,60 @@ export default function InspectorPanel({
   const [isResetMenuOpen, setIsResetMenuOpen] = useState(false);
 
   // Active Effective Values
-  const effectiveFont = activeSegment?.styleOverride?.fontFamily || style.font.family;
+  const effectiveStyle = useMemo(() => {
+    if (scope === 'all' || !activeSegment) return style;
+    return getEffectiveCaptionStyle(style, activeSegment.styleOverride);
+  }, [scope, activeSegment, style]);
+
+  const effectiveFont = effectiveStyle.font.family;
   const fontDef = useMemo(() => fontById(effectiveFont), [effectiveFont]);
   const availableWeights = useMemo(() => {
     const weights = fontDef.files.map((f) => f.weight);
     return Array.from(new Set(weights)).sort((a, b) => a - b);
   }, [fontDef]);
 
-  const effectiveWeight = activeSegment?.styleOverride?.fontWeight || style.font.weight;
-  const effectiveSize =
-    activeSegment?.styleOverride?.fontSize !== undefined
-      ? activeSegment.styleOverride.fontSize * 100
-      : activeSegment?.styleOverride?.scale !== undefined
-        ? style.font.size * activeSegment.styleOverride.scale * 100
-        : style.font.size * 100;
+  const effectiveWeight = effectiveStyle.font.weight;
+  const effectiveSize = effectiveStyle.font.size * 100;
+  const effectiveFill = effectiveStyle.fill;
+  const effectiveStrokeColor = effectiveStyle.stroke.color;
 
-  const effectiveFill = activeSegment?.styleOverride?.fillColor || style.fill;
-  const effectiveStrokeColor = activeSegment?.styleOverride?.strokeColor || style.stroke.color;
+  const applyStyleChange = useCallback(
+    (updater: (prev: CaptionStyle) => CaptionStyle) => {
+      if (scope === 'all') {
+        onStyleChange(updater(style));
+      } else if (scope === 'caption') {
+        if (!activeSegment || !onSegmentOverrideChange) return;
+        const currentEffective = getEffectiveCaptionStyle(style, activeSegment.styleOverride);
+        const nextEffective = updater(currentEffective);
+        onSegmentOverrideChange(activeSegment.id, {
+          customStyle: nextEffective,
+          fontFamily: nextEffective.font.family,
+          fontWeight: nextEffective.font.weight,
+          fontSize: nextEffective.font.size,
+          underline: nextEffective.font.underline,
+          italic: nextEffective.font.italic,
+          textCase: nextEffective.font.textCase,
+          fillColor:
+            typeof nextEffective.fill === 'string'
+              ? nextEffective.fill
+              : nextEffective.fill.stops[0][1],
+          strokeColor: nextEffective.stroke.color,
+          highlightColor: nextEffective.highlight.color,
+          positionX: nextEffective.layout.x,
+          positionY: nextEffective.layout.y,
+        });
+      } else if (scope === 'words') {
+        if (activeSegment && onSegmentOverrideChange) {
+          const currentEffective = getEffectiveCaptionStyle(style, activeSegment.styleOverride);
+          const nextEffective = updater(currentEffective);
+          onSegmentOverrideChange(activeSegment.id, {
+            customStyle: nextEffective,
+          });
+        }
+      }
+    },
+    [scope, activeSegment, onStyleChange, onSegmentOverrideChange, style],
+  );
 
   // Active Word if selected
   const activeWord: WordTimestamp | null =
@@ -292,9 +331,19 @@ export default function InspectorPanel({
                       : 'Select a word chip'}
               </span>
               {scope === 'caption' && activeSegment?.styleOverride && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 font-mono">
-                  Customized
-                </span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 font-mono font-bold">
+                    Customized
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onSegmentOverrideChange?.(activeSegment.id, null)}
+                    className="text-[10px] text-smoke hover:text-amber-300 underline cursor-pointer"
+                    title="Reset this caption back to global style"
+                  >
+                    Reset
+                  </button>
+                </div>
               )}
             </div>
 
@@ -362,7 +411,9 @@ export default function InspectorPanel({
                   <InspectorTypographySection
                     scope={scope}
                     style={style}
+                    effectiveStyle={effectiveStyle}
                     onStyleChange={onStyleChange}
+                    onApplyStyleChange={applyStyleChange}
                     activeSegment={activeSegment}
                     onUpdateActiveSegment={onUpdateActiveSegment}
                     onSegmentOverrideChange={onSegmentOverrideChange}
@@ -377,7 +428,9 @@ export default function InspectorPanel({
                 ) : (
                   <InspectorEffectsSection
                     style={style}
+                    effectiveStyle={effectiveStyle}
                     onStyleChange={onStyleChange}
+                    onApplyStyleChange={applyStyleChange}
                     subTab={textSubTab}
                     effectiveStrokeColor={effectiveStrokeColor}
                   />
@@ -413,10 +466,13 @@ export default function InspectorPanel({
                         key={ea}
                         type="button"
                         onClick={() => {
-                          onStyleChange({ ...style, motion: { ...style.motion, in: ea } });
+                          applyStyleChange((s) => ({
+                            ...s,
+                            motion: { ...s.motion, in: ea },
+                          }));
                         }}
                         className={`py-1.5 px-2 rounded-lg text-[10px] font-semibold capitalize transition-colors ${
-                          style.motion.in === ea
+                          effectiveStyle.motion.in === ea
                             ? 'bg-amber-400 text-black font-bold'
                             : 'bg-[#181817] text-smoke hover:text-bone border border-white/5'
                         }`}
@@ -438,10 +494,13 @@ export default function InspectorPanel({
                         key={hl}
                         type="button"
                         onClick={() => {
-                          onStyleChange({ ...style, highlight: { ...style.highlight, mode: hl } });
+                          applyStyleChange((s) => ({
+                            ...s,
+                            highlight: { ...s.highlight, mode: hl },
+                          }));
                         }}
                         className={`py-1.5 px-2 rounded-lg text-[10px] font-semibold capitalize transition-colors ${
-                          style.highlight.mode === hl
+                          effectiveStyle.highlight.mode === hl
                             ? 'bg-amber-400 text-black font-bold'
                             : 'bg-[#181817] text-smoke hover:text-bone border border-white/5'
                         }`}
@@ -456,12 +515,13 @@ export default function InspectorPanel({
                 <label className="flex items-center gap-2 cursor-pointer pt-1">
                   <input
                     type="checkbox"
-                    checked={style.highlight.keep}
+                    checked={effectiveStyle.highlight.keep}
                     onChange={(e) => {
-                      onStyleChange({
-                        ...style,
-                        highlight: { ...style.highlight, keep: e.target.checked },
-                      });
+                      const ch = e.target.checked;
+                      applyStyleChange((s) => ({
+                        ...s,
+                        highlight: { ...s.highlight, keep: ch },
+                      }));
                     }}
                     className="rounded border-white/20 text-amber-400 focus:ring-0 bg-transparent cursor-pointer"
                   />
@@ -670,21 +730,10 @@ export default function InspectorPanel({
                         key={anchor.label}
                         type="button"
                         onClick={() => {
-                          if (scope === 'all') {
-                            onStyleChange({
-                              ...style,
-                              layout: { ...style.layout, x: anchor.x, y: anchor.y },
-                            });
-                          } else if (
-                            scope === 'caption' &&
-                            activeSegment &&
-                            onSegmentOverrideChange
-                          ) {
-                            onSegmentOverrideChange(activeSegment.id, {
-                              positionX: anchor.x,
-                              positionY: anchor.y,
-                            });
-                          }
+                          applyStyleChange((s) => ({
+                            ...s,
+                            layout: { ...s.layout, x: anchor.x, y: anchor.y },
+                          }));
                         }}
                         className="p-1.5 rounded-lg bg-[#181817] hover:bg-white/10 text-smoke hover:text-bone text-[10px] font-semibold border border-white/5"
                       >
@@ -703,17 +752,18 @@ export default function InspectorPanel({
                       min={1}
                       max={8}
                       step={1}
-                      value={style.layout.wordsPerPage}
+                      value={effectiveStyle.layout.wordsPerPage}
                       onChange={(e) => {
-                        onStyleChange({
-                          ...style,
-                          layout: { ...style.layout, wordsPerPage: parseInt(e.target.value, 10) },
-                        });
+                        const wpp = parseInt(e.target.value, 10);
+                        applyStyleChange((s) => ({
+                          ...s,
+                          layout: { ...s.layout, wordsPerPage: wpp },
+                        }));
                       }}
                       className="flex-1 accent-amber-400 cursor-pointer"
                     />
                     <span className="font-mono text-bone text-[11px] w-8 text-right">
-                      {style.layout.wordsPerPage}
+                      {effectiveStyle.layout.wordsPerPage}
                     </span>
                   </div>
                 </div>
@@ -753,10 +803,10 @@ export default function InspectorPanel({
                   <button
                     type="button"
                     onClick={() => {
-                      // Reset all segments
+                      onClearAllOverrides?.();
                       setIsResetMenuOpen(false);
                     }}
-                    className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/10 text-[11px]"
+                    className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-white/10 text-[11px] text-rose-300 hover:text-rose-200"
                   >
                     Reset all overrides
                   </button>
@@ -785,3 +835,5 @@ export default function InspectorPanel({
     </aside>
   );
 }
+
+export default memo(InspectorPanel);

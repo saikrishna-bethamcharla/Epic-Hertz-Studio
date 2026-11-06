@@ -19,6 +19,7 @@ import {
 } from './animation';
 import {
   COMPLEX_SCRIPT,
+  getEffectiveCaptionStyle,
   type CaptionStyle,
   type GradientPaint,
   type InAnim,
@@ -599,52 +600,7 @@ export function renderCaptions(
   }
 
   if (seg.styleOverride) {
-    const ov = seg.styleOverride;
-    if (ov.customStyle) {
-      activeStyle = {
-        ...activeStyle,
-        ...ov.customStyle,
-        font: { ...activeStyle.font, ...(ov.customStyle.font || {}) },
-        layout: { ...activeStyle.layout, ...(ov.customStyle.layout || {}) },
-        stroke: { ...activeStyle.stroke, ...(ov.customStyle.stroke || {}) },
-        shadow: { ...activeStyle.shadow, ...(ov.customStyle.shadow || {}) },
-        glow: { ...activeStyle.glow, ...(ov.customStyle.glow || {}) },
-        extrude: { ...activeStyle.extrude, ...(ov.customStyle.extrude || {}) },
-        plate: { ...activeStyle.plate, ...(ov.customStyle.plate || {}) },
-        highlight: { ...activeStyle.highlight, ...(ov.customStyle.highlight || {}) },
-        reveal: { ...activeStyle.reveal, ...(ov.customStyle.reveal || {}) },
-        motion: { ...activeStyle.motion, ...(ov.customStyle.motion || {}) },
-      };
-    }
-    activeStyle = {
-      ...activeStyle,
-      layout: {
-        ...activeStyle.layout,
-        x: ov.positionX !== undefined ? ov.positionX : activeStyle.layout.x,
-        y: ov.positionY !== undefined ? ov.positionY : activeStyle.layout.y,
-      },
-      font: {
-        ...activeStyle.font,
-        family: ov.fontFamily || activeStyle.font.family,
-        weight: ov.fontWeight || activeStyle.font.weight,
-        size:
-          ov.fontSize !== undefined
-            ? ov.fontSize
-            : ov.scale !== undefined
-              ? activeStyle.font.size * ov.scale
-              : activeStyle.font.size,
-        underline: ov.underline !== undefined ? ov.underline : activeStyle.font.underline,
-        italic: ov.italic !== undefined ? ov.italic : activeStyle.font.italic,
-        textCase: ov.textCase !== undefined ? ov.textCase : activeStyle.font.textCase,
-      },
-      fill: ov.fillColor || activeStyle.fill,
-      stroke: ov.strokeColor
-        ? { ...activeStyle.stroke, color: ov.strokeColor }
-        : activeStyle.stroke,
-      highlight: ov.highlightColor
-        ? { ...activeStyle.highlight, color: ov.highlightColor }
-        : activeStyle.highlight,
-    };
+    activeStyle = getEffectiveCaptionStyle(activeStyle, seg.styleOverride);
   }
 
   const pages = buildPages(seg, words, activeStyle.layout.wordsPerPage);

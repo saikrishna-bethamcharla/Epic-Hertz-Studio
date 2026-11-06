@@ -21,6 +21,7 @@ interface TimelineProps {
   isPlaying: boolean;
   segments: Segment[];
   activeId: string | null;
+  selectedId?: string | null;
   lowerThirds?: LowerThirdSpec[];
   activeLowerThirdId?: string | null;
   onLowerThirdsChange?: (lowerThirds: LowerThirdSpec[]) => void;
@@ -50,6 +51,7 @@ export default function Timeline({
   isPlaying,
   segments,
   activeId,
+  selectedId,
   lowerThirds,
   activeLowerThirdId,
   onLowerThirdsChange,
@@ -124,13 +126,13 @@ export default function Timeline({
   const totalDuration = Math.max(duration || 0, maxSegEnd, 5);
   const totalWidth = Math.max(totalDuration * zoom, 600);
 
-  // Active segment
+  // Active / selected segment
   const currentSeg = useMemo(() => {
     return (
-      segments.find((s) => s.id === activeId) ||
+      segments.find((s) => s.id === (selectedId ?? activeId)) ||
       segments.find((s) => currentTime >= s.start && currentTime <= s.end)
     );
-  }, [segments, activeId, currentTime]);
+  }, [segments, selectedId, activeId, currentTime]);
 
   // ── Render Waveform Canvas ────────────────────────────────────────────────
   useEffect(() => {
@@ -465,12 +467,15 @@ export default function Timeline({
     };
 
     const newSeg2: Segment = {
+      ...currentSeg,
       id: `seg-${Date.now()}`,
       index: currentSeg.index + 1,
       start: currentTime,
       end: currentSeg.end,
       text: text2,
       words: currentSeg.words ? currentSeg.words.filter((w) => w.start >= currentTime) : undefined,
+      styleOverride: currentSeg.styleOverride ? { ...currentSeg.styleOverride } : undefined,
+      speaker: currentSeg.speaker,
     };
 
     const updated = [
@@ -617,6 +622,7 @@ export default function Timeline({
             {segments.map((seg, sIdx) => {
               const left = seg.start * zoom;
               const width = Math.max(30, (seg.end - seg.start) * zoom);
+              const isSelected = seg.id === (selectedId ?? activeId);
               const isActive = seg.id === activeId;
               const speakerStyle = getSpeakerStyle(seg.speaker);
               const nextSeg = sIdx < segments.length - 1 ? segments[sIdx + 1] : undefined;
@@ -629,9 +635,11 @@ export default function Timeline({
                   <div
                     onMouseDown={(e) => startSegmentDrag(e, seg, 'move')}
                     className={`timeline-segment absolute top-0.5 h-11 rounded-lg px-2 py-1 text-xs font-medium cursor-grab active:cursor-grabbing transition-colors border flex flex-col justify-center overflow-hidden group shadow-md select-none ${
-                      isActive
+                      isSelected
                         ? 'bg-[#2b2a26] border-amber-400 text-amber-200 ring-1 ring-amber-400/50'
-                        : 'bg-[#1c1c1a] border-white/15 text-bone hover:border-white/35 hover:bg-[#222220]'
+                        : isActive
+                          ? 'bg-[#232321] border-amber-400/40 text-bone ring-1 ring-amber-400/20'
+                          : 'bg-[#1c1c1a] border-white/15 text-bone hover:border-white/35 hover:bg-[#222220]'
                     }`}
                     style={{
                       left: `${left}px`,

@@ -1,5 +1,5 @@
 // ─── Library Panel — Epic Hertz Studio v2 ──────────────────────────────────
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, memo } from 'react';
 import {
   Captions,
   Type,
@@ -38,6 +38,7 @@ interface LibraryPanelProps {
   onTabChange: (tab: LibraryTab) => void;
   segments: Segment[];
   activeId: string | null;
+  selectedId?: string | null;
   onSelectSegment: (id: string) => void;
   onSegmentsChange: (segments: Segment[]) => void;
   onSeek: (time: number) => void;
@@ -48,6 +49,8 @@ interface LibraryPanelProps {
   scriptOutput: ScriptOutput;
   onRetranscribe?: () => void;
   scope: 'all' | 'caption' | 'words';
+  onScopeChange?: (scope: 'all' | 'caption' | 'words') => void;
+  onClearAllOverrides?: () => void;
   onNotification?: (msg: string) => void;
   onToggleCollapse?: () => void;
 }
@@ -158,11 +161,12 @@ const LOOK_PRESETS: Array<{ id: string; name: string; look: Partial<CaptionStyle
   },
 ];
 
-export default function LibraryPanel({
+function LibraryPanel({
   leftTab,
   onTabChange,
   segments,
   activeId,
+  selectedId,
   onSelectSegment,
   onSegmentsChange,
   onSeek,
@@ -173,6 +177,8 @@ export default function LibraryPanel({
   scriptOutput,
   onRetranscribe,
   scope,
+  onScopeChange,
+  onClearAllOverrides,
   onNotification,
   onToggleCollapse,
 }: LibraryPanelProps) {
@@ -204,57 +210,124 @@ export default function LibraryPanel({
     };
   }, [segments]);
 
+  const targetCaptionId = selectedId ?? activeId;
+  const targetCaptionIndex = segments.findIndex((s) => s.id === targetCaptionId);
+
   // Apply style to scope helper
   const applyPresetToScope = (targetStyle: CaptionStyle, presetName: string) => {
     addRecentPresetId(targetStyle.id);
 
-    if (scope === 'all' || !activeId) {
+    if (scope === 'caption') {
+      if (!targetCaptionId) {
+        if (onNotification)
+          onNotification('Select a caption first to apply this style to a single caption.');
+        return;
+      }
+      if (onSegmentOverrideChange) {
+        onSegmentOverrideChange(targetCaptionId, {
+          customStyle: targetStyle,
+          fillColor: typeof targetStyle.fill === 'string' ? targetStyle.fill : undefined,
+          strokeColor: targetStyle.stroke.color,
+          highlightColor: targetStyle.highlight.color,
+        });
+        if (onNotification)
+          onNotification(`Applied "${presetName}" to Caption #${targetCaptionIndex + 1}`);
+      }
+    } else {
+      // scope === 'all'
       onStyleChange(targetStyle);
-      if (onNotification) onNotification(`Applied "${presetName}" to all captions`);
-    } else if (scope === 'caption' && onSegmentOverrideChange) {
-      onSegmentOverrideChange(activeId, {
-        customStyle: targetStyle,
-        fillColor: typeof targetStyle.fill === 'string' ? targetStyle.fill : undefined,
-        strokeColor: targetStyle.stroke.color,
-        highlightColor: targetStyle.highlight.color,
-      });
-      if (onNotification)
-        onNotification(
-          `Applied "${presetName}" to Caption #${segments.findIndex((s) => s.id === activeId) + 1}`,
-        );
+      const hasOverrides = segments.some((s) => s.styleOverride);
+      if (hasOverrides && onClearAllOverrides) {
+        onClearAllOverrides();
+        if (onNotification)
+          onNotification(`Applied "${presetName}" to all captions (custom overrides reset)`);
+      } else {
+        if (onNotification) onNotification(`Applied "${presetName}" to all captions`);
+      }
     }
   };
 
   // Apply look only
   const applyLookToScope = (look: Partial<CaptionStyle>, name: string) => {
     const isNone = name === 'None';
-    if (scope === 'all' || !activeId) {
+    if (scope === 'caption') {
+      if (!targetCaptionId) {
+        if (onNotification)
+          onNotification('Select a caption first to apply text effects to a single caption.');
+        return;
+      }
+      if (onSegmentOverrideChange) {
+        if (isNone) {
+          onSegmentOverrideChange(targetCaptionId, null);
+        } else {
+          onSegmentOverrideChange(targetCaptionId, {
+            customStyle: look,
+            fillColor: typeof look.fill === 'string' ? look.fill : undefined,
+            strokeColor: look.stroke?.color,
+          });
+        }
+        if (onNotification)
+          onNotification(
+            isNone
+              ? `Reset text effects on Caption #${targetCaptionIndex + 1}`
+              : `Applied "${name}" look to Caption #${targetCaptionIndex + 1}`,
+          );
+      }
+    } else {
+      // scope === 'all'
       onStyleChange({ ...style, ...look });
       if (onNotification)
         onNotification(
           isNone ? 'Reset text effects on all captions' : `Applied "${name}" look to all captions`,
         );
-    } else if (scope === 'caption' && onSegmentOverrideChange) {
-      if (isNone) {
-        onSegmentOverrideChange(activeId, {
-          fillColor: undefined,
-          strokeColor: undefined,
-          customStyle: undefined,
-        });
-      } else {
-        onSegmentOverrideChange(activeId, {
-          fillColor: typeof look.fill === 'string' ? look.fill : undefined,
-          strokeColor: look.stroke?.color,
-        });
-      }
-      if (onNotification)
-        onNotification(
-          isNone
-            ? 'Removed text effect from selected caption'
-            : `Applied "${name}" look to selected caption`,
-        );
     }
   };
+
+  const renderScopeBanner = () => (
+    <div className="flex items-center justify-between p-2 rounded-lg bg-[#181817] border border-white/5 text-xs mb-1">
+      <div className="flex items-center gap-1.5 min-w-0">
+        <span className="text-[10px] uppercase font-bold text-mist tracking-wider">Target:</span>
+        <span className="font-semibold text-bone truncate">
+          {scope === 'all'
+            ? `All (${segments.length} captions)`
+            : targetCaptionIndex >= 0
+              ? `Caption #${targetCaptionIndex + 1}`
+              : 'None selected'}
+        </span>
+      </div>
+      <div className="flex items-center gap-1 shrink-0">
+        <button
+          type="button"
+          onClick={() => onScopeChange?.('all')}
+          className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${
+            scope === 'all'
+              ? 'bg-amber-400 text-black shadow-xs'
+              : 'text-smoke hover:text-bone bg-white/5'
+          }`}
+        >
+          All
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (targetCaptionId) onScopeChange?.('caption');
+            else if (onNotification)
+              onNotification('Select a caption in the list or timeline first');
+          }}
+          disabled={!targetCaptionId}
+          className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${
+            scope === 'caption'
+              ? 'bg-amber-400 text-black shadow-xs'
+              : targetCaptionId
+                ? 'text-smoke hover:text-bone bg-white/5'
+                : 'text-smoke/40 bg-white/5 cursor-not-allowed'
+          }`}
+        >
+          This Caption
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="h-full flex flex-col bg-[#141413] border-r border-white/10 select-none overflow-hidden">
@@ -393,16 +466,19 @@ export default function LibraryPanel({
             TAB 2: FULL STYLES GALLERY
         ────────────────────────────────────────────────────────────── */}
         {leftTab === 'styles' && (
-          <LibraryStylesTab
-            style={style}
-            sampleSegment={sampleSegment}
-            userPresetsList={userPresetsList}
-            favorites={favorites}
-            onFavoritesChange={setFavorites}
-            onApplyPreset={applyPresetToScope}
-            onUserPresetsChange={setUserPresetsList}
-            onNotification={onNotification}
-          />
+          <div className="space-y-3">
+            {renderScopeBanner()}
+            <LibraryStylesTab
+              style={style}
+              sampleSegment={sampleSegment}
+              userPresetsList={userPresetsList}
+              favorites={favorites}
+              onFavoritesChange={setFavorites}
+              onApplyPreset={applyPresetToScope}
+              onUserPresetsChange={setUserPresetsList}
+              onNotification={onNotification}
+            />
+          </div>
         )}
 
         {/* ─────────────────────────────────────────────────────────────
@@ -410,6 +486,7 @@ export default function LibraryPanel({
         ────────────────────────────────────────────────────────────── */}
         {leftTab === 'effects' && (
           <div className="space-y-3">
+            {renderScopeBanner()}
             <p className="text-[11px] text-smoke">
               Applies styling treatment (fill, outline, shadow, glow, 3D) without changing your
               chosen font or animation.
@@ -446,6 +523,7 @@ export default function LibraryPanel({
         ────────────────────────────────────────────────────────────── */}
         {leftTab === 'animations' && (
           <div className="space-y-3">
+            {renderScopeBanner()}
             <div className="flex items-center gap-1 bg-[#121211] p-0.5 rounded-lg border border-white/10">
               {(['entrance', 'exit', 'highlight'] as const).map((sub) => (
                 <button
@@ -578,3 +656,5 @@ export default function LibraryPanel({
     </div>
   );
 }
+
+export default memo(LibraryPanel);

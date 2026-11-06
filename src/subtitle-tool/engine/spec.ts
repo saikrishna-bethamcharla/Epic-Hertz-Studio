@@ -4,6 +4,7 @@
 
 import type { EaseName } from './util';
 import type { EntranceType, EmphasisType, ExitType, AnimationEasing } from './animation/types';
+import type { SegmentStyleOverride } from '../types';
 
 export interface GradientPaint {
   /** Degrees. 90 = top → bottom, 0 = left → right. */
@@ -355,3 +356,85 @@ export const DEFAULT_LOWER_THIRD: Omit<LowerThirdSpec, 'id' | 'start' | 'end'> =
   introDuration: 0.7,
   outroDuration: 0.6,
 };
+
+/**
+ * Computes the effective resolved CaptionStyle for a caption by cleanly layering
+ * its SegmentStyleOverride (including customStyle and direct shortcut fields)
+ * on top of the base global style.
+ */
+export function getEffectiveCaptionStyle(
+  globalStyle: CaptionStyle,
+  override?: SegmentStyleOverride | null,
+): CaptionStyle {
+  if (!globalStyle) return globalStyle;
+  if (!override) return globalStyle;
+  let s: CaptionStyle = {
+    ...globalStyle,
+    layout: {
+      ...(globalStyle.layout || {
+        x: 0.5,
+        y: 0.8,
+        wordsPerPage: 0,
+        maxLines: 2,
+        widthPct: 0.88,
+        align: 'center',
+      }),
+    },
+    font: { ...globalStyle.font },
+    stroke: { ...globalStyle.stroke },
+    shadow: { ...globalStyle.shadow },
+    glow: { ...globalStyle.glow },
+    extrude: { ...globalStyle.extrude },
+    plate: { ...globalStyle.plate },
+    highlight: { ...globalStyle.highlight },
+    reveal: { ...globalStyle.reveal },
+    motion: { ...globalStyle.motion },
+  };
+
+  if (override.customStyle) {
+    s = {
+      ...s,
+      ...override.customStyle,
+      font: { ...s.font, ...(override.customStyle.font || {}) },
+      layout: { ...s.layout, ...(override.customStyle.layout || {}) },
+      stroke: { ...s.stroke, ...(override.customStyle.stroke || {}) },
+      shadow: { ...s.shadow, ...(override.customStyle.shadow || {}) },
+      glow: { ...s.glow, ...(override.customStyle.glow || {}) },
+      extrude: { ...s.extrude, ...(override.customStyle.extrude || {}) },
+      plate: { ...s.plate, ...(override.customStyle.plate || {}) },
+      highlight: { ...s.highlight, ...(override.customStyle.highlight || {}) },
+      reveal: { ...s.reveal, ...(override.customStyle.reveal || {}) },
+      motion: { ...s.motion, ...(override.customStyle.motion || {}) },
+    };
+  }
+
+  s = {
+    ...s,
+    layout: {
+      ...s.layout,
+      x: override.positionX !== undefined ? override.positionX : (s.layout?.x ?? 0.5),
+      y: override.positionY !== undefined ? override.positionY : (s.layout?.y ?? 0.8),
+    },
+    font: {
+      ...s.font,
+      family: override.fontFamily || s.font.family,
+      weight: override.fontWeight || s.font.weight,
+      size:
+        override.fontSize !== undefined
+          ? override.fontSize
+          : override.scale !== undefined
+            ? s.font.size * override.scale
+            : s.font.size,
+      underline: override.underline !== undefined ? override.underline : s.font.underline,
+      italic: override.italic !== undefined ? override.italic : s.font.italic,
+      textCase: override.textCase !== undefined ? override.textCase : s.font.textCase,
+    },
+    fill: override.fillColor || s.fill,
+    stroke: override.strokeColor ? { ...s.stroke, color: override.strokeColor } : s.stroke,
+    highlight: override.highlightColor
+      ? { ...s.highlight, color: override.highlightColor }
+      : s.highlight,
+  };
+
+  return s;
+}

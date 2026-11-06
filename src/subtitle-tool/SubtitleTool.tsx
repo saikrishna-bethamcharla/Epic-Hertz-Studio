@@ -86,6 +86,10 @@ export default function SubtitleTool() {
   const [scope, setScope] = useState<'all' | 'caption' | 'words'>('all');
   const [leftTab, setLeftTab] = useState<LibraryTab>('captions');
   const [selectedWordIndices, setSelectedWordIndices] = useState<number[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const currentTimeRef = useRef(0);
+  const durationRef = useRef(0);
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [projectName, setProjectName] = useState<string>('Untitled Video');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [lowerThirds, setLowerThirds] = useState<LowerThirdSpec[]>([]);
@@ -154,13 +158,37 @@ export default function SubtitleTool() {
 
   const showToast = useCallback((msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    toastTimeoutRef.current = setTimeout(() => {
       setToastMessage((cur) => (cur === msg ? null : cur));
+      toastTimeoutRef.current = null;
     }, 4000);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    };
   }, []);
 
   const videoRef = useRef<VideoPreviewHandle>(null);
   const exportAbortRef = useRef<AbortController | null>(null);
+
+  const onTimeUpdate = useCallback(
+    (time: number) => {
+      currentTimeRef.current = time;
+      handleTimeUpdate(time);
+    },
+    [handleTimeUpdate],
+  );
+
+  const onDurationUpdate = useCallback(
+    (dur: number) => {
+      durationRef.current = dur;
+      setDuration(dur);
+    },
+    [setDuration],
+  );
 
   const updateSegments = useCallback(
     (newSegments: Segment[] | ((prev: Segment[]) => Segment[]), recordUndo: boolean = true) => {
@@ -177,16 +205,13 @@ export default function SubtitleTool() {
   );
 
   const handleUndo = useCallback(() => {
-    setHistory((h) => {
-      if (h.length === 0) return h;
-      const prev = h[h.length - 1];
-      setSegments((curr) => {
-        setRedoStack((r) => [curr, ...r]);
-        return prev;
-      });
-      return h.slice(0, -1);
-    });
-  }, []);
+    if (history.length === 0) return;
+    const prev = history[history.length - 1];
+    const newHistory = history.slice(0, -1);
+    setRedoStack((r) => [segments, ...r]);
+    setHistory(newHistory);
+    setSegments(prev);
+  }, [history, segments]);
 
   // Load photo blobs for lower thirds into photoCache
   useEffect(() => {
@@ -247,16 +272,24 @@ export default function SubtitleTool() {
   }, []);
 
   const handleRedo = useCallback(() => {
-    setRedoStack((r) => {
-      if (r.length === 0) return r;
-      const next = r[0];
-      setSegments((curr) => {
-        setHistory((h) => [...h.slice(-30), curr]);
-        return next;
-      });
-      return r.slice(1);
-    });
-  }, []);
+    if (redoStack.length === 0) return;
+    const next = redoStack[0];
+    const newRedo = redoStack.slice(1);
+    setHistory((h) => [...h.slice(-30), segments]);
+    setRedoStack(newRedo);
+    setSegments(next);
+  }, [redoStack, segments]);
+
+  const handleClearAllOverrides = useCallback(() => {
+    updateSegments((prev) =>
+      prev.map((s) => {
+        if (!s.styleOverride) return s;
+        const { styleOverride: _, ...rest } = s;
+        return rest;
+      }),
+    );
+    showToast('Reset all captions back to global style');
+  }, [updateSegments, showToast]);
 
   const handleSegmentOverride = useCallback(
     (segId: string, override: Partial<SegmentStyleOverride> | null) => {
@@ -281,7 +314,7 @@ export default function SubtitleTool() {
   );
 
   const handleSplitAtPlayhead = useCallback(() => {
-    const curTime = currentTime;
+    const curTime = currentTimeRef.current;
     const target = segments.find((s) => curTime >= s.start && curTime <= s.end);
     if (!target) return;
     if (curTime <= target.start + 0.15 || curTime >= target.end - 0.15) return;
@@ -301,12 +334,15 @@ export default function SubtitleTool() {
     };
     const newId = 'seg-' + Date.now();
     const newSeg2: Segment = {
+      ...target,
       id: newId,
       index: target.index + 1,
       start: curTime,
       end: target.end,
       text: text2,
       words: target.words ? target.words.filter((w) => w.start >= curTime) : undefined,
+      styleOverride: target.styleOverride ? { ...target.styleOverride } : undefined,
+      speaker: target.speaker,
     };
 
     const updated = [...segments.slice(0, idx), newSeg1, newSeg2, ...segments.slice(idx + 1)].map(
@@ -314,31 +350,38 @@ export default function SubtitleTool() {
     );
 
     updateSegments(updated);
+    setSelectedId(newId);
     setActiveId(newId);
-  }, [currentTime, segments, updateSegments]);
+  }, [segments, updateSegments, setActiveId]);
 
   const handleDeleteActive = useCallback(() => {
-    if (!activeId) return;
-    const next = segments.filter((s) => s.id !== activeId).map((s, i) => ({ ...s, index: i + 1 }));
+    const targetId = selectedId ?? activeId;
+    if (!targetId) return;
+    const next = segments.filter((s) => s.id !== targetId).map((s, i) => ({ ...s, index: i + 1 }));
     updateSegments(next);
+    setSelectedId(null);
     setActiveId(null);
-  }, [activeId, segments, updateSegments]);
+  }, [selectedId, activeId, segments, updateSegments, setActiveId]);
 
   const handleJumpPrevCaption = useCallback(() => {
-    const prev = [...segments].reverse().find((s) => s.start < currentTime - 0.25);
+    const curTime = currentTimeRef.current;
+    const prev = [...segments].reverse().find((s) => s.start < curTime - 0.25);
     if (prev) {
       videoRef.current?.seekTo(prev.start);
+      setSelectedId(prev.id);
       setActiveId(prev.id);
     }
-  }, [currentTime, segments]);
+  }, [segments, setActiveId]);
 
   const handleJumpNextCaption = useCallback(() => {
-    const next = segments.find((s) => s.start > currentTime + 0.25);
+    const curTime = currentTimeRef.current;
+    const next = segments.find((s) => s.start > curTime + 0.25);
     if (next) {
       videoRef.current?.seekTo(next.start);
+      setSelectedId(next.id);
       setActiveId(next.id);
     }
-  }, [currentTime, segments]);
+  }, [segments, setActiveId]);
 
   const handleAutoAlignTimings = useCallback(async () => {
     if (!videoFile || segments.length === 0) return;
@@ -423,8 +466,10 @@ export default function SubtitleTool() {
         if (target && typeof target.blur === 'function') {
           target.blur();
         }
-        setScope('all');
-        setSelectedWordIndices([]);
+        if (!isTyping) {
+          setScope('all');
+          setSelectedWordIndices([]);
+        }
         return;
       }
 
@@ -475,27 +520,27 @@ export default function SubtitleTool() {
 
       if (e.key.toLowerCase() === 'j') {
         e.preventDefault();
-        videoRef.current?.seekTo(Math.max(0, currentTime - 1));
+        videoRef.current?.seekTo(Math.max(0, currentTimeRef.current - 1));
         return;
       }
 
       if (e.key.toLowerCase() === 'l') {
         e.preventDefault();
-        videoRef.current?.seekTo(Math.min(duration || 0, currentTime + 1));
+        videoRef.current?.seekTo(Math.min(durationRef.current || 0, currentTimeRef.current + 1));
         return;
       }
 
       if (e.key === 'ArrowLeft') {
         e.preventDefault();
         const step = e.shiftKey ? 1.0 : 1 / 30;
-        videoRef.current?.seekTo(Math.max(0, currentTime - step));
+        videoRef.current?.seekTo(Math.max(0, currentTimeRef.current - step));
         return;
       }
 
       if (e.key === 'ArrowRight') {
         e.preventDefault();
         const step = e.shiftKey ? 1.0 : 1 / 30;
-        videoRef.current?.seekTo(Math.min(duration || 0, currentTime + step));
+        videoRef.current?.seekTo(Math.min(durationRef.current || 0, currentTimeRef.current + step));
         return;
       }
 
@@ -538,8 +583,6 @@ export default function SubtitleTool() {
     };
   }, [
     stage,
-    currentTime,
-    duration,
     isShortcutsOpen,
     handleUndo,
     handleRedo,
@@ -970,7 +1013,9 @@ export default function SubtitleTool() {
                             onTabChange={setLeftTab}
                             segments={segments}
                             activeId={activeId}
+                            selectedId={selectedId}
                             onSelectSegment={(id) => {
+                              setSelectedId(id);
                               setActiveId(id);
                               setScope('caption');
                             }}
@@ -983,6 +1028,8 @@ export default function SubtitleTool() {
                             scriptOutput={scriptOutput}
                             onRetranscribe={() => setStage('configuring')}
                             scope={scope}
+                            onScopeChange={setScope}
+                            onClearAllOverrides={handleClearAllOverrides}
                             onNotification={(msg) => showToast(msg)}
                             onToggleCollapse={() => {
                               setLayout((p) => {
@@ -1029,8 +1076,8 @@ export default function SubtitleTool() {
                         photoCache={photoCache}
                         aspectRatio={aspectRatio}
                         onAspectRatioChange={setAspectRatio}
-                        onTimeUpdate={handleTimeUpdate}
-                        onDurationChange={setDuration}
+                        onTimeUpdate={onTimeUpdate}
+                        onDurationChange={onDurationUpdate}
                         onPlayStateChange={setIsPlaying}
                         hideCaptions={hideCaptions}
                         onToggleHideCaptions={() => setHideCaptions((prev) => !prev)}
@@ -1085,15 +1132,19 @@ export default function SubtitleTool() {
                             onScopeChange={setScope}
                             style={style}
                             onStyleChange={setStyle}
-                            activeSegment={segments.find((s) => s.id === activeId) || null}
+                            activeSegment={
+                              segments.find((s) => s.id === (selectedId ?? activeId)) || null
+                            }
                             onUpdateActiveSegment={(override) => {
-                              if (!activeId) return;
+                              const targetId = selectedId ?? activeId;
+                              if (!targetId) return;
                               const updated = segments.map((s) =>
-                                s.id === activeId ? { ...s, ...override } : s,
+                                s.id === targetId ? { ...s, ...override } : s,
                               );
                               updateSegments(updated);
                             }}
                             onSegmentOverrideChange={handleSegmentOverride}
+                            onClearAllOverrides={handleClearAllOverrides}
                             selectedWordIndices={selectedWordIndices}
                             onSelectWordIndex={(idx) => {
                               setSelectedWordIndices([idx]);
@@ -1101,7 +1152,9 @@ export default function SubtitleTool() {
                             }}
                             totalSegmentsCount={segments.length}
                             onPlayPreview={() => {
-                              const active = segments.find((s) => s.id === activeId);
+                              const active = segments.find(
+                                (s) => s.id === (selectedId ?? activeId),
+                              );
                               if (active) {
                                 videoRef.current?.seekTo(active.start);
                                 videoRef.current?.play();
@@ -1155,6 +1208,7 @@ export default function SubtitleTool() {
                       isPlaying={isPlaying}
                       segments={segments}
                       activeId={activeId}
+                      selectedId={selectedId}
                       lowerThirds={lowerThirds}
                       activeLowerThirdId={activeLowerThirdId}
                       onLowerThirdsChange={setLowerThirds}
@@ -1164,6 +1218,7 @@ export default function SubtitleTool() {
                       onTogglePlay={() => videoRef.current?.togglePlay()}
                       onSegmentsChange={updateSegments}
                       onSelectSegment={(id) => {
+                        setSelectedId(id);
                         setActiveId(id);
                         setScope('caption');
                       }}
@@ -1187,8 +1242,8 @@ export default function SubtitleTool() {
                       onSegmentOverrideChange={handleSegmentOverride}
                       aspectRatio={aspectRatio}
                       onAspectRatioChange={setAspectRatio}
-                      onTimeUpdate={handleTimeUpdate}
-                      onDurationChange={setDuration}
+                      onTimeUpdate={onTimeUpdate}
+                      onDurationChange={onDurationUpdate}
                       onPlayStateChange={setIsPlaying}
                       hideCaptions={hideCaptions}
                       onToggleHideCaptions={() => setHideCaptions((prev) => !prev)}
@@ -1222,6 +1277,12 @@ export default function SubtitleTool() {
                       <CaptionEditor
                         segments={segments}
                         activeId={activeId}
+                        selectedId={selectedId}
+                        onSelectSegment={(id) => {
+                          setSelectedId(id);
+                          setActiveId(id);
+                          setScope('caption');
+                        }}
                         scriptOutput={scriptOutput}
                         spokenLanguage={spokenLanguage}
                         onSegmentsChange={updateSegments}
@@ -1234,14 +1295,21 @@ export default function SubtitleTool() {
                         onTabChange={() => {}}
                         segments={segments}
                         activeId={activeId}
-                        onSelectSegment={setActiveId}
+                        selectedId={selectedId}
+                        onSelectSegment={(id) => {
+                          setSelectedId(id);
+                          setActiveId(id);
+                          setScope('caption');
+                        }}
                         onSegmentsChange={updateSegments}
                         onSeek={(t) => videoRef.current?.seekTo(t)}
                         style={style}
                         onStyleChange={setStyle}
                         spokenLanguage={spokenLanguage}
                         scriptOutput={scriptOutput}
-                        scope="all"
+                        scope={scope}
+                        onScopeChange={setScope}
+                        onClearAllOverrides={handleClearAllOverrides}
                         onNotification={(msg) => showToast(msg)}
                       />
                     )}
@@ -1252,6 +1320,7 @@ export default function SubtitleTool() {
                         isPlaying={isPlaying}
                         segments={segments}
                         activeId={activeId}
+                        selectedId={selectedId}
                         lowerThirds={lowerThirds}
                         activeLowerThirdId={activeLowerThirdId}
                         onLowerThirdsChange={setLowerThirds}
@@ -1260,7 +1329,11 @@ export default function SubtitleTool() {
                         onSeek={(t) => videoRef.current?.seekTo(t)}
                         onTogglePlay={() => videoRef.current?.togglePlay()}
                         onSegmentsChange={updateSegments}
-                        onSelectSegment={(id) => setActiveId(id)}
+                        onSelectSegment={(id) => {
+                          setSelectedId(id);
+                          setActiveId(id);
+                          setScope('caption');
+                        }}
                         canUndo={history.length > 0}
                         canRedo={redoStack.length > 0}
                         onUndo={handleUndo}

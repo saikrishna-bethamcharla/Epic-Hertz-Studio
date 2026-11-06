@@ -16,7 +16,9 @@ import ColorPopover from '../ColorPopover';
 export interface InspectorTypographySectionProps {
   scope: 'all' | 'caption' | 'words';
   style: CaptionStyle;
+  effectiveStyle: CaptionStyle;
   onStyleChange: (style: CaptionStyle) => void;
+  onApplyStyleChange: (updater: (prev: CaptionStyle) => CaptionStyle) => void;
   activeSegment: Segment | null;
   onUpdateActiveSegment: (override: Partial<Segment>) => void;
   onSegmentOverrideChange?: (segId: string, override: Partial<SegmentStyleOverride> | null) => void;
@@ -31,11 +33,13 @@ export interface InspectorTypographySectionProps {
 
 export const InspectorTypographySection: React.FC<InspectorTypographySectionProps> = ({
   scope,
-  style,
-  onStyleChange,
+  style: _style,
+  effectiveStyle,
+  onStyleChange: _onStyleChange,
+  onApplyStyleChange,
   activeSegment,
   onUpdateActiveSegment,
-  onSegmentOverrideChange,
+  onSegmentOverrideChange: _onSegmentOverrideChange,
   effectiveFont,
   fontDef,
   availableWeights,
@@ -80,11 +84,10 @@ export const InspectorTypographySection: React.FC<InspectorTypographySectionProp
             <FontPopover
               currentFamilyId={effectiveFont}
               onSelectFamily={(fId) => {
-                if (scope === 'all') {
-                  onStyleChange({ ...style, font: { ...style.font, family: fId } });
-                } else if (scope === 'caption' && activeSegment && onSegmentOverrideChange) {
-                  onSegmentOverrideChange(activeSegment.id, { fontFamily: fId });
-                }
+                onApplyStyleChange((s) => ({
+                  ...s,
+                  font: { ...s.font, family: fId },
+                }));
               }}
               onClose={() => setIsFontPopoverOpen(false)}
               onGoToBrand={onGoToBrand}
@@ -102,11 +105,10 @@ export const InspectorTypographySection: React.FC<InspectorTypographySectionProp
               key={w}
               type="button"
               onClick={() => {
-                if (scope === 'all') {
-                  onStyleChange({ ...style, font: { ...style.font, weight: w } });
-                } else if (scope === 'caption' && activeSegment && onSegmentOverrideChange) {
-                  onSegmentOverrideChange(activeSegment.id, { fontWeight: w });
-                }
+                onApplyStyleChange((s) => ({
+                  ...s,
+                  font: { ...s.font, weight: w },
+                }));
               }}
               className={`flex-1 py-1 rounded text-[10px] font-bold transition-colors cursor-pointer ${
                 effectiveWeight === w
@@ -128,9 +130,10 @@ export const InspectorTypographySection: React.FC<InspectorTypographySectionProp
             type="button"
             onClick={() => {
               const newWeight = effectiveWeight >= 800 ? 600 : 900;
-              if (scope === 'all') {
-                onStyleChange({ ...style, font: { ...style.font, weight: newWeight } });
-              }
+              onApplyStyleChange((s) => ({
+                ...s,
+                font: { ...s.font, weight: newWeight },
+              }));
             }}
             className={`p-1.5 rounded cursor-pointer ${effectiveWeight >= 800 ? 'bg-amber-400 text-black' : 'text-smoke hover:text-bone'}`}
             title="Bold"
@@ -140,15 +143,13 @@ export const InspectorTypographySection: React.FC<InspectorTypographySectionProp
           <button
             type="button"
             onClick={() => {
-              const nextUnderline = !style.font.underline;
-              if (scope === 'all') {
-                onStyleChange({
-                  ...style,
-                  font: { ...style.font, underline: nextUnderline },
-                });
-              }
+              const nextUnderline = !effectiveStyle.font.underline;
+              onApplyStyleChange((s) => ({
+                ...s,
+                font: { ...s.font, underline: nextUnderline },
+              }));
             }}
-            className={`p-1.5 rounded cursor-pointer ${style.font.underline ? 'bg-amber-400 text-black' : 'text-smoke hover:text-bone'}`}
+            className={`p-1.5 rounded cursor-pointer ${effectiveStyle.font.underline ? 'bg-amber-400 text-black' : 'text-smoke hover:text-bone'}`}
             title="Underline"
           >
             <UnderlineIcon className="w-3.5 h-3.5" />
@@ -156,12 +157,13 @@ export const InspectorTypographySection: React.FC<InspectorTypographySectionProp
           <button
             type="button"
             onClick={() => {
-              const nextItalic = !style.font.italic;
-              if (scope === 'all') {
-                onStyleChange({ ...style, font: { ...style.font, italic: nextItalic } });
-              }
+              const nextItalic = !effectiveStyle.font.italic;
+              onApplyStyleChange((s) => ({
+                ...s,
+                font: { ...s.font, italic: nextItalic },
+              }));
             }}
-            className={`p-1.5 rounded cursor-pointer ${style.font.italic ? 'bg-amber-400 text-black' : 'text-smoke hover:text-bone'}`}
+            className={`p-1.5 rounded cursor-pointer ${effectiveStyle.font.italic ? 'bg-amber-400 text-black' : 'text-smoke hover:text-bone'}`}
             title="Italic"
           >
             <Italic className="w-3.5 h-3.5" />
@@ -181,9 +183,10 @@ export const InspectorTypographySection: React.FC<InspectorTypographySectionProp
             value={effectiveSize}
             onChange={(e) => {
               const val = parseFloat(e.target.value) / 100;
-              if (scope === 'all') {
-                onStyleChange({ ...style, font: { ...style.font, size: val } });
-              }
+              onApplyStyleChange((s) => ({
+                ...s,
+                font: { ...s.font, size: val },
+              }));
             }}
             className="flex-1 accent-amber-400 cursor-pointer"
           />
@@ -202,12 +205,13 @@ export const InspectorTypographySection: React.FC<InspectorTypographySectionProp
               key={cs}
               type="button"
               onClick={() => {
-                if (scope === 'all') {
-                  onStyleChange({ ...style, font: { ...style.font, textCase: cs } });
-                }
+                onApplyStyleChange((s) => ({
+                  ...s,
+                  font: { ...s.font, textCase: cs },
+                }));
               }}
               className={`px-2 py-1 rounded text-[10px] font-bold cursor-pointer ${
-                style.font.textCase === cs
+                effectiveStyle.font.textCase === cs
                   ? 'bg-amber-400 text-black'
                   : 'text-smoke hover:text-bone'
               }`}
@@ -244,12 +248,10 @@ export const InspectorTypographySection: React.FC<InspectorTypographySectionProp
             <ColorPopover
               value={effectiveFill}
               onChange={(col) => {
-                if (scope === 'all') onStyleChange({ ...style, fill: col });
-                else if (scope === 'caption' && activeSegment && onSegmentOverrideChange) {
-                  onSegmentOverrideChange(activeSegment.id, {
-                    fillColor: typeof col === 'string' ? col : col.stops[0][1],
-                  });
-                }
+                onApplyStyleChange((s) => ({
+                  ...s,
+                  fill: col,
+                }));
               }}
               onClose={() => setIsColorPickerOpen(false)}
             />
@@ -266,15 +268,18 @@ export const InspectorTypographySection: React.FC<InspectorTypographySectionProp
             min={-0.05}
             max={0.15}
             step={0.005}
-            value={style.font.tracking}
+            value={effectiveStyle.font.tracking}
             onChange={(e) => {
               const tr = parseFloat(e.target.value);
-              onStyleChange({ ...style, font: { ...style.font, tracking: tr } });
+              onApplyStyleChange((s) => ({
+                ...s,
+                font: { ...s.font, tracking: tr },
+              }));
             }}
             className="flex-1 accent-amber-400 cursor-pointer"
           />
           <span className="font-mono text-bone text-[11px] w-12 text-right">
-            {(style.font.tracking * 100).toFixed(1)}em
+            {(effectiveStyle.font.tracking * 100).toFixed(1)}em
           </span>
         </div>
       </div>
@@ -288,10 +293,15 @@ export const InspectorTypographySection: React.FC<InspectorTypographySectionProp
               key={al}
               type="button"
               onClick={() => {
-                onStyleChange({ ...style, layout: { ...style.layout, align: al } });
+                onApplyStyleChange((s) => ({
+                  ...s,
+                  layout: { ...s.layout, align: al },
+                }));
               }}
               className={`p-1.5 rounded cursor-pointer ${
-                style.layout.align === al ? 'bg-amber-400 text-black' : 'text-smoke hover:text-bone'
+                effectiveStyle.layout.align === al
+                  ? 'bg-amber-400 text-black'
+                  : 'text-smoke hover:text-bone'
               }`}
             >
               {al === 'left' ? (

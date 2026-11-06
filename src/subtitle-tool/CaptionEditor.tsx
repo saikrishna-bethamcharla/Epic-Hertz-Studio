@@ -40,19 +40,23 @@ import { SegmentWordEditor } from './editor/SegmentWordEditor';
 interface CaptionEditorProps {
   segments: Segment[];
   activeId: string | null;
+  selectedId?: string | null;
   scriptOutput?: ScriptOutput;
   spokenLanguage?: SpokenLanguage;
   onSegmentsChange: (segments: Segment[]) => void;
   onSeek: (time: number) => void;
+  onSelectSegment?: (id: string) => void;
 }
 
 export default function CaptionEditor({
   segments,
   activeId,
+  selectedId,
   scriptOutput = 'romanized',
   spokenLanguage = 'te',
   onSegmentsChange,
   onSeek,
+  onSelectSegment,
 }: CaptionEditorProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedWordIds, setExpandedWordIds] = useState<Set<string>>(new Set());
@@ -295,12 +299,15 @@ export default function CaptionEditor({
 
       const newId = `seg-${Date.now()}`;
       const seg2: Segment = {
+        ...target,
         id: newId,
         index: idx + 2,
         start: splitTime,
         end: target.end,
         text: afterText,
         words: words2,
+        styleOverride: target.styleOverride ? { ...target.styleOverride } : undefined,
+        speaker: target.speaker,
       };
 
       const updated = [...segments.slice(0, idx), seg1, seg2, ...segments.slice(idx + 1)].map(
@@ -597,7 +604,7 @@ export default function CaptionEditor({
         <AnimatePresence initial={false}>
           {filteredSegments.map((seg, idx) => {
             const isActive = seg.id === activeId;
-            const isSelected = selectedIds.has(seg.id);
+            const isSelected = selectedId === seg.id || selectedIds.has(seg.id);
             const isWordsExpanded = expandedWordIds.has(seg.id);
             const prevSeg = idx > 0 ? filteredSegments[idx - 1] : undefined;
             const nextSeg =
@@ -631,6 +638,7 @@ export default function CaptionEditor({
                 transition={{ duration: 0.15 }}
                 onClick={(e) => {
                   handleSelectRow(seg.id, e);
+                  onSelectSegment?.(seg.id);
                   onSeek(seg.start);
                 }}
                 style={

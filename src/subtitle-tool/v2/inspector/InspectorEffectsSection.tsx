@@ -5,14 +5,18 @@ import ColorPopover from '../ColorPopover';
 
 export interface InspectorEffectsSectionProps {
   style: CaptionStyle;
+  effectiveStyle: CaptionStyle;
   onStyleChange: (style: CaptionStyle) => void;
+  onApplyStyleChange: (updater: (prev: CaptionStyle) => CaptionStyle) => void;
   subTab: 'fill' | 'effects' | 'background';
   effectiveStrokeColor: string;
 }
 
 export const InspectorEffectsSection: React.FC<InspectorEffectsSectionProps> = ({
-  style,
-  onStyleChange,
+  style: _style,
+  effectiveStyle,
+  onStyleChange: _onStyleChange,
+  onApplyStyleChange,
   subTab,
   effectiveStrokeColor,
 }) => {
@@ -32,17 +36,18 @@ export const InspectorEffectsSection: React.FC<InspectorEffectsSectionProps> = (
               min={0}
               max={0.25}
               step={0.01}
-              value={style.stroke.width}
+              value={effectiveStyle.stroke.width}
               onChange={(e) => {
-                onStyleChange({
-                  ...style,
-                  stroke: { ...style.stroke, width: parseFloat(e.target.value) },
-                });
+                const val = parseFloat(e.target.value);
+                onApplyStyleChange((s) => ({
+                  ...s,
+                  stroke: { ...s.stroke, width: val },
+                }));
               }}
               className="flex-1 accent-amber-400 cursor-pointer"
             />
             <span className="font-mono text-bone text-[11px] w-12 text-right">
-              {(style.stroke.width * 100).toFixed(0)}%
+              {(effectiveStyle.stroke.width * 100).toFixed(0)}%
             </span>
           </div>
         </div>
@@ -67,7 +72,10 @@ export const InspectorEffectsSection: React.FC<InspectorEffectsSectionProps> = (
                 value={effectiveStrokeColor}
                 onChange={(col) => {
                   const c = typeof col === 'string' ? col : col.stops[0][1];
-                  onStyleChange({ ...style, stroke: { ...style.stroke, color: c } });
+                  onApplyStyleChange((s) => ({
+                    ...s,
+                    stroke: { ...s.stroke, color: c },
+                  }));
                 }}
                 onClose={() => setActiveColorTarget(null)}
               />
@@ -90,17 +98,18 @@ export const InspectorEffectsSection: React.FC<InspectorEffectsSectionProps> = (
               min={0}
               max={2}
               step={0.1}
-              value={style.glow.strength}
+              value={effectiveStyle.glow.strength}
               onChange={(e) => {
-                onStyleChange({
-                  ...style,
-                  glow: { ...style.glow, strength: parseFloat(e.target.value) },
-                });
+                const val = parseFloat(e.target.value);
+                onApplyStyleChange((s) => ({
+                  ...s,
+                  glow: { ...s.glow, strength: val },
+                }));
               }}
               className="flex-1 accent-amber-400 cursor-pointer"
             />
             <span className="font-mono text-bone text-[11px] w-12 text-right">
-              {style.glow.strength.toFixed(1)}
+              {effectiveStyle.glow.strength.toFixed(1)}
             </span>
           </div>
         </div>
@@ -114,17 +123,18 @@ export const InspectorEffectsSection: React.FC<InspectorEffectsSectionProps> = (
               min={0}
               max={0.25}
               step={0.01}
-              value={style.extrude.depth}
+              value={effectiveStyle.extrude.depth}
               onChange={(e) => {
-                onStyleChange({
-                  ...style,
-                  extrude: { ...style.extrude, depth: parseFloat(e.target.value) },
-                });
+                const val = parseFloat(e.target.value);
+                onApplyStyleChange((s) => ({
+                  ...s,
+                  extrude: { ...s.extrude, depth: val },
+                }));
               }}
               className="flex-1 accent-amber-400 cursor-pointer"
             />
             <span className="font-mono text-bone text-[11px] w-12 text-right">
-              {(style.extrude.depth * 100).toFixed(0)}%
+              {(effectiveStyle.extrude.depth * 100).toFixed(0)}%
             </span>
           </div>
         </div>
@@ -144,10 +154,15 @@ export const InspectorEffectsSection: React.FC<InspectorEffectsSectionProps> = (
               key={m}
               type="button"
               onClick={() => {
-                onStyleChange({ ...style, plate: { ...style.plate, mode: m } });
+                onApplyStyleChange((s) => ({
+                  ...s,
+                  plate: { ...s.plate, mode: m },
+                }));
               }}
               className={`flex-1 py-1 rounded capitalize text-[10px] font-bold cursor-pointer ${
-                style.plate.mode === m ? 'bg-amber-400 text-black' : 'text-smoke hover:text-bone'
+                effectiveStyle.plate.mode === m
+                  ? 'bg-amber-400 text-black'
+                  : 'text-smoke hover:text-bone'
               }`}
             >
               {m}

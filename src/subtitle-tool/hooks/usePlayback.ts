@@ -11,6 +11,9 @@ export interface UsePlaybackReturn {
   setDuration: (duration: number) => void;
   isPlaying: boolean;
   setIsPlaying: (playing: boolean) => void;
+  /** ID of caption currently under the playhead timestamp (null in gaps). */
+  playheadId: string | null;
+  /** Backward-compatible alias for playheadId. */
   activeId: string | null;
   setActiveId: (id: string | null) => void;
   handleTimeUpdate: (time: number) => void;
@@ -46,6 +49,7 @@ export function usePlayback(segments: Segment[]): UsePlaybackReturn {
     setDuration,
     isPlaying,
     setIsPlaying,
+    playheadId: activeId,
     activeId,
     setActiveId,
     handleTimeUpdate,
