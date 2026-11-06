@@ -1,5 +1,14 @@
 import type { CaptionStyle, TextCase } from './engine/spec';
-export type { CaptionStyle, TextCase } from './engine/spec';
+
+export type {
+  CaptionStyle,
+  TextCase,
+  LowerThirdSpec,
+  LowerThirdVariant,
+  LowerThirdColors,
+  LowerThirdPosition,
+} from './engine/spec';
+export { DEFAULT_LOWER_THIRD } from './engine/spec';
 
 export interface WordTimestamp {
   word: string;

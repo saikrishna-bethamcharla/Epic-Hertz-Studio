@@ -31,7 +31,7 @@ import {
   SkipBack,
   SkipForward,
 } from 'lucide-react';
-import type { Segment, CaptionStyle, VideoAspectRatio, SegmentStyleOverride } from './types';
+import type { Segment, CaptionStyle, VideoAspectRatio, SegmentStyleOverride, LowerThirdSpec } from './types';
 import CaptionCanvas from './CaptionCanvas';
 import { formatTimecode } from './utils/formatTime';
 
@@ -51,6 +51,8 @@ interface VideoPreviewProps {
   onTimeUpdate: (time: number) => void;
   onDurationChange?: (duration: number) => void;
   onPlayStateChange?: (isPlaying: boolean) => void;
+  lowerThirds?: LowerThirdSpec[];
+  photoCache?: Map<string, HTMLImageElement>;
   hideCaptions?: boolean;
   onToggleHideCaptions?: () => void;
   isLeftCollapsed?: boolean;
@@ -81,6 +83,8 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       onTimeUpdate,
       onDurationChange,
       onPlayStateChange,
+      lowerThirds,
+      photoCache,
       hideCaptions = false,
       onToggleHideCaptions,
       isLeftCollapsed = false,
@@ -554,7 +558,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
                   Social native title & hashtags live in this lower area...
                 </p>
                 <div className="flex items-center gap-1 text-[9px] text-white/50 font-mono">
-                  <span>♫ Original Audio · Viral Beat</span>
+                  <span>Original Audio · Viral Beat</span>
                 </div>
               </div>
             </div>
@@ -612,6 +616,8 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           <CaptionCanvas
             segments={segments}
             style={style}
+            lowerThirds={lowerThirds}
+            photoCache={photoCache}
             videoRef={videoRef}
             hostRef={containerRef}
             onStyleChange={onStyleChange}
@@ -623,7 +629,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           {hasCustomPos && activeSeg && (
             <div className="absolute top-3 left-3 z-30 flex items-center gap-2 px-3 py-1.5 bg-[#141413]/90 backdrop-blur-md rounded-xl border border-amber-400/40 text-[11px] text-bone shadow-2xl animate-in fade-in duration-150">
               <span className="flex items-center gap-1.5 text-amber-300 font-semibold">
-                <span className="text-xs">📍</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                 <span>Custom Position</span>
                 <span className="text-smoke text-[10px] font-mono">
                   ({Math.round((activeSeg.styleOverride?.positionX ?? style.layout.x) * 100)}%,{' '}

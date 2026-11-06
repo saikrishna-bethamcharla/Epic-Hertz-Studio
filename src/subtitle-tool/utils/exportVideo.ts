@@ -8,9 +8,10 @@
 // cannot be carried over) it throws, and the caller falls back to the canvas path.
 // We never hand back a file that silently lost its sound.
 
-import type { Segment, CaptionStyle } from '../types';
+import type { Segment, CaptionStyle, LowerThirdSpec } from '../types';
 import { renderCaptions } from '../engine/render';
-import { ensureFonts } from '../engine/fonts';
+import { renderLowerThirds } from '../engine/lowerThirds';
+import { ensureFonts, ensureLowerThirdFonts } from '../engine/fonts';
 
 export type ExportQuality = 'standard' | 'high' | 'max';
 
@@ -20,6 +21,8 @@ export interface ExportOptions {
   maxShortSide?: number;
   /** Optional file stream for direct-to-disk streaming in Chromium to eliminate RAM bloat. */
   fileStream?: WritableStream;
+  lowerThirds?: LowerThirdSpec[];
+  photoCache?: Map<string, HTMLImageElement>;
 }
 
 export interface ExportProgress {
@@ -83,7 +86,10 @@ export async function exportCaptionedVideo(
   if (!webCodecsSupported())
     throw new ExportUnsupportedError('WebCodecs is not available in this browser.');
 
-  await ensureFonts(style, segments.map((s) => s.text).join(' '));
+  await Promise.all([
+    ensureFonts(style, segments.map((s) => s.text).join(' ')),
+    ensureLowerThirdFonts(options.lowerThirds),
+  ]);
   const mb = await import('mediabunny');
 
   const input = new mb.Input({ source: new mb.BlobSource(file), formats: mb.ALL_FORMATS });
@@ -151,6 +157,7 @@ export async function exportCaptionedVideo(
           }
           sample.draw(ctx, 0, 0);
           renderCaptions(ctx, canvas.width, canvas.height, sample.timestamp, segments, style);
+          renderLowerThirds(ctx, canvas.width, canvas.height, sample.timestamp, options.lowerThirds, options.photoCache);
           return canvas;
         },
         processedWidth: outW,

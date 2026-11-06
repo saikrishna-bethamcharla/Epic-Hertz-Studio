@@ -6,9 +6,10 @@
 // 2. We record the video canvas + audio track directly to MP4 / WebM with zero server latency.
 // 3. Fully cancellable via AbortSignal.
 
-import type { Segment, CaptionStyle } from '../types';
+import type { Segment, CaptionStyle, LowerThirdSpec } from '../types';
+import { renderLowerThirds } from '../engine/lowerThirds';
 import { renderCaptions } from '../engine/render';
-import { ensureFonts } from '../engine/fonts';
+import { ensureFonts, ensureLowerThirdFonts } from '../engine/fonts';
 
 /**
  * Burns subtitles directly into video frames using HTML5 Canvas & MediaRecorder.
@@ -20,13 +21,18 @@ export async function burnCaptionsCanvas(
   style: CaptionStyle,
   onProgress?: (pct: number) => void,
   signal?: AbortSignal,
+  lowerThirds?: LowerThirdSpec[],
+  photoCache?: Map<string, HTMLImageElement>,
 ): Promise<Blob> {
   if (signal?.aborted) {
     throw new DOMException('Export cancelled', 'AbortError');
   }
 
   // Fonts must be loaded before the first frame is drawn
-  await ensureFonts(style, segments.map((s) => s.text).join(' '));
+  await Promise.all([
+    ensureFonts(style, segments.map((s) => s.text).join(' ')),
+    ensureLowerThirdFonts(lowerThirds),
+  ]);
 
   return new Promise((resolve, reject) => {
     const video = document.createElement('video');
@@ -181,6 +187,7 @@ export async function burnCaptionsCanvas(
 
         // 2. Captions: the exact renderer the live preview uses
         renderCaptions(ctx, width, height, video.currentTime, segments, style);
+        renderLowerThirds(ctx, width, height, video.currentTime, lowerThirds, photoCache);
 
         animId = requestAnimationFrame(renderLoop);
       };

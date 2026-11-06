@@ -57,7 +57,10 @@ import type {
   SpokenLanguage,
   ScriptOutput,
   VideoAspectRatio,
+  LowerThirdSpec,
 } from './types';
+import { DEFAULT_LOWER_THIRD } from './engine/spec';
+import { getPhotoBlob, deletePhotoBlob } from './utils/projectStorage';
 
 export default function SubtitleTool() {
   const [stage, setStage] = useState<AppStage>('idle');
@@ -85,6 +88,9 @@ export default function SubtitleTool() {
   const [selectedWordIndices, setSelectedWordIndices] = useState<number[]>([]);
   const [projectName, setProjectName] = useState<string>('Untitled Video');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [lowerThirds, setLowerThirds] = useState<LowerThirdSpec[]>([]);
+  const [activeLowerThirdId, setActiveLowerThirdId] = useState<string | null>(null);
+  const [photoCache, setPhotoCache] = useState<Map<string, HTMLImageElement>>(() => new Map());
 
   // Modular custom hooks (Phase 6.2)
   const {
@@ -130,6 +136,8 @@ export default function SubtitleTool() {
     scriptOutput,
     aspectRatio,
     projectName,
+    lowerThirds,
+    setLowerThirds,
     setVideoFile,
     setSegments,
     setHistory,
@@ -178,6 +186,62 @@ export default function SubtitleTool() {
       });
       return h.slice(0, -1);
     });
+  }, []);
+
+  // Load photo blobs for lower thirds into photoCache
+  useEffect(() => {
+    if (lowerThirds.length === 0) return;
+    lowerThirds.forEach((lt) => {
+      if (lt.photoBlobId && !photoCache.has(lt.photoBlobId)) {
+        getPhotoBlob(lt.photoBlobId).then((blob) => {
+          if (!blob) return;
+          const url = URL.createObjectURL(blob);
+          const img = new Image();
+          img.onload = () => {
+            setPhotoCache((prev) => new Map(prev).set(lt.photoBlobId!, img));
+            URL.revokeObjectURL(url);
+          };
+          img.src = url;
+        }).catch((e) => console.warn('Failed to load photo blob:', e));
+      }
+    });
+  }, [lowerThirds, photoCache]);
+
+  const handleAddLowerThird = useCallback(() => {
+    const newLt: LowerThirdSpec = {
+      ...DEFAULT_LOWER_THIRD,
+      id: 'lt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      start: Math.max(0, currentTime),
+      end: Math.min(duration || currentTime + 3.5, currentTime + 3.5),
+    };
+    setLowerThirds((prev) => [...prev, newLt]);
+    setActiveLowerThirdId(newLt.id);
+  }, [currentTime, duration]);
+
+  const handleUpdateLowerThird = useCallback((updated: LowerThirdSpec) => {
+    setLowerThirds((prev) => prev.map((lt) => (lt.id === updated.id ? updated : lt)));
+  }, []);
+
+  const handleDeleteLowerThird = useCallback((id: string) => {
+    setLowerThirds((prev) => prev.filter((lt) => lt.id !== id));
+    setActiveLowerThirdId((cur) => (cur === id ? null : cur));
+  }, []);
+
+  const handlePhotoUploaded = useCallback((photoBlobId: string, img: HTMLImageElement) => {
+    setPhotoCache((prev) => {
+      const next = new Map(prev);
+      next.set(photoBlobId, img);
+      return next;
+    });
+  }, []);
+
+  const handlePhotoRemoved = useCallback((photoBlobId: string) => {
+    setPhotoCache((prev) => {
+      const next = new Map(prev);
+      next.delete(photoBlobId);
+      return next;
+    });
+    deletePhotoBlob(photoBlobId).catch(() => {});
   }, []);
 
   const handleRedo = useCallback(() => {
@@ -584,6 +648,8 @@ export default function SubtitleTool() {
     setSegments([]);
     setHistory([]);
     setRedoStack([]);
+    setLowerThirds([]);
+    setActiveLowerThirdId(null);
     setError(null);
     setBurnProgress(0);
     resetPlayback();
@@ -639,6 +705,8 @@ export default function SubtitleTool() {
             videoFile={videoFile}
             segments={segments}
             style={style}
+            lowerThirds={lowerThirds}
+            photoCache={photoCache}
             signal={exportAbortRef.current?.signal}
             onBurnStart={() => {
               exportAbortRef.current = new AbortController();
@@ -955,6 +1023,8 @@ export default function SubtitleTool() {
                         style={style}
                         onStyleChange={setStyle}
                         onSegmentOverrideChange={handleSegmentOverride}
+                        lowerThirds={lowerThirds}
+                        photoCache={photoCache}
                         aspectRatio={aspectRatio}
                         onAspectRatioChange={setAspectRatio}
                         onTimeUpdate={handleTimeUpdate}
@@ -1037,6 +1107,15 @@ export default function SubtitleTool() {
                             }}
                             onGoToBrand={() => setLeftTab('brand')}
                             onAutoAlignTimings={videoFile ? handleAutoAlignTimings : undefined}
+                            lowerThirds={lowerThirds}
+                            activeLowerThirdId={activeLowerThirdId}
+                            onSelectLowerThird={setActiveLowerThirdId}
+                            onUpdateLowerThird={handleUpdateLowerThird}
+                            onDeleteLowerThird={handleDeleteLowerThird}
+                            onAddLowerThird={handleAddLowerThird}
+                            photoCache={photoCache}
+                            onPhotoUploaded={handlePhotoUploaded}
+                            onPhotoRemoved={handlePhotoRemoved}
                           />
                         </div>
                       </>
@@ -1074,6 +1153,11 @@ export default function SubtitleTool() {
                       isPlaying={isPlaying}
                       segments={segments}
                       activeId={activeId}
+                      lowerThirds={lowerThirds}
+                      activeLowerThirdId={activeLowerThirdId}
+                      onLowerThirdsChange={setLowerThirds}
+                      onSelectLowerThird={setActiveLowerThirdId}
+                      onAddLowerThird={handleAddLowerThird}
                       onSeek={(t) => videoRef.current?.seekTo(t)}
                       onTogglePlay={() => videoRef.current?.togglePlay()}
                       onSegmentsChange={updateSegments}
@@ -1166,6 +1250,11 @@ export default function SubtitleTool() {
                         isPlaying={isPlaying}
                         segments={segments}
                         activeId={activeId}
+                        lowerThirds={lowerThirds}
+                        activeLowerThirdId={activeLowerThirdId}
+                        onLowerThirdsChange={setLowerThirds}
+                        onSelectLowerThird={setActiveLowerThirdId}
+                        onAddLowerThird={handleAddLowerThird}
                         onSeek={(t) => videoRef.current?.seekTo(t)}
                         onTogglePlay={() => videoRef.current?.togglePlay()}
                         onSegmentsChange={updateSegments}

@@ -5,7 +5,7 @@
 // finished loading so cached layouts are rebuilt.
 
 import { getAssetUrl } from '../utils/assetUrl';
-import { fontById, SCRIPT_FONTS, type CaptionStyle, type FontFile } from './spec';
+import { fontById, SCRIPT_FONTS, type CaptionStyle, type FontFile, type LowerThirdSpec } from './spec';
 
 let version = 0;
 const listeners = new Set<() => void>();
@@ -90,6 +90,25 @@ export function ensureFonts(style: CaptionStyle, text = ''): Promise<void> {
 }
 
 /** Preload a family (used by the font picker so every option previews in its own face). */
+/** Load families for all lower thirds plus any Indic script fonts their text needs. */
+export function ensureLowerThirdFonts(lowerThirds: LowerThirdSpec[] = []): Promise<void> {
+  const tasks: Promise<void>[] = [];
+  for (const lt of lowerThirds) {
+    const fam = fontById(lt.font.family);
+    const file = nearestFile(fam.files, lt.font.weight, false);
+    if (file) tasks.push(loadFile(fam.css, file));
+
+    const combinedText = `${lt.name} ${lt.role} ${lt.handle || ''}`;
+    for (const s of SCRIPT_FONTS) {
+      if (s.test.test(combinedText)) {
+        const sf = nearestFile(s.files, lt.font.weight >= 800 ? 900 : 700, false);
+        if (sf) tasks.push(loadFile(s.css, sf));
+      }
+    }
+  }
+  return Promise.all(tasks).then(() => undefined);
+}
+
 export function ensureFamily(id: string): Promise<void> {
   const fam = fontById(id);
   return Promise.all(fam.files.map((f) => loadFile(fam.css, f))).then(() => undefined);

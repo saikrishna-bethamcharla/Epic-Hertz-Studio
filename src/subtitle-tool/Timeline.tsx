@@ -12,7 +12,7 @@
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { formatTimecode, formatRulerTick } from './utils/formatTime';
 import { getSpeakerStyle, getSpeakerShortCode } from './utils/speakers';
-import type { Segment } from './types';
+import type { Segment, LowerThirdSpec } from './types';
 import TimelineToolbar from './editor/TimelineToolbar';
 
 interface TimelineProps {
@@ -21,6 +21,11 @@ interface TimelineProps {
   isPlaying: boolean;
   segments: Segment[];
   activeId: string | null;
+  lowerThirds?: LowerThirdSpec[];
+  activeLowerThirdId?: string | null;
+  onLowerThirdsChange?: (lowerThirds: LowerThirdSpec[]) => void;
+  onSelectLowerThird?: (id: string | null) => void;
+  onAddLowerThird?: () => void;
   onSeek: (time: number) => void;
   onTogglePlay: () => void;
   onSegmentsChange: (segments: Segment[]) => void;
@@ -32,7 +37,7 @@ interface TimelineProps {
 }
 
 interface DragState {
-  type: 'move' | 'trim-start' | 'trim-end';
+  type: 'move' | 'trim-start' | 'trim-end' | 'lt-move' | 'lt-trim-start' | 'lt-trim-end';
   segId: string;
   initialClientX: number;
   initialStart: number;
@@ -45,6 +50,11 @@ export default function Timeline({
   isPlaying,
   segments,
   activeId,
+  lowerThirds,
+  activeLowerThirdId,
+  onLowerThirdsChange,
+  onSelectLowerThird,
+  onAddLowerThird,
   onSeek,
   onTogglePlay,
   onSegmentsChange,
@@ -351,6 +361,91 @@ export default function Timeline({
     window.addEventListener('mouseup', onMouseUp);
   };
 
+  const startLowerThirdDrag = (
+    e: React.MouseEvent,
+    lt: LowerThirdSpec,
+    type: 'lt-move' | 'lt-trim-start' | 'lt-trim-end',
+  ) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onSelectLowerThird?.(lt.id);
+
+    dragStateRef.current = {
+      type,
+      segId: lt.id,
+      initialClientX: e.clientX,
+      initialStart: lt.start,
+      initialEnd: lt.end,
+    };
+
+    const snapThreshold = 10 / zoom;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const state = dragStateRef.current;
+      if (!state || !lowerThirds) return;
+
+      const deltaX = moveEvent.clientX - state.initialClientX;
+      const deltaSec = deltaX / zoom;
+
+      let newStart = state.initialStart;
+      let newEnd = state.initialEnd;
+      let guide: number | null = null;
+
+      if (state.type === 'lt-move') {
+        const span = state.initialEnd - state.initialStart;
+        newStart = Math.max(0, +(state.initialStart + deltaSec).toFixed(2));
+        newEnd = +(newStart + span).toFixed(2);
+
+        if (isSnappingEnabled) {
+          if (Math.abs(newStart - currentTime) < snapThreshold) {
+            newStart = currentTime;
+            newEnd = +(newStart + span).toFixed(2);
+            guide = newStart;
+          } else if (Math.abs(newEnd - currentTime) < snapThreshold) {
+            newEnd = currentTime;
+            newStart = Math.max(0, +(newEnd - span).toFixed(2));
+            guide = newEnd;
+          }
+        }
+      } else if (state.type === 'lt-trim-start') {
+        newStart = Math.max(
+          0,
+          Math.min(state.initialEnd - 0.3, +(state.initialStart + deltaSec).toFixed(2)),
+        );
+        if (isSnappingEnabled && Math.abs(newStart - currentTime) < snapThreshold) {
+          newStart = Math.min(state.initialEnd - 0.3, currentTime);
+          guide = newStart;
+        }
+      } else if (state.type === 'lt-trim-end') {
+        newEnd = Math.max(
+          state.initialStart + 0.3,
+          Math.min(totalDuration, +(state.initialEnd + deltaSec).toFixed(2)),
+        );
+        if (isSnappingEnabled && Math.abs(newEnd - currentTime) < snapThreshold) {
+          newEnd = Math.max(state.initialStart + 0.3, currentTime);
+          guide = newEnd;
+        }
+      }
+
+      setSnapGuide(guide);
+
+      const updated = lowerThirds.map((item) =>
+        item.id === state.segId ? { ...item, start: newStart, end: newEnd } : item,
+      );
+      onLowerThirdsChange?.(updated);
+    };
+
+    const onMouseUp = () => {
+      dragStateRef.current = null;
+      setSnapGuide(null);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
   // ── Split Segment at Current Playhead ─────────────────────────────────────
   const handleSplit = () => {
     if (!currentSeg) return;
@@ -463,6 +558,7 @@ export default function Timeline({
         onTogglePlay={onTogglePlay}
         currentSeg={currentSeg}
         onAddText={handleAddText}
+        onAddLowerThird={onAddLowerThird}
         onSplit={handleSplit}
         onMerge={handleMerge}
         onDelete={handleDelete}
@@ -616,7 +712,71 @@ export default function Timeline({
             })}
           </div>
 
-          {/* 3. Audio Waveform Track */}
+          {/* 3. Lower Thirds Track */}
+          <div className="h-10 shrink-0 relative px-1 my-0.5 border-t border-b border-white/5 bg-[#0d0d0c]/70">
+            <div className="absolute left-1 top-0.5 z-10 text-[8px] font-mono font-bold tracking-wider text-smoke/60 uppercase pointer-events-none">
+              Lower Thirds
+            </div>
+            {lowerThirds && lowerThirds.length > 0 ? (
+              lowerThirds.map((lt) => {
+                const left = lt.start * zoom;
+                const width = Math.max(36, (lt.end - lt.start) * zoom);
+                const isActive = lt.id === activeLowerThirdId;
+
+                return (
+                  <div
+                    key={lt.id}
+                    onMouseDown={(e) => startLowerThirdDrag(e, lt, 'lt-move')}
+                    className={`timeline-segment absolute top-1 h-8 rounded-lg px-2 text-xs font-medium cursor-grab active:cursor-grabbing transition-colors border flex items-center justify-between overflow-hidden group shadow-md select-none ${
+                      isActive
+                        ? 'bg-[#272621] border-amber-400 text-amber-200 ring-1 ring-amber-400/50 z-20'
+                        : 'bg-[#181816] border-white/15 text-bone hover:border-white/35 hover:bg-[#1f1f1d] z-10'
+                    }`}
+                    style={{
+                      left: `${left}px`,
+                      width: `${width}px`,
+                      borderLeftColor: lt.colors.primary,
+                      borderLeftWidth: 3,
+                    }}
+                    title={`[V${lt.variant}] ${lt.name} - ${lt.role} (${formatTimecode(lt.start)} - ${formatTimecode(lt.end)})`}
+                  >
+                    {/* Left Trim Handle */}
+                    <div
+                      onMouseDown={(e) => startLowerThirdDrag(e, lt, 'lt-trim-start')}
+                      className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-amber-400/60 transition-colors z-20 group-hover:bg-white/20"
+                      title="Drag to trim start"
+                    />
+
+                    {/* Content */}
+                    <div className="flex items-center gap-1.5 min-w-0 pl-1">
+                      <span className="px-1 py-0.2 rounded bg-amber-400/20 text-amber-300 font-mono text-[8px] font-bold shrink-0">
+                        V{lt.variant}
+                      </span>
+                      <span className="truncate font-semibold text-[10px] tracking-tight">
+                        {lt.name || 'Lower Third'}
+                      </span>
+                    </div>
+                    <span className="text-[8px] text-smoke font-mono shrink-0 pl-1">
+                      {(lt.end - lt.start).toFixed(1)}s
+                    </span>
+
+                    {/* Right Trim Handle */}
+                    <div
+                      onMouseDown={(e) => startLowerThirdDrag(e, lt, 'lt-trim-end')}
+                      className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-amber-400/60 transition-colors z-20 group-hover:bg-white/20"
+                      title="Drag to trim end"
+                    />
+                  </div>
+                );
+              })
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-[10px] text-smoke/40 font-medium pointer-events-none">
+                No lower thirds · Click "+ Lower Third" in toolbar to add
+              </div>
+            )}
+          </div>
+
+          {/* 4. Audio Waveform Track */}
           <div className="flex-1 min-h-[44px] relative">
             <canvas
               ref={waveformCanvasRef}

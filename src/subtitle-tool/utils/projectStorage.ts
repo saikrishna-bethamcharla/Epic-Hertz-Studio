@@ -9,15 +9,17 @@ import type {
   SpokenLanguage,
   ScriptOutput,
   VideoAspectRatio,
+  LowerThirdSpec,
 } from '../types';
 import { ensureCaptionStyle } from '../engine/compat';
 
 export const DB_NAME = 'epic_hertz_studio_db';
-export const DB_VERSION = 3;
+export const DB_VERSION = 4;
 export const PROJECTS_STORE = 'projects';
 export const MEDIA_STORE = 'media';
 export const LEGACY_STORE = 'project_store';
 export const CUSTOM_FONTS_STORE = 'custom_fonts';
+export const PHOTOS_STORE = 'photos';
 
 export interface ProjectRecord {
   id: string;
@@ -27,6 +29,7 @@ export interface ProjectRecord {
   thumbnail?: string;
   segmentCount: number;
   segments: Segment[];
+  lowerThirds?: LowerThirdSpec[];
   style: CaptionStyle;
   spokenLanguage: SpokenLanguage;
   scriptOutput: ScriptOutput;
@@ -50,6 +53,7 @@ export interface FullProject {
   name: string;
   videoFile: File;
   segments: Segment[];
+  lowerThirds?: LowerThirdSpec[];
   style: CaptionStyle;
   spokenLanguage: SpokenLanguage;
   scriptOutput: ScriptOutput;
@@ -110,7 +114,7 @@ async function migrateLegacyIfPresent(db: IDBDatabase): Promise<void> {
               spokenLanguage: oldMeta.spokenLanguage || 'te',
               scriptOutput: oldMeta.scriptOutput || 'romanized',
               aspectRatio: oldMeta.aspectRatio || '9:16',
-              schemaVersion: 2,
+              schemaVersion: 3,
               createdAt: oldMeta.updatedAt || Date.now(),
               updatedAt: oldMeta.updatedAt || Date.now(),
             };
@@ -161,6 +165,10 @@ export function openDB(): Promise<IDBDatabase> {
 
       if (!db.objectStoreNames.contains(CUSTOM_FONTS_STORE)) {
         db.createObjectStore(CUSTOM_FONTS_STORE, { keyPath: 'name' });
+      }
+
+      if (!db.objectStoreNames.contains(PHOTOS_STORE)) {
+        db.createObjectStore(PHOTOS_STORE, { keyPath: 'id' });
       }
     };
 
@@ -216,6 +224,22 @@ export async function requestPersistentStorage(): Promise<{
 /**
  * Lists all projects stored in IndexedDB, sorted by most recently updated.
  */
+/**
+ * Migrates older project records to schemaVersion 3, ensuring lowerThirds exists.
+ */
+export function migrateProjectRecord(raw: any): ProjectRecord {
+  if (!raw) return raw;
+  return {
+    ...raw,
+    segments: Array.isArray(raw.segments) ? raw.segments : [],
+    lowerThirds: Array.isArray(raw.lowerThirds) ? raw.lowerThirds : [],
+    style: ensureCaptionStyle(raw.style),
+    schemaVersion: 3,
+    createdAt: raw.createdAt || Date.now(),
+    updatedAt: raw.updatedAt || Date.now(),
+  };
+}
+
 export async function listProjects(): Promise<ProjectRecord[]> {
   try {
     const db = await openDB();
@@ -225,7 +249,7 @@ export async function listProjects(): Promise<ProjectRecord[]> {
       const req = store.getAll();
 
       req.onsuccess = () => {
-        const list = (req.result as ProjectRecord[]) || [];
+        const list = ((req.result as any[]) || []).map(migrateProjectRecord);
         list.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
         resolve(list);
       };
@@ -248,7 +272,7 @@ export async function getProject(id: string): Promise<ProjectRecord | null> {
       const store = tx.objectStore(PROJECTS_STORE);
       const req = store.get(id);
 
-      req.onsuccess = () => resolve((req.result as ProjectRecord) || null);
+      req.onsuccess = () => resolve(req.result ? migrateProjectRecord(req.result) : null);
       req.onerror = () => reject(req.error);
     });
   } catch (err) {
@@ -269,6 +293,8 @@ export async function saveProjectRecord(project: ProjectRecord): Promise<void> {
       const updated: ProjectRecord = {
         ...project,
         segmentCount: project.segments.length,
+        lowerThirds: project.lowerThirds || [],
+        schemaVersion: 3,
         updatedAt: project.updatedAt ?? Date.now(),
       };
       const req = store.put(updated);
@@ -338,7 +364,7 @@ export async function loadProjectWithMedia(id: string): Promise<FullProject | nu
       new Promise<ProjectRecord | null>((resolve, reject) => {
         const tx = db.transaction(PROJECTS_STORE, 'readonly');
         const req = tx.objectStore(PROJECTS_STORE).get(id);
-        req.onsuccess = () => resolve((req.result as ProjectRecord) || null);
+        req.onsuccess = () => resolve(req.result ? migrateProjectRecord(req.result) : null);
         req.onerror = () => reject(req.error);
       }),
       new Promise<MediaRecord | null>((resolve, reject) => {
@@ -360,6 +386,7 @@ export async function loadProjectWithMedia(id: string): Promise<FullProject | nu
       name: project.name,
       videoFile: file,
       segments: project.segments || [],
+      lowerThirds: project.lowerThirds || [],
       style: ensureCaptionStyle(project.style),
       spokenLanguage: project.spokenLanguage || 'te',
       scriptOutput: project.scriptOutput || 'romanized',
@@ -476,11 +503,12 @@ export async function saveProjectMeta(
     thumbnail: meta.thumbnail || existing?.thumbnail,
     segmentCount: meta.segments.length,
     segments: meta.segments,
+    lowerThirds: meta.lowerThirds || existing?.lowerThirds || [],
     style: meta.style,
     spokenLanguage: meta.spokenLanguage,
     scriptOutput: meta.scriptOutput,
     aspectRatio: meta.aspectRatio,
-    schemaVersion: 2,
+    schemaVersion: 3,
     createdAt: existing?.createdAt || now,
     updatedAt: now,
   };
@@ -544,6 +572,54 @@ export async function listCustomFonts(): Promise<CustomFontRecord[]> {
     req.onsuccess = () => resolve(req.result || []);
     req.onerror = () => reject(req.error);
   });
+}
+
+// ─── Photo Storage (Lower Thirds) ───────────────────────────────────────────
+
+export interface PhotoRecord {
+  id: string;
+  blob: Blob;
+  name?: string;
+  updatedAt: number;
+}
+
+export async function savePhotoBlob(id: string, blob: Blob, name?: string): Promise<void> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(PHOTOS_STORE, 'readwrite');
+    const store = tx.objectStore(PHOTOS_STORE);
+    const req = store.put({ id, blob, name, updatedAt: Date.now() });
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+export async function getPhotoBlob(id: string): Promise<Blob | null> {
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(PHOTOS_STORE, 'readonly');
+      const store = tx.objectStore(PHOTOS_STORE);
+      const req = store.get(id);
+      req.onsuccess = () => resolve((req.result as PhotoRecord)?.blob || null);
+      req.onerror = () => reject(req.error);
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function deletePhotoBlob(id: string): Promise<void> {
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(PHOTOS_STORE, 'readwrite');
+      const store = tx.objectStore(PHOTOS_STORE);
+      const req = store.delete(id);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  } catch {}
 }
 
 export async function deleteCustomFont(name: string): Promise<void> {

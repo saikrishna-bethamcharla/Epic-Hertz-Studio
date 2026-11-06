@@ -13,7 +13,7 @@ import {
   estimateExportMemory,
   type ExportQuality,
 } from './utils/exportVideo';
-import type { Segment, CaptionStyle } from './types';
+import type { Segment, CaptionStyle, LowerThirdSpec } from './types';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -21,6 +21,8 @@ interface ExportModalProps {
   videoFile: File;
   segments: Segment[];
   style: CaptionStyle;
+  lowerThirds?: LowerThirdSpec[];
+  photoCache?: Map<string, HTMLImageElement>;
   onBurnStart: () => void;
   onBurnProgress: (pct: number) => void;
   onBurnStatus?: (msg: string) => void;
@@ -35,6 +37,9 @@ export default function ExportModal({
   videoFile,
   segments,
   style,
+
+  lowerThirds,
+  photoCache,
   onBurnStart,
   onBurnProgress,
   onBurnStatus,
@@ -169,6 +174,8 @@ export default function ExportModal({
             quality,
             maxShortSide: resolution === '1080' ? 1080 : 0,
             fileStream,
+            lowerThirds,
+            photoCache,
           },
           ({ pct, etaSec }) => {
             onBurnProgress(pct);
@@ -202,6 +209,8 @@ export default function ExportModal({
             onBurnProgress(pct);
           },
           signal,
+          lowerThirds,
+          photoCache,
         );
       }
 

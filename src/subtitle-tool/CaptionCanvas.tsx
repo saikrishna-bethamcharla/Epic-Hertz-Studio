@@ -5,9 +5,10 @@
 // Drag the caption block to reposition it (snaps to the centre lines).
 
 import { useEffect, useMemo, useRef, type RefObject } from 'react';
-import type { CaptionStyle, Segment, SegmentStyleOverride } from './types';
+import type { CaptionStyle, Segment, SegmentStyleOverride, LowerThirdSpec } from './types';
+import { renderLowerThirds } from './engine/lowerThirds';
 import { renderCaptions, findSegment } from './engine/render';
-import { ensureFonts, fontsVersion, onFontsChange } from './engine/fonts';
+import { ensureFonts, ensureLowerThirdFonts, fontsVersion, onFontsChange } from './engine/fonts';
 
 interface CaptionCanvasProps {
   segments: Segment[];
@@ -17,6 +18,8 @@ interface CaptionCanvasProps {
   hostRef: RefObject<HTMLElement | null>;
   onStyleChange?: (style: CaptionStyle) => void;
   onSegmentOverrideChange?: (segmentId: string, override: Partial<SegmentStyleOverride>) => void;
+  lowerThirds?: LowerThirdSpec[];
+  photoCache?: Map<string, HTMLImageElement>;
   visible?: boolean;
 }
 
@@ -38,13 +41,15 @@ export default function CaptionCanvas({
   hostRef,
   onStyleChange,
   onSegmentOverrideChange,
+  lowerThirds,
+  photoCache,
   visible = true,
 }: CaptionCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Latest props, readable from the animation loop without re-subscribing
-  const live = useRef({ segments, style, onStyleChange, onSegmentOverrideChange, visible });
-  live.current = { segments, style, onStyleChange, onSegmentOverrideChange, visible };
+  const live = useRef({ segments, style, lowerThirds, photoCache, onStyleChange, onSegmentOverrideChange, visible });
+  live.current = { segments, style, lowerThirds, photoCache, onStyleChange, onSegmentOverrideChange, visible };
 
   const geom = useRef<Geometry>({ cssW: 0, cssH: 0, left: 0, top: 0, dpr: 1 });
   const geomVersion = useRef(0);
@@ -62,6 +67,7 @@ export default function CaptionCanvas({
   const allText = useMemo(() => segments.map((s) => s.text).join(' '), [segments]);
   useEffect(() => {
     void ensureFonts(style, allText);
+    void ensureLowerThirdFonts(lowerThirds);
   }, [style.font.family, style.font.weight, style.font.italic, allText, style]);
 
   // ── Track the displayed video rectangle (object-contain inside the frame)
@@ -175,6 +181,7 @@ export default function CaptionCanvas({
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const res = renderCaptions(ctx, canvas.width, canvas.height, t, effSegs, effStyle);
+      renderLowerThirds(ctx, canvas.width, canvas.height, t, live.current.lowerThirds, live.current.photoCache);
       bounds.current = res.bounds;
 
       // Editing aids: bounding box on hover/drag, centre guides while dragging

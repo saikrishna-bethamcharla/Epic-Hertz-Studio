@@ -21,6 +21,7 @@ export interface TimelineToolbarProps {
   onTogglePlay: () => void;
   currentSeg: Segment | null | undefined;
   onAddText: () => void;
+  onAddLowerThird?: () => void;
   onSplit: () => void;
   onMerge: () => void;
   onDelete: () => void;
@@ -44,6 +45,7 @@ export const TimelineToolbar: React.FC<TimelineToolbarProps> = ({
   onTogglePlay,
   currentSeg,
   onAddText,
+  onAddLowerThird,
   onSplit,
   onMerge,
   onDelete,
@@ -118,6 +120,27 @@ export const TimelineToolbar: React.FC<TimelineToolbarProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Add Lower Third */}
+          {onAddLowerThird && (
+            <div className="relative group/tip flex items-center">
+              <button
+                onClick={onAddLowerThird}
+                aria-label="Add lower third overlay at playhead"
+                className="h-7 px-2 flex items-center gap-1.5 rounded-lg bg-white/10 hover:bg-amber-400/20 text-bone hover:text-amber-300 border border-white/10 hover:border-amber-400/40 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-400 font-semibold text-[11px]"
+                title="Add Lower Third at playhead"
+              >
+                <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span>Lower Third</span>
+              </button>
+              <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
+                <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap">
+                  <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
+                  <span>Add Lower Third</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Split */}
           <div className="relative group/tip flex items-center">

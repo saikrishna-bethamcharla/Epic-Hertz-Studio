@@ -1,5 +1,5 @@
 // ─── Contextual Inspector Panel — Epic Hertz Studio v2 ────────────────────────
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Type,
   Zap,
@@ -12,7 +12,9 @@ import {
   Wand2,
 } from 'lucide-react';
 
-import type { Segment, CaptionStyle, SegmentStyleOverride, WordTimestamp } from '../types';
+import type { Segment, CaptionStyle, SegmentStyleOverride, WordTimestamp, LowerThirdSpec } from '../types';
+import LowerThirdInspector from './inspector/LowerThirdInspector';
+import { Plus } from 'lucide-react';
 import { fontById } from '../engine/spec';
 import SavePresetModal from './SavePresetModal';
 import { formatTimecode } from '../utils/formatTime';
@@ -35,6 +37,15 @@ interface InspectorPanelProps {
   onPlayPreview?: () => void;
   onGoToBrand?: () => void;
   onAutoAlignTimings?: () => void;
+  lowerThirds?: LowerThirdSpec[];
+  activeLowerThirdId?: string | null;
+  onSelectLowerThird?: (id: string | null) => void;
+  onUpdateLowerThird?: (updated: LowerThirdSpec) => void;
+  onDeleteLowerThird?: (id: string) => void;
+  onAddLowerThird?: () => void;
+  photoCache?: Map<string, HTMLImageElement>;
+  onPhotoUploaded?: (photoBlobId: string, img: HTMLImageElement) => void;
+  onPhotoRemoved?: (photoBlobId: string) => void;
 }
 
 export type InspectorTab = 'text' | 'animation' | 'timing' | 'layout';
@@ -54,6 +65,15 @@ export default function InspectorPanel({
   onPlayPreview,
   onGoToBrand,
   onAutoAlignTimings,
+  lowerThirds = [],
+  activeLowerThirdId,
+  onSelectLowerThird,
+  onUpdateLowerThird,
+  onDeleteLowerThird,
+  onAddLowerThird,
+  photoCache,
+  onPhotoUploaded,
+  onPhotoRemoved,
 }: InspectorPanelProps) {
   const [tab, setTab] = useState<InspectorTab>('text');
   const [textSubTab, setTextSubTab] = useState<TextSubTab>('basic');
@@ -98,8 +118,134 @@ export default function InspectorPanel({
     };
   }, [activeSegment]);
 
+  const [panelSection, setPanelSection] = useState<'captions' | 'lowerThirds'>('captions');
+  const activeLt = lowerThirds.find((lt) => lt.id === activeLowerThirdId);
+
+  useEffect(() => {
+    if (activeLowerThirdId) {
+      setPanelSection('lowerThirds');
+    }
+  }, [activeLowerThirdId]);
+
   return (
     <aside className="h-full flex flex-col bg-[#141413] border-l border-white/10 select-none overflow-hidden">
+      {/* ── Top-level Tab Switcher: Captions vs Lower Thirds ── */}
+      <div className="flex items-center border-b border-white/10 bg-[#10100f] px-3 pt-2 gap-2 shrink-0">
+        <button
+          type="button"
+          onClick={() => {
+            setPanelSection('captions');
+            onSelectLowerThird?.(null);
+          }}
+          className={`pb-2 px-1 text-xs font-semibold border-b-2 transition-colors ${
+            panelSection === 'captions'
+              ? 'border-amber-400 text-amber-200'
+              : 'border-transparent text-smoke hover:text-bone'
+          }`}
+        >
+          Captions
+        </button>
+        <button
+          type="button"
+          onClick={() => setPanelSection('lowerThirds')}
+          className={`pb-2 px-1 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 ${
+            panelSection === 'lowerThirds'
+              ? 'border-amber-400 text-amber-200'
+              : 'border-transparent text-smoke hover:text-bone'
+          }`}
+        >
+          <span>Lower Thirds</span>
+          <span className="px-1.5 py-0.2 rounded-full bg-white/10 text-[10px] font-mono">
+            {lowerThirds.length}
+          </span>
+        </button>
+      </div>
+
+      {panelSection === 'lowerThirds' ? (
+        activeLt && onUpdateLowerThird && onDeleteLowerThird ? (
+          <LowerThirdInspector
+            spec={activeLt}
+            onChange={onUpdateLowerThird}
+            onDelete={onDeleteLowerThird}
+            photoImage={photoCache?.get(activeLt.photoBlobId || '')}
+            onPhotoUploaded={onPhotoUploaded}
+            onPhotoRemoved={onPhotoRemoved}
+          />
+        ) : (
+          <div className="flex-1 flex flex-col p-4 text-xs space-y-4 overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div>
+                <div className="font-semibold text-bone">Lower Thirds</div>
+                <div className="text-[11px] text-smoke">
+                  {lowerThirds.length} overlay{lowerThirds.length === 1 ? '' : 's'} on timeline
+                </div>
+              </div>
+              {onAddLowerThird && (
+                <button
+                  type="button"
+                  onClick={onAddLowerThird}
+                  className="px-2.5 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-semibold text-xs transition-colors flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span>Add</span>
+                </button>
+              )}
+            </div>
+
+            {lowerThirds.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-3 bg-[#181816] rounded-2xl border border-white/5 my-auto">
+                <div className="w-10 h-10 rounded-xl bg-amber-400/10 border border-amber-400/20 text-amber-400 flex items-center justify-center">
+                  <Layout className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="font-semibold text-bone">No Lower Thirds Yet</div>
+                  <div className="text-[11px] text-smoke mt-0.5 max-w-[200px]">
+                    Add animated speaker names, titles, and social handles to your reel.
+                  </div>
+                </div>
+                {onAddLowerThird && (
+                  <button
+                    type="button"
+                    onClick={onAddLowerThird}
+                    className="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-semibold text-xs transition-colors flex items-center gap-1.5"
+                  >
+                    <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>Create Lower Third</span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <span className="text-[10px] font-semibold text-smoke uppercase tracking-wider block">
+                  Select to Edit
+                </span>
+                {lowerThirds.map((lt) => (
+                  <button
+                    key={lt.id}
+                    type="button"
+                    onClick={() => onSelectLowerThird?.(lt.id)}
+                    className="w-full p-3 rounded-xl bg-[#1a1a18] hover:bg-[#22221f] border border-white/10 hover:border-amber-400/40 text-left transition-all flex items-center justify-between group"
+                  >
+                    <div className="min-w-0 pr-2">
+                      <div className="flex items-center gap-2">
+                        <span className="px-1.5 py-0.2 rounded bg-amber-400/15 text-amber-300 font-mono text-[9px] font-bold">
+                          V{lt.variant}
+                        </span>
+                        <span className="font-semibold text-bone truncate">{lt.name || 'Unnamed'}</span>
+                      </div>
+                      <div className="text-[11px] text-smoke truncate mt-0.5">{lt.role || 'No title'}</div>
+                    </div>
+                    <span className="text-[10px] text-smoke font-mono shrink-0">
+                      {formatTimecode(lt.start)}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      ) : (
+        <>
       {/* ── 4.1 Contextual Header & Scope Switch ── */}
       <div className="p-3 border-b border-white/10 bg-[#121211] shrink-0 space-y-2">
         <div className="flex items-center justify-between text-[11px] font-semibold text-smoke">
@@ -470,7 +616,7 @@ export default function InspectorPanel({
                     </div>
                     {diag.warnings.length > 0 && (
                       <div className="text-[11px] text-amber-300 font-medium">
-                        ⚠️ {diag.warnings.join(' · ')}
+                        Warning: {diag.warnings.join(' · ')}
                       </div>
                     )}
                   </div>
@@ -556,7 +702,7 @@ export default function InspectorPanel({
             </div>
 
             <p className="text-[11px] text-smoke/70 italic">
-              💡 Tip: You can also drag the caption block directly on the video player!
+              Tip: You can also drag the caption block directly on the video player!
             </p>
           </div>
         )}
@@ -617,6 +763,8 @@ export default function InspectorPanel({
         onClose={() => setIsSavePresetOpen(false)}
         style={style}
       />
+        </>
+      )}
     </aside>
   );
 }

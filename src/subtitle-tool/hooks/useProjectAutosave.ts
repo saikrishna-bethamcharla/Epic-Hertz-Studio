@@ -9,6 +9,7 @@ import type {
   SpokenLanguage,
   ScriptOutput,
   VideoAspectRatio,
+  LowerThirdSpec,
 } from '../types';
 import {
   saveProjectMeta,
@@ -30,6 +31,8 @@ export interface UseProjectAutosaveParams {
   scriptOutput: ScriptOutput;
   aspectRatio: VideoAspectRatio;
   projectName: string;
+  lowerThirds?: LowerThirdSpec[];
+  setLowerThirds?: (lowerThirds: LowerThirdSpec[]) => void;
   setVideoFile: (file: File | null) => void;
   setSegments: (segments: Segment[]) => void;
   setHistory: (history: Segment[][]) => void;
@@ -53,6 +56,8 @@ export function useProjectAutosave({
   scriptOutput,
   aspectRatio,
   projectName,
+  lowerThirds = [],
+  setLowerThirds,
   setVideoFile,
   setSegments,
   setHistory,
@@ -100,6 +105,7 @@ export function useProjectAutosave({
           spokenLanguage,
           scriptOutput,
           aspectRatio,
+          lowerThirds,
           updatedAt: Date.now(),
         });
         setSaveStatus('saved');
@@ -110,7 +116,7 @@ export function useProjectAutosave({
       }
     }, 800);
     return () => clearTimeout(timer);
-  }, [stage, videoFile, segments, style, spokenLanguage, scriptOutput, aspectRatio, projectName]);
+  }, [stage, videoFile, segments, style, spokenLanguage, scriptOutput, aspectRatio, projectName, lowerThirds]);
 
   // Explicitly flush active project to IndexedDB immediately (e.g. before navigating to Home)
   const flushAutosaveNow = useCallback(async () => {
@@ -126,6 +132,7 @@ export function useProjectAutosave({
         spokenLanguage,
         scriptOutput,
         aspectRatio,
+        lowerThirds,
         updatedAt: Date.now(),
       });
       setSaveStatus('saved');
@@ -133,7 +140,7 @@ export function useProjectAutosave({
     } catch (err) {
       console.warn('Manual save before exit failed:', err);
     }
-  }, [stage, videoFile, segments, style, spokenLanguage, scriptOutput, aspectRatio, projectName]);
+  }, [stage, videoFile, segments, style, spokenLanguage, scriptOutput, aspectRatio, projectName, lowerThirds]);
 
   // Edits live in this browser tab and IndexedDB. Warn before an accidental reload.
   useEffect(() => {
@@ -165,6 +172,7 @@ export function useProjectAutosave({
       setScriptOutput(project.scriptOutput);
       setAspectRatio(project.aspectRatio);
       setProjectName(project.name || project.videoFile.name.replace(/\.[^/.]+$/, ''));
+      if (setLowerThirds) setLowerThirds(project.lowerThirds || []);
       setSavedDraft(null);
       setStage('editing');
       setSaveStatus('saved');
@@ -208,6 +216,7 @@ export function useProjectAutosave({
         setScriptOutput(project.scriptOutput);
         setAspectRatio(project.aspectRatio);
         setProjectName(project.name || project.videoFile.name.replace(/\.[^/.]+$/, ''));
+        if (setLowerThirds) setLowerThirds(project.lowerThirds || []);
         setSavedDraft(null);
         setStage('editing');
         setSaveStatus('saved');

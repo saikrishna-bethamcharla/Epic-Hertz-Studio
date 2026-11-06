@@ -127,6 +127,26 @@ export interface FontFamilyDef {
 
 export const FONT_FAMILIES: FontFamilyDef[] = [
   {
+    id: 'unbounded',
+    label: 'Unbounded',
+    css: 'Unbounded',
+    group: 'Display',
+    files: [
+      { weight: 700, style: 'normal', file: 'unbounded-latin-700-normal.woff2' },
+      { weight: 900, style: 'normal', file: 'unbounded-latin-900-normal.woff2' },
+    ],
+  },
+  {
+    id: 'albert',
+    label: 'Albert Sans',
+    css: 'Albert Sans',
+    group: 'Sans',
+    files: [
+      { weight: 600, style: 'normal', file: 'albert-sans-latin-600-normal.woff2' },
+      { weight: 800, style: 'normal', file: 'albert-sans-latin-800-normal.woff2' },
+    ],
+  },
+  {
     id: 'montserrat',
     label: 'Montserrat',
     css: 'Montserrat',
@@ -266,3 +286,64 @@ export const SCRIPT_FONTS: Array<{ name: string; css: string; test: RegExp; file
 
 /** Any Indic script — these must not be split into characters or tracked out. */
 export const COMPLEX_SCRIPT = /[\u0900-\u0DFF]/;
+
+// ─── Lower Thirds overlay model ──────────────────────────────────────────────
+export type LowerThirdVariant = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+
+export interface LowerThirdColors {
+  primary: string; // Accent / main shape / underline / highlight color
+  secondary?: string; // Secondary badge or background plate
+  textPrimary: string; // Name text color
+  textSecondary: string; // Role / handle text color
+}
+
+export interface LowerThirdPosition {
+  x: number; // 0..1 frame width (0 = left margin, 0.5 = center)
+  y: number; // 0..1 frame height (0.82 = classic lower third)
+  align: 'left' | 'center' | 'right';
+}
+
+export interface LowerThirdSpec {
+  id: string;
+  start: number; // Seconds
+  end: number; // Seconds
+  variant: LowerThirdVariant;
+  name: string;
+  role: string;
+  handle?: string;
+  photoBlobId?: string;
+  photoUrl?: string;
+  position: LowerThirdPosition;
+  colors: LowerThirdColors;
+  font: {
+    family: string; // Font id from FONT_FAMILIES
+    size: number; // Fraction of frame width/height (e.g. 0.035)
+    weight: number;
+  };
+  scale: number; // Overall multiplier (0.5 .. 2.0)
+  introDuration?: number; // Seconds (~0.7)
+  outroDuration?: number; // Seconds (~0.6)
+}
+
+export const DEFAULT_LOWER_THIRD: Omit<LowerThirdSpec, 'id' | 'start' | 'end'> = {
+  variant: 1,
+  name: 'RAVI TEJA',
+  role: 'CREATIVE DIRECTOR',
+  handle: '@raviteja',
+  position: { x: 0.08, y: 0.82, align: 'left' },
+  colors: {
+    primary: '#f59e0b',
+    secondary: '#18181b',
+    textPrimary: '#ffffff',
+    textSecondary: '#e4e4e7',
+  },
+  font: {
+    family: 'unbounded',
+    size: 0.035,
+    weight: 800,
+  },
+  scale: 1.0,
+  introDuration: 0.7,
+  outroDuration: 0.6,
+};
+
