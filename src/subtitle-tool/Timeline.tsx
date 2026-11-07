@@ -9,15 +9,40 @@
 // - Scrubbable playhead cursor
 // - Quick edit actions: + Text, Split, Merge, Delete, Undo/Redo, Find & Replace
 
-import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { formatTimecode, formatRulerTick } from './utils/formatTime';
 import { getSpeakerStyle, getSpeakerShortCode } from './utils/speakers';
 import type { Segment, LowerThirdSpec } from './types';
 import TimelineToolbar from './editor/TimelineToolbar';
+import { timeStore, usePlayheadTime } from './store/timeStore';
 
-interface TimelineProps {
+export const TimelinePlayhead = React.memo(function TimelinePlayhead({
+  zoom,
+  fallbackTime,
+}: {
+  zoom: number;
+  fallbackTime?: number;
+}) {
+  const storeTime = usePlayheadTime();
+  const time = fallbackTime !== undefined ? fallbackTime : storeTime;
+  return (
+    <div
+      className="absolute top-0 bottom-0 pointer-events-none z-30 will-change-transform"
+      style={{
+        left: 0,
+        transform: `translate3d(${time * zoom}px, 0, 0) translateX(-50%)`,
+      }}
+    >
+      {/* Playhead marker pin */}
+      <div className="w-3.5 h-3.5 bg-amber-400 rounded-sm rotate-45 -translate-y-1 mx-auto shadow-md" />
+      <div className="w-[1.5px] h-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)] mx-auto" />
+    </div>
+  );
+});
+
+export interface TimelineProps {
   duration: number;
-  currentTime: number;
+  currentTime?: number;
   isPlaying: boolean;
   segments: Segment[];
   activeId: string | null;
@@ -45,7 +70,7 @@ interface DragState {
   initialEnd: number;
 }
 
-export default function Timeline({
+function Timeline({
   duration,
   currentTime,
   isPlaying,
@@ -128,10 +153,13 @@ export default function Timeline({
 
   // Active / selected segment
   const currentSeg = useMemo(() => {
-    return (
-      segments.find((s) => s.id === (selectedId ?? activeId)) ||
-      segments.find((s) => currentTime >= s.start && currentTime <= s.end)
-    );
+    const id = selectedId ?? activeId;
+    if (id) {
+      const found = segments.find((s) => s.id === id);
+      if (found) return found;
+    }
+    const t = currentTime !== undefined ? currentTime : timeStore.getTime();
+    return segments.find((s) => t >= s.start && t <= s.end);
   }, [segments, selectedId, activeId, currentTime]);
 
   // ── Render Waveform Canvas ────────────────────────────────────────────────
@@ -251,6 +279,7 @@ export default function Timeline({
       const state = dragStateRef.current;
       if (!state) return;
 
+      const effectiveTime = currentTime !== undefined ? currentTime : timeStore.getTime();
       const deltaX = moveEvent.clientX - state.initialClientX;
       const deltaSec = deltaX / zoom;
 
@@ -265,12 +294,12 @@ export default function Timeline({
 
         if (isSnappingEnabled) {
           // Snap to playhead
-          if (Math.abs(newStart - currentTime) < snapThreshold) {
-            newStart = currentTime;
+          if (Math.abs(newStart - effectiveTime) < snapThreshold) {
+            newStart = effectiveTime;
             newEnd = +(newStart + span).toFixed(2);
             guide = newStart;
-          } else if (Math.abs(newEnd - currentTime) < snapThreshold) {
-            newEnd = currentTime;
+          } else if (Math.abs(newEnd - effectiveTime) < snapThreshold) {
+            newEnd = effectiveTime;
             newStart = Math.max(0, +(newEnd - span).toFixed(2));
             guide = newEnd;
           } else {
@@ -300,8 +329,8 @@ export default function Timeline({
           Math.min(state.initialEnd - 0.2, +(state.initialStart + deltaSec).toFixed(2)),
         );
         if (isSnappingEnabled) {
-          if (Math.abs(newStart - currentTime) < snapThreshold) {
-            newStart = Math.min(state.initialEnd - 0.2, currentTime);
+          if (Math.abs(newStart - effectiveTime) < snapThreshold) {
+            newStart = Math.min(state.initialEnd - 0.2, effectiveTime);
             guide = newStart;
           } else {
             const prev = segments.find(
@@ -316,8 +345,8 @@ export default function Timeline({
       } else if (state.type === 'trim-end') {
         newEnd = Math.max(state.initialStart + 0.2, +(state.initialEnd + deltaSec).toFixed(2));
         if (isSnappingEnabled) {
-          if (Math.abs(newEnd - currentTime) < snapThreshold) {
-            newEnd = Math.max(state.initialStart + 0.2, currentTime);
+          if (Math.abs(newEnd - effectiveTime) < snapThreshold) {
+            newEnd = Math.max(state.initialStart + 0.2, effectiveTime);
             guide = newEnd;
           } else {
             const next = segments.find(
@@ -386,6 +415,7 @@ export default function Timeline({
       const state = dragStateRef.current;
       if (!state || !lowerThirds) return;
 
+      const effectiveTime = currentTime !== undefined ? currentTime : timeStore.getTime();
       const deltaX = moveEvent.clientX - state.initialClientX;
       const deltaSec = deltaX / zoom;
 
@@ -399,12 +429,12 @@ export default function Timeline({
         newEnd = +(newStart + span).toFixed(2);
 
         if (isSnappingEnabled) {
-          if (Math.abs(newStart - currentTime) < snapThreshold) {
-            newStart = currentTime;
+          if (Math.abs(newStart - effectiveTime) < snapThreshold) {
+            newStart = effectiveTime;
             newEnd = +(newStart + span).toFixed(2);
             guide = newStart;
-          } else if (Math.abs(newEnd - currentTime) < snapThreshold) {
-            newEnd = currentTime;
+          } else if (Math.abs(newEnd - effectiveTime) < snapThreshold) {
+            newEnd = effectiveTime;
             newStart = Math.max(0, +(newEnd - span).toFixed(2));
             guide = newEnd;
           }
@@ -414,8 +444,8 @@ export default function Timeline({
           0,
           Math.min(state.initialEnd - 0.3, +(state.initialStart + deltaSec).toFixed(2)),
         );
-        if (isSnappingEnabled && Math.abs(newStart - currentTime) < snapThreshold) {
-          newStart = Math.min(state.initialEnd - 0.3, currentTime);
+        if (isSnappingEnabled && Math.abs(newStart - effectiveTime) < snapThreshold) {
+          newStart = Math.min(state.initialEnd - 0.3, effectiveTime);
           guide = newStart;
         }
       } else if (state.type === 'lt-trim-end') {
@@ -423,8 +453,8 @@ export default function Timeline({
           state.initialStart + 0.3,
           Math.min(totalDuration, +(state.initialEnd + deltaSec).toFixed(2)),
         );
-        if (isSnappingEnabled && Math.abs(newEnd - currentTime) < snapThreshold) {
-          newEnd = Math.max(state.initialStart + 0.3, currentTime);
+        if (isSnappingEnabled && Math.abs(newEnd - effectiveTime) < snapThreshold) {
+          newEnd = Math.max(state.initialStart + 0.3, effectiveTime);
           guide = newEnd;
         }
       }
@@ -451,7 +481,8 @@ export default function Timeline({
   // ── Split Segment at Current Playhead ─────────────────────────────────────
   const handleSplit = () => {
     if (!currentSeg) return;
-    if (currentTime <= currentSeg.start + 0.2 || currentTime >= currentSeg.end - 0.2) return;
+    const curTime = currentTime !== undefined ? currentTime : timeStore.getTime();
+    if (curTime <= currentSeg.start + 0.2 || curTime >= currentSeg.end - 0.2) return;
 
     const segIndex = segments.findIndex((s) => s.id === currentSeg.id);
     const words = currentSeg.text.split(' ');
@@ -461,19 +492,19 @@ export default function Timeline({
 
     const newSeg1: Segment = {
       ...currentSeg,
-      end: currentTime,
+      end: curTime,
       text: text1,
-      words: currentSeg.words ? currentSeg.words.filter((w) => w.start < currentTime) : undefined,
+      words: currentSeg.words ? currentSeg.words.filter((w) => w.start < curTime) : undefined,
     };
 
     const newSeg2: Segment = {
       ...currentSeg,
       id: `seg-${Date.now()}`,
       index: currentSeg.index + 1,
-      start: currentTime,
+      start: curTime,
       end: currentSeg.end,
       text: text2,
-      words: currentSeg.words ? currentSeg.words.filter((w) => w.start >= currentTime) : undefined,
+      words: currentSeg.words ? currentSeg.words.filter((w) => w.start >= curTime) : undefined,
       styleOverride: currentSeg.styleOverride ? { ...currentSeg.styleOverride } : undefined,
       speaker: currentSeg.speaker,
     };
@@ -521,7 +552,7 @@ export default function Timeline({
 
   // ── Add New Text Segment at Playhead ───────────────────────────────────────
   const handleAddText = () => {
-    const start = currentTime;
+    const start = currentTime !== undefined ? currentTime : timeStore.getTime();
     const end = Math.min(totalDuration, start + 2);
     const newSeg: Segment = {
       id: `seg-${Date.now()}`,
@@ -801,19 +832,11 @@ export default function Timeline({
           )}
 
           {/* 4. Playhead Cursor (Amber vertical line with pointer top) */}
-          <div
-            className="absolute top-0 bottom-0 pointer-events-none z-30 will-change-transform"
-            style={{
-              left: 0,
-              transform: `translate3d(${currentTime * zoom}px, 0, 0) translateX(-50%)`,
-            }}
-          >
-            {/* Playhead marker pin */}
-            <div className="w-3.5 h-3.5 bg-amber-400 rounded-sm rotate-45 -translate-y-1 mx-auto shadow-md" />
-            <div className="w-[1.5px] h-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)] mx-auto" />
-          </div>
+          <TimelinePlayhead zoom={zoom} fallbackTime={currentTime} />
         </div>
       </div>
     </div>
   );
 }
+
+export default React.memo(Timeline);

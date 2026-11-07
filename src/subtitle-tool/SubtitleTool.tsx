@@ -46,6 +46,7 @@ import { saveMediaAsset, formatRelativeTime, listCustomFonts } from './utils/pro
 import { extractAudio } from './utils/extractAudio';
 import { refineSegmentsFromAudioWithMetrics } from './utils/alignWords';
 import { usePlayback } from './hooks/usePlayback';
+import { timeStore } from './store/timeStore';
 import { useTranscription } from './hooks/useTranscription';
 import { useProjectAutosave } from './hooks/useProjectAutosave';
 
@@ -100,7 +101,6 @@ export default function SubtitleTool() {
 
   // Modular custom hooks (Phase 6.2)
   const {
-    currentTime,
     duration,
     setDuration,
     isPlaying,
@@ -237,15 +237,16 @@ export default function SubtitleTool() {
   }, [lowerThirds, photoCache]);
 
   const handleAddLowerThird = useCallback(() => {
+    const curTime = timeStore.getTime();
     const newLt: LowerThirdSpec = {
       ...DEFAULT_LOWER_THIRD,
       id: 'lt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-      start: Math.max(0, currentTime),
-      end: Math.min(duration || currentTime + 3.5, currentTime + 3.5),
+      start: Math.max(0, curTime),
+      end: Math.min(duration || curTime + 3.5, curTime + 3.5),
     };
     setLowerThirds((prev) => [...prev, newLt]);
     setActiveLowerThirdId(newLt.id);
-  }, [currentTime, duration]);
+  }, [duration]);
 
   const handleUpdateLowerThird = useCallback((updated: LowerThirdSpec) => {
     setLowerThirds((prev) => prev.map((lt) => (lt.id === updated.id ? updated : lt)));
@@ -1212,7 +1213,6 @@ export default function SubtitleTool() {
                   >
                     <Timeline
                       duration={duration}
-                      currentTime={currentTime}
                       isPlaying={isPlaying}
                       segments={segments}
                       activeId={activeId}
@@ -1377,7 +1377,6 @@ export default function SubtitleTool() {
                     {mobileTab === 'timeline' && (
                       <Timeline
                         duration={duration}
-                        currentTime={currentTime}
                         isPlaying={isPlaying}
                         segments={segments}
                         activeId={activeId}

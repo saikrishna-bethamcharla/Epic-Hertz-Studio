@@ -13,9 +13,25 @@ import {
 } from 'lucide-react';
 import type { Segment } from '../types';
 import { formatTimecode } from '../utils/formatTime';
+import { usePlayheadTime } from '../store/timeStore';
+
+export const TimelineTimeDisplay = React.memo(function TimelineTimeDisplay({
+  totalDuration,
+}: {
+  totalDuration: number;
+}) {
+  const currentTime = usePlayheadTime();
+  return (
+    <span className="font-mono text-mist text-[11px]">
+      <span className="text-bone font-medium">{formatTimecode(currentTime)}</span>
+      <span className="text-smoke mx-1">/</span>
+      <span>{formatTimecode(totalDuration)}</span>
+    </span>
+  );
+});
 
 export interface TimelineToolbarProps {
-  currentTime: number;
+  currentTime?: number;
   totalDuration: number;
   isPlaying: boolean;
   onTogglePlay: () => void;
@@ -95,11 +111,15 @@ export const TimelineToolbar: React.FC<TimelineToolbarProps> = ({
             )}
           </button>
 
-          <span className="font-mono text-mist text-[11px]">
-            <span className="text-bone font-medium">{formatTimecode(currentTime)}</span>
-            <span className="text-smoke mx-1">/</span>
-            <span>{formatTimecode(totalDuration)}</span>
-          </span>
+          {currentTime !== undefined ? (
+            <span className="font-mono text-mist text-[11px]">
+              <span className="text-bone font-medium">{formatTimecode(currentTime)}</span>
+              <span className="text-smoke mx-1">/</span>
+              <span>{formatTimecode(totalDuration)}</span>
+            </span>
+          ) : (
+            <TimelineTimeDisplay totalDuration={totalDuration} />
+          )}
         </div>
 
         {/* Center: Editing tools (+ Text, Split, Merge, Delete, Snap, Ripple, Undo/Redo, Dictionary) */}
@@ -389,4 +409,4 @@ export const TimelineToolbar: React.FC<TimelineToolbarProps> = ({
   );
 };
 
-export default TimelineToolbar;
+export default React.memo(TimelineToolbar);

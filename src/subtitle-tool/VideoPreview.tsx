@@ -39,6 +39,25 @@ import type {
 } from './types';
 import CaptionCanvas from './CaptionCanvas';
 import { formatTimecode } from './utils/formatTime';
+import React from 'react';
+import { timeStore, usePlayheadTime, usePlayheadId } from './store/timeStore';
+
+const PreviewTimeDisplay = React.memo(function PreviewTimeDisplay({
+  duration,
+}: {
+  duration: number;
+}) {
+  const currentTime = usePlayheadTime();
+  return (
+    <div className="font-mono text-mist text-[11px] px-1">
+      <span className="text-bone font-semibold">
+        {formatTimecode(currentTime, { decimals: true })}
+      </span>
+      <span className="text-smoke mx-1">/</span>
+      <span>{formatTimecode(duration, { decimals: true })}</span>
+    </div>
+  );
+});
 
 export type SafeZonePlatform = 'reels' | 'tiktok' | 'shorts';
 
@@ -100,7 +119,6 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
     ref,
   ) => {
     const videoRef = useRef<HTMLVideoElement>(null);
-    const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
     const [volume, setVolume] = useState(1);
@@ -115,10 +133,17 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
     // Create stable Blob URL for the video file
     const videoURL = useMemo(() => URL.createObjectURL(videoFile), [videoFile]);
 
+    // Sync style.syncOffset into timeStore
+    useEffect(() => {
+      timeStore.setSyncOffset(style.syncOffset || 0);
+    }, [style.syncOffset]);
+
+    // Active segment only recomputes when activeSegId changes!
+    const activeSegId = usePlayheadId();
     const activeSeg = useMemo(() => {
-      const t = currentTime - (style.syncOffset || 0);
-      return segments.find((s) => t >= s.start && t <= s.end + 0.15);
-    }, [segments, currentTime, style.syncOffset]);
+      if (!activeSegId) return null;
+      return segments.find((s) => s.id === activeSegId) ?? null;
+    }, [segments, activeSegId]);
 
     const hasCustomPos =
       activeSeg?.styleOverride?.positionX !== undefined ||
@@ -187,7 +212,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             const maxDur = videoRef.current.duration || duration || time;
             const target = Math.max(0, Math.min(maxDur, time));
             videoRef.current.currentTime = target;
-            setCurrentTime(target);
+            timeStore.setTime(target, true);
           }
         },
         play() {
@@ -212,20 +237,18 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
     const handleTimeUpdate = useCallback(() => {
       if (videoRef.current) {
         const t = videoRef.current.currentTime;
-        setCurrentTime(t);
+        timeStore.setTime(t, true);
         onTimeUpdate(t);
       }
     }, [onTimeUpdate]);
 
-    // Keep the time readout fresh while playing. Captions are drawn by CaptionCanvas on its own
-    // frame loop, so this only needs to run a few times a second.
+    // Synchronize playhead time store on requestAnimationFrame loop.
+    // timeStore throttles time tick listeners to <= 30Hz internally.
     useEffect(() => {
       let rafId: number;
-      let lastPush = 0;
       const tick = (now: number) => {
-        if (videoRef.current && !videoRef.current.paused && now - lastPush > 80) {
-          lastPush = now;
-          setCurrentTime(videoRef.current.currentTime);
+        if (videoRef.current && !videoRef.current.paused) {
+          timeStore.setTime(videoRef.current.currentTime, false, now);
         }
         rafId = requestAnimationFrame(tick);
       };
@@ -268,9 +291,6 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       setPlaybackRate(next);
       if (videoRef.current) videoRef.current.playbackRate = next;
     };
-
-    // Format timestamp
-    const formatTime = (secs: number) => formatTimecode(secs, { decimals: true });
 
     // Aspect ratio container styles
     const aspectContainerClass = useMemo(() => {
@@ -693,9 +713,9 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             type="button"
             onClick={() => {
               if (videoRef.current) {
-                const target = Math.max(0, currentTime - 1.0);
+                const target = Math.max(0, videoRef.current.currentTime - 1.0);
                 videoRef.current.currentTime = target;
-                setCurrentTime(target);
+                timeStore.setTime(target, true);
               }
             }}
             className="p-1 rounded text-smoke hover:text-amber-300 hover:bg-white/10 transition-colors"
@@ -709,9 +729,9 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             type="button"
             onClick={() => {
               if (videoRef.current) {
-                const target = Math.max(0, currentTime - 1 / 30);
+                const target = Math.max(0, videoRef.current.currentTime - 1 / 30);
                 videoRef.current.currentTime = target;
-                setCurrentTime(target);
+                timeStore.setTime(target, true);
               }
             }}
             className="p-1 rounded text-smoke hover:text-amber-300 hover:bg-white/10 transition-colors"
@@ -743,9 +763,9 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             type="button"
             onClick={() => {
               if (videoRef.current) {
-                const target = Math.min(duration, currentTime + 1 / 30);
+                const target = Math.min(duration, videoRef.current.currentTime + 1 / 30);
                 videoRef.current.currentTime = target;
-                setCurrentTime(target);
+                timeStore.setTime(target, true);
               }
             }}
             className="p-1 rounded text-smoke hover:text-amber-300 hover:bg-white/10 transition-colors"
@@ -759,9 +779,9 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             type="button"
             onClick={() => {
               if (videoRef.current) {
-                const target = Math.min(duration, currentTime + 1.0);
+                const target = Math.min(duration, videoRef.current.currentTime + 1.0);
                 videoRef.current.currentTime = target;
-                setCurrentTime(target);
+                timeStore.setTime(target, true);
               }
             }}
             className="p-1 rounded text-smoke hover:text-amber-300 hover:bg-white/10 transition-colors"
@@ -773,11 +793,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           <div className="h-4 w-px bg-white/10 mx-1" />
 
           {/* Time display: 0:01.20 / 0:08.50 */}
-          <div className="font-mono text-mist text-[11px] px-1">
-            <span className="text-bone font-semibold">{formatTime(currentTime)}</span>
-            <span className="text-smoke mx-1">/</span>
-            <span>{formatTime(duration)}</span>
-          </div>
+          <PreviewTimeDisplay duration={duration} />
 
           <div className="h-4 w-px bg-white/10 mx-1" />
 
@@ -843,4 +859,4 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
 );
 
 VideoPreview.displayName = 'VideoPreview';
-export default VideoPreview;
+export default React.memo(VideoPreview);
