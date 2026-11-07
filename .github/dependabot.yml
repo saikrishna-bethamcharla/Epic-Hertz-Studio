@@ -4,3 +4,20 @@ updates:
     directory: '/'
     schedule:
       interval: 'weekly'
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'monthly'
+    open-pull-requests-limit: 3
+    ignore:
+      - dependency-name: 'react'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'react-dom'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'vite'
+        update-types: ['version-update:semver-major']
+    groups:
+      react:
+        patterns: ['react', 'react-dom', '@types/react*']
+      minor-and-patch:
+        update-types: ['minor', 'patch']
