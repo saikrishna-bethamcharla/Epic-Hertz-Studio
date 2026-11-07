@@ -1,12 +1,13 @@
 // ─── usePlayback Hook — Epic Hertz Studio ────────────────────────────────────
-// Manages playhead position, media duration, playback state, and active caption tracking.
+// Manages playback state, active caption tracking, and synchronizes with high-performance timeStore.
+// Playback time is decoupled from React state to eliminate playhead lag and full-tree re-renders.
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { Segment } from '../types';
+import { timeStore, usePlayheadId, usePlaybackStatus } from '../store/timeStore';
 
 export interface UsePlaybackReturn {
   currentTime: number;
-  setCurrentTime: (time: number) => void;
   duration: number;
   setDuration: (duration: number) => void;
   isPlaying: boolean;
@@ -18,41 +19,53 @@ export interface UsePlaybackReturn {
   setActiveId: (id: string | null) => void;
   handleTimeUpdate: (time: number) => void;
   resetPlayback: () => void;
+  getCurrentTime: () => number;
 }
 
 export function usePlayback(segments: Segment[]): UsePlaybackReturn {
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const { isPlaying, duration } = usePlaybackStatus();
+  const playheadId = usePlayheadId();
+  const [manualActiveId, setManualActiveId] = useState<string | null>(null);
 
-  const handleTimeUpdate = useCallback(
-    (time: number) => {
-      setCurrentTime(time);
-      const active = segments.find((s) => time >= s.start && time <= s.end);
-      setActiveId(active?.id ?? null);
-    },
-    [segments],
-  );
+  // Sync segments into timeStore so it can compute playhead transitions
+  useEffect(() => {
+    timeStore.setSegments(segments);
+  }, [segments]);
 
-  const resetPlayback = useCallback(() => {
-    setCurrentTime(0);
-    setDuration(0);
-    setIsPlaying(false);
-    setActiveId(null);
+  const setDuration = useCallback((d: number) => {
+    timeStore.setDuration(d);
   }, []);
 
+  const setIsPlaying = useCallback((p: boolean) => {
+    timeStore.setIsPlaying(p);
+  }, []);
+
+  const handleTimeUpdate = useCallback((time: number) => {
+    timeStore.setTime(time, false);
+  }, []);
+
+  const resetPlayback = useCallback(() => {
+    timeStore.reset();
+    setManualActiveId(null);
+  }, []);
+
+  const setActiveId = useCallback((id: string | null) => {
+    setManualActiveId(id);
+  }, []);
+
+  const activeId = manualActiveId ?? playheadId;
+
   return {
-    currentTime,
-    setCurrentTime,
+    currentTime: timeStore.getTime(),
     duration,
     setDuration,
     isPlaying,
     setIsPlaying,
-    playheadId: activeId,
+    playheadId,
     activeId,
     setActiveId,
     handleTimeUpdate,
     resetPlayback,
+    getCurrentTime: timeStore.getTime,
   };
 }

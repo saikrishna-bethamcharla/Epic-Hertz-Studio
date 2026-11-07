@@ -7,7 +7,7 @@
 // - Readability and timing diagnostics (CPS, WPM, duration, overlap warnings)
 // - Playhead active sync, seek on click, plus add/split/delete actions
 
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronDown,
@@ -47,7 +47,7 @@ interface CaptionEditorProps {
   onSelectSegment?: (id: string) => void;
 }
 
-export default function CaptionEditor({
+function CaptionEditor({
   segments,
   activeId,
   selectedId,
@@ -913,3 +913,5 @@ export default function CaptionEditor({
     </div>
   );
 }
+
+export default React.memo(CaptionEditor);
