@@ -131,6 +131,9 @@ Epic Hertz Studio runs 100% in-browser without server-side video rendering.
 | **Mozilla Firefox** | Real-Time Canvas Capture Fallback | In-Memory (`BufferTarget`) | Native Web Audio API |
 | **Chrome / Android** | WebCodecs Hardware Accel (`mediabunny`) | In-Memory (`BufferTarget`) | Native Web Audio API |
 
+### 📏 In-Browser Decoding Boundaries (250MB Limit)
+- **Direct in-browser video limit:** 250MB. Because video decoding and audio extraction occur entirely in the browser using the Web Audio API without uploading your raw video to any server, files are capped at 250MB to avoid browser tab memory exhaustion (OOM). For larger videos, extract the audio track first or compress the video before importing.
+
 ---
 
 ## 🔑 Bring Your Own Key (BYOK)

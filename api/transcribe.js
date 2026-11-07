@@ -30,13 +30,18 @@ const LIMIT_PER_DAY = Number(process.env.RATE_LIMIT_PER_DAY) || 60;
 const GLOBAL_DAILY_LIMIT = Number(process.env.GLOBAL_DAILY_LIMIT) || 0;
 const DEADLINE_MS = 52_000; // leave headroom under maxDuration (60s)
 
-if (process.env.NODE_ENV === 'production' && (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN)) {
-  console.warn('[transcribe] UPSTASH_REDIS_REST_* is not configured; using memory fallback (limits apply per serverless instance).');
+if (
+  process.env.NODE_ENV === 'production' &&
+  (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN)
+) {
+  console.warn(
+    '[transcribe] UPSTASH_REDIS_REST_* is not configured; using memory fallback (limits apply per serverless instance).',
+  );
 }
 
 const ALLOWED_ORIGINS = (
   process.env.ALLOWED_ORIGINS ||
-  'https://epic-hertz-studio.vercel.app,https://saikrishna-bethamcharla.github.io,http://localhost:5173'
+  'https://epic-hertz-studio.vercel.app,https://saikrishna-bethamcharla.github.io,http://localhost:5173,http://localhost:4173,http://127.0.0.1:5173,http://127.0.0.1:4173'
 )
   .split(',')
   .map((s) => s.trim())
@@ -44,16 +49,15 @@ const ALLOWED_ORIGINS = (
 
 // Current production Gemini models supporting audio input & structured output.
 const DEFAULT_MODELS = [
-  'gemini-3.5-flash',
-  'gemini-3.5-flash-lite',
-  'gemini-3.8-flash',
-  'gemini-3.6-flash',
-  'gemini-3.1-flash-lite',
   'gemini-2.5-flash',
   'gemini-2.5-flash-lite',
+  'gemini-2.0-flash',
+  'gemini-1.5-flash',
 ];
 const CANDIDATE_MODELS = process.env.GEMINI_MODELS
-  ? process.env.GEMINI_MODELS.split(',').map((s) => s.trim()).filter(Boolean)
+  ? process.env.GEMINI_MODELS.split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
   : DEFAULT_MODELS;
 
 const LANGUAGE_LABELS = {
@@ -106,7 +110,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 function clientIp(req) {
   const real = req.headers['x-real-ip'];
   if (real) return String(real).trim();
-  const fwd = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+  const fwd = String(req.headers['x-forwarded-for'] || '')
+    .split(',')[0]
+    .trim();
   return fwd || req.socket?.remoteAddress || 'unknown';
 }
 
@@ -228,7 +234,10 @@ async function readBody(req) {
 }
 
 async function getAudio(req) {
-  const contentType = String(req.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
+  const contentType = String(req.headers['content-type'] || '')
+    .split(';')[0]
+    .trim()
+    .toLowerCase();
   const raw = await readBody(req);
 
   // Legacy JSON shape: { audio: <base64>, mimeType?: string }
@@ -251,7 +260,8 @@ async function getAudio(req) {
   // Raw binary (default). Missing / generic content-type is treated as WAV.
   const generic = !contentType || contentType === 'application/octet-stream';
   const mimeType = generic ? 'audio/wav' : MIME_MAP[contentType];
-  if (!mimeType) throw new HttpError(415, 'Unsupported audio format. Use WAV, MP3, OGG, AAC or FLAC.');
+  if (!mimeType)
+    throw new HttpError(415, 'Unsupported audio format. Use WAV, MP3, OGG, AAC or FLAC.');
   return { buffer: raw, mimeType };
 }
 
@@ -395,7 +405,11 @@ export default async function handler(req, res) {
   const apiKey = userKey || process.env.GEMINI_API_KEY;
 
   if (!apiKey || apiKey === 'your_gemini_api_key_here') {
-    res.status(503).json({ error: 'Transcription service is temporarily unavailable. Please try again shortly.' });
+    res
+      .status(503)
+      .json({
+        error: 'Transcription service is temporarily unavailable. Please try again shortly.',
+      });
     return;
   }
 
@@ -430,7 +444,12 @@ export default async function handler(req, res) {
     const client = new GoogleGenAI({ apiKey });
     const prompt = buildPrompt(langName, isRomanized, isAutoDetect);
 
-    const { text, lastError, timedOut, model: successfulModel } = await transcribeWithFallback(
+    const {
+      text,
+      lastError,
+      timedOut,
+      model: successfulModel,
+    } = await transcribeWithFallback(
       client,
       { base64: buffer.toString('base64'), mimeType, prompt },
       startedAt + DEADLINE_MS,
@@ -455,7 +474,10 @@ export default async function handler(req, res) {
     const segments = parseSegmentsFromResponse(text);
     if (segments.length === 0) {
       console.warn('No parseable segments. Response length:', text.length);
-      throw new HttpError(422, 'No speech detected in audio. Please try a video with clear spoken dialogue.');
+      throw new HttpError(
+        422,
+        'No speech detected in audio. Please try a video with clear spoken dialogue.',
+      );
     }
 
     res.status(200).json({ segments, model: successfulModel });

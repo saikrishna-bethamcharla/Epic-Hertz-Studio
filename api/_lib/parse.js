@@ -100,7 +100,11 @@ function tryJson(text) {
 function fromSrt(text) {
   const out = [];
   for (const block of text.split(/\n\s*\n/)) {
-    const lines = block.trim().split('\n').map((l) => l.trim()).filter(Boolean);
+    const lines = block
+      .trim()
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
     const timeIdx = lines.findIndex((l) => l.includes('-->'));
     if (timeIdx === -1) continue;
     const [startStr, endStr] = lines[timeIdx].split('-->').map((s) => s.trim());

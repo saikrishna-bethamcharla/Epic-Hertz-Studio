@@ -18,7 +18,6 @@ import {
   Combine,
   AlertTriangle,
   Wand2,
-  Smile,
   Sliders,
   Mic,
   MapPin,
@@ -61,7 +60,6 @@ export default function CaptionEditor({
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedWordIds, setExpandedWordIds] = useState<Set<string>>(new Set());
   const [styleOverrideSegIds, setStyleOverrideSegIds] = useState<Set<string>>(new Set());
-  const [emojiPickerSegId, setEmojiPickerSegId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const lastClickedIdRef = useRef<string | null>(null);
 
@@ -209,26 +207,6 @@ export default function CaptionEditor({
     const curr = currentWords[wordIdx]?.highlightColor || '';
     const next = colors[(colors.indexOf(curr) + 1) % colors.length];
     updateWord(seg, wordIdx, { highlightColor: next || undefined });
-  };
-
-  const insertEmoji = (segId: string, emoji: string) => {
-    const seg = segments.find((s) => s.id === segId);
-    if (!seg) return;
-    const textarea = document.querySelector<HTMLTextAreaElement>(`#caption-${segId} textarea`);
-    let newText: string;
-    if (textarea && textarea.selectionStart !== null) {
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      newText =
-        seg.text.slice(0, start) +
-        emoji +
-        (start < seg.text.length && seg.text[start] !== ' ' ? ' ' : '') +
-        seg.text.slice(end);
-    } else {
-      newText = `${seg.text} ${emoji}`;
-    }
-    updateSegment(segId, { text: newText });
-    setEmojiPickerSegId(null);
   };
 
   const updateSegmentStyleOverride = (
@@ -747,30 +725,20 @@ export default function CaptionEditor({
                       aria-label={`Caption ${seg.index} text (${formatTimecode(seg.start)})`}
                       className="w-full resize-none bg-transparent text-bone text-sm leading-relaxed outline-none focus:outline-none rounded hover:bg-white/5 focus:bg-white/5 focus:ring-1 focus:ring-amber-400/30 p-1 transition-colors cursor-text"
                       placeholder="Caption text…"
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectSegment?.(seg.id);
+                        onSeek(seg.start);
+                      }}
+                      onFocus={() => {
+                        onSelectSegment?.(seg.id);
+                        onSeek(seg.start);
+                      }}
                     />
                   </div>
 
-                  {/* Actions & Toggles: Emoji, Style Override, Words, Add, Delete */}
+                  {/* Actions & Toggles: Style Override, Words, Add, Delete */}
                   <div className="flex items-center gap-1 shrink-0 text-smoke opacity-70 group-hover:opacity-100 transition-opacity">
-                    {/* Emoji Picker Trigger */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEmojiPickerSegId((prev) => (prev === seg.id ? null : seg.id));
-                      }}
-                      aria-label={`Insert emoji into caption ${seg.index}`}
-                      className={`p-1 rounded hover:bg-white/10 transition-colors ${
-                        emojiPickerSegId === seg.id
-                          ? 'text-amber-400 bg-white/10'
-                          : 'text-smoke hover:text-bone'
-                      }`}
-                      title="Insert emoji"
-                    >
-                      <Smile className="w-3.5 h-3.5" />
-                    </button>
-
                     {/* Style Override Drawer Trigger */}
                     <button
                       type="button"
@@ -866,13 +834,10 @@ export default function CaptionEditor({
                   </div>
                 </div>
 
-                {/* ── Per-Caption Style & Reaction Overrides Drawer ────────────────── */}
+                {/* ── Per-Caption Style Overrides Drawer ────────────────── */}
                 <SegmentStyleDrawer
                   segment={seg}
                   isOpen={styleOverrideSegIds.has(seg.id)}
-                  isEmojiOpen={emojiPickerSegId === seg.id}
-                  onCloseEmoji={() => setEmojiPickerSegId(null)}
-                  onInsertEmoji={(emoji) => insertEmoji(seg.id, emoji)}
                   onUpdateOverride={updateSegmentStyleOverride}
                   onUpdateSpeaker={(segId, speaker) => updateSegment(segId, { speaker })}
                 />

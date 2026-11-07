@@ -33,6 +33,7 @@ export const InspectorEffectsSection: React.FC<InspectorEffectsSectionProps> = (
           <div className="flex items-center gap-2">
             <input
               type="range"
+              aria-label="Outline width"
               min={0}
               max={0.25}
               step={0.01}
@@ -95,6 +96,7 @@ export const InspectorEffectsSection: React.FC<InspectorEffectsSectionProps> = (
           <div className="flex items-center gap-2">
             <input
               type="range"
+              aria-label="Glow strength"
               min={0}
               max={2}
               step={0.1}
@@ -120,6 +122,7 @@ export const InspectorEffectsSection: React.FC<InspectorEffectsSectionProps> = (
           <div className="flex items-center gap-2">
             <input
               type="range"
+              aria-label="3D extrusion depth"
               min={0}
               max={0.25}
               step={0.01}

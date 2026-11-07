@@ -7,6 +7,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   build: {
     target: 'es2020',
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -20,5 +21,6 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
+    exclude: ['**/node_modules/**', '**/dist/**', '**/e2e/**'],
   },
 });

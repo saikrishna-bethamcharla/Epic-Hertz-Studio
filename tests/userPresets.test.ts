@@ -58,4 +58,18 @@ describe('userPresets: JSON import & export', () => {
     expect(res.importedCount).toBe(0);
     expect(res.errors.length).toBeGreaterThan(0);
   });
+
+  it('rejects oversized JSON payloads exceeding 2MB', () => {
+    const hugePayload = ' '.repeat(2_000_001);
+    const res = importUserPresetsFromJson(hugePayload);
+    expect(res.importedCount).toBe(0);
+    expect(res.errors[0]).toMatch(/exceeds 2MB limit/i);
+  });
+
+  it('filters out prototype-pollution attempts safely', () => {
+    const malicious = `{"presets":[{"id":"hack-1","name":"Exploit","style":${JSON.stringify(DEFAULT_STYLE)},"__proto__":{"isAdmin":true}}]}`;
+    const res = importUserPresetsFromJson(malicious);
+    expect((Object.prototype as Record<string, unknown>).isAdmin).toBeUndefined();
+    expect(res.importedCount).toBe(1);
+  });
 });

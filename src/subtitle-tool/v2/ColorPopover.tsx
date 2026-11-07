@@ -114,7 +114,7 @@ export default function ColorPopover({ value, onChange, onClose }: ColorPopoverP
         if (res?.sRGBHex) {
           handleSolidChange(res.sRGBHex);
         }
-      } catch (e) {
+      } catch {
         // user cancelled
       }
     }

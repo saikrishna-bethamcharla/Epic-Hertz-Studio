@@ -214,6 +214,7 @@ export function useProjectAutosave({
     setAspectRatio,
     setProjectName,
     setStage,
+    setLowerThirds,
   ]);
 
   // Load Specific Project from ProjectManagerModal
@@ -260,6 +261,7 @@ export function useProjectAutosave({
       setAspectRatio,
       setProjectName,
       setStage,
+      setLowerThirds,
     ],
   );
 

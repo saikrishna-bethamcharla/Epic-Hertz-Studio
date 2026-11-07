@@ -8,7 +8,7 @@
 import { useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Sparkles,
+  Play,
   CheckCircle2,
   Upload,
   RotateCcw,
@@ -80,7 +80,9 @@ export default function SubtitleTool() {
   const [hideCaptions, setHideCaptions] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const isDesktop = useDesktop();
-  const [mobileTab, setMobileTab] = useState<'captions' | 'styles' | 'timeline'>('captions');
+  const [mobileTab, setMobileTab] = useState<'captions' | 'styles' | 'inspector' | 'timeline'>(
+    'captions',
+  );
   const [style, setStyle] = useState<CaptionStyle>(() => structuredClone(DEFAULT_STYLE));
   const [layout, setLayout] = useState<WorkspaceLayout>(() => getStoredLayout());
   const [scope, setScope] = useState<'all' | 'caption' | 'words'>('all');
@@ -602,6 +604,12 @@ export default function SubtitleTool() {
 
   // ── 1. File Selected → Go to 'configuring' modal ─────────────────────────
   const handleFileDrop = useCallback((file: File) => {
+    if (file.size > 250 * 1024 * 1024) {
+      setError(
+        `File size (${(file.size / (1024 * 1024)).toFixed(0)}MB) exceeds direct browser decoding limits (250MB). Please compress the video or upload an audio-only file.`,
+      );
+      return;
+    }
     setVideoFile(file);
     setProjectName(file.name.replace(/\.[^/.]+$/, ''));
     setError(null);
@@ -850,7 +858,7 @@ export default function SubtitleTool() {
                   onClick={handleTryDemo}
                   className="px-3.5 py-1.5 text-xs text-zinc-300 hover:text-white hover:bg-white/5 rounded-lg border border-white/10 transition-colors cursor-pointer flex items-center gap-1.5"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <Play className="w-3 h-3 text-amber-400 fill-amber-400" />
                   <span>Try Demo</span>
                 </button>
                 <label className="px-4 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-black font-semibold text-xs tracking-wide shadow-sm active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer">
@@ -1240,6 +1248,8 @@ export default function SubtitleTool() {
                       style={style}
                       onStyleChange={setStyle}
                       onSegmentOverrideChange={handleSegmentOverride}
+                      lowerThirds={lowerThirds}
+                      photoCache={photoCache}
                       aspectRatio={aspectRatio}
                       onAspectRatioChange={setAspectRatio}
                       onTimeUpdate={onTimeUpdate}
@@ -1253,15 +1263,18 @@ export default function SubtitleTool() {
                   <div
                     role="tablist"
                     aria-label="Editor panels"
-                    className="shrink-0 grid grid-cols-3 border-y border-white/10 bg-[#141413]"
+                    className="shrink-0 grid grid-cols-4 border-y border-white/10 bg-[#141413]"
                   >
-                    {(['captions', 'styles', 'timeline'] as const).map((tab) => (
+                    {(['captions', 'styles', 'inspector', 'timeline'] as const).map((tab) => (
                       <button
                         key={tab}
                         role="tab"
                         aria-selected={mobileTab === tab}
-                        onClick={() => setMobileTab(tab)}
-                        className={`py-2.5 text-xs font-semibold tracking-wide capitalize border-b-2 transition-colors ${
+                        onClick={() => {
+                          setMobileTab(tab);
+                          if (tab === 'styles') setLeftTab('styles');
+                        }}
+                        className={`py-2 text-[11px] font-semibold tracking-wide capitalize border-b-2 transition-colors ${
                           mobileTab === tab
                             ? 'text-amber-300 border-amber-400 bg-white/5'
                             : 'text-mist border-transparent hover:text-bone'
@@ -1291,8 +1304,8 @@ export default function SubtitleTool() {
                     )}
                     {mobileTab === 'styles' && (
                       <LibraryPanel
-                        leftTab="styles"
-                        onTabChange={() => {}}
+                        leftTab={leftTab === 'captions' ? 'styles' : leftTab}
+                        onTabChange={setLeftTab}
                         segments={segments}
                         activeId={activeId}
                         selectedId={selectedId}
@@ -1305,6 +1318,7 @@ export default function SubtitleTool() {
                         onSeek={(t) => videoRef.current?.seekTo(t)}
                         style={style}
                         onStyleChange={setStyle}
+                        onSegmentOverrideChange={handleSegmentOverride}
                         spokenLanguage={spokenLanguage}
                         scriptOutput={scriptOutput}
                         scope={scope}
@@ -1312,6 +1326,53 @@ export default function SubtitleTool() {
                         onClearAllOverrides={handleClearAllOverrides}
                         onNotification={(msg) => showToast(msg)}
                       />
+                    )}
+                    {mobileTab === 'inspector' && (
+                      <div className="h-full overflow-y-auto">
+                        <InspectorPanel
+                          scope={scope}
+                          onScopeChange={setScope}
+                          style={style}
+                          onStyleChange={setStyle}
+                          activeSegment={
+                            segments.find((s) => s.id === (selectedId ?? activeId)) || null
+                          }
+                          onUpdateActiveSegment={(override) => {
+                            const targetId = selectedId ?? activeId;
+                            if (!targetId) return;
+                            const updated = segments.map((s) =>
+                              s.id === targetId ? { ...s, ...override } : s,
+                            );
+                            updateSegments(updated);
+                          }}
+                          onSegmentOverrideChange={handleSegmentOverride}
+                          onClearAllOverrides={handleClearAllOverrides}
+                          selectedWordIndices={selectedWordIndices}
+                          onSelectWordIndex={(idx) => {
+                            setSelectedWordIndices([idx]);
+                            setScope('words');
+                          }}
+                          totalSegmentsCount={segments.length}
+                          onPlayPreview={() => {
+                            const active = segments.find((s) => s.id === (selectedId ?? activeId));
+                            if (active) {
+                              videoRef.current?.seekTo(active.start);
+                              videoRef.current?.play();
+                            }
+                          }}
+                          onGoToBrand={() => setMobileTab('styles')}
+                          onAutoAlignTimings={videoFile ? handleAutoAlignTimings : undefined}
+                          lowerThirds={lowerThirds}
+                          activeLowerThirdId={activeLowerThirdId}
+                          onSelectLowerThird={setActiveLowerThirdId}
+                          onUpdateLowerThird={handleUpdateLowerThird}
+                          onDeleteLowerThird={handleDeleteLowerThird}
+                          onAddLowerThird={handleAddLowerThird}
+                          photoCache={photoCache}
+                          onPhotoUploaded={handlePhotoUploaded}
+                          onPhotoRemoved={handlePhotoRemoved}
+                        />
+                      </div>
                     )}
                     {mobileTab === 'timeline' && (
                       <Timeline

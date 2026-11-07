@@ -132,16 +132,36 @@ function InspectorPanel({
           positionY: nextEffective.layout.y,
         });
       } else if (scope === 'words') {
-        if (activeSegment && onSegmentOverrideChange) {
+        if (activeSegment && activeSegment.words && selectedWordIndices.length > 0) {
           const currentEffective = getEffectiveCaptionStyle(style, activeSegment.styleOverride);
           const nextEffective = updater(currentEffective);
-          onSegmentOverrideChange(activeSegment.id, {
-            customStyle: nextEffective,
+          const newHighlight =
+            nextEffective.highlight?.color ||
+            (typeof nextEffective.fill === 'string'
+              ? nextEffective.fill
+              : nextEffective.fill?.stops?.[0]?.[1]);
+          const updatedWords = activeSegment.words.map((w, idx) => {
+            if (selectedWordIndices.includes(idx)) {
+              return {
+                ...w,
+                highlightColor: newHighlight || w.highlightColor,
+              };
+            }
+            return w;
           });
+          onUpdateActiveSegment({ words: updatedWords });
         }
       }
     },
-    [scope, activeSegment, onStyleChange, onSegmentOverrideChange, style],
+    [
+      scope,
+      activeSegment,
+      onStyleChange,
+      onSegmentOverrideChange,
+      onUpdateActiveSegment,
+      selectedWordIndices,
+      style,
+    ],
   );
 
   // Active Word if selected

@@ -2,7 +2,7 @@
 // Dedicated editor sub-component for sub-second word timing precision, color, and emphasis.
 
 import { motion } from 'framer-motion';
-import { Wand2, Play } from 'lucide-react';
+import { Wand2, Play, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Segment, WordTimestamp } from '../types';
 
 export interface SegmentWordEditorProps {
@@ -127,7 +127,7 @@ export function SegmentWordEditor({
                   className="px-1 text-[9px] text-smoke hover:text-bone hover:bg-white/10 rounded cursor-pointer"
                   title="Nudge start earlier (-0.05s)"
                 >
-                  ◀
+                  <ChevronLeft className="w-2.5 h-2.5" />
                 </button>
                 <button
                   type="button"
@@ -135,7 +135,7 @@ export function SegmentWordEditor({
                   className="px-1 text-[9px] text-smoke hover:text-bone hover:bg-white/10 rounded cursor-pointer"
                   title="Nudge start later (+0.05s)"
                 >
-                  ▶
+                  <ChevronRight className="w-2.5 h-2.5" />
                 </button>
               </div>
             </div>

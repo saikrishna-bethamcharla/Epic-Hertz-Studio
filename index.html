@@ -2,12 +2,6 @@
 <html lang="en" style="background-color: #0e0e0d; color: #f4f1ec;">
   <head>
     <meta charset="UTF-8" />
-    <script>
-      if ('scrollRestoration' in history) {
-        history.scrollRestoration = 'manual';
-      }
-      window.scrollTo(0, 0);
-    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Epic Hertz Studio | AI Auto-Captions for Telugu, Hindi &amp; Tamil Reels</title>
     <meta name="description" content="AI caption studio for Reels, Shorts and TikTok. Auto-generate Tanglish, Hinglish or native-script subtitles with viral styles, word-level sync and MP4/SRT export." />
@@ -59,27 +53,6 @@
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <script>
-      (function () {
-        function reloadOnce(key) {
-          try {
-            if (sessionStorage.getItem(key)) return;
-            sessionStorage.setItem(key, '1');
-          } catch (e) { return; }
-          window.location.reload();
-        }
-        window.addEventListener('vite:preloadError', function (e) {
-          e.preventDefault();
-          reloadOnce('chunk_reload_preload');
-        });
-        window.addEventListener('error', function (e) {
-          var url = e.target && (e.target.src || e.target.href);
-          if (url && url.indexOf('/assets/index-') !== -1 && e.target.tagName === 'SCRIPT') {
-            reloadOnce('chunk_reload_' + url);
-          }
-        }, true);
-      })();
-    </script>
   </head>
   <body style="background-color: #0e0e0d; color: #f4f1ec; margin: 0; min-height: 100vh;">
     <div id="root"></div>

@@ -84,7 +84,7 @@ export default function CaptionCanvas({
   useEffect(() => {
     void ensureFonts(style, allText);
     void ensureLowerThirdFonts(lowerThirds);
-  }, [style.font.family, style.font.weight, style.font.italic, allText, style]);
+  }, [style.font.family, style.font.weight, style.font.italic, allText, style, lowerThirds]);
 
   // ── Track the displayed video rectangle (object-contain inside the frame)
   useEffect(() => {

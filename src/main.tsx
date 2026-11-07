@@ -1,3 +1,4 @@
+import './chunkReload';
 import { Component, type ErrorInfo, type ReactNode, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { MotionConfig } from 'framer-motion';
@@ -30,11 +31,11 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Epic Hertz Studio ErrorBoundary caught:', error, errorInfo);
   }
 
-  render() {
+  override render() {
     if (this.state.hasError) {
       return (
         <div

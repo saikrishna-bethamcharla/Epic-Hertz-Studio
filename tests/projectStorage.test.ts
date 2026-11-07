@@ -253,7 +253,7 @@ describe('projectStorage: Migration from DB v1 to v2', () => {
   });
 
   it('normalizes legacy or malformed style objects to full CaptionStyle on load', async () => {
-    const rawProj: any = {
+    const rawProj: Record<string, unknown> = {
       id: 'legacy-style-proj',
       name: 'Legacy Style',
       videoName: 'test.mp4',

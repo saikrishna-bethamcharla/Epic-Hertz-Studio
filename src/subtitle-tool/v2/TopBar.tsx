@@ -106,20 +106,20 @@ export default function TopBar({
             className="flex items-center gap-2 shrink-0 text-left hover:opacity-90 transition-opacity cursor-pointer group"
             title="Epic Hertz Studio — Back to Home"
           >
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-black shadow-sm font-black text-xs group-hover:scale-105 transition-transform">
+            <div className="w-6 h-6 rounded bg-amber-400 flex items-center justify-center text-black font-bold text-[11px] shrink-0">
               EH
             </div>
-            <span className="text-xs font-bold text-bone tracking-tight hidden sm:inline">
-              Epic Hertz <span className="text-amber-400 font-medium">Studio</span>
+            <span className="text-xs font-semibold text-bone tracking-tight hidden sm:inline">
+              Epic Hertz <span className="text-amber-400 font-normal">Studio</span>
             </span>
           </button>
         ) : (
           <div className="flex items-center gap-2 shrink-0">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-black shadow-sm font-black text-xs">
+            <div className="w-6 h-6 rounded bg-amber-400 flex items-center justify-center text-black font-bold text-[11px] shrink-0">
               EH
             </div>
-            <span className="text-xs font-bold text-bone tracking-tight hidden sm:inline">
-              Epic Hertz <span className="text-amber-400 font-medium">Studio</span>
+            <span className="text-xs font-semibold text-bone tracking-tight hidden sm:inline">
+              Epic Hertz <span className="text-amber-400 font-normal">Studio</span>
             </span>
           </div>
         )}

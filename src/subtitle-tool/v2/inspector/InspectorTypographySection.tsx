@@ -60,6 +60,7 @@ export const InspectorTypographySection: React.FC<InspectorTypographySectionProp
             Caption Text
           </label>
           <textarea
+            aria-label="Active caption text"
             value={activeSegment.text}
             onChange={(e) => onUpdateActiveSegment({ text: e.target.value })}
             rows={2}
@@ -128,6 +129,7 @@ export const InspectorTypographySection: React.FC<InspectorTypographySectionProp
         <div className="flex items-center gap-1 bg-[#181817] p-0.5 rounded-lg border border-white/5 w-fit">
           <button
             type="button"
+            aria-label="Bold"
             onClick={() => {
               const newWeight = effectiveWeight >= 800 ? 600 : 900;
               onApplyStyleChange((s) => ({
@@ -142,6 +144,7 @@ export const InspectorTypographySection: React.FC<InspectorTypographySectionProp
           </button>
           <button
             type="button"
+            aria-label="Underline"
             onClick={() => {
               const nextUnderline = !effectiveStyle.font.underline;
               onApplyStyleChange((s) => ({
@@ -156,6 +159,7 @@ export const InspectorTypographySection: React.FC<InspectorTypographySectionProp
           </button>
           <button
             type="button"
+            aria-label="Italic"
             onClick={() => {
               const nextItalic = !effectiveStyle.font.italic;
               onApplyStyleChange((s) => ({
@@ -177,6 +181,7 @@ export const InspectorTypographySection: React.FC<InspectorTypographySectionProp
         <div className="flex items-center gap-2">
           <input
             type="range"
+            aria-label="Font size"
             min={3}
             max={20}
             step={0.1}
@@ -265,6 +270,7 @@ export const InspectorTypographySection: React.FC<InspectorTypographySectionProp
         <div className="flex items-center gap-2">
           <input
             type="range"
+            aria-label="Tracking"
             min={-0.05}
             max={0.15}
             step={0.005}
@@ -292,6 +298,8 @@ export const InspectorTypographySection: React.FC<InspectorTypographySectionProp
             <button
               key={al}
               type="button"
+              aria-label={`Align ${al}`}
+              title={`Align ${al}`}
               onClick={() => {
                 onApplyStyleChange((s) => ({
                   ...s,

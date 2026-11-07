@@ -259,7 +259,7 @@ export default function PrepareMediaModal({
               </div>
             </div>
             <p className="text-[11px] text-smoke mt-1.5">
-              Epic Hertz AI auto-adapts cadence and dialogue boundaries.
+              Speech recognition automatically detects speech cadence and dialogue boundaries.
             </p>
           </div>
 

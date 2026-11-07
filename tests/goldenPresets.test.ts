@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { renderCaptions, findSegment } from '../src/subtitle-tool/engine/render';
+import { renderCaptions } from '../src/subtitle-tool/engine/render';
 import { PRESETS } from '../src/subtitle-tool/engine/presets';
-import type { Segment, CaptionStyle } from '../src/subtitle-tool/types';
+import type { Segment } from '../src/subtitle-tool/types';
 
 describe('Phase A: Golden Snapshot Tests for Existing Presets', () => {
   function createRecorderCanvasContext() {
-    const log: Array<{ op: string; args: any[] }> = [];
+    const log: Array<{ op: string; args: unknown[] }> = [];
     return {
       log,
       save: () => log.push({ op: 'save', args: [] }),
@@ -61,7 +61,7 @@ describe('Phase A: Golden Snapshot Tests for Existing Presets', () => {
       textBaseline: 'alphabetic',
       globalAlpha: 1,
       globalCompositeOperation: 'source-over',
-    } as unknown as CanvasRenderingContext2D & { log: Array<{ op: string; args: any[] }> };
+    } as unknown as CanvasRenderingContext2D & { log: Array<{ op: string; args: unknown[] }> };
   }
 
   const sampleSegments: Segment[] = [

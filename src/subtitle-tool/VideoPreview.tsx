@@ -23,7 +23,6 @@ import {
   Bookmark,
   ThumbsUp,
   ThumbsDown,
-  Sparkles,
   PanelLeftClose,
   PanelLeftOpen,
   PanelRightClose,
@@ -539,7 +538,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
                   </div>
                   <div className="flex flex-col items-center">
                     <div className="w-8 h-8 rounded-full bg-black/40 border border-white/20 flex items-center justify-center">
-                      <Sparkles className="w-4 h-4 text-white/90" />
+                      <Disc3 className="w-4 h-4 text-white/90" />
                     </div>
                     <span className="text-[9px] font-mono mt-0.5">Remix</span>
                   </div>

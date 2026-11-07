@@ -71,14 +71,27 @@ export function toVTTTime(seconds: number): string {
 }
 
 /**
- * Parses "HH:MM:SS,mmm" or "HH:MM:SS.mmm" → seconds
+ * Parses "HH:MM:SS,mmm", "HH:MM:SS.mmm", "MM:SS.mmm", or "SS.mmm" → seconds
  */
 export function parseTimestamp(ts: string): number {
-  const cleaned = ts.replace(',', '.');
+  if (typeof ts !== 'string') return 0;
+  const cleaned = ts.trim().replace(',', '.');
   const [hms, fracStr = '0'] = cleaned.split('.');
+  if (!hms) return 0;
   const parts = hms.split(':').map(Number);
-  const [h = 0, m = 0, s = 0] = parts;
-  return h * 3600 + m * 60 + s + Number(fracStr) / 1000;
+  if (parts.some((p) => !Number.isFinite(p))) return 0;
+
+  let seconds = 0;
+  if (parts.length === 3) {
+    seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+  } else if (parts.length === 2) {
+    seconds = parts[0] * 60 + parts[1];
+  } else if (parts.length === 1) {
+    seconds = parts[0];
+  }
+  const frac = Number(fracStr) / 1000;
+  const total = seconds + (Number.isFinite(frac) ? frac : 0);
+  return Number.isFinite(total) && total >= 0 ? total : 0;
 }
 
 // ── SRT export ───────────────────────────────────────────────────────────────

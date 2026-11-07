@@ -2,7 +2,7 @@
 // Pro export dialog: Fast WebCodecs burn-in with real-time canvas fallback, SRT, VTT, TXT.
 // Supports direct-to-disk streaming in Chromium via File System Access API.
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle } from 'lucide-react';
 import { useModalA11y } from './hooks/useModalA11y';
@@ -82,6 +82,18 @@ export default function ExportModal({
     };
     v.onerror = () => URL.revokeObjectURL(v.src);
   }, [videoFile]);
+
+  // Browser engine capability detection
+  const canExportVideo = useMemo(() => {
+    if (typeof window === 'undefined') return true;
+    const hasWebCodecs = typeof VideoEncoder !== 'undefined' && typeof VideoDecoder !== 'undefined';
+    const canvas = document.createElement('canvas');
+    const hasCaptureStream =
+      typeof (canvas as unknown as { captureStream?: () => MediaStream }).captureStream ===
+      'function';
+    const hasMediaRecorder = typeof MediaRecorder !== 'undefined';
+    return hasWebCodecs || (hasCaptureStream && hasMediaRecorder);
+  }, []);
 
   if (!isOpen) return null;
 
@@ -252,7 +264,7 @@ export default function ExportModal({
               Export Captioned Video
             </h2>
             <p className="text-xs text-smoke mt-0.5">
-              Hardware-accelerated rendering with full animation fidelity
+              Hardware-accelerated MP4 export with 60fps animation fidelity
             </p>
           </div>
           <button
@@ -313,8 +325,8 @@ export default function ExportModal({
                 </span>
               </div>
               <p className="text-[11px] text-smoke mt-1 leading-relaxed">
-                Burns your styled, animated captions into the video exactly as shown in the preview.
-                Frame-by-frame hardware acceleration carries original sound and frame rate.
+                Burns styled, animated captions into the video file matching your preview, keeping
+                the original audio track and frame rate intact.
               </p>
             </div>
           </label>
@@ -405,6 +417,20 @@ export default function ExportModal({
               ))}
             </div>
           </div>
+
+          {!canExportVideo && exportType === 'hardsub' && (
+            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs space-y-1">
+              <p className="font-semibold flex items-center gap-1.5">
+                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>Video Export Unsupported in Safari / WebKit</span>
+              </p>
+              <p className="text-amber-300/80 leading-relaxed">
+                Your browser lacks client-side video encoding support (WebCodecs and
+                Canvas.captureStream). You can still export SRT, VTT, or TXT subtitles, or open Epic
+                Hertz Studio in Chrome or Firefox for full MP4 video export.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* CTA Buttons */}
@@ -418,9 +444,9 @@ export default function ExportModal({
           </button>
           <button
             type="button"
-            disabled={processing}
+            disabled={processing || (!canExportVideo && exportType === 'hardsub')}
             onClick={handleExport}
-            className="px-6 py-2.5 rounded-full bg-amber-400 hover:bg-amber-300 active:scale-95 text-black font-semibold text-xs transition-all shadow-md flex items-center gap-2 cursor-pointer"
+            className="px-6 py-2.5 rounded-full bg-amber-400 hover:bg-amber-300 disabled:opacity-40 disabled:hover:bg-amber-400 disabled:cursor-not-allowed active:scale-95 text-black font-semibold text-xs transition-all shadow-md flex items-center gap-2 cursor-pointer"
           >
             <span>
               {exportType === 'srt'

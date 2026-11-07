@@ -1,15 +1,9 @@
 // ─── SegmentStyleDrawer — Epic Hertz Studio ──────────────────────────────────
-// Drawer component for per-caption style overrides (position, scale, color, speaker, emoji).
+// Drawer component for per-caption style overrides (position, scale, color, speaker).
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Palette, RotateCcw, Smile } from 'lucide-react';
+import { Palette, RotateCcw } from 'lucide-react';
 import type { Segment, SegmentStyleOverride } from '../types';
-
-export const POPULAR_EMOJIS = [
-  { label: 'Reactions', emojis: ['🔥', '😂', '🤯', '❤️', '👏', '🚀'] },
-  { label: 'Emphasis', emojis: ['⚡', '✨', '⭐', '💥', '🎯', '💯'] },
-  { label: 'Expressions', emojis: ['👀', '🤫', '😎', '💡', '⚠️', '🚨'] },
-];
 
 export const PRESET_ACCENT_COLORS = [
   { label: 'Yellow', value: '#FACC15' },
@@ -25,9 +19,6 @@ export const PRESET_ACCENT_COLORS = [
 export interface SegmentStyleDrawerProps {
   segment: Segment;
   isOpen: boolean;
-  isEmojiOpen: boolean;
-  onCloseEmoji: () => void;
-  onInsertEmoji: (emoji: string) => void;
   onUpdateOverride: (segId: string, override: Partial<SegmentStyleOverride> | null) => void;
   onUpdateSpeaker: (segId: string, speaker: string | undefined) => void;
 }
@@ -35,62 +26,11 @@ export interface SegmentStyleDrawerProps {
 export function SegmentStyleDrawer({
   segment,
   isOpen,
-  isEmojiOpen,
-  onCloseEmoji,
-  onInsertEmoji,
   onUpdateOverride,
   onUpdateSpeaker,
 }: SegmentStyleDrawerProps) {
   return (
     <>
-      {/* ── Popover: Opt-In Creator Emoji Picker ──────────────────────── */}
-      <AnimatePresence>
-        {isEmojiOpen && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: -4 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -4 }}
-            className="mt-2 p-2.5 bg-[#1f1e1b] border border-amber-400/30 rounded-xl shadow-xl z-20"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between pb-1.5 border-b border-white/10 mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1">
-                <Smile className="w-3 h-3" />
-                <span>Insert Reaction Emoji</span>
-              </span>
-              <button
-                type="button"
-                onClick={onCloseEmoji}
-                className="text-smoke hover:text-bone text-xs p-0.5 rounded cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              {POPULAR_EMOJIS.map((group) => (
-                <div key={group.label}>
-                  <div className="text-[9px] font-semibold text-smoke/70 mb-1">{group.label}</div>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {group.emojis.map((emoji) => (
-                      <button
-                        key={emoji}
-                        type="button"
-                        onClick={() => onInsertEmoji(emoji)}
-                        className="w-7 h-7 flex items-center justify-center text-sm rounded-lg bg-black/40 hover:bg-amber-400/20 hover:scale-120 active:scale-95 transition-all cursor-pointer"
-                        title={`Insert ${emoji}`}
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* ── Drawer: Per-Caption Style Overrides ────────────────────────── */}
       <AnimatePresence>
         {isOpen && (

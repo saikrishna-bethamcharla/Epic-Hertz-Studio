@@ -104,7 +104,24 @@ export async function burnCaptionsCanvas(
       }
 
       // Capture canvas video stream at 30 fps
-      const canvasStream = canvas.captureStream(30);
+      // Feature detection: check for canvas.captureStream and MediaRecorder
+      if (
+        typeof (canvas as unknown as { captureStream?: (fps?: number) => MediaStream })
+          .captureStream !== 'function' ||
+        typeof MediaRecorder === 'undefined'
+      ) {
+        cleanup();
+        reject(
+          new Error(
+            'In-browser video burning is unsupported in this browser (missing HTMLCanvasElement.captureStream). Please use Chrome, Edge, or Firefox for full video export.',
+          ),
+        );
+        return;
+      }
+
+      const canvasStream = (
+        canvas as unknown as { captureStream: (fps: number) => MediaStream }
+      ).captureStream(30);
 
       // Merge audio track from Web Audio destination or fallback video captureStream
       let audioTracks: MediaStreamTrack[] = [];

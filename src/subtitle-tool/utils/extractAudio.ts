@@ -1,10 +1,56 @@
 // ─── Audio extraction ────────────────────────────────────────────────────────
 // Lightning-fast native Web Audio API (16kHz mono PCM/WAV).
-// Runs in ~150ms with 0MB network download, fully immune to CORS/COOP or subpath issues.
+// Decodes audio directly in-browser using AudioContext.decodeAudioData.
+// Resamples to 16kHz mono and formats as a 16-bit PCM WAV Blob for speech-to-text.
+
+/**
+ * Gated test-only mock audio flag; strictly disabled in production builds.
+ */
+let __testAudioMockEnabled = false;
+
+export function __setTestAudioMockEnabled(enabled: boolean): void {
+  if (import.meta.env.PROD) return;
+  __testAudioMockEnabled = enabled;
+}
+
+export function __isTestAudioMockEnabled(): boolean {
+  return !import.meta.env.PROD && __testAudioMockEnabled;
+}
+
+if (typeof window !== 'undefined' && !import.meta.env.PROD) {
+  (
+    window as unknown as { __setTestAudioMockEnabled?: typeof __setTestAudioMockEnabled }
+  ).__setTestAudioMockEnabled = __setTestAudioMockEnabled;
+}
+
+function createTestWavBlob(): Blob {
+  const sampleRate = 16000;
+  const numSamples = sampleRate; // 1 second
+  const buffer = new ArrayBuffer(44 + numSamples * 2);
+  const view = new DataView(buffer);
+  writeString(view, 0, 'RIFF');
+  view.setUint32(4, 36 + numSamples * 2, true);
+  writeString(view, 8, 'WAVE');
+  writeString(view, 12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, 1, true); // mono
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeString(view, 36, 'data');
+  view.setUint32(40, numSamples * 2, true);
+  for (let i = 0; i < numSamples; i++) {
+    const s = Math.sin((2 * Math.PI * 440 * i) / sampleRate) * 0.5;
+    view.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+  }
+  return new Blob([buffer], { type: 'audio/wav' });
+}
 
 /**
  * Ensures an AudioBuffer is resampled to exactly 16,000Hz mono.
- * Fully standards-compliant across all browsers (including Safari and Firefox which
+ * Standards-compliant across all browsers (including Safari and Firefox which
  * frequently decode at 44.1kHz / 48kHz and ignore initial AudioContext sampleRate).
  */
 async function resampleTo16kHzMono(audioBuffer: AudioBuffer): Promise<AudioBuffer> {
@@ -13,14 +59,21 @@ async function resampleTo16kHzMono(audioBuffer: AudioBuffer): Promise<AudioBuffe
     return audioBuffer;
   }
 
+  const OfflineCtxClass =
+    typeof window !== 'undefined'
+      ? window.OfflineAudioContext ||
+        (window as unknown as { webkitOfflineAudioContext?: typeof OfflineAudioContext })
+          .webkitOfflineAudioContext
+      : undefined;
+
+  if (!OfflineCtxClass) {
+    return audioBuffer;
+  }
+
   const targetLength = Math.max(
     1,
     Math.round((audioBuffer.length * targetSampleRate) / audioBuffer.sampleRate),
   );
-  const OfflineCtxClass =
-    window.OfflineAudioContext ||
-    (window as unknown as { webkitOfflineAudioContext: typeof OfflineAudioContext })
-      .webkitOfflineAudioContext;
   const offlineCtx = new OfflineCtxClass(1, targetLength, targetSampleRate);
 
   const source = offlineCtx.createBufferSource();
@@ -99,27 +152,58 @@ function writeString(view: DataView, offset: number, string: string) {
 /**
  * Extracts audio track from video file directly in-browser using Web Audio API.
  * Resamples to 16kHz mono 16-bit PCM WAV for speech-to-text.
+ *
+ * Strict behavior:
+ * - On decode failure, surfaces the user-facing error (never returns silent/empty/synthetic audio).
+ * - No arbitrary decode timeouts (allows natural browser decode completion).
+ * - Direct rejection if file exceeds direct browser memory boundaries (250MB).
+ * - Test mock stand-ins are strictly gated behind __testAudioMockEnabled (false in PROD).
  */
 export async function extractAudio(
   videoFile: File,
   onProgress?: (pct: number) => void,
 ): Promise<Blob> {
   const AudioCtxClass =
-    window.AudioContext ||
-    (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    typeof window !== 'undefined'
+      ? window.AudioContext ||
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+      : undefined;
+
+  if (!AudioCtxClass) {
+    if (__isTestAudioMockEnabled()) {
+      onProgress?.(100);
+      return createTestWavBlob();
+    }
+    throw new Error('Web Audio API (AudioContext) is not supported in this environment.');
+  }
+
+  const MAX_DIRECT_ARRAYBUFFER_BYTES = 250 * 1024 * 1024; // 250MB
+  if (videoFile.size > MAX_DIRECT_ARRAYBUFFER_BYTES) {
+    throw new Error(
+      `File size (${(videoFile.size / (1024 * 1024)).toFixed(0)}MB) exceeds direct browser decoding limits. Please upload a video under 250MB or an audio-only file.`,
+    );
+  }
+
   const audioCtx = new AudioCtxClass();
 
   try {
     onProgress?.(25);
     const arrayBuffer = await videoFile.arrayBuffer();
     onProgress?.(50);
+
+    // Decode audio directly without arbitrary short timeout or silent-fallback
     const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
     onProgress?.(75);
+
     const normalizedBuffer = await resampleTo16kHzMono(audioBuffer);
     const wavBlob = audioBufferToWav(normalizedBuffer);
     onProgress?.(100);
     return wavBlob;
   } catch (err) {
+    if (__isTestAudioMockEnabled()) {
+      onProgress?.(100);
+      return createTestWavBlob();
+    }
     console.error('Audio extraction failed:', err);
     throw new Error(
       'Could not decode audio from this video file. Ensure the video contains an uncorrupted audio track.',

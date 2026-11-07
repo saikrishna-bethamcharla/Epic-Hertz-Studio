@@ -7,3 +7,6 @@ dist
 !.env.example
 /.claude
 .agents
+test-results/
+playwright-report/
+docs/audit/SECURITY_PRIVATE.md

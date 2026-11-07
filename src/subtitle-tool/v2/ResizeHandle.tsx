@@ -45,6 +45,13 @@ export default function ResizeHandle({
   return (
     <div
       role="separator"
+      aria-orientation={direction}
+      aria-valuenow={50}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={
+        title || (direction === 'horizontal' ? 'Horizontal splitter' : 'Vertical splitter')
+      }
       tabIndex={0}
       title={title}
       onDoubleClick={(e) => {

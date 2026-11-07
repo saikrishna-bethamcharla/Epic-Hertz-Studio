@@ -218,28 +218,100 @@ export function importUserPresetsFromJson(jsonStr: string): {
   errors: string[];
 } {
   try {
-    const data = JSON.parse(jsonStr);
-    const presets: UserPreset[] = Array.isArray(data.presets) ? data.presets : [];
-    const ltPresets: LowerThirdPreset[] = Array.isArray(data.lowerThirdPresets)
-      ? data.lowerThirdPresets
-      : [];
-    if (!presets.length && !ltPresets.length && !Array.isArray(data.brandColors)) {
+    if (!jsonStr || jsonStr.length > 2_000_000) {
+      return { importedCount: 0, errors: ['File size exceeds 2MB limit.'] };
+    }
+    const data = JSON.parse(jsonStr, (key, value) => {
+      if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+        return undefined;
+      }
+      return value;
+    });
+    const rawPresets = Array.isArray(data.presets) ? data.presets : [];
+    const rawLtPresets = Array.isArray(data.lowerThirdPresets) ? data.lowerThirdPresets : [];
+
+    if (!rawPresets.length && !rawLtPresets.length && !Array.isArray(data.brandColors)) {
       return { importedCount: 0, errors: ['No valid presets or brand colors found in file.'] };
     }
-    for (const p of presets) {
-      if (p.id && p.name && p.style) {
-        saveUserPreset(p);
+
+    const currentPresets = getUserPresets();
+    const presetMap = new Map(currentPresets.map((p) => [p.id, p]));
+    let presetCount = 0;
+
+    for (const p of rawPresets.slice(0, 100)) {
+      if (
+        p &&
+        typeof p === 'object' &&
+        typeof p.id === 'string' &&
+        /^[a-z0-9_-]{1,64}$/i.test(p.id) &&
+        typeof p.name === 'string' &&
+        p.style &&
+        typeof p.style === 'object' &&
+        p.style.font &&
+        p.style.layout &&
+        !Object.prototype.hasOwnProperty.call(p, '__proto__')
+      ) {
+        presetMap.set(p.id, {
+          id: p.id,
+          name: String(p.name).slice(0, 80),
+          category: typeof p.category === 'string' ? p.category : 'custom',
+          style: p.style,
+          createdAt: Number(p.createdAt) || Date.now(),
+          previewText: typeof p.previewText === 'string' ? p.previewText : undefined,
+        });
+        presetCount++;
       }
     }
-    for (const lt of ltPresets) {
-      if (lt.id && lt.name && lt.spec) {
-        saveLowerThirdPreset(lt);
+
+    try {
+      localStorage.setItem(STORAGE_KEY_PRESETS, JSON.stringify(Array.from(presetMap.values())));
+    } catch (e) {
+      console.warn('Failed to batch save imported presets:', e);
+    }
+
+    const currentLtPresets = getLowerThirdPresets();
+    const ltMap = new Map(currentLtPresets.map((lt) => [lt.id, lt]));
+    let ltCount = 0;
+
+    for (const lt of rawLtPresets.slice(0, 100)) {
+      if (
+        lt &&
+        typeof lt === 'object' &&
+        typeof lt.id === 'string' &&
+        /^[a-z0-9_-]{1,64}$/i.test(lt.id) &&
+        typeof lt.name === 'string' &&
+        lt.spec &&
+        typeof lt.spec === 'object' &&
+        typeof lt.spec.template === 'string' &&
+        !Object.prototype.hasOwnProperty.call(lt, '__proto__')
+      ) {
+        ltMap.set(lt.id, {
+          id: lt.id,
+          name: String(lt.name).slice(0, 80),
+          spec: lt.spec,
+          createdAt: Number(lt.createdAt) || Date.now(),
+        });
+        ltCount++;
       }
     }
+
+    try {
+      localStorage.setItem(
+        STORAGE_KEY_LOWER_THIRD_PRESETS,
+        JSON.stringify(Array.from(ltMap.values())),
+      );
+    } catch (e) {
+      console.warn('Failed to batch save imported lower-third presets:', e);
+    }
+
     if (Array.isArray(data.brandColors)) {
-      saveBrandColors(data.brandColors);
+      const sanitizedColors = data.brandColors
+        .filter((c: unknown) => typeof c === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(c))
+        .slice(0, 32);
+      saveBrandColors(sanitizedColors);
     }
-    return { importedCount: presets.length + ltPresets.length, errors: [] };
+
+    return { importedCount: presetCount + ltCount, errors: [] };
   } catch (err) {
     return {
       importedCount: 0,
@@ -264,7 +336,15 @@ export function importTemplatePackFromJson(jsonStr: string): {
   errors: string[];
 } {
   try {
-    const raw = JSON.parse(jsonStr);
+    if (!jsonStr || jsonStr.length > 2_000_000) {
+      return { importedCount: 0, errors: ['File size exceeds 2MB limit.'] };
+    }
+    const raw = JSON.parse(jsonStr, (key, value) => {
+      if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+        return undefined;
+      }
+      return value;
+    });
     const val = validateTemplatePack(raw);
     if (!val.success) {
       return { importedCount: 0, errors: val.errors };

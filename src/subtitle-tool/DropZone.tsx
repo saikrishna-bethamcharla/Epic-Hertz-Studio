@@ -30,6 +30,12 @@ export default function DropZone({ onFile }: DropZoneProps) {
         setError(`Unsupported format. Please use MP4, MOV, WebM, or MKV.`);
         return;
       }
+      if (file.size > 250 * 1024 * 1024) {
+        setError(
+          `File size (${(file.size / (1024 * 1024)).toFixed(0)}MB) exceeds the 250MB in-browser decoding limit. Please compress the video or upload an audio-only file.`,
+        );
+        return;
+      }
       setError(null);
       onFile(file);
     },
@@ -116,7 +122,9 @@ export default function DropZone({ onFile }: DropZoneProps) {
             or{' '}
             <span className="text-crimson-2 underline underline-offset-2">browse your files</span>
           </p>
-          <p className="text-smoke text-xs mt-3">Supports MP4, MOV, WebM, MKV · up to 2 GB</p>
+          <p className="text-smoke text-xs mt-3">
+            Supports MP4, MOV, WebM, MKV · in-browser decoding up to 250MB
+          </p>
         </div>
 
         {/* Hidden file input */}

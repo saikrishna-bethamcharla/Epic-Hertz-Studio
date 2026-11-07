@@ -109,7 +109,7 @@ export default function LowerThirdInspector({
     );
     if (!presetName) return;
 
-    const { id, start, end, ...styleSpec } = spec;
+    const { id: _id, start: _start, end: _end, ...styleSpec } = spec;
     saveLowerThirdPreset({
       id: `lt-preset-${Date.now()}`,
       name: presetName.trim(),
@@ -483,6 +483,7 @@ export default function LowerThirdInspector({
               </div>
               <input
                 type="range"
+                aria-label="Lower third scale"
                 min={0.6}
                 max={1.6}
                 step={0.05}
@@ -543,6 +544,7 @@ export default function LowerThirdInspector({
             </div>
             <input
               type="range"
+              aria-label="Lower third vertical position"
               min={0.1}
               max={0.92}
               step={0.01}
@@ -604,6 +606,7 @@ export default function LowerThirdInspector({
             </div>
             <input
               type="range"
+              aria-label="Lower third intro wipe duration"
               min={0.2}
               max={1.8}
               step={0.05}
@@ -622,6 +625,7 @@ export default function LowerThirdInspector({
             </div>
             <input
               type="range"
+              aria-label="Lower third outro wipe duration"
               min={0.2}
               max={1.8}
               step={0.05}

@@ -1,0 +1,3 @@
+# Gitleaks ignore list
+# Known historical revoked prototype commit tracked in SEC-01 of AUDIT_LEDGER.md
+0ed56f4b044c99bd49d222ad8ad938032872cc15
