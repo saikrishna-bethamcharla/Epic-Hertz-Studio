@@ -6,6 +6,9 @@ import 'fake-indexeddb/auto';
 import type { Segment } from '../src/subtitle-tool/types';
 import SubtitleTool from '../src/subtitle-tool/SubtitleTool';
 import CaptionEditor from '../src/subtitle-tool/CaptionEditor';
+import VideoPreview, { type VideoPreviewHandle } from '../src/subtitle-tool/VideoPreview';
+import Timeline from '../src/subtitle-tool/Timeline';
+import { DEFAULT_STYLE } from '../src/subtitle-tool/engine/presets';
 import { usePlayback } from '../src/subtitle-tool/hooks/usePlayback';
 import { timeStore, usePlayheadTime } from '../src/subtitle-tool/store/timeStore';
 
@@ -278,6 +281,72 @@ describe('Playback Render Count Regression & Profiling', () => {
 
     // - Style actions still target user-selected caption A, NOT playhead B!
     expect(getByTestId('target-style-id').textContent).toBe('seg-1');
+  });
+
+  it('drives seeks through videoRef.seekTo and Timeline onSeek: paused, click caption A, scrub to caption B, expects activeId = B while selectedId stays A', () => {
+    const videoRef = React.createRef<VideoPreviewHandle>();
+
+    function RealSeekPathHarness() {
+      const { activeId, setActiveId, isPlaying, handleSeek } = usePlayback(sampleSegments);
+      const [selectedId, setSelectedId] = useState<string | null>(null);
+      const mockFile = new File(['dummy-video'], 'demo.mp4', { type: 'video/mp4' });
+
+      return (
+        <div>
+          <button
+            data-testid="select-a-btn"
+            onClick={() => {
+              setSelectedId('seg-1');
+              setActiveId('seg-1');
+            }}
+          >
+            Click Caption A
+          </button>
+          <div data-testid="active-id-val">{activeId}</div>
+          <div data-testid="selected-id-val">{selectedId}</div>
+          <VideoPreview
+            ref={videoRef}
+            videoFile={mockFile}
+            segments={sampleSegments}
+            style={DEFAULT_STYLE}
+            onTimeUpdate={() => {}}
+            onSeek={handleSeek}
+          />
+          <Timeline
+            duration={10}
+            isPlaying={isPlaying}
+            segments={sampleSegments}
+            activeId={activeId}
+            selectedId={selectedId}
+            onSeek={(t) => videoRef.current?.seekTo(t)}
+            onTogglePlay={() => {}}
+            onSegmentsChange={() => {}}
+          />
+        </div>
+      );
+    }
+
+    const { getByTestId } = render(<RealSeekPathHarness />);
+
+    // Confirms playback is paused
+    expect(timeStore.getIsPlaying()).toBe(false);
+
+    // 1. Click Caption A: selectedId becomes 'seg-1', activeId becomes 'seg-1'
+    act(() => {
+      fireEvent.click(getByTestId('select-a-btn'));
+    });
+    expect(getByTestId('selected-id-val').textContent).toBe('seg-1');
+    expect(getByTestId('active-id-val').textContent).toBe('seg-1');
+
+    // 2. Scrub to Caption B (2.0s is inside seg-2: 1.5s - 3.5s)
+    // Invoked through videoRef.current.seekTo / Timeline onSeek (the real seek path)
+    act(() => {
+      videoRef.current?.seekTo(2.0);
+    });
+
+    // 3. Expect activeId = 'seg-2' (B) while selectedId stays 'seg-1' (A)
+    expect(getByTestId('active-id-val').textContent).toBe('seg-2');
+    expect(getByTestId('selected-id-val').textContent).toBe('seg-1');
   });
 
   it('guarantees throttled playhead indicator renders without waking parents', () => {

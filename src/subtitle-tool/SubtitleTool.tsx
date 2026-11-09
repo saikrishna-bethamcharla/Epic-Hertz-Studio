@@ -118,6 +118,7 @@ export default function SubtitleTool({
     activeId,
     setActiveId,
     handleTimeUpdate,
+    handleSeek,
     resetPlayback,
   } = usePlayback(segments);
 
@@ -1096,6 +1097,7 @@ export default function SubtitleTool({
                         aspectRatio={aspectRatio}
                         onAspectRatioChange={setAspectRatio}
                         onTimeUpdate={onTimeUpdate}
+                        onSeek={handleSeek}
                         onDurationChange={onDurationUpdate}
                         onPlayStateChange={setIsPlaying}
                         hideCaptions={hideCaptions}
@@ -1263,6 +1265,7 @@ export default function SubtitleTool({
                       aspectRatio={aspectRatio}
                       onAspectRatioChange={setAspectRatio}
                       onTimeUpdate={onTimeUpdate}
+                      onSeek={handleSeek}
                       onDurationChange={onDurationUpdate}
                       onPlayStateChange={setIsPlaying}
                       hideCaptions={hideCaptions}

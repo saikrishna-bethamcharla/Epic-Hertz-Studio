@@ -13,7 +13,10 @@ export interface UsePlaybackReturn {
   setIsPlaying: (playing: boolean) => void;
   /** ID of caption currently under the playhead timestamp (null in gaps). */
   playheadId: string | null;
-  /** Backward-compatible alias for playheadId. */
+  /**
+   * Active caption ID for editor highlight and auto-scroll. Tracks playheadId during playback
+   * and on seek/scrub, or reflects manual user selection until the playhead moves into another caption.
+   */
   activeId: string | null;
   setActiveId: (id: string | null) => void;
   handleTimeUpdate: (time: number) => void;

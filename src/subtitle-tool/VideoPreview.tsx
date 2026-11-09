@@ -73,6 +73,7 @@ interface VideoPreviewProps {
   aspectRatio?: VideoAspectRatio;
   onAspectRatioChange?: (ratio: VideoAspectRatio) => void;
   onTimeUpdate: (time: number) => void;
+  onSeek?: (time: number) => void;
   onDurationChange?: (duration: number) => void;
   onPlayStateChange?: (isPlaying: boolean) => void;
   lowerThirds?: LowerThirdSpec[];
@@ -105,6 +106,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       aspectRatio = '9:16',
       onAspectRatioChange,
       onTimeUpdate,
+      onSeek,
       onDurationChange,
       onPlayStateChange,
       lowerThirds,
@@ -203,18 +205,24 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       }
     }, []);
 
+    const seekTo = useCallback(
+      (time: number) => {
+        const maxDur = videoRef.current?.duration || duration || time;
+        const target = Math.max(0, Math.min(maxDur, time));
+        if (videoRef.current) {
+          videoRef.current.currentTime = target;
+        }
+        timeStore.seek(target);
+        onSeek?.(target);
+      },
+      [duration, onSeek],
+    );
+
     // Expose methods to parent (Timeline & Caption editor clicks)
     useImperativeHandle(
       ref,
       () => ({
-        seekTo(time: number) {
-          if (videoRef.current) {
-            const maxDur = videoRef.current.duration || duration || time;
-            const target = Math.max(0, Math.min(maxDur, time));
-            videoRef.current.currentTime = target;
-            timeStore.setTime(target, true);
-          }
-        },
+        seekTo,
         play() {
           safePlay();
         },
@@ -231,7 +239,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           toggleFullscreen();
         },
       }),
-      [safePlay, safePause, togglePlay, toggleFullscreen, duration],
+      [seekTo, safePlay, safePause, togglePlay, toggleFullscreen],
     );
 
     const handleTimeUpdate = useCallback(() => {
@@ -712,11 +720,8 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           <button
             type="button"
             onClick={() => {
-              if (videoRef.current) {
-                const target = Math.max(0, videoRef.current.currentTime - 1.0);
-                videoRef.current.currentTime = target;
-                timeStore.setTime(target, true);
-              }
+              const cur = videoRef.current?.currentTime ?? timeStore.getTime();
+              seekTo(Math.max(0, cur - 1.0));
             }}
             className="p-1 rounded text-smoke hover:text-amber-300 hover:bg-white/10 transition-colors"
             title="Rewind 1s (J)"
@@ -728,11 +733,8 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           <button
             type="button"
             onClick={() => {
-              if (videoRef.current) {
-                const target = Math.max(0, videoRef.current.currentTime - 1 / 30);
-                videoRef.current.currentTime = target;
-                timeStore.setTime(target, true);
-              }
+              const cur = videoRef.current?.currentTime ?? timeStore.getTime();
+              seekTo(Math.max(0, cur - 1 / 30));
             }}
             className="p-1 rounded text-smoke hover:text-amber-300 hover:bg-white/10 transition-colors"
             title="Step 1 frame backward (←)"
@@ -762,11 +764,8 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           <button
             type="button"
             onClick={() => {
-              if (videoRef.current) {
-                const target = Math.min(duration, videoRef.current.currentTime + 1 / 30);
-                videoRef.current.currentTime = target;
-                timeStore.setTime(target, true);
-              }
+              const cur = videoRef.current?.currentTime ?? timeStore.getTime();
+              seekTo(Math.min(duration, cur + 1 / 30));
             }}
             className="p-1 rounded text-smoke hover:text-amber-300 hover:bg-white/10 transition-colors"
             title="Step 1 frame forward (→)"
@@ -778,11 +777,8 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           <button
             type="button"
             onClick={() => {
-              if (videoRef.current) {
-                const target = Math.min(duration, videoRef.current.currentTime + 1.0);
-                videoRef.current.currentTime = target;
-                timeStore.setTime(target, true);
-              }
+              const cur = videoRef.current?.currentTime ?? timeStore.getTime();
+              seekTo(Math.min(duration, cur + 1.0));
             }}
             className="p-1 rounded text-smoke hover:text-amber-300 hover:bg-white/10 transition-colors"
             title="Forward 1s (L)"
