@@ -207,9 +207,16 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
 
     const seekTo = useCallback(
       (time: number) => {
-        const maxDur = videoRef.current?.duration || duration || time;
+        const vDur = videoRef.current?.duration;
+        const validVideoDur =
+          typeof vDur === 'number' && Number.isFinite(vDur) && vDur > 0 ? vDur : null;
+        const validStateDur =
+          typeof duration === 'number' && Number.isFinite(duration) && duration > 0
+            ? duration
+            : null;
+        const maxDur = validVideoDur ?? validStateDur ?? time;
         const target = Math.max(0, Math.min(maxDur, time));
-        if (videoRef.current) {
+        if (videoRef.current && Number.isFinite(target)) {
           videoRef.current.currentTime = target;
         }
         timeStore.seek(target);

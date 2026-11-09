@@ -110,9 +110,9 @@ test.describe('Playback Performance & Frame Timing', () => {
       await page.keyboard.press('Space');
     }
 
-    // Locate slider (timeline zoom slider or any interactive range slider)
-    const slider = page.locator('input[type="range"]').first();
-    await expect(slider).toBeVisible();
+    // Locate slider (volume slider or timeline zoom slider)
+    const slider = page.getByLabel(/Video volume|Timeline zoom level/i).first();
+    await expect(slider).toBeVisible({ timeout: 10000 });
 
     // Measure input-to-paint latency during active playback
     const latency: number = await slider.evaluate(async (el: HTMLInputElement) => {
