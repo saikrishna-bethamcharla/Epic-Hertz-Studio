@@ -15,6 +15,7 @@ import {
   calculateExitTransform,
   type TransformState,
   type EntranceType,
+  type EmphasisType,
   type ExitType,
 } from './animation';
 import {
@@ -38,7 +39,7 @@ export interface WordTiming {
   start: number;
   end: number;
   highlightColor?: string;
-  emphasis?: 'none' | 'pop' | 'shake' | 'glow' | 'underline';
+  emphasis?: 'none' | 'pop' | 'shake' | 'glow' | 'underline' | 'slam' | 'wobble' | 'color-flip';
 }
 
 interface Page {
@@ -647,10 +648,12 @@ export function renderCaptions(
   let pageBlur = 0;
   let pageClip: TransformState['clip'] | undefined;
 
-  const exitType = m.exitType ?? (m.out as ExitType);
+  const exitType = m.exitType ?? (m.out === 'shrink' ? 'scale-out' : (m.out as ExitType));
   const isCustomExit =
     m.exitType !== undefined ||
     [
+      'fade',
+      'slide-down',
       'slide-left',
       'slide-right',
       'scale-out',
@@ -659,6 +662,7 @@ export function renderCaptions(
       'typewriter-erase',
       'drop-out',
       'glitch-out',
+      'shrink',
     ].includes(m.out as string);
 
   if (m.out !== 'none') {
@@ -789,6 +793,21 @@ export function renderCaptions(
   if ((hl.mode === 'box' || hl.emphasisType === 'highlight-box-sweep') && active >= 0) {
     const cur = wordRect(active);
     const prev = active > 0 ? wordRect(active - 1) : null;
+    const wordProg = clamp01(
+      (t - page.words[active].start) /
+        Math.max(0.06, page.words[active].end - page.words[active].start),
+    );
+    let sweepProgress = 1;
+    if (hl.emphasisType === 'highlight-box-sweep') {
+      const sweepTx = calculateEmphasisTransform(
+        'highlight-box-sweep',
+        wordProg,
+        px,
+        'spring',
+        hl.emphasisParams,
+      );
+      sweepProgress = sweepTx.clip?.wipeProgress ?? 1;
+    }
     const slide = ease('out', clamp01((t - page.words[active].start) / 0.11));
     const r = prev
       ? {
@@ -808,7 +827,11 @@ export function renderCaptions(
     const s = prev ? 1 : 0.85 + 0.15 * enter;
     ctx.translate(cx, cy);
     ctx.scale(s, s);
-    roundRect(ctx, -r.w / 2, -r.h / 2, r.w, r.h, hl.boxRadius * px);
+    if (!prev && sweepProgress < 1) {
+      roundRect(ctx, -r.w / 2, -r.h / 2, r.w * sweepProgress, r.h, hl.boxRadius * px);
+    } else {
+      roundRect(ctx, -r.w / 2, -r.h / 2, r.w, r.h, hl.boxRadius * px);
+    }
     ctx.fill();
     ctx.restore();
   }
@@ -841,10 +864,20 @@ export function renderCaptions(
     let emphBlur = 0;
     let emphColorMix = colourAmt;
 
-    if (hl.emphasisType && (isActive || (t >= w.start && t <= w.end))) {
+    let activeEmphasisType: EmphasisType | undefined = hl.emphasisType;
+    if (!activeEmphasisType && w.emphasis) {
+      if (w.emphasis === 'pop') activeEmphasisType = 'pop';
+      else if (w.emphasis === 'shake') activeEmphasisType = 'shake';
+      else if (w.emphasis === 'glow') activeEmphasisType = 'glow-pulse';
+      else if (w.emphasis === 'slam') activeEmphasisType = 'scale-slam';
+      else if (w.emphasis === 'wobble') activeEmphasisType = 'wobble';
+      else if (w.emphasis === 'color-flip') activeEmphasisType = 'color-flip';
+    }
+
+    if (activeEmphasisType && (isActive || (t >= w.start && t <= w.end))) {
       const wordProg = clamp01((t - w.start) / Math.max(0.06, w.end - w.start));
       const emphTx = calculateEmphasisTransform(
-        hl.emphasisType,
+        activeEmphasisType,
         wordProg,
         px,
         'spring',
@@ -913,7 +946,22 @@ export function renderCaptions(
       const local = t - base;
       if (local < 0) return;
       const p = m.in === 'none' ? 1 : clamp01(local / inDur);
-      const entranceType = m.entranceType ?? (m.in as EntranceType);
+      let resolvedEntranceType: EntranceType;
+      if (m.entranceType) {
+        resolvedEntranceType = m.entranceType;
+      } else {
+        const inStr = (m.in as string) || 'none';
+        if (inStr === 'pop' || inStr === 'zoom') resolvedEntranceType = 'scale-pop';
+        else if (inStr === 'slide-up') resolvedEntranceType = 'slide-up';
+        else if (inStr === 'slide-down' || inStr === 'drop') resolvedEntranceType = 'drop-in';
+        else if (inStr === 'bounce') resolvedEntranceType = 'bounce-in';
+        else if (inStr === 'blur') resolvedEntranceType = 'blur-in';
+        else if (inStr === 'mask-up') resolvedEntranceType = 'clip-reveal';
+        else if (inStr === 'typewriter') resolvedEntranceType = 'typewriter';
+        else if (inStr === 'fade') resolvedEntranceType = 'fade';
+        else resolvedEntranceType = inStr as EntranceType;
+      }
+
       const isCustomEntrance =
         m.entranceType !== undefined ||
         [
@@ -927,6 +975,15 @@ export function renderCaptions(
           'clip-reveal',
           'slide-left',
           'slide-right',
+          'slide-up',
+          'typewriter',
+          'fade',
+          'pop',
+          'zoom',
+          'bounce',
+          'blur',
+          'drop',
+          'mask-up',
         ].includes(m.in as string);
 
       let tx: {
@@ -943,14 +1000,14 @@ export function renderCaptions(
         clip?: TransformState['clip'];
       };
 
-      if (isCustomEntrance && entranceType) {
+      if (isCustomEntrance && resolvedEntranceType) {
         const entTx = calculateEntranceTransform(
-          entranceType,
+          resolvedEntranceType,
           p,
           px,
           L.lineBox,
           m.easing ?? 'easeOutCubic',
-          m.entranceParams,
+          m.entranceParams ?? { bounce: m.bounce },
         );
         tx = {
           alpha: entTx.alpha,

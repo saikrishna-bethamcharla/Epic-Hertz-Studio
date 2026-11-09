@@ -21,15 +21,18 @@ export class PlaybackTimeStore {
   private _timeListeners = new Set<() => void>();
   private _playheadIdListeners = new Set<() => void>();
   private _playbackStatusListeners = new Set<() => void>();
+  private _seekListeners = new Set<(time: number) => void>();
 
   constructor() {
     this.subscribeTime = this.subscribeTime.bind(this);
     this.subscribePlayheadId = this.subscribePlayheadId.bind(this);
     this.subscribePlaybackStatus = this.subscribePlaybackStatus.bind(this);
+    this.subscribeSeek = this.subscribeSeek.bind(this);
     this.getTime = this.getTime.bind(this);
     this.getPlayheadId = this.getPlayheadId.bind(this);
     this.getDuration = this.getDuration.bind(this);
     this.getIsPlaying = this.getIsPlaying.bind(this);
+    this.seek = this.seek.bind(this);
   }
 
   // ── Getters for useSyncExternalStore ──────────────────────────────────────
@@ -68,6 +71,13 @@ export class PlaybackTimeStore {
     this._playbackStatusListeners.add(listener);
     return () => {
       this._playbackStatusListeners.delete(listener);
+    };
+  }
+
+  subscribeSeek(listener: (time: number) => void): () => void {
+    this._seekListeners.add(listener);
+    return () => {
+      this._seekListeners.delete(listener);
     };
   }
 
@@ -114,7 +124,14 @@ export class PlaybackTimeStore {
     if (force || nowMs - this._lastTickMs >= 33) {
       this._lastTickMs = nowMs;
       this._timeListeners.forEach((fn) => fn());
+      if (force) {
+        this._seekListeners.forEach((fn) => fn(time));
+      }
     }
+  }
+
+  seek(time: number): void {
+    this.setTime(time, true);
   }
 
   private _updatePlayheadId(time: number): void {

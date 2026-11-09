@@ -7,7 +7,6 @@ import type { Segment } from '../types';
 import { timeStore, usePlayheadId, usePlaybackStatus } from '../store/timeStore';
 
 export interface UsePlaybackReturn {
-  currentTime: number;
   duration: number;
   setDuration: (duration: number) => void;
   isPlaying: boolean;
@@ -18,6 +17,7 @@ export interface UsePlaybackReturn {
   activeId: string | null;
   setActiveId: (id: string | null) => void;
   handleTimeUpdate: (time: number) => void;
+  handleSeek: (time: number) => void;
   resetPlayback: () => void;
   getCurrentTime: () => number;
 }
@@ -32,6 +32,20 @@ export function usePlayback(segments: Segment[]): UsePlaybackReturn {
     timeStore.setSegments(segments);
   }, [segments]);
 
+  // Clear manual selection when playhead moves into a different caption during playback
+  useEffect(() => {
+    if (isPlaying && playheadId && manualActiveId && playheadId !== manualActiveId) {
+      setManualActiveId(null);
+    }
+  }, [isPlaying, playheadId, manualActiveId]);
+
+  // Clear manual selection on seek or scrub
+  useEffect(() => {
+    return timeStore.subscribeSeek(() => {
+      setManualActiveId(null);
+    });
+  }, []);
+
   const setDuration = useCallback((d: number) => {
     timeStore.setDuration(d);
   }, []);
@@ -42,6 +56,11 @@ export function usePlayback(segments: Segment[]): UsePlaybackReturn {
 
   const handleTimeUpdate = useCallback((time: number) => {
     timeStore.setTime(time, false);
+  }, []);
+
+  const handleSeek = useCallback((time: number) => {
+    setManualActiveId(null);
+    timeStore.seek(time);
   }, []);
 
   const resetPlayback = useCallback(() => {
@@ -56,7 +75,6 @@ export function usePlayback(segments: Segment[]): UsePlaybackReturn {
   const activeId = manualActiveId ?? playheadId;
 
   return {
-    currentTime: timeStore.getTime(),
     duration,
     setDuration,
     isPlaying,
@@ -65,6 +83,7 @@ export function usePlayback(segments: Segment[]): UsePlaybackReturn {
     activeId,
     setActiveId,
     handleTimeUpdate,
+    handleSeek,
     resetPlayback,
     getCurrentTime: timeStore.getTime,
   };

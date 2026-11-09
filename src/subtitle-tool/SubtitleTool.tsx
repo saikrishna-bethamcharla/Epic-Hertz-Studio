@@ -63,18 +63,28 @@ import type {
 import { DEFAULT_LOWER_THIRD } from './engine/spec';
 import { getPhotoBlob, deletePhotoBlob } from './utils/projectStorage';
 
-export default function SubtitleTool() {
-  const [stage, setStage] = useState<AppStage>('idle');
+export interface SubtitleToolProps {
+  initialStage?: AppStage;
+  initialVideoFile?: File | null;
+  initialSegments?: Segment[];
+}
+
+export default function SubtitleTool({
+  initialStage = 'idle',
+  initialVideoFile = null,
+  initialSegments = [],
+}: SubtitleToolProps = {}) {
+  const [stage, setStage] = useState<AppStage>(initialStage);
   const [statusText, setStatusText] = useState('');
   const [burnProgress, setBurnProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(initialVideoFile);
   const [spokenLanguage, setSpokenLanguage] = useState<SpokenLanguage>('te');
   const [scriptOutput, setScriptOutput] = useState<ScriptOutput>('romanized');
   const [aspectRatio, setAspectRatio] = useState<VideoAspectRatio>('9:16');
 
-  const [segments, setSegments] = useState<Segment[]>([]);
+  const [segments, setSegments] = useState<Segment[]>(initialSegments);
   const [history, setHistory] = useState<Segment[][]>([]);
   const [redoStack, setRedoStack] = useState<Segment[][]>([]);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);

@@ -1,5 +1,13 @@
 import { test, expect } from '@playwright/test';
 
+declare global {
+  interface Window {
+    __frameTimings?: number[];
+    __startRecordingFrames?: () => void;
+    __stopRecordingFrames?: () => void;
+  }
+}
+
 test.describe('Playback Performance & Frame Timing', () => {
   test('logs frame timings during playback and confirms smooth frame delivery', async ({
     page,
@@ -16,28 +24,28 @@ test.describe('Playback Performance & Frame Timing', () => {
 
     // Install frame timing probe in the browser context
     await page.evaluate(() => {
-      (window as any).__frameTimings = [];
+      window.__frameTimings = [];
       let lastTime = performance.now();
       let recording = false;
-      (window as any).__startRecordingFrames = () => {
+      window.__startRecordingFrames = () => {
         recording = true;
         lastTime = performance.now();
         const loop = (now: number) => {
           if (!recording) return;
           const delta = now - lastTime;
           lastTime = now;
-          (window as any).__frameTimings.push(delta);
+          window.__frameTimings?.push(delta);
           requestAnimationFrame(loop);
         };
         requestAnimationFrame(loop);
       };
-      (window as any).__stopRecordingFrames = () => {
+      window.__stopRecordingFrames = () => {
         recording = false;
       };
     });
 
     // Start recording frame deltas
-    await page.evaluate(() => (window as any).__startRecordingFrames());
+    await page.evaluate(() => window.__startRecordingFrames?.());
 
     // Hit Space to play or click play button
     const playBtn = page.getByRole('button', { name: /start playback|play/i }).first();
@@ -52,8 +60,8 @@ test.describe('Playback Performance & Frame Timing', () => {
 
     // Stop recording frame deltas
     const timings: number[] = await page.evaluate(() => {
-      (window as any).__stopRecordingFrames();
-      return (window as any).__frameTimings || [];
+      window.__stopRecordingFrames?.();
+      return window.__frameTimings || [];
     });
 
     // Pause video
@@ -77,5 +85,60 @@ test.describe('Playback Performance & Frame Timing', () => {
 
     // Performance assertion: 95% of frames delivered under 50ms (>= 20 fps even under CI/CD load)
     expect(p95).toBeLessThan(60);
+  });
+
+  test('drags a slider during playback and asserts input-to-paint latency', async ({ page }) => {
+    await page.goto('/');
+
+    const demoBtn = page.getByRole('button', { name: /try demo/i });
+    await expect(demoBtn).toBeVisible();
+    await demoBtn.click();
+
+    await expect(page.locator('canvas').first()).toBeVisible({ timeout: 10000 });
+
+    // Start playback
+    const playBtn = page.getByRole('button', { name: /start playback|play/i }).first();
+    if (await playBtn.isVisible()) {
+      await playBtn.click();
+    } else {
+      await page.keyboard.press('Space');
+    }
+
+    // Locate slider (timeline zoom slider or any interactive range slider)
+    const slider = page.locator('input[type="range"]').first();
+    await expect(slider).toBeVisible();
+
+    // Measure input-to-paint latency during active playback
+    const latency: number = await slider.evaluate(async (el: HTMLInputElement) => {
+      return new Promise<number>((resolve) => {
+        const start = performance.now();
+        el.value = String(Math.min(Number(el.max), Number(el.value) + 15));
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        requestAnimationFrame(() => {
+          const painted = performance.now();
+          resolve(painted - start);
+        });
+      });
+    });
+
+    // Drag the slider interactively
+    const box = await slider.boundingBox();
+    if (box) {
+      const startX = box.x + box.width / 2;
+      const startY = box.y + box.height / 2;
+      await page.mouse.move(startX, startY);
+      await page.mouse.down();
+      await page.mouse.move(startX + 15, startY, { steps: 5 });
+      await page.mouse.up();
+    }
+
+    // Pause video
+    await page.keyboard.press('Space');
+
+    console.log(`[SLIDER INTERACTION LATENCY] Measured input-to-paint: ${latency.toFixed(2)} ms`);
+
+    // Assert that input-to-paint latency during playback is under 50ms (responsive, unblocked UI)
+    expect(latency).toBeLessThan(50);
   });
 });
