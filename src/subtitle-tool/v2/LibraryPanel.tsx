@@ -2,15 +2,18 @@
 import { useState, useMemo, useEffect, memo } from 'react';
 import {
   Captions,
-  Type,
   SlidersHorizontal,
   Film,
-  Palette,
   Layers,
   ChevronLeft,
   AlertTriangle,
   Ban,
   Trash2,
+  PlusCircle,
+  Plus,
+  LayoutGrid,
+  Bookmark,
+  Quote,
 } from 'lucide-react';
 
 import type {
@@ -35,7 +38,15 @@ import LibraryStylesTab from './library/LibraryStylesTab';
 import LibraryBrandTab from './library/LibraryBrandTab';
 import LibraryLowerThirdsTab from './library/LibraryLowerThirdsTab';
 
-export type LibraryTab = 'captions' | 'styles' | 'effects' | 'animations' | 'brand' | 'lowerThirds';
+export type LibraryTab =
+  | 'addText'
+  | 'templates'
+  | 'styles'
+  | 'lowerThirds'
+  | 'effects'
+  | 'animations'
+  | 'brand'
+  | 'captions';
 
 interface LibraryPanelProps {
   leftTab: LibraryTab;
@@ -66,7 +77,7 @@ interface LibraryPanelProps {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Look-only presets (Text Effects tab)
+// Look-only presets (Text Effects sub-section)
 // ─────────────────────────────────────────────────────────────────────────────
 const NONE_LOOK: Partial<CaptionStyle> = {
   fill: '#FFFFFF',
@@ -171,6 +182,68 @@ const LOOK_PRESETS: Array<{ id: string; name: string; look: Partial<CaptionStyle
   },
 ];
 
+// Sub-sections in the Text Section navigation
+const SUB_SECTIONS: Array<{
+  id: LibraryTab;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge?: string;
+  title: string;
+  description: string;
+}> = [
+  {
+    id: 'addText',
+    label: 'Add text',
+    icon: PlusCircle,
+    title: 'Add Text',
+    description: 'Insert text layers & headlines at playhead',
+  },
+  {
+    id: 'templates',
+    label: 'Templates',
+    icon: LayoutGrid,
+    badge: '48',
+    title: 'Text Templates',
+    description: 'Viral subtitles & social preset templates',
+  },
+  {
+    id: 'lowerThirds',
+    label: 'Lower thirds',
+    icon: Layers,
+    badge: '48',
+    title: 'Lower Thirds',
+    description: 'Broadcast name cards, titles & ticker packs',
+  },
+  {
+    id: 'effects',
+    label: 'Text effects',
+    icon: SlidersHorizontal,
+    title: 'Text Effects',
+    description: 'Fills, outlines, glows, and 3D extrusion looks',
+  },
+  {
+    id: 'animations',
+    label: 'Animations',
+    icon: Film,
+    title: 'Animations',
+    description: 'Entrance, exit, and karaoke word highlights',
+  },
+  {
+    id: 'brand',
+    label: 'Yours',
+    icon: Bookmark,
+    title: 'Yours / Brand',
+    description: 'Brand colors, custom fonts, and saved presets',
+  },
+  {
+    id: 'captions',
+    label: 'Captions',
+    icon: Captions,
+    title: 'Captions',
+    description: 'Timed speech segments & transcription editor',
+  },
+];
+
 function LibraryPanel({
   leftTab,
   onTabChange,
@@ -208,6 +281,18 @@ function LibraryPanel({
     void listCustomFonts().then(setCustomFonts);
   }, []);
 
+  // Map 'styles' to 'templates' for backwards compatibility
+  const activeTabKey: LibraryTab = leftTab === 'styles' ? 'templates' : leftTab;
+
+  // Active sub-section metadata
+  const currentSubSection = useMemo(() => {
+    return (
+      SUB_SECTIONS.find((s) => s.id === activeTabKey) ||
+      SUB_SECTIONS.find((s) => s.id === 'templates') ||
+      SUB_SECTIONS[0]
+    );
+  }, [activeTabKey]);
+
   // Sample segment for thumbnail rendering (rule: user's first caption or fallback)
   const sampleSegment: Segment = useMemo(() => {
     if (segments.length > 0 && segments[0].text) return segments[0];
@@ -228,6 +313,50 @@ function LibraryPanel({
 
   const targetCaptionId = selectedId ?? activeId;
   const targetCaptionIndex = segments.findIndex((s) => s.id === targetCaptionId);
+
+  // Helper to add a new text segment at current playhead
+  const handleAddTextSegment = (text = 'Default text', override?: Partial<SegmentStyleOverride>) => {
+    const curTime = currentTime || 0;
+    const duration = 2.0;
+    const start = Math.max(0, parseFloat(curTime.toFixed(2)));
+    const end = parseFloat((start + duration).toFixed(2));
+    const newId = `seg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+
+    const words = text
+      .trim()
+      .split(/\s+/)
+      .map((word, i, arr) => {
+        const wDur = duration / Math.max(1, arr.length);
+        return {
+          word,
+          start: parseFloat((start + i * wDur).toFixed(2)),
+          end: parseFloat((start + (i + 1) * wDur).toFixed(2)),
+        };
+      });
+
+    const newSegment: Segment = {
+      id: newId,
+      index: segments.length + 1,
+      start,
+      end,
+      text,
+      words,
+    };
+
+    if (override) {
+      newSegment.styleOverride = override;
+    }
+
+    // Insert in time-sorted order and re-index 1..N
+    const next = [...segments, newSegment]
+      .sort((a, b) => a.start - b.start)
+      .map((s, idx) => ({ ...s, index: idx + 1 }));
+
+    onSegmentsChange(next);
+    onSelectSegment(newId);
+    onSeek(start);
+    if (onNotification) onNotification(`Added "${text}" at ${formatTimecode(start)}`);
+  };
 
   // Apply style to scope helper
   const applyPresetToScope = (targetStyle: CaptionStyle, presetName: string) => {
@@ -346,379 +475,596 @@ function LibraryPanel({
     </div>
   );
 
+  const showScopeHeader =
+    activeTabKey === 'templates' ||
+    activeTabKey === 'effects' ||
+    activeTabKey === 'animations';
+
   return (
-    <div className="h-full flex flex-col bg-[#141413] border-r border-white/10 select-none overflow-hidden">
-      {/* ── 3.1 Tab Rail (Compact tabs with small icon above label, amber underline) ── */}
-      <div className="flex items-center border-b border-white/10 bg-[#121211] shrink-0">
+    <div className="h-full flex bg-[#141413] border-r border-white/10 select-none overflow-hidden">
+      {/* ── Sub-Sections Vertical Navigation Rail (Left Rail) ── */}
+      <div className="w-[102px] shrink-0 border-r border-white/10 bg-[#121211] p-1.5 flex flex-col justify-between overflow-y-auto no-scrollbar">
         <div
           role="tablist"
-          aria-label="Library navigation"
-          className="flex items-center flex-1 overflow-x-auto no-scrollbar"
+          aria-label="Text sub-sections navigation"
+          aria-orientation="vertical"
+          className="flex flex-col gap-1 w-full"
         >
-          {[
-            { id: 'captions', label: 'Captions', icon: Captions },
-            { id: 'styles', label: 'Styles', icon: Type },
-            { id: 'effects', label: 'Effects', icon: SlidersHorizontal },
-            { id: 'animations', label: 'Anim', icon: Film },
-            { id: 'brand', label: 'Brand', icon: Palette },
-            { id: 'lowerThirds', label: 'Lower 3rd', icon: Layers },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = leftTab === tab.id;
+          {SUB_SECTIONS.map((sub) => {
+            const Icon = sub.icon;
+            const isActive = activeTabKey === sub.id;
             return (
               <button
-                key={tab.id}
+                key={sub.id}
+                id={`tab-${sub.id}`}
                 type="button"
                 role="tab"
                 aria-selected={isActive}
-                onClick={() => onTabChange(tab.id as LibraryTab)}
-                className={`min-w-[54px] flex-1 py-2 flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-colors relative ${
+                aria-controls={`panel-${sub.id}`}
+                onClick={() => onTabChange(sub.id)}
+                className={`w-full py-2.5 px-1.5 flex flex-col items-center justify-center gap-1 rounded-lg text-center transition-all cursor-pointer relative group ${
                   isActive
-                    ? 'text-amber-300 bg-white/5'
-                    : 'text-smoke hover:text-bone hover:bg-white/5'
+                    ? 'bg-amber-400/15 text-amber-300 border border-amber-400/30 shadow-xs font-semibold'
+                    : 'text-smoke hover:text-bone hover:bg-white/5 border border-transparent font-medium'
                 }`}
+                title={sub.description}
               >
-                <Icon className="w-3.5 h-3.5" />
-                <span className="text-[10px] tracking-tight">{tab.label}</span>
+                <Icon
+                  className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${
+                    isActive ? 'text-amber-400' : 'text-smoke group-hover:text-bone'
+                  }`}
+                />
+                <span className="text-[10px] leading-tight tracking-tight break-words text-center">
+                  {sub.label}
+                </span>
+                {sub.badge && (
+                  <span
+                    className={`text-[8px] px-1 py-0.2 rounded-full font-mono ${
+                      isActive
+                        ? 'bg-amber-400/25 text-amber-300 font-bold'
+                        : 'bg-white/5 text-mist group-hover:text-smoke'
+                    }`}
+                  >
+                    {sub.badge}
+                  </span>
+                )}
                 {isActive && (
-                  <div className="absolute bottom-0 left-2 right-2 h-[2px] bg-amber-400 rounded-full" />
+                  <div className="absolute left-0 top-2 bottom-2 w-[2.5px] bg-amber-400 rounded-r-full" />
                 )}
               </button>
             );
           })}
         </div>
+
         {onToggleCollapse && (
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="px-2 py-2 text-smoke hover:text-bone hover:bg-white/5 transition-colors shrink-0"
-            title="Collapse library panel ([)"
+            className="w-full mt-2 py-1.5 flex items-center justify-center gap-1 text-smoke hover:text-bone hover:bg-white/5 rounded-lg border border-transparent transition-colors text-[10px] font-medium cursor-pointer shrink-0"
+            title="Collapse text panel ([)"
             aria-label="Collapse library panel"
           >
             <ChevronLeft className="w-3.5 h-3.5" />
+            <span>Collapse</span>
           </button>
         )}
       </div>
 
-      {/* ── Tab Content Container ── */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
-        {/* ─────────────────────────────────────────────────────────────
-            TAB 1: CAPTIONS
-        ────────────────────────────────────────────────────────────── */}
-        {leftTab === 'captions' && (
-          <div className="space-y-3">
-            {/* Header: Language & Re-transcribe */}
-            <div className="flex items-center justify-between pb-2 border-b border-white/10 text-xs">
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded-full bg-amber-400/15 text-amber-300 font-mono text-[10px] font-bold uppercase">
-                  {spokenLanguage} · {scriptOutput}
-                </span>
-                <span className="text-smoke text-[11px]">{segments.length} captions</span>
-              </div>
-              {onRetranscribe && (
+      {/* ── Sub-Section Content Area (Right Panel) ── */}
+      <div
+        id={`panel-${activeTabKey}`}
+        role="tabpanel"
+        aria-labelledby={`tab-${activeTabKey}`}
+        className="flex-1 min-w-0 h-full flex flex-col overflow-hidden bg-[#141413]"
+      >
+        {/* Top Header of Active Sub-Section */}
+        <div className="h-11 px-3 border-b border-white/10 bg-[#121211]/60 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <h3 className="text-xs font-bold text-bone truncate">{currentSubSection.title}</h3>
+            {currentSubSection.badge && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-mist font-mono">
+                {currentSubSection.badge} presets
+              </span>
+            )}
+            {activeTabKey === 'captions' && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/20 font-mono font-bold uppercase">
+                {spokenLanguage} · {scriptOutput}
+              </span>
+            )}
+          </div>
+
+          {/* Header Action Items */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {showScopeHeader && (
+              <div className="flex items-center gap-1 bg-[#181817] p-0.5 rounded-md border border-white/5 text-xs">
                 <button
                   type="button"
-                  onClick={onRetranscribe}
-                  className="px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-mist hover:text-bone text-[10px] transition-colors"
-                >
-                  Re-transcribe
-                </button>
-              )}
-            </div>
-
-            {/* Captions List */}
-            <div className="space-y-1.5">
-              {segments.map((seg) => {
-                const isSelected = seg.id === (selectedId ?? activeId);
-                const issues = checkReadability(seg);
-                const hasWarning = issues.length > 0;
-                const hasOverride = !!seg.styleOverride;
-
-                return (
-                  <div
-                    key={seg.id}
-                    onClick={() => {
-                      onSelectSegment(seg.id);
-                      onSeek(seg.start);
-                    }}
-                    className={`p-2.5 rounded-xl border transition-all cursor-pointer group flex flex-col gap-1.5 ${
-                      isSelected
-                        ? 'bg-amber-400/10 border-amber-400/60 shadow-xs'
-                        : 'bg-[#181817] border-white/5 hover:border-white/15'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between text-[11px]">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-mono text-smoke text-[10px]">#{seg.index}</span>
-                        <span className="font-mono text-amber-400/90 text-[10px]">
-                          {formatTimecode(seg.start)}
-                        </span>
-                        {hasOverride && (
-                          <span
-                            className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"
-                            title="Has custom style override"
-                          />
-                        )}
-                        {hasWarning && (
-                          <span title={issues.map((i) => i.message).join(', ')}>
-                            <AlertTriangle className="w-3 h-3 text-amber-400/80" />
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] text-smoke">
-                          {(seg.end - seg.start).toFixed(2)}s
-                        </span>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const updated = segments
-                              .filter((s) => s.id !== seg.id)
-                              .map((s, i) => ({ ...s, index: i + 1 }));
-                            onSegmentsChange(updated);
-                          }}
-                          aria-label={`Delete caption ${seg.index}`}
-                          title="Delete segment"
-                          className="p-1 rounded hover:bg-white/10 text-smoke hover:text-crimson-2 transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <textarea
-                      aria-label={`Caption segment ${seg.index + 1}`}
-                      value={seg.text}
-                      onChange={(e) => {
-                        const updated = segments.map((s) =>
-                          s.id === seg.id ? { ...s, text: e.target.value } : s,
-                        );
-                        onSegmentsChange(updated);
-                      }}
-                      onFocus={() => {
-                        onSelectSegment(seg.id);
-                        onSeek(seg.start);
-                      }}
-                      rows={2}
-                      className="w-full bg-transparent text-bone text-xs leading-relaxed resize-none focus:outline-none rounded hover:bg-white/5 focus:bg-white/5 p-1 transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectSegment(seg.id);
-                        onSeek(seg.start);
-                      }}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* ─────────────────────────────────────────────────────────────
-            TAB 2: FULL STYLES GALLERY
-        ────────────────────────────────────────────────────────────── */}
-        {leftTab === 'styles' && (
-          <div className="space-y-3">
-            {renderScopeBanner()}
-            <LibraryStylesTab
-              style={style}
-              sampleSegment={sampleSegment}
-              userPresetsList={userPresetsList}
-              favorites={favorites}
-              onFavoritesChange={setFavorites}
-              onApplyPreset={applyPresetToScope}
-              onUserPresetsChange={setUserPresetsList}
-              onNotification={onNotification}
-            />
-          </div>
-        )}
-
-        {/* ─────────────────────────────────────────────────────────────
-            TAB 3: TEXT EFFECTS (LOOK-ONLY PRESETS)
-        ────────────────────────────────────────────────────────────── */}
-        {leftTab === 'effects' && (
-          <div className="space-y-3">
-            {renderScopeBanner()}
-            <p className="text-[11px] text-smoke">
-              Applies styling treatment (fill, outline, shadow, glow, 3D) without changing your
-              chosen font or animation.
-            </p>
-            <div className="grid grid-cols-3 gap-1.5">
-              {/* None / Reset tile: symbol only, no text label */}
-              <button
-                type="button"
-                onClick={() => applyLookToScope(NONE_LOOK, 'None')}
-                className="group p-2 rounded-lg bg-[#181817] border border-white/10 hover:border-amber-400 flex items-center justify-center transition-all hover:scale-102 min-h-[46px]"
-                title="None (reset text effect)"
-                aria-label="None (reset text effect)"
-              >
-                <Ban className="w-5 h-5 text-smoke/70 group-hover:text-amber-400 group-hover:scale-110 transition-all" />
-              </button>
-
-              {LOOK_PRESETS.map((eff) => (
-                <button
-                  key={eff.id}
-                  type="button"
-                  onClick={() => applyLookToScope(eff.look, eff.name)}
-                  className="p-2 rounded-lg bg-[#181817] border border-white/10 hover:border-amber-400 text-left transition-all hover:scale-102 flex flex-col gap-0.5 min-h-[46px]"
-                >
-                  <span className="text-[11px] font-bold text-bone truncate">{eff.name}</span>
-                  <span className="text-[9px] text-smoke">Effect</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ─────────────────────────────────────────────────────────────
-            TAB 4: ANIMATIONS (MOTION-ONLY PRESETS)
-        ────────────────────────────────────────────────────────────── */}
-        {leftTab === 'animations' && (
-          <div className="space-y-3">
-            {renderScopeBanner()}
-            <div className="flex items-center gap-1 bg-[#121211] p-0.5 rounded-lg border border-white/10">
-              {(['entrance', 'exit', 'highlight'] as const).map((sub) => (
-                <button
-                  key={sub}
-                  type="button"
-                  onClick={() => setAnimSubTab(sub)}
-                  className={`flex-1 py-1 rounded text-[11px] font-semibold capitalize transition-colors ${
-                    animSubTab === sub ? 'bg-amber-400 text-black' : 'text-smoke hover:text-bone'
+                  onClick={() => onScopeChange?.('all')}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${
+                    scope === 'all'
+                      ? 'bg-amber-400 text-black shadow-xs'
+                      : 'text-smoke hover:text-bone hover:bg-white/5'
                   }`}
                 >
-                  {sub}
+                  All
                 </button>
-              ))}
-            </div>
-
-            {animSubTab === 'entrance' && (
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { id: 'pop', name: 'Pop Bounce' },
-                  { id: 'slide-up', name: 'Slide Up' },
-                  { id: 'slide-down', name: 'Slide Down' },
-                  { id: 'zoom', name: 'Zoom Slam' },
-                  { id: 'blur', name: 'Blur In' },
-                  { id: 'mask-up', name: 'Mask Reveal' },
-                  { id: 'drop', name: 'Drop' },
-                  { id: 'typewriter', name: 'Typewriter' },
-                  { id: 'glitch', name: 'Glitch' },
-                  { id: 'fade', name: 'Fade' },
-                  { id: 'none', name: 'None' },
-                ].map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      onStyleChange({
-                        ...style,
-                        motion: { ...style.motion, in: item.id as any },
-                      });
-                      if (onNotification) onNotification(`Entrance set to: ${item.name}`);
-                    }}
-                    className={`p-2.5 rounded-xl border text-left transition-all ${
-                      style.motion.in === item.id
-                        ? 'bg-amber-400/15 border-amber-400 text-amber-300 font-bold'
-                        : 'bg-[#181817] border-white/10 hover:border-white/20 text-bone'
-                    }`}
-                  >
-                    <span className="text-xs">{item.name}</span>
-                  </button>
-                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (targetCaptionId) onScopeChange?.('caption');
+                    else if (onNotification)
+                      onNotification('Select a caption in the list or timeline first');
+                  }}
+                  disabled={!targetCaptionId}
+                  title="Apply to active caption only"
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${
+                    scope === 'caption'
+                      ? 'bg-amber-400 text-black shadow-xs'
+                      : targetCaptionId
+                        ? 'text-smoke hover:text-bone hover:bg-white/5'
+                        : 'text-smoke/40 cursor-not-allowed'
+                  }`}
+                >
+                  Caption
+                </button>
               </div>
             )}
-
-            {animSubTab === 'exit' && (
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { id: 'none', name: 'None' },
-                  { id: 'fade', name: 'Fade Out' },
-                  { id: 'slide-down', name: 'Slide Down' },
-                  { id: 'shrink', name: 'Shrink' },
-                ].map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      onStyleChange({
-                        ...style,
-                        motion: { ...style.motion, out: item.id as any },
-                      });
-                      if (onNotification) onNotification(`Exit set to: ${item.name}`);
-                    }}
-                    className={`p-2.5 rounded-xl border text-left transition-all ${
-                      style.motion.out === item.id
-                        ? 'bg-amber-400/15 border-amber-400 text-amber-300 font-bold'
-                        : 'bg-[#181817] border-white/10 hover:border-white/20 text-bone'
-                    }`}
-                  >
-                    <span className="text-xs">{item.name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {animSubTab === 'highlight' && (
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { id: 'box', name: 'Highlight Box' },
-                  { id: 'color', name: 'Active Color' },
-                  { id: 'underline', name: 'Underline Sweep' },
-                  { id: 'sweep', name: 'Karaoke Sweep' },
-                  { id: 'none', name: 'None' },
-                ].map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      onStyleChange({
-                        ...style,
-                        highlight: { ...style.highlight, mode: item.id as any },
-                      });
-                      if (onNotification) onNotification(`Highlight set to: ${item.name}`);
-                    }}
-                    className={`p-2.5 rounded-xl border text-left transition-all ${
-                      style.highlight.mode === item.id
-                        ? 'bg-amber-400/15 border-amber-400 text-amber-300 font-bold'
-                        : 'bg-[#181817] border-white/10 hover:border-white/20 text-bone'
-                    }`}
-                  >
-                    <span className="text-xs">{item.name}</span>
-                  </button>
-                ))}
-              </div>
+            {activeTabKey === 'captions' && onRetranscribe && (
+              <button
+                type="button"
+                onClick={onRetranscribe}
+                className="px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-mist hover:text-bone text-[10px] font-medium transition-colors cursor-pointer"
+              >
+                Re-transcribe
+              </button>
             )}
           </div>
-        )}
+        </div>
 
-        {/* ─────────────────────────────────────────────────────────────
-            TAB 5: BRAND KIT
-        ────────────────────────────────────────────────────────────── */}
-        {leftTab === 'brand' && (
-          <LibraryBrandTab
-            brandColors={brandColors}
-            setBrandColors={setBrandColors}
-            customFonts={customFonts}
-            setCustomFonts={setCustomFonts}
-            setUserPresetsList={setUserPresetsList}
-            onNotification={onNotification}
-          />
-        )}
+        {/* Scrollable Sub-Section Body */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-3">
+          {/* ─────────────────────────────────────────────────────────────
+              SUB-SECTION 1: ADD TEXT
+          ────────────────────────────────────────────────────────────── */}
+          {activeTabKey === 'addText' && (
+            <div className="space-y-4">
+              <div>
+                <p className="text-[11px] text-smoke leading-relaxed">
+                  Insert text overlays and titles at playhead{' '}
+                  <span className="font-mono text-amber-400 font-semibold">
+                    ({formatTimecode(currentTime)})
+                  </span>
+                  .
+                </p>
+              </div>
 
-        {/* ─────────────────────────────────────────────────────────────
-            TAB 6: LOWER THIRDS PACK LIBRARY
-        ────────────────────────────────────────────────────────────── */}
-        {leftTab === 'lowerThirds' && (
-          <LibraryLowerThirdsTab
-            currentTime={currentTime}
-            selectedLowerThirdId={selectedLowerThirdId}
-            selectedLowerThirdSpec={selectedLowerThirdSpec}
-            onAddLowerThird={(spec) => onAddLowerThird?.(spec)}
-            onUpdateLowerThird={(spec) => onUpdateLowerThird?.(spec)}
-            onAddMultipleLowerThirds={(specs) => onAddMultipleLowerThirds?.(specs)}
-          />
-        )}
+              {/* Quick Text Starter Tiles */}
+              <div className="grid grid-cols-2 gap-2.5">
+                {/* Default Text Card (CapCut style) */}
+                <button
+                  type="button"
+                  onClick={() => handleAddTextSegment('Default text')}
+                  className="group p-3.5 rounded-xl bg-[#181817] border border-white/10 hover:border-amber-400/80 hover:bg-[#1f1f1d] flex flex-col items-center justify-center gap-2 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                >
+                  <div className="w-9 h-9 rounded-lg bg-amber-400/10 border border-amber-400/20 group-hover:bg-amber-400/20 group-hover:border-amber-400 flex items-center justify-center transition-colors">
+                    <Plus className="w-5 h-5 text-amber-400 group-hover:scale-110 transition-transform" />
+                  </div>
+                  <span className="text-xs font-bold text-bone group-hover:text-amber-300">
+                    Default text
+                  </span>
+                  <span className="text-[10px] text-smoke">Add at playhead</span>
+                </button>
+
+                {/* Bold Headline Card */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleAddTextSegment('HEADLINE TITLE', {
+                      fontSize: 0.12,
+                      fontWeight: 900,
+                      textCase: 'upper',
+                      fillColor: '#FFFFFF',
+                      strokeColor: '#000000',
+                    })
+                  }
+                  className="group p-3.5 rounded-xl bg-[#181817] border border-white/10 hover:border-amber-400/80 hover:bg-[#1f1f1d] flex flex-col items-center justify-center gap-2 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                >
+                  <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 group-hover:border-amber-400 flex items-center justify-center font-black text-sm text-bone group-hover:text-amber-300">
+                    H1
+                  </div>
+                  <span className="text-xs font-bold text-bone group-hover:text-amber-300">
+                    Headline
+                  </span>
+                  <span className="text-[10px] text-smoke">Bold title</span>
+                </button>
+
+                {/* Subheading Card */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleAddTextSegment('Subtitle context', {
+                      fontSize: 0.07,
+                      fontWeight: 600,
+                      textCase: 'none',
+                      fillColor: '#E4E4E7',
+                      strokeColor: '#000000',
+                    })
+                  }
+                  className="group p-3.5 rounded-xl bg-[#181817] border border-white/10 hover:border-amber-400/80 hover:bg-[#1f1f1d] flex flex-col items-center justify-center gap-2 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                >
+                  <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 group-hover:border-amber-400 flex items-center justify-center font-medium text-xs text-bone group-hover:text-amber-300">
+                    H2
+                  </div>
+                  <span className="text-xs font-bold text-bone group-hover:text-amber-300">
+                    Subheading
+                  </span>
+                  <span className="text-[10px] text-smoke">Supporting line</span>
+                </button>
+
+                {/* Callout Quote Card */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleAddTextSegment('Highlight Quote', {
+                      fontSize: 0.08,
+                      fontWeight: 700,
+                      fillColor: '#FFFFFF',
+                      customStyle: {
+                        plate: {
+                          mode: 'line',
+                          color: 'rgba(20,20,25,0.85)',
+                          padX: 0.35,
+                          padY: 0.15,
+                          radius: 0.25,
+                        },
+                      },
+                    })
+                  }
+                  className="group p-3.5 rounded-xl bg-[#181817] border border-white/10 hover:border-amber-400/80 hover:bg-[#1f1f1d] flex flex-col items-center justify-center gap-2 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                >
+                  <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 group-hover:border-amber-400 flex items-center justify-center text-smoke group-hover:text-amber-300">
+                    <Quote className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-bold text-bone group-hover:text-amber-300">
+                    Callout Plate
+                  </span>
+                  <span className="text-[10px] text-smoke">Framed box</span>
+                </button>
+              </div>
+
+              {/* Lower Third Quick Jump */}
+              <div className="p-3 rounded-xl bg-[#181817] border border-white/5 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-amber-400/10 border border-amber-400/20 flex items-center justify-center shrink-0">
+                    <Layers className="w-4 h-4 text-amber-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-bone">Lower Thirds Library</div>
+                    <div className="text-[10px] text-smoke truncate">
+                      48 broadcast, cinematic & social name cards
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onTabChange('lowerThirds')}
+                  className="px-2.5 py-1 rounded-md bg-amber-400 text-black text-[10px] font-bold hover:bg-amber-300 transition-colors shrink-0 cursor-pointer"
+                >
+                  Browse
+                </button>
+              </div>
+
+              {/* Quick instructions */}
+              <div className="p-2.5 rounded-lg bg-white/5 border border-white/5 text-[11px] text-smoke space-y-1">
+                <div className="text-bone font-semibold text-[11px]">Workflow tips:</div>
+                <ul className="list-disc list-inside space-y-0.5 text-[10px] text-mist">
+                  <li>Click any card above to drop a text segment at the playhead.</li>
+                  <li>Drag corners in the video preview to reposition or scale.</li>
+                  <li>Customize colors, fonts, and animations in the Inspector.</li>
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {/* ─────────────────────────────────────────────────────────────
+              SUB-SECTION 2: TEMPLATES (FULL STYLES GALLERY)
+          ────────────────────────────────────────────────────────────── */}
+          {activeTabKey === 'templates' && (
+            <div className="space-y-3">
+              {renderScopeBanner()}
+              <LibraryStylesTab
+                style={style}
+                sampleSegment={sampleSegment}
+                userPresetsList={userPresetsList}
+                favorites={favorites}
+                onFavoritesChange={setFavorites}
+                onApplyPreset={applyPresetToScope}
+                onUserPresetsChange={setUserPresetsList}
+                onNotification={onNotification}
+              />
+            </div>
+          )}
+
+          {/* ─────────────────────────────────────────────────────────────
+              SUB-SECTION 3: LOWER THIRDS PACK LIBRARY
+          ────────────────────────────────────────────────────────────── */}
+          {activeTabKey === 'lowerThirds' && (
+            <LibraryLowerThirdsTab
+              currentTime={currentTime}
+              selectedLowerThirdId={selectedLowerThirdId}
+              selectedLowerThirdSpec={selectedLowerThirdSpec}
+              onAddLowerThird={(spec) => onAddLowerThird?.(spec)}
+              onUpdateLowerThird={(spec) => onUpdateLowerThird?.(spec)}
+              onAddMultipleLowerThirds={(specs) => onAddMultipleLowerThirds?.(specs)}
+            />
+          )}
+
+          {/* ─────────────────────────────────────────────────────────────
+              SUB-SECTION 4: TEXT EFFECTS (LOOK-ONLY PRESETS)
+          ────────────────────────────────────────────────────────────── */}
+          {activeTabKey === 'effects' && (
+            <div className="space-y-3">
+              {renderScopeBanner()}
+              <p className="text-[11px] text-smoke">
+                Applies styling treatments (fill, stroke, shadow, glow, 3D) without altering your
+                font or animation timings.
+              </p>
+              <div className="grid grid-cols-3 gap-1.5">
+                {/* None / Reset tile */}
+                <button
+                  type="button"
+                  onClick={() => applyLookToScope(NONE_LOOK, 'None')}
+                  className="group p-2 rounded-lg bg-[#181817] border border-white/10 hover:border-amber-400 flex items-center justify-center transition-all hover:scale-102 min-h-[46px] cursor-pointer"
+                  title="None (reset text effect)"
+                  aria-label="None (reset text effect)"
+                >
+                  <Ban className="w-5 h-5 text-smoke/70 group-hover:text-amber-400 group-hover:scale-110 transition-all" />
+                </button>
+
+                {LOOK_PRESETS.map((eff) => (
+                  <button
+                    key={eff.id}
+                    type="button"
+                    onClick={() => applyLookToScope(eff.look, eff.name)}
+                    className="p-2 rounded-lg bg-[#181817] border border-white/10 hover:border-amber-400 text-left transition-all hover:scale-102 flex flex-col gap-0.5 min-h-[46px] cursor-pointer"
+                  >
+                    <span className="text-[11px] font-bold text-bone truncate">{eff.name}</span>
+                    <span className="text-[9px] text-smoke">Effect</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ─────────────────────────────────────────────────────────────
+              SUB-SECTION 5: ANIMATIONS (MOTION-ONLY PRESETS)
+          ────────────────────────────────────────────────────────────── */}
+          {activeTabKey === 'animations' && (
+            <div className="space-y-3">
+              {renderScopeBanner()}
+              <div className="flex items-center gap-1 bg-[#121211] p-0.5 rounded-lg border border-white/10">
+                {(['entrance', 'exit', 'highlight'] as const).map((sub) => (
+                  <button
+                    key={sub}
+                    type="button"
+                    onClick={() => setAnimSubTab(sub)}
+                    className={`flex-1 py-1 rounded text-[11px] font-semibold capitalize transition-colors cursor-pointer ${
+                      animSubTab === sub ? 'bg-amber-400 text-black' : 'text-smoke hover:text-bone'
+                    }`}
+                  >
+                    {sub}
+                  </button>
+                ))}
+              </div>
+
+              {animSubTab === 'entrance' && (
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: 'pop', name: 'Pop Bounce' },
+                    { id: 'slide-up', name: 'Slide Up' },
+                    { id: 'slide-down', name: 'Slide Down' },
+                    { id: 'zoom', name: 'Zoom Slam' },
+                    { id: 'blur', name: 'Blur In' },
+                    { id: 'mask-up', name: 'Mask Reveal' },
+                    { id: 'drop', name: 'Drop' },
+                    { id: 'typewriter', name: 'Typewriter' },
+                    { id: 'glitch', name: 'Glitch' },
+                    { id: 'fade', name: 'Fade' },
+                    { id: 'none', name: 'None' },
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        onStyleChange({
+                          ...style,
+                          motion: { ...style.motion, in: item.id as any },
+                        });
+                        if (onNotification) onNotification(`Entrance set to: ${item.name}`);
+                      }}
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        style.motion.in === item.id
+                          ? 'bg-amber-400/15 border-amber-400 text-amber-300 font-bold'
+                          : 'bg-[#181817] border-white/10 hover:border-white/20 text-bone'
+                      }`}
+                    >
+                      <span className="text-xs">{item.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {animSubTab === 'exit' && (
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: 'none', name: 'None' },
+                    { id: 'fade', name: 'Fade Out' },
+                    { id: 'slide-down', name: 'Slide Down' },
+                    { id: 'shrink', name: 'Shrink' },
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        onStyleChange({
+                          ...style,
+                          motion: { ...style.motion, out: item.id as any },
+                        });
+                        if (onNotification) onNotification(`Exit set to: ${item.name}`);
+                      }}
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        style.motion.out === item.id
+                          ? 'bg-amber-400/15 border-amber-400 text-amber-300 font-bold'
+                          : 'bg-[#181817] border-white/10 hover:border-white/20 text-bone'
+                      }`}
+                    >
+                      <span className="text-xs">{item.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {animSubTab === 'highlight' && (
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: 'box', name: 'Highlight Box' },
+                    { id: 'color', name: 'Active Color' },
+                    { id: 'underline', name: 'Underline Sweep' },
+                    { id: 'sweep', name: 'Karaoke Sweep' },
+                    { id: 'none', name: 'None' },
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        onStyleChange({
+                          ...style,
+                          highlight: { ...style.highlight, mode: item.id as any },
+                        });
+                        if (onNotification) onNotification(`Highlight set to: ${item.name}`);
+                      }}
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        style.highlight.mode === item.id
+                          ? 'bg-amber-400/15 border-amber-400 text-amber-300 font-bold'
+                          : 'bg-[#181817] border-white/10 hover:border-white/20 text-bone'
+                      }`}
+                    >
+                      <span className="text-xs">{item.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ─────────────────────────────────────────────────────────────
+              SUB-SECTION 6: YOURS / BRAND KIT
+          ────────────────────────────────────────────────────────────── */}
+          {activeTabKey === 'brand' && (
+            <LibraryBrandTab
+              brandColors={brandColors}
+              setBrandColors={setBrandColors}
+              customFonts={customFonts}
+              setCustomFonts={setCustomFonts}
+              setUserPresetsList={setUserPresetsList}
+              onNotification={onNotification}
+            />
+          )}
+
+          {/* ─────────────────────────────────────────────────────────────
+              SUB-SECTION 7: CAPTIONS LIST
+          ────────────────────────────────────────────────────────────── */}
+          {activeTabKey === 'captions' && (
+            <div className="space-y-3">
+              {/* Captions List */}
+              <div className="space-y-1.5">
+                {segments.map((seg) => {
+                  const isSelected = seg.id === (selectedId ?? activeId);
+                  const issues = checkReadability(seg);
+                  const hasWarning = issues.length > 0;
+                  const hasOverride = !!seg.styleOverride;
+
+                  return (
+                    <div
+                      key={seg.id}
+                      onClick={() => {
+                        onSelectSegment(seg.id);
+                        onSeek(seg.start);
+                      }}
+                      className={`p-2.5 rounded-xl border transition-all cursor-pointer group flex flex-col gap-1.5 ${
+                        isSelected
+                          ? 'bg-amber-400/10 border-amber-400/60 shadow-xs'
+                          : 'bg-[#181817] border-white/5 hover:border-white/15'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between text-[11px]">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono text-smoke text-[10px]">#{seg.index}</span>
+                          <span className="font-mono text-amber-400/90 text-[10px]">
+                            {formatTimecode(seg.start)}
+                          </span>
+                          {hasOverride && (
+                            <span
+                              className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"
+                              title="Has custom style override"
+                            />
+                          )}
+                          {hasWarning && (
+                            <span title={issues.map((i) => i.message).join(', ')}>
+                              <AlertTriangle className="w-3 h-3 text-amber-400/80" />
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] text-smoke">
+                            {(seg.end - seg.start).toFixed(2)}s
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const updated = segments
+                                .filter((s) => s.id !== seg.id)
+                                .map((s, i) => ({ ...s, index: i + 1 }));
+                              onSegmentsChange(updated);
+                            }}
+                            aria-label={`Delete caption ${seg.index}`}
+                            title="Delete segment"
+                            className="p-1 rounded hover:bg-white/10 text-smoke hover:text-crimson-2 transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <textarea
+                        aria-label={`Caption segment ${seg.index + 1}`}
+                        value={seg.text}
+                        onChange={(e) => {
+                          const updated = segments.map((s) =>
+                            s.id === seg.id ? { ...s, text: e.target.value } : s,
+                          );
+                          onSegmentsChange(updated);
+                        }}
+                        onFocus={() => {
+                          onSelectSegment(seg.id);
+                          onSeek(seg.start);
+                        }}
+                        rows={2}
+                        className="w-full bg-transparent text-bone text-xs leading-relaxed resize-none focus:outline-none rounded hover:bg-white/5 focus:bg-white/5 p-1 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectSegment(seg.id);
+                          onSeek(seg.start);
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
