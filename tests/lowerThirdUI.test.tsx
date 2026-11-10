@@ -47,10 +47,11 @@ describe('Phase E: Lower Thirds Library UI & Interaction Suite', () => {
     render(<LibraryLowerThirdsTab currentTime={5.0} onAddLowerThird={vi.fn()} />);
 
     // Verify pack chips are rendered
-    expect(screen.getByRole('button', { name: /All \(48\)/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /All \(60\)/i })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Clean Corporate' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Gaming and Tech' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Indic Pack' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Modern Lower Thirds' })).toBeDefined();
 
     // Verify search input
     const searchInput = screen.getByLabelText('Search lower third templates') as HTMLInputElement;

@@ -2894,7 +2894,855 @@ export const INDIC_PACK_TEMPLATES: LowerThirdTemplate[] = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Complete 6 Packs Definition
+// PACK 7: MODERN LOWER THIRDS (contemporary creator, podcast, and broadcast)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const MODERN_CANVAS = {
+  referenceWidth: 1080,
+  referenceHeight: 1920,
+  safeZone: { top: 0.05, bottom: 0.08, left: 0.06, right: 0.06 },
+} as const;
+
+const MODERN_COMMON_SLOTS = [
+  {
+    id: 'primaryColor',
+    label: 'Accent Color',
+    type: 'color' as const,
+    target: 'colors.primary',
+    default: '#38BDF8',
+  },
+  {
+    id: 'secondaryColor',
+    label: 'Plate Color',
+    type: 'color' as const,
+    target: 'colors.secondary',
+    default: '#18181B',
+  },
+  {
+    id: 'textColor',
+    label: 'Name Color',
+    type: 'color' as const,
+    target: 'colors.textPrimary',
+    default: '#FFFFFF',
+  },
+  {
+    id: 'roleColor',
+    label: 'Role Color',
+    type: 'color' as const,
+    target: 'colors.textSecondary',
+    default: '#A1A1AA',
+  },
+  {
+    id: 'fontFamily',
+    label: 'Font Family',
+    type: 'font' as const,
+    target: 'font.family',
+    default: 'inter',
+  },
+  {
+    id: 'scale',
+    label: 'Scale',
+    type: 'number' as const,
+    target: 'scale',
+    default: 1.0,
+    min: 0.5,
+    max: 2.0,
+    step: 0.05,
+  },
+];
+
+const MODERN_AUTO_FIT = {
+  minScale: 0.55,
+  maxLines: 2,
+  truncate: true,
+  overflow: 'shrink' as const,
+};
+
+export const MODERN_TEMPLATES: LowerThirdTemplate[] = [
+  // 1. Minimal Bar
+  {
+    id: 'modern-minimal-bar',
+    packId: 'modern',
+    name: 'Minimal Bar',
+    version: 1,
+    category: 'Modern',
+    tags: ['minimal', 'bar', 'clean', 'podcast', 'documentary'],
+    author: 'Epic Hertz Studio',
+    license: 'OFL-1.1 / MIT',
+    canvas: { ...MODERN_CANVAS },
+    elements: [
+      {
+        id: 'accent-bar',
+        type: 'shape',
+        role: 'decor',
+        geometry: { x: 0, y: 0, width: 6, height: 'content', align: 'left', anchor: 'frame' },
+        style: { fill: '$colors.primary', radius: 3, opacity: 1 },
+        animation: {
+          in: { type: 'lineDraw', duration: 0.55, delay: 0, easing: 'easeOutExpo', direction: 'top' },
+          out: { type: 'fade', duration: 0.35, delay: 0.1, easing: 'easeOutCubic' },
+        },
+      },
+      {
+        id: 'text-name',
+        type: 'text',
+        role: 'name',
+        geometry: { x: 0.02, y: 0, width: 'content', height: 'content', align: 'left', anchor: 'frame' },
+        style: { fill: '$colors.textPrimary', opacity: 1 },
+        animation: {
+          in: { type: 'maskSlideUp', duration: 0.5, delay: 0.1, easing: 'easeOutCubic' },
+          out: { type: 'slideOut', duration: 0.35, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+      {
+        id: 'text-role',
+        type: 'text',
+        role: 'role',
+        geometry: { x: 0.02, y: 0.032, width: 'content', height: 'content', align: 'left', anchor: 'frame' },
+        style: { fill: '$colors.textSecondary', opacity: 1 },
+        animation: {
+          in: { type: 'maskSlideUp', duration: 0.45, delay: 0.16, easing: 'easeOutCubic' },
+          out: { type: 'slideOut', duration: 0.3, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+    ],
+    slots: [
+      { ...MODERN_COMMON_SLOTS[0], default: '#38BDF8' },
+      { ...MODERN_COMMON_SLOTS[1], default: 'transparent' },
+      { ...MODERN_COMMON_SLOTS[2], default: '#FFFFFF' },
+      { ...MODERN_COMMON_SLOTS[3], default: '#A1A1AA' },
+      { ...MODERN_COMMON_SLOTS[4], default: 'inter' },
+      MODERN_COMMON_SLOTS[5],
+    ],
+    autoFit: MODERN_AUTO_FIT,
+  },
+
+  // 2. Glass Card
+  {
+    id: 'modern-glass-card',
+    packId: 'modern',
+    name: 'Glass Card',
+    version: 1,
+    category: 'Modern',
+    tags: ['glass', 'frosted', 'premium', 'creator', 'soft'],
+    author: 'Epic Hertz Studio',
+    license: 'OFL-1.1 / MIT',
+    canvas: { ...MODERN_CANVAS },
+    elements: [
+      {
+        id: 'glass-plate',
+        type: 'shape',
+        role: 'container',
+        geometry: { x: 0, y: 0, width: 'content', height: 'content', align: 'left', anchor: 'frame' },
+        style: {
+          fill: 'rgba(24,24,27,0.72)',
+          radius: 14,
+          opacity: 1,
+          shadow: { x: 0, y: 8, blur: 24, color: 'rgba(0,0,0,0.35)' },
+        },
+        animation: {
+          in: { type: 'scalePop', duration: 0.55, delay: 0, easing: 'easeOutBack', overshoot: 0.06 },
+          out: { type: 'fade', duration: 0.4, delay: 0.05, easing: 'easeOutCubic' },
+        },
+      },
+      {
+        id: 'text-name',
+        type: 'text',
+        role: 'name',
+        geometry: { x: 0.025, y: 0.012, width: 'content', height: 'content', align: 'left', anchor: 'name' },
+        style: { fill: '$colors.textPrimary', opacity: 1 },
+        animation: {
+          in: { type: 'fadeUp', duration: 0.45, delay: 0.12, easing: 'easeOutCubic' },
+          out: { type: 'fade', duration: 0.3, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+      {
+        id: 'text-role',
+        type: 'text',
+        role: 'role',
+        geometry: { x: 0.025, y: 0.042, width: 'content', height: 'content', align: 'left', anchor: 'name' },
+        style: { fill: '$colors.textSecondary', opacity: 1 },
+        animation: {
+          in: { type: 'fadeUp', duration: 0.4, delay: 0.18, easing: 'easeOutCubic' },
+          out: { type: 'fade', duration: 0.28, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+    ],
+    slots: [
+      { ...MODERN_COMMON_SLOTS[0], default: '#38BDF8' },
+      { ...MODERN_COMMON_SLOTS[1], default: 'rgba(24,24,27,0.72)' },
+      { ...MODERN_COMMON_SLOTS[2], default: '#FFFFFF' },
+      { ...MODERN_COMMON_SLOTS[3], default: '#A1A1AA' },
+      { ...MODERN_COMMON_SLOTS[4], default: 'inter' },
+      MODERN_COMMON_SLOTS[5],
+    ],
+    autoFit: MODERN_AUTO_FIT,
+  },
+
+  // 3. Gradient Pill
+  {
+    id: 'modern-gradient-pill',
+    packId: 'modern',
+    name: 'Gradient Pill',
+    version: 1,
+    category: 'Modern',
+    tags: ['pill', 'rounded', 'social', 'reels', 'soft'],
+    author: 'Epic Hertz Studio',
+    license: 'OFL-1.1 / MIT',
+    canvas: { ...MODERN_CANVAS },
+    elements: [
+      {
+        id: 'pill-bg',
+        type: 'shape',
+        role: 'container',
+        geometry: { x: 0, y: 0, width: 'content', height: 72, align: 'left', anchor: 'frame' },
+        style: { fill: '$colors.secondary', radius: 36, opacity: 1 },
+        animation: {
+          in: { type: 'wipe', duration: 0.6, delay: 0, easing: 'easeOutExpo', direction: 'left' },
+          out: { type: 'wipe', duration: 0.45, delay: 0.08, easing: 'easeOutExpo', direction: 'left' },
+        },
+      },
+      {
+        id: 'accent-dot',
+        type: 'shape',
+        role: 'decor',
+        geometry: { x: 0.018, y: 0.018, width: 12, height: 12, align: 'left', anchor: 'frame' },
+        style: { fill: '$colors.primary', radius: 6, opacity: 1 },
+        animation: {
+          in: { type: 'scalePop', duration: 0.45, delay: 0.15, easing: 'easeOutBack', overshoot: 0.12 },
+          out: { type: 'fade', duration: 0.3, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+      {
+        id: 'text-name',
+        type: 'text',
+        role: 'name',
+        geometry: { x: 0.04, y: 0.008, width: 'content', height: 'content', align: 'left', anchor: 'frame' },
+        style: { fill: '$colors.textPrimary', opacity: 1 },
+        animation: {
+          in: { type: 'maskSlideUp', duration: 0.5, delay: 0.12, easing: 'easeOutCubic' },
+          out: { type: 'slideOut', duration: 0.35, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+      {
+        id: 'text-role',
+        type: 'text',
+        role: 'role',
+        geometry: { x: 0.04, y: 0.032, width: 'content', height: 'content', align: 'left', anchor: 'frame' },
+        style: { fill: '$colors.textSecondary', opacity: 1 },
+        animation: {
+          in: { type: 'maskSlideUp', duration: 0.45, delay: 0.18, easing: 'easeOutCubic' },
+          out: { type: 'slideOut', duration: 0.3, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+    ],
+    slots: [
+      { ...MODERN_COMMON_SLOTS[0], default: '#22D3EE' },
+      { ...MODERN_COMMON_SLOTS[1], default: '#0F172A' },
+      { ...MODERN_COMMON_SLOTS[2], default: '#F8FAFC' },
+      { ...MODERN_COMMON_SLOTS[3], default: '#94A3B8' },
+      { ...MODERN_COMMON_SLOTS[4], default: 'montserrat' },
+      MODERN_COMMON_SLOTS[5],
+    ],
+    autoFit: MODERN_AUTO_FIT,
+  },
+
+  // 4. Side Accent
+  {
+    id: 'modern-side-accent',
+    packId: 'modern',
+    name: 'Side Accent',
+    version: 1,
+    category: 'Modern',
+    tags: ['side', 'accent', 'broadcast', 'news', 'bold'],
+    author: 'Epic Hertz Studio',
+    license: 'OFL-1.1 / MIT',
+    canvas: { ...MODERN_CANVAS },
+    elements: [
+      {
+        id: 'side-bar',
+        type: 'shape',
+        role: 'decor',
+        geometry: { x: 0, y: 0, width: 10, height: 'content', align: 'left', anchor: 'frame' },
+        style: { fill: '$colors.primary', radius: 0, opacity: 1 },
+        animation: {
+          in: { type: 'wipe', duration: 0.5, delay: 0, easing: 'easeOutExpo', direction: 'top' },
+          out: { type: 'wipe', duration: 0.35, delay: 0.1, easing: 'easeOutExpo', direction: 'bottom' },
+        },
+      },
+      {
+        id: 'plate',
+        type: 'shape',
+        role: 'container',
+        geometry: { x: 0.012, y: 0, width: 'content', height: 'content', align: 'left', anchor: 'frame' },
+        style: { fill: '$colors.secondary', radius: 0, opacity: 0.92 },
+        animation: {
+          in: { type: 'wipe', duration: 0.55, delay: 0.05, easing: 'easeOutExpo', direction: 'left' },
+          out: { type: 'wipe', duration: 0.4, delay: 0, easing: 'easeOutExpo', direction: 'left' },
+        },
+      },
+      {
+        id: 'text-name',
+        type: 'text',
+        role: 'name',
+        geometry: { x: 0.03, y: 0.01, width: 'content', height: 'content', align: 'left', anchor: 'name' },
+        style: { fill: '$colors.textPrimary', opacity: 1 },
+        animation: {
+          in: { type: 'maskSlideUp', duration: 0.45, delay: 0.15, easing: 'easeOutCubic' },
+          out: { type: 'slideOut', duration: 0.3, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+      {
+        id: 'text-role',
+        type: 'text',
+        role: 'role',
+        geometry: { x: 0.03, y: 0.038, width: 'content', height: 'content', align: 'left', anchor: 'name' },
+        style: { fill: '$colors.textSecondary', opacity: 1 },
+        animation: {
+          in: { type: 'maskSlideUp', duration: 0.4, delay: 0.2, easing: 'easeOutCubic' },
+          out: { type: 'slideOut', duration: 0.28, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+    ],
+    slots: [
+      { ...MODERN_COMMON_SLOTS[0], default: '#F59E0B' },
+      { ...MODERN_COMMON_SLOTS[1], default: '#111113' },
+      { ...MODERN_COMMON_SLOTS[2], default: '#FFFFFF' },
+      { ...MODERN_COMMON_SLOTS[3], default: '#FBBF24' },
+      { ...MODERN_COMMON_SLOTS[4], default: 'oswald' },
+      MODERN_COMMON_SLOTS[5],
+    ],
+    autoFit: MODERN_AUTO_FIT,
+  },
+
+  // 5. Underline Name
+  {
+    id: 'modern-underline-name',
+    packId: 'modern',
+    name: 'Underline Name',
+    version: 1,
+    category: 'Modern',
+    tags: ['underline', 'editorial', 'minimal', 'clean'],
+    author: 'Epic Hertz Studio',
+    license: 'OFL-1.1 / MIT',
+    canvas: { ...MODERN_CANVAS },
+    elements: [
+      {
+        id: 'text-name',
+        type: 'text',
+        role: 'name',
+        geometry: { x: 0, y: 0, width: 'content', height: 'content', align: 'left', anchor: 'frame' },
+        style: { fill: '$colors.textPrimary', opacity: 1 },
+        animation: {
+          in: { type: 'fadeUp', duration: 0.5, delay: 0, easing: 'easeOutCubic' },
+          out: { type: 'fade', duration: 0.35, delay: 0.05, easing: 'easeOutCubic' },
+        },
+      },
+      {
+        id: 'underline',
+        type: 'line',
+        role: 'decor',
+        geometry: { x: 0, y: 0.038, width: 'content', height: 3, align: 'left', anchor: 'name' },
+        style: { fill: '$colors.primary', radius: 1.5, opacity: 1 },
+        animation: {
+          in: { type: 'lineDraw', duration: 0.55, delay: 0.15, easing: 'easeOutExpo', direction: 'left' },
+          out: { type: 'fade', duration: 0.3, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+      {
+        id: 'text-role',
+        type: 'text',
+        role: 'role',
+        geometry: { x: 0, y: 0.05, width: 'content', height: 'content', align: 'left', anchor: 'name' },
+        style: { fill: '$colors.textSecondary', opacity: 1 },
+        animation: {
+          in: { type: 'fade', duration: 0.4, delay: 0.25, easing: 'easeOutCubic' },
+          out: { type: 'fade', duration: 0.28, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+    ],
+    slots: [
+      { ...MODERN_COMMON_SLOTS[0], default: '#38BDF8' },
+      { ...MODERN_COMMON_SLOTS[1], default: 'transparent' },
+      { ...MODERN_COMMON_SLOTS[2], default: '#FFFFFF' },
+      { ...MODERN_COMMON_SLOTS[3], default: '#A1A1AA' },
+      { ...MODERN_COMMON_SLOTS[4], default: 'inter' },
+      MODERN_COMMON_SLOTS[5],
+    ],
+    autoFit: MODERN_AUTO_FIT,
+  },
+
+  // 6. Stacked Cards
+  {
+    id: 'modern-stacked-cards',
+    packId: 'modern',
+    name: 'Stacked Cards',
+    version: 1,
+    category: 'Modern',
+    tags: ['stacked', 'layered', 'bold', 'name-tag'],
+    author: 'Epic Hertz Studio',
+    license: 'OFL-1.1 / MIT',
+    canvas: { ...MODERN_CANVAS },
+    elements: [
+      {
+        id: 'card-name',
+        type: 'shape',
+        role: 'container',
+        geometry: { x: 0, y: 0, width: 'content', height: 'content', align: 'left', anchor: 'frame' },
+        style: { fill: '$colors.primary', radius: 6, opacity: 1 },
+        animation: {
+          in: { type: 'wipe', duration: 0.55, delay: 0, easing: 'easeOutExpo', direction: 'left' },
+          out: { type: 'wipe', duration: 0.4, delay: 0.1, easing: 'easeOutExpo', direction: 'left' },
+        },
+      },
+      {
+        id: 'card-role',
+        type: 'shape',
+        role: 'container',
+        geometry: { x: 0.012, y: 0.038, width: 'content', height: 'content', align: 'left', anchor: 'frame' },
+        style: { fill: '$colors.secondary', radius: 6, opacity: 1 },
+        animation: {
+          in: { type: 'wipe', duration: 0.5, delay: 0.1, easing: 'easeOutExpo', direction: 'left' },
+          out: { type: 'wipe', duration: 0.35, delay: 0, easing: 'easeOutExpo', direction: 'left' },
+        },
+      },
+      {
+        id: 'text-name',
+        type: 'text',
+        role: 'name',
+        geometry: { x: 0.02, y: 0.006, width: 'content', height: 'content', align: 'left', anchor: 'name' },
+        style: { fill: '$colors.textPrimary', opacity: 1 },
+        animation: {
+          in: { type: 'maskSlideUp', duration: 0.45, delay: 0.12, easing: 'easeOutCubic' },
+          out: { type: 'slideOut', duration: 0.3, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+      {
+        id: 'text-role',
+        type: 'text',
+        role: 'role',
+        geometry: { x: 0.03, y: 0.044, width: 'content', height: 'content', align: 'left', anchor: 'name' },
+        style: { fill: '$colors.textSecondary', opacity: 1 },
+        animation: {
+          in: { type: 'maskSlideUp', duration: 0.4, delay: 0.2, easing: 'easeOutCubic' },
+          out: { type: 'slideOut', duration: 0.28, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+    ],
+    slots: [
+      { ...MODERN_COMMON_SLOTS[0], default: '#F59E0B' },
+      { ...MODERN_COMMON_SLOTS[1], default: '#18181B' },
+      { ...MODERN_COMMON_SLOTS[2], default: '#18181B' },
+      { ...MODERN_COMMON_SLOTS[3], default: '#E4E4E7' },
+      { ...MODERN_COMMON_SLOTS[4], default: 'montserrat' },
+      MODERN_COMMON_SLOTS[5],
+    ],
+    autoFit: MODERN_AUTO_FIT,
+  },
+
+  // 7. Neon Edge
+  {
+    id: 'modern-neon-edge',
+    packId: 'modern',
+    name: 'Neon Edge',
+    version: 1,
+    category: 'Modern',
+    tags: ['neon', 'glow', 'gaming', 'night', 'cyber'],
+    author: 'Epic Hertz Studio',
+    license: 'OFL-1.1 / MIT',
+    canvas: { ...MODERN_CANVAS },
+    elements: [
+      {
+        id: 'plate',
+        type: 'shape',
+        role: 'container',
+        geometry: { x: 0, y: 0, width: 'content', height: 'content', align: 'left', anchor: 'frame' },
+        style: {
+          fill: 'rgba(10,10,15,0.88)',
+          radius: 4,
+          opacity: 1,
+          shadow: { x: 0, y: 0, blur: 20, color: 'rgba(56,189,248,0.25)' },
+        },
+        animation: {
+          in: { type: 'wipe', duration: 0.55, delay: 0, easing: 'easeOutExpo', direction: 'left' },
+          out: { type: 'wipe', duration: 0.4, delay: 0.08, easing: 'easeOutExpo', direction: 'left' },
+        },
+      },
+      {
+        id: 'neon-bar',
+        type: 'shape',
+        role: 'decor',
+        geometry: { x: 0, y: 0, width: 4, height: 'content', align: 'left', anchor: 'frame' },
+        style: { fill: '$colors.primary', radius: 2, opacity: 1 },
+        animation: {
+          in: { type: 'lineDraw', duration: 0.5, delay: 0.05, easing: 'easeOutExpo', direction: 'top' },
+          out: { type: 'fade', duration: 0.3, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+      {
+        id: 'text-name',
+        type: 'text',
+        role: 'name',
+        geometry: { x: 0.025, y: 0.01, width: 'content', height: 'content', align: 'left', anchor: 'name' },
+        style: { fill: '$colors.textPrimary', opacity: 1 },
+        animation: {
+          in: { type: 'maskSlideUp', duration: 0.45, delay: 0.12, easing: 'easeOutCubic' },
+          out: { type: 'slideOut', duration: 0.3, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+      {
+        id: 'text-role',
+        type: 'text',
+        role: 'role',
+        geometry: { x: 0.025, y: 0.04, width: 'content', height: 'content', align: 'left', anchor: 'name' },
+        style: { fill: '$colors.textSecondary', opacity: 1 },
+        animation: {
+          in: { type: 'maskSlideUp', duration: 0.4, delay: 0.18, easing: 'easeOutCubic' },
+          out: { type: 'slideOut', duration: 0.28, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+    ],
+    slots: [
+      { ...MODERN_COMMON_SLOTS[0], default: '#22D3EE' },
+      { ...MODERN_COMMON_SLOTS[1], default: 'rgba(10,10,15,0.88)' },
+      { ...MODERN_COMMON_SLOTS[2], default: '#E0F2FE' },
+      { ...MODERN_COMMON_SLOTS[3], default: '#67E8F9' },
+      { ...MODERN_COMMON_SLOTS[4], default: 'unbounded' },
+      MODERN_COMMON_SLOTS[5],
+    ],
+    autoFit: MODERN_AUTO_FIT,
+  },
+
+  // 8. Creator Handle
+  {
+    id: 'modern-creator-handle',
+    packId: 'modern',
+    name: 'Creator Handle',
+    version: 1,
+    category: 'Modern',
+    tags: ['handle', 'creator', 'youtube', 'instagram', 'social'],
+    author: 'Epic Hertz Studio',
+    license: 'OFL-1.1 / MIT',
+    canvas: { ...MODERN_CANVAS },
+    elements: [
+      {
+        id: 'plate',
+        type: 'shape',
+        role: 'container',
+        geometry: { x: 0, y: 0, width: 'content', height: 'content', align: 'left', anchor: 'frame' },
+        style: { fill: '$colors.secondary', radius: 10, opacity: 0.9 },
+        animation: {
+          in: { type: 'scalePop', duration: 0.5, delay: 0, easing: 'easeOutBack', overshoot: 0.05 },
+          out: { type: 'fade', duration: 0.35, delay: 0.05, easing: 'easeOutCubic' },
+        },
+      },
+      {
+        id: 'text-name',
+        type: 'text',
+        role: 'name',
+        geometry: { x: 0.022, y: 0.01, width: 'content', height: 'content', align: 'left', anchor: 'name' },
+        style: { fill: '$colors.textPrimary', opacity: 1 },
+        animation: {
+          in: { type: 'fadeUp', duration: 0.4, delay: 0.1, easing: 'easeOutCubic' },
+          out: { type: 'fade', duration: 0.28, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+      {
+        id: 'text-role',
+        type: 'text',
+        role: 'role',
+        geometry: { x: 0.022, y: 0.038, width: 'content', height: 'content', align: 'left', anchor: 'name' },
+        style: { fill: '$colors.primary', opacity: 1 },
+        animation: {
+          in: { type: 'fadeUp', duration: 0.35, delay: 0.16, easing: 'easeOutCubic' },
+          out: { type: 'fade', duration: 0.25, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+    ],
+    slots: [
+      { ...MODERN_COMMON_SLOTS[0], default: '#A78BFA' },
+      { ...MODERN_COMMON_SLOTS[1], default: '#18181B' },
+      { ...MODERN_COMMON_SLOTS[2], default: '#FFFFFF' },
+      { ...MODERN_COMMON_SLOTS[3], default: '#A78BFA' },
+      { ...MODERN_COMMON_SLOTS[4], default: 'inter' },
+      MODERN_COMMON_SLOTS[5],
+    ],
+    autoFit: MODERN_AUTO_FIT,
+  },
+
+  // 9. Broadcast Strip
+  {
+    id: 'modern-broadcast-strip',
+    packId: 'modern',
+    name: 'Broadcast Strip',
+    version: 1,
+    category: 'Modern',
+    tags: ['broadcast', 'strip', 'news', 'live', 'wide'],
+    author: 'Epic Hertz Studio',
+    license: 'OFL-1.1 / MIT',
+    canvas: { ...MODERN_CANVAS },
+    elements: [
+      {
+        id: 'strip',
+        type: 'shape',
+        role: 'container',
+        geometry: { x: 0, y: 0, width: 'full', height: 56, align: 'left', anchor: 'frame' },
+        style: { fill: '$colors.secondary', radius: 0, opacity: 0.95 },
+        animation: {
+          in: { type: 'wipe', duration: 0.5, delay: 0, easing: 'easeOutExpo', direction: 'left' },
+          out: { type: 'wipe', duration: 0.4, delay: 0.05, easing: 'easeOutExpo', direction: 'right' },
+        },
+      },
+      {
+        id: 'accent-left',
+        type: 'shape',
+        role: 'decor',
+        geometry: { x: 0, y: 0, width: 8, height: 56, align: 'left', anchor: 'frame' },
+        style: { fill: '$colors.primary', radius: 0, opacity: 1 },
+        animation: {
+          in: { type: 'wipe', duration: 0.45, delay: 0.05, easing: 'easeOutExpo', direction: 'top' },
+          out: { type: 'fade', duration: 0.3, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+      {
+        id: 'text-name',
+        type: 'text',
+        role: 'name',
+        geometry: { x: 0.03, y: 0.006, width: 'content', height: 'content', align: 'left', anchor: 'frame' },
+        style: { fill: '$colors.textPrimary', opacity: 1 },
+        animation: {
+          in: { type: 'maskSlideUp', duration: 0.4, delay: 0.12, easing: 'easeOutCubic' },
+          out: { type: 'slideOut', duration: 0.3, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+      {
+        id: 'text-role',
+        type: 'text',
+        role: 'role',
+        geometry: { x: 0.03, y: 0.028, width: 'content', height: 'content', align: 'left', anchor: 'frame' },
+        style: { fill: '$colors.textSecondary', opacity: 1 },
+        animation: {
+          in: { type: 'maskSlideUp', duration: 0.35, delay: 0.18, easing: 'easeOutCubic' },
+          out: { type: 'slideOut', duration: 0.28, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+    ],
+    slots: [
+      { ...MODERN_COMMON_SLOTS[0], default: '#EF4444' },
+      { ...MODERN_COMMON_SLOTS[1], default: '#0C0A09' },
+      { ...MODERN_COMMON_SLOTS[2], default: '#FFFFFF' },
+      { ...MODERN_COMMON_SLOTS[3], default: '#FCA5A5' },
+      { ...MODERN_COMMON_SLOTS[4], default: 'oswald' },
+      MODERN_COMMON_SLOTS[5],
+    ],
+    autoFit: MODERN_AUTO_FIT,
+  },
+
+  // 10. Angled Cut
+  {
+    id: 'modern-angled-cut',
+    packId: 'modern',
+    name: 'Angled Cut',
+    version: 1,
+    category: 'Modern',
+    tags: ['angled', 'skew', 'geometric', 'kinetic'],
+    author: 'Epic Hertz Studio',
+    license: 'OFL-1.1 / MIT',
+    canvas: { ...MODERN_CANVAS },
+    elements: [
+      {
+        id: 'angled-plate',
+        type: 'shape',
+        role: 'container',
+        geometry: { x: 0, y: 0, width: 'content', height: 'content', align: 'left', anchor: 'frame' },
+        style: { fill: '$colors.secondary', radius: 2, skew: -12, opacity: 1 },
+        animation: {
+          in: { type: 'wipe', duration: 0.55, delay: 0, easing: 'easeOutExpo', direction: 'left' },
+          out: { type: 'slideOut', duration: 0.4, delay: 0.08, easing: 'easeOutExpo', direction: 'left' },
+        },
+      },
+      {
+        id: 'accent-strip',
+        type: 'shape',
+        role: 'decor',
+        geometry: { x: 0, y: 0, width: 8, height: 'content', align: 'left', anchor: 'frame' },
+        style: { fill: '$colors.primary', radius: 0, skew: -12, opacity: 1 },
+        animation: {
+          in: { type: 'wipe', duration: 0.5, delay: 0.05, easing: 'easeOutExpo', direction: 'top' },
+          out: { type: 'fade', duration: 0.3, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+      {
+        id: 'text-name',
+        type: 'text',
+        role: 'name',
+        geometry: { x: 0.03, y: 0.008, width: 'content', height: 'content', align: 'left', anchor: 'name' },
+        style: { fill: '$colors.textPrimary', opacity: 1 },
+        animation: {
+          in: { type: 'fade', duration: 0.45, delay: 0.12, easing: 'easeOutCubic' },
+          out: { type: 'slideOut', duration: 0.3, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+      {
+        id: 'text-role',
+        type: 'text',
+        role: 'role',
+        geometry: { x: 0.035, y: 0.038, width: 'content', height: 'content', align: 'left', anchor: 'name' },
+        style: { fill: '$colors.textSecondary', opacity: 1 },
+        animation: {
+          in: { type: 'fade', duration: 0.4, delay: 0.18, easing: 'easeOutCubic' },
+          out: { type: 'slideOut', duration: 0.28, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+    ],
+    slots: [
+      { ...MODERN_COMMON_SLOTS[0], default: '#F97316' },
+      { ...MODERN_COMMON_SLOTS[1], default: '#1C1917' },
+      { ...MODERN_COMMON_SLOTS[2], default: '#FFF7ED' },
+      { ...MODERN_COMMON_SLOTS[3], default: '#FDBA74' },
+      { ...MODERN_COMMON_SLOTS[4], default: 'oswald' },
+      MODERN_COMMON_SLOTS[5],
+    ],
+    autoFit: MODERN_AUTO_FIT,
+  },
+
+  // 11. Photo Ring
+  {
+    id: 'modern-photo-ring',
+    packId: 'modern',
+    name: 'Photo Ring',
+    version: 1,
+    category: 'Modern',
+    tags: ['photo', 'avatar', 'ring', 'creator', 'interview'],
+    author: 'Epic Hertz Studio',
+    license: 'OFL-1.1 / MIT',
+    canvas: { ...MODERN_CANVAS },
+    elements: [
+      {
+        id: 'avatar',
+        type: 'image',
+        role: 'photo',
+        geometry: { x: 0, y: 0, width: 72, height: 72, align: 'left', anchor: 'frame' },
+        style: {
+          fill: '#18181B',
+          stroke: '$colors.primary',
+          strokeWidth: 3,
+          radius: 36,
+          opacity: 1,
+        },
+        animation: {
+          in: {
+            type: 'photoReveal',
+            duration: 0.65,
+            delay: 0,
+            easing: 'easeOutBack',
+            overshoot: 0.08,
+          },
+          out: { type: 'scalePop', duration: 0.4, delay: 0.1, easing: 'easeOutCubic' },
+        },
+      },
+      {
+        id: 'text-name',
+        type: 'text',
+        role: 'name',
+        geometry: { x: 90, y: 0.008, width: 'content', height: 'content', align: 'left', anchor: 'photo' },
+        style: { fill: '$colors.textPrimary', opacity: 1 },
+        animation: {
+          in: { type: 'maskSlideUp', duration: 0.5, delay: 0.15, easing: 'easeOutCubic' },
+          out: { type: 'slideOut', duration: 0.35, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+      {
+        id: 'text-role',
+        type: 'text',
+        role: 'role',
+        geometry: { x: 90, y: 0.036, width: 'content', height: 'content', align: 'left', anchor: 'photo' },
+        style: { fill: '$colors.textSecondary', opacity: 1 },
+        animation: {
+          in: { type: 'maskSlideUp', duration: 0.45, delay: 0.22, easing: 'easeOutCubic' },
+          out: { type: 'slideOut', duration: 0.3, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+    ],
+    slots: [
+      { ...MODERN_COMMON_SLOTS[0], default: '#38BDF8' },
+      { ...MODERN_COMMON_SLOTS[1], default: 'transparent' },
+      { ...MODERN_COMMON_SLOTS[2], default: '#FFFFFF' },
+      { ...MODERN_COMMON_SLOTS[3], default: '#94A3B8' },
+      { ...MODERN_COMMON_SLOTS[4], default: 'inter' },
+      MODERN_COMMON_SLOTS[5],
+    ],
+    autoFit: MODERN_AUTO_FIT,
+  },
+
+  // 12. Dual Line
+  {
+    id: 'modern-dual-line',
+    packId: 'modern',
+    name: 'Dual Line',
+    version: 1,
+    category: 'Modern',
+    tags: ['dual', 'hierarchy', 'clean', 'editorial'],
+    author: 'Epic Hertz Studio',
+    license: 'OFL-1.1 / MIT',
+    canvas: { ...MODERN_CANVAS },
+    elements: [
+      {
+        id: 'name-plate',
+        type: 'shape',
+        role: 'container',
+        geometry: { x: 0, y: 0, width: 'content', height: 'content', align: 'left', anchor: 'frame' },
+        style: { fill: '$colors.primary', radius: 4, opacity: 1 },
+        animation: {
+          in: { type: 'wipe', duration: 0.5, delay: 0, easing: 'easeOutExpo', direction: 'left' },
+          out: { type: 'wipe', duration: 0.35, delay: 0.1, easing: 'easeOutExpo', direction: 'left' },
+        },
+      },
+      {
+        id: 'text-name',
+        type: 'text',
+        role: 'name',
+        geometry: { x: 0.018, y: 0.006, width: 'content', height: 'content', align: 'left', anchor: 'name' },
+        style: { fill: '$colors.textPrimary', opacity: 1 },
+        animation: {
+          in: { type: 'maskSlideUp', duration: 0.45, delay: 0.12, easing: 'easeOutCubic' },
+          out: { type: 'slideOut', duration: 0.3, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+      {
+        id: 'text-role',
+        type: 'text',
+        role: 'role',
+        geometry: { x: 0.005, y: 0.042, width: 'content', height: 'content', align: 'left', anchor: 'name' },
+        style: { fill: '$colors.textSecondary', opacity: 1 },
+        animation: {
+          in: { type: 'fadeUp', duration: 0.4, delay: 0.2, easing: 'easeOutCubic' },
+          out: { type: 'fade', duration: 0.28, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+    ],
+    slots: [
+      { ...MODERN_COMMON_SLOTS[0], default: '#FFFFFF' },
+      { ...MODERN_COMMON_SLOTS[1], default: 'transparent' },
+      { ...MODERN_COMMON_SLOTS[2], default: '#0A0A0A' },
+      { ...MODERN_COMMON_SLOTS[3], default: '#E4E4E7' },
+      { ...MODERN_COMMON_SLOTS[4], default: 'montserrat' },
+      MODERN_COMMON_SLOTS[5],
+    ],
+    autoFit: MODERN_AUTO_FIT,
+  },
+];
+
+export const MODERN_PACK: LowerThirdPack = {
+  id: 'modern',
+  packId: 'modern',
+  name: 'Modern Lower Thirds',
+  description:
+    '12 contemporary lower-third styles for creators, podcasts, broadcast, and social content.',
+  templates: MODERN_TEMPLATES,
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Complete 7 Packs Definition
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const ALL_PACK_TEMPLATES: LowerThirdTemplate[] = [
@@ -2904,6 +3752,7 @@ export const ALL_PACK_TEMPLATES: LowerThirdTemplate[] = [
   ...CINEMATIC_DOC_TEMPLATES,
   ...GAMING_TECH_TEMPLATES,
   ...INDIC_PACK_TEMPLATES,
+  ...MODERN_TEMPLATES,
 ];
 
 export const LOWER_THIRD_PACKS: LowerThirdPack[] = [
@@ -2949,6 +3798,7 @@ export const LOWER_THIRD_PACKS: LowerThirdPack[] = [
     description: 'Telugu, Hindi, Tamil, and English native cards with conjunct-safe word motion',
     templates: INDIC_PACK_TEMPLATES,
   },
+  MODERN_PACK,
 ];
 
 export function getLowerThirdTemplateById(id: string): LowerThirdTemplate | undefined {

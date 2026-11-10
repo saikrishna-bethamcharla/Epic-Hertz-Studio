@@ -18,10 +18,10 @@ import { renderTemplateLowerThird } from '../src/subtitle-tool/engine/lowerThird
 import { DEFAULT_LOWER_THIRD, type LowerThirdSpec } from '../src/subtitle-tool/engine/spec';
 import { createRecorderCanvasContext } from './goldenLowerThirds.test';
 
-describe('Phase D: Lower Third 48-Template Catalog & Distinctness Suite', () => {
-  it('contains exactly 6 packs with 8 styles each (48 templates total)', () => {
-    expect(LOWER_THIRD_PACKS).toHaveLength(6);
-    expect(ALL_PACK_TEMPLATES).toHaveLength(48);
+describe('Phase D: Lower Third 60-Template Catalog & Distinctness Suite', () => {
+  it('contains exactly 7 packs with 60 templates total', () => {
+    expect(LOWER_THIRD_PACKS).toHaveLength(7);
+    expect(ALL_PACK_TEMPLATES).toHaveLength(60);
 
     expect(CLEAN_CORPORATE_TEMPLATES).toHaveLength(8);
     expect(CREATOR_REELS_TEMPLATES).toHaveLength(8);
@@ -31,7 +31,7 @@ describe('Phase D: Lower Third 48-Template Catalog & Distinctness Suite', () => 
     expect(INDIC_PACK_TEMPLATES).toHaveLength(8);
   });
 
-  it('validates every single template in the 48-catalog against Zod schema', () => {
+  it('validates every single template in the 60-catalog against Zod schema', () => {
     const ids = new Set<string>();
 
     for (const template of ALL_PACK_TEMPLATES) {
@@ -44,14 +44,18 @@ describe('Phase D: Lower Third 48-Template Catalog & Distinctness Suite', () => 
       expect(validated.autoFit.minScale).toBeGreaterThanOrEqual(0.2);
     }
 
-    expect(ids.size).toBe(48);
+    expect(ids.size).toBe(60);
   });
 
-  it('validates all 6 packs through validateLowerThirdPack', () => {
+  it('validates all 7 packs through validateLowerThirdPack', () => {
     for (const pack of LOWER_THIRD_PACKS) {
       const validated = validateLowerThirdPack(pack);
       expect(validated.id).toBe(pack.id);
-      expect(validated.templates).toHaveLength(8);
+      if (pack.id === 'modern') {
+        expect(validated.templates).toHaveLength(12);
+      } else {
+        expect(validated.templates).toHaveLength(8);
+      }
     }
   });
 
@@ -104,6 +108,6 @@ describe('Phase D: Lower Third 48-Template Catalog & Distinctness Suite', () => 
       signatures.set(serialized, template.id);
     }
 
-    expect(signatures.size).toBe(48);
+    expect(signatures.size).toBe(60);
   });
 });
