@@ -5,7 +5,7 @@
 // - Bottom multi-track audio waveform timeline with split/merge/delete/undo/redo/dictionary
 // - Export modal with lossless stream-copy MP4, hardsubbed burn MP4, SRT, VTT & TXT
 
-import { useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect, lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Play,
@@ -246,6 +246,11 @@ export default function SubtitleTool({
       }
     });
   }, [lowerThirds, photoCache]);
+
+  const selectedLowerThirdSpec = useMemo(
+    () => lowerThirds.find((lt) => lt.id === activeLowerThirdId) || null,
+    [lowerThirds, activeLowerThirdId],
+  );
 
   const handleAddLowerThird = useCallback(() => {
     const curTime = timeStore.getTime();
@@ -1051,6 +1056,18 @@ export default function SubtitleTool({
                             onScopeChange={setScope}
                             onClearAllOverrides={handleClearAllOverrides}
                             onNotification={(msg) => showToast(msg)}
+                            currentTime={timeStore.getTime()}
+                            selectedLowerThirdId={activeLowerThirdId}
+                            selectedLowerThirdSpec={selectedLowerThirdSpec}
+                            onAddLowerThird={(spec) => {
+                              setLowerThirds((prev) => [...prev, spec]);
+                              setActiveLowerThirdId(spec.id);
+                            }}
+                            onUpdateLowerThird={handleUpdateLowerThird}
+                            onAddMultipleLowerThirds={(specs) => {
+                              setLowerThirds((prev) => [...prev, ...specs]);
+                              if (specs[0]) setActiveLowerThirdId(specs[0].id);
+                            }}
                             onToggleCollapse={() => {
                               setLayout((p) => {
                                 const next = { ...p, isLeftCollapsed: true };
@@ -1338,6 +1355,18 @@ export default function SubtitleTool({
                         onScopeChange={setScope}
                         onClearAllOverrides={handleClearAllOverrides}
                         onNotification={(msg) => showToast(msg)}
+                        currentTime={timeStore.getTime()}
+                        selectedLowerThirdId={activeLowerThirdId}
+                        selectedLowerThirdSpec={selectedLowerThirdSpec}
+                        onAddLowerThird={(spec) => {
+                          setLowerThirds((prev) => [...prev, spec]);
+                          setActiveLowerThirdId(spec.id);
+                        }}
+                        onUpdateLowerThird={handleUpdateLowerThird}
+                        onAddMultipleLowerThirds={(specs) => {
+                          setLowerThirds((prev) => [...prev, ...specs]);
+                          if (specs[0]) setActiveLowerThirdId(specs[0].id);
+                        }}
                       />
                     )}
                     {mobileTab === 'inspector' && (

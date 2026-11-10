@@ -6,6 +6,7 @@ import {
   SlidersHorizontal,
   Film,
   Palette,
+  Layers,
   ChevronLeft,
   AlertTriangle,
   Ban,
@@ -18,6 +19,7 @@ import type {
   SpokenLanguage,
   ScriptOutput,
   SegmentStyleOverride,
+  LowerThirdSpec,
 } from '../types';
 import {
   getUserPresets,
@@ -31,8 +33,9 @@ import { formatTimecode } from '../utils/formatTime';
 import { checkReadability } from '../utils/readability';
 import LibraryStylesTab from './library/LibraryStylesTab';
 import LibraryBrandTab from './library/LibraryBrandTab';
+import LibraryLowerThirdsTab from './library/LibraryLowerThirdsTab';
 
-export type LibraryTab = 'captions' | 'styles' | 'effects' | 'animations' | 'brand';
+export type LibraryTab = 'captions' | 'styles' | 'effects' | 'animations' | 'brand' | 'lowerThirds';
 
 interface LibraryPanelProps {
   leftTab: LibraryTab;
@@ -54,6 +57,12 @@ interface LibraryPanelProps {
   onClearAllOverrides?: () => void;
   onNotification?: (msg: string) => void;
   onToggleCollapse?: () => void;
+  currentTime?: number;
+  selectedLowerThirdId?: string | null;
+  selectedLowerThirdSpec?: LowerThirdSpec | null;
+  onAddLowerThird?: (spec: LowerThirdSpec) => void;
+  onUpdateLowerThird?: (spec: LowerThirdSpec) => void;
+  onAddMultipleLowerThirds?: (specs: LowerThirdSpec[]) => void;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -182,6 +191,12 @@ function LibraryPanel({
   onClearAllOverrides,
   onNotification,
   onToggleCollapse,
+  currentTime = 0,
+  selectedLowerThirdId,
+  selectedLowerThirdSpec,
+  onAddLowerThird,
+  onUpdateLowerThird,
+  onAddMultipleLowerThirds,
 }: LibraryPanelProps) {
   const [animSubTab, setAnimSubTab] = useState<'entrance' | 'exit' | 'highlight'>('entrance');
   const [favorites, setFavorites] = useState<string[]>(() => getFavoritePresetIds());
@@ -346,6 +361,7 @@ function LibraryPanel({
             { id: 'effects', label: 'Effects', icon: SlidersHorizontal },
             { id: 'animations', label: 'Anim', icon: Film },
             { id: 'brand', label: 'Brand', icon: Palette },
+            { id: 'lowerThirds', label: 'Lower 3rd', icon: Layers },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = leftTab === tab.id;
@@ -687,6 +703,20 @@ function LibraryPanel({
             setCustomFonts={setCustomFonts}
             setUserPresetsList={setUserPresetsList}
             onNotification={onNotification}
+          />
+        )}
+
+        {/* ─────────────────────────────────────────────────────────────
+            TAB 6: LOWER THIRDS PACK LIBRARY
+        ────────────────────────────────────────────────────────────── */}
+        {leftTab === 'lowerThirds' && (
+          <LibraryLowerThirdsTab
+            currentTime={currentTime}
+            selectedLowerThirdId={selectedLowerThirdId}
+            selectedLowerThirdSpec={selectedLowerThirdSpec}
+            onAddLowerThird={(spec) => onAddLowerThird?.(spec)}
+            onUpdateLowerThird={(spec) => onUpdateLowerThird?.(spec)}
+            onAddMultipleLowerThirds={(specs) => onAddMultipleLowerThirds?.(specs)}
           />
         )}
       </div>

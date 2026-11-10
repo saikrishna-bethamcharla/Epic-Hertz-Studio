@@ -3,7 +3,11 @@
 // Restrained, unslop professional look. No emojis, no sparkle icons, no neon/rainbow gradients.
 // OFL fonts and generic Lucide icons only.
 
-import type { LowerThirdPack, LowerThirdTemplate } from './lowerThirdSchema';
+import {
+  type LowerThirdPack,
+  type LowerThirdTemplate,
+  CLASSIC_TEMPLATES,
+} from './lowerThirdSchema';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PACK 1: CLEAN CORPORATE (sans, calm, solid colors)
@@ -2946,3 +2950,7 @@ export const LOWER_THIRD_PACKS: LowerThirdPack[] = [
     templates: INDIC_PACK_TEMPLATES,
   },
 ];
+
+export function getLowerThirdTemplateById(id: string): LowerThirdTemplate | undefined {
+  return ALL_PACK_TEMPLATES.find((t) => t.id === id) || CLASSIC_TEMPLATES.find((t) => t.id === id);
+}

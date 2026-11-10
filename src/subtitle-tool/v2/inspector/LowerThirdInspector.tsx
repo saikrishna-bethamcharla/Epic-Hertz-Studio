@@ -9,13 +9,44 @@
 // - Configurable intro & outro animation timing
 // - Save as reusable preset
 
-import React, { useRef, useState } from 'react';
-import { Trash2, Bookmark, Upload, User, Clock, Layout, Palette, Type } from 'lucide-react';
+import React, { useMemo, useRef, useState } from 'react';
+import {
+  Trash2,
+  Bookmark,
+  Upload,
+  User,
+  Clock,
+  Layout,
+  Palette,
+  Type,
+  RotateCcw,
+  AlertTriangle,
+  Layers,
+} from 'lucide-react';
 import type { LowerThirdSpec, LowerThirdVariant } from '../../types';
 import { FONT_FAMILIES } from '../../engine/spec';
 import { savePhotoBlob, deletePhotoBlob } from '../../utils/projectStorage';
 import { saveLowerThirdPreset, getBrandColors } from '../userPresets';
 import ColorPopover from '../ColorPopover';
+import { getLowerThirdTemplateById } from '../../engine/lowerThirdPacks';
+
+function getContrastRatio(hex1?: string, hex2?: string): number {
+  if (!hex1 || !hex2) return 21;
+  const getLum = (hex: string) => {
+    const c = hex.replace('#', '');
+    if (c.length < 6) return 0.5;
+    const r = parseInt(c.slice(0, 2), 16) / 255;
+    const g = parseInt(c.slice(2, 4), 16) / 255;
+    const b = parseInt(c.slice(4, 6), 16) / 255;
+    const a = [r, g, b].map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)));
+    return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
+  };
+  const l1 = getLum(hex1);
+  const l2 = getLum(hex2);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
 
 interface LowerThirdInspectorProps {
   spec: LowerThirdSpec;
@@ -55,6 +86,53 @@ export default function LowerThirdInspector({
   >(null);
   const [presetSavedToast, setPresetSavedToast] = useState(false);
   const brandColors = getBrandColors();
+
+  const matchedTemplate = useMemo(() => {
+    return spec.templateId ? getLowerThirdTemplateById(spec.templateId) : undefined;
+  }, [spec.templateId]);
+
+  const handleResetToTemplateDefaults = () => {
+    if (!matchedTemplate) return;
+
+    let primaryColor = spec.colors.primary;
+    let secondaryColor = spec.colors.secondary;
+    let textPrimaryColor = spec.colors.textPrimary;
+    let textSecondaryColor = spec.colors.textSecondary;
+    let fontFamily = spec.font.family;
+
+    for (const slot of matchedTemplate.slots) {
+      if (typeof slot.default === 'string') {
+        if (slot.target === 'colors.primary') primaryColor = slot.default;
+        else if (slot.target === 'colors.secondary') secondaryColor = slot.default;
+        else if (slot.target === 'colors.textPrimary') textPrimaryColor = slot.default;
+        else if (slot.target === 'colors.textSecondary') textSecondaryColor = slot.default;
+        else if (slot.target === 'font.family') fontFamily = slot.default;
+      }
+    }
+
+    const firstEl = matchedTemplate.elements[0];
+
+    onChange({
+      ...spec,
+      colors: {
+        primary: primaryColor,
+        secondary: secondaryColor,
+        textPrimary: textPrimaryColor,
+        textSecondary: textSecondaryColor,
+      },
+      font: {
+        ...spec.font,
+        family: fontFamily,
+      },
+      scale: 1,
+      introDuration: firstEl?.animation?.in?.duration || spec.introDuration || 0.7,
+      outroDuration: firstEl?.animation?.out?.duration || spec.outroDuration || 0.6,
+    });
+  };
+
+  const primaryTextContrast = useMemo(() => {
+    return getContrastRatio(spec.colors.textPrimary, spec.colors.primary);
+  }, [spec.colors.textPrimary, spec.colors.primary]);
 
   // Helper to update partial spec properties
   const updateSpec = (patch: Partial<LowerThirdSpec>) => {
@@ -163,6 +241,31 @@ export default function LowerThirdInspector({
         </div>
       )}
 
+      {matchedTemplate && (
+        <div className="p-3 rounded-xl bg-amber-400/5 border border-amber-400/20 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-amber-400" />
+              <span className="font-semibold text-bone text-xs">{matchedTemplate.name}</span>
+            </div>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-400/10 border border-amber-400/20 text-amber-300 font-mono tracking-wider uppercase">
+              {matchedTemplate.packId}
+            </span>
+          </div>
+          <p className="text-[10px] text-smoke line-clamp-1">
+            {matchedTemplate.category} • {matchedTemplate.tags.join(', ')}
+          </p>
+          <button
+            type="button"
+            onClick={handleResetToTemplateDefaults}
+            className="w-full py-1.5 px-2 rounded-lg bg-[#1c1c1a] hover:bg-amber-400/10 text-smoke hover:text-amber-300 text-[11px] font-medium flex items-center justify-center gap-1.5 transition-colors border border-white/10 hover:border-amber-400/30 cursor-pointer"
+          >
+            <RotateCcw className="w-3 h-3" />
+            <span>Reset to template defaults</span>
+          </button>
+        </div>
+      )}
+
       {/* ── 1. Variant Picker (Thumbnail Grid) ────────────────────────────── */}
       <div className="space-y-2">
         <label className="text-[11px] font-semibold text-smoke uppercase tracking-wider flex items-center gap-1.5">
@@ -220,6 +323,17 @@ export default function LowerThirdInspector({
               value={spec.role}
               onChange={(e) => updateSpec({ role: e.target.value })}
               placeholder="e.g. CREATIVE DIRECTOR"
+              className="mt-1 w-full px-2.5 py-1.5 rounded-lg bg-[#1a1a18] border border-white/10 focus:border-amber-400 focus:outline-none text-bone font-medium"
+            />
+          </div>
+
+          <div>
+            <span className="text-[10px] text-smoke">Extra Line (Optional)</span>
+            <input
+              type="text"
+              value={spec.extra || ''}
+              onChange={(e) => updateSpec({ extra: e.target.value || undefined })}
+              placeholder="e.g. Episode 04 / Live"
               className="mt-1 w-full px-2.5 py-1.5 rounded-lg bg-[#1a1a18] border border-white/10 focus:border-amber-400 focus:outline-none text-bone font-medium"
             />
           </div>
@@ -295,10 +409,18 @@ export default function LowerThirdInspector({
 
       {/* ── 4. Colors ─────────────────────────────────────────────────────── */}
       <div className="space-y-2 pt-1 border-t border-white/5">
-        <label className="text-[11px] font-semibold text-smoke uppercase tracking-wider flex items-center gap-1.5">
-          <Palette className="w-3.5 h-3.5 text-amber-400" />
-          <span>Colors</span>
-        </label>
+        <div className="flex items-center justify-between">
+          <label className="text-[11px] font-semibold text-smoke uppercase tracking-wider flex items-center gap-1.5">
+            <Palette className="w-3.5 h-3.5 text-amber-400" />
+            <span>Colors</span>
+          </label>
+          {primaryTextContrast < 4.5 && (
+            <span className="text-[10px] text-amber-300 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3 text-amber-400" />
+              <span>Low contrast ({primaryTextContrast.toFixed(1)}:1)</span>
+            </span>
+          )}
+        </div>
 
         <div className="grid grid-cols-2 gap-2">
           {/* Primary Accent */}
@@ -586,13 +708,14 @@ export default function LowerThirdInspector({
             <input
               type="number"
               step={0.1}
-              min={spec.start + 0.5}
-              value={spec.end}
-              onChange={(e) =>
+              min={(spec.start ?? 0) + 0.5}
+              value={spec.end ?? 4.0}
+              onChange={(e) => {
+                const s = spec.start ?? 0;
                 updateSpec({
-                  end: Math.max(spec.start + 0.5, parseFloat(e.target.value) || spec.start + 1),
-                })
-              }
+                  end: Math.max(s + 0.5, parseFloat(e.target.value) || s + 1),
+                });
+              }}
               className="mt-1 w-full px-2 py-1.5 rounded-lg bg-[#1a1a18] border border-white/10 text-bone font-mono text-xs focus:border-amber-400 focus:outline-none"
             />
           </div>
