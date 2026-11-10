@@ -318,8 +318,10 @@ export interface LowerThirdSpec {
   start: number; // Seconds
   end: number; // Seconds
   variant: LowerThirdVariant;
+  templateId?: string; // Reference to LowerThirdTemplate ID (e.g. 'classic-box-highlight')
   name: string;
   role: string;
+  extra?: string; // Optional third line (e.g. affiliation, location, date)
   handle?: string;
   photoBlobId?: string;
   photoUrl?: string;
@@ -333,10 +335,12 @@ export interface LowerThirdSpec {
   scale: number; // Overall multiplier (0.5 .. 2.0)
   introDuration?: number; // Seconds (~0.7)
   outroDuration?: number; // Seconds (~0.6)
+  slotOverrides?: Record<string, unknown>; // Custom per-instance slot parameter overrides
 }
 
 export const DEFAULT_LOWER_THIRD: Omit<LowerThirdSpec, 'id' | 'start' | 'end'> = {
   variant: 1,
+  templateId: 'classic-box-highlight',
   name: 'RAVI TEJA',
   role: 'CREATIVE DIRECTOR',
   handle: '@raviteja',

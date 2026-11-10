@@ -12,6 +12,7 @@ import type {
   LowerThirdSpec,
 } from '../types';
 import { ensureCaptionStyle } from '../engine/compat';
+import { normalizeLowerThirdSpec } from '../engine/lowerThirdSchema';
 
 export const DB_NAME = 'epic_hertz_studio_db';
 export const DB_VERSION = 4;
@@ -232,9 +233,11 @@ export function migrateProjectRecord(raw: any): ProjectRecord {
   return {
     ...raw,
     segments: Array.isArray(raw.segments) ? raw.segments : [],
-    lowerThirds: Array.isArray(raw.lowerThirds) ? raw.lowerThirds : [],
+    lowerThirds: (Array.isArray(raw.lowerThirds) ? raw.lowerThirds : []).map(
+      normalizeLowerThirdSpec,
+    ),
     style: ensureCaptionStyle(raw.style),
-    schemaVersion: 3,
+    schemaVersion: 4,
     createdAt: raw.createdAt || Date.now(),
     updatedAt: raw.updatedAt || Date.now(),
   };

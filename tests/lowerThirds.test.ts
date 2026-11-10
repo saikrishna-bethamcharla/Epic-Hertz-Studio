@@ -210,7 +210,7 @@ describe('Lower Thirds: Multilingual Text Fitting & Font Scaling', () => {
 });
 
 describe('Lower Thirds: Schema Migration & Backward Compatibility', () => {
-  it('migrates legacy v1/v2 project records to v3 with lowerThirds array', () => {
+  it('migrates legacy v1/v2 project records to v4 with normalized lowerThirds array', () => {
     const legacyProject = {
       id: 'legacy-1',
       name: 'Legacy Reel',
@@ -227,13 +227,13 @@ describe('Lower Thirds: Schema Migration & Backward Compatibility', () => {
     };
 
     const migrated = migrateProjectRecord(legacyProject);
-    expect(migrated.schemaVersion).toBe(3);
+    expect(migrated.schemaVersion).toBe(4);
     expect(Array.isArray(migrated.lowerThirds)).toBe(true);
     expect(migrated.lowerThirds).toHaveLength(0);
     expect(migrated.name).toBe('Legacy Reel');
   });
 
-  it('preserves existing lowerThirds on already-v3 projects', () => {
+  it('preserves existing lowerThirds and assigns templateId on v3 to v4 migration', () => {
     const v3Project = {
       id: 'v3-1',
       name: 'V3 Project',
@@ -250,6 +250,7 @@ describe('Lower Thirds: Schema Migration & Backward Compatibility', () => {
         {
           ...DEFAULT_LOWER_THIRD,
           id: 'lt-existing',
+          variant: 1,
           name: 'Pavan Kalyan',
           role: 'Producer',
         },
@@ -258,9 +259,10 @@ describe('Lower Thirds: Schema Migration & Backward Compatibility', () => {
     };
 
     const result = migrateProjectRecord(v3Project);
-    expect(result.schemaVersion).toBe(3);
+    expect(result.schemaVersion).toBe(4);
     expect(result.lowerThirds).toHaveLength(1);
     expect(result.lowerThirds[0].name).toBe('Pavan Kalyan');
+    expect(result.lowerThirds[0].templateId).toBe('classic-box-highlight');
   });
 });
 
