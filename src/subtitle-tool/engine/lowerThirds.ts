@@ -967,6 +967,8 @@ export function drawVariant8(
   ctx.restore();
 }
 
+import { renderTemplateLowerThird } from './lowerThirdRenderer';
+
 // ─── Main Dispatcher ────────────────────────────────────────────────────────
 
 /**
@@ -980,6 +982,12 @@ export function draw(
   h: number,
   photoImage?: CanvasImageSource | null,
 ): void {
+  // If a data-driven non-classic templateId is specified, render via template renderer
+  if (spec.templateId && !spec.templateId.startsWith('classic-')) {
+    renderTemplateLowerThird(ctx, spec, t, w, h, { photoImage });
+    return;
+  }
+
   const anim = getLowerThirdPhase(spec, t);
   if (!anim.active || anim.opacity <= 0.001) return;
 
