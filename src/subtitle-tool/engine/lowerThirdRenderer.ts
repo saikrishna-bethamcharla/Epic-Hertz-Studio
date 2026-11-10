@@ -21,9 +21,12 @@ import {
   evalIdleAccentPulse,
   evalSlideOut,
   evalFadeDown,
+  evalCounterTypewriter,
   getLineHeightMultiplier,
   clamp01,
 } from './lowerThirdPrimitives';
+
+import { ALL_PACK_TEMPLATES } from './lowerThirdPacks';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Template Registry & Lookup
@@ -31,8 +34,11 @@ import {
 
 const templateRegistry = new Map<string, LowerThirdTemplate>();
 
-// Register baseline classic templates
+// Register baseline classic templates and all 48 catalog pack templates
 for (const tmpl of CLASSIC_TEMPLATES) {
+  templateRegistry.set(tmpl.id, tmpl);
+}
+for (const tmpl of ALL_PACK_TEMPLATES) {
   templateRegistry.set(tmpl.id, tmpl);
 }
 
@@ -635,7 +641,7 @@ function renderElement(
         : elem.style.fill === '#3b82f6'
           ? primaryColor
           : elem.style.fill;
-    ctx.fillStyle = fill;
+    ctx.fillStyle = fill || '#ffffff';
 
     const rad = elem.style.radius ?? 4;
     ctx.beginPath();
@@ -658,11 +664,16 @@ function renderElement(
       ctx.stroke();
     }
   } else if (elem.type === 'line') {
-    ctx.strokeStyle = primaryColor;
+    ctx.strokeStyle = elem.style.stroke || elem.style.fill || primaryColor;
     ctx.lineWidth = (elem.style.strokeWidth || 3) * scale;
     ctx.beginPath();
     ctx.moveTo(0, elH / 2);
-    const lineLen = elem.animation.in.type === 'lineDraw' ? elW * elemProgress : elW;
+    const lineLen =
+      elem.animation.in.type === 'lineDraw'
+        ? elW * elemProgress
+        : elem.animation.in.type === 'shineSweep'
+          ? Math.max(4, elW * 0.15)
+          : elW;
     ctx.lineTo(lineLen, elH / 2);
     ctx.stroke();
   } else if (elem.type === 'text') {
@@ -673,7 +684,13 @@ function renderElement(
 
       let lineY = padY + nameFit.lineHeight / 2;
       for (const line of nameFit.lines) {
-        ctx.fillText(line, padX, lineY);
+        if (elem.animation.in.type === 'counterTypewriter') {
+          const tw = evalCounterTypewriter(line, elemProgress);
+          const cursor = tw.showCursor ? ' █' : '';
+          ctx.fillText(`${tw.visibleText}${cursor}`, padX, lineY);
+        } else {
+          ctx.fillText(line, padX, lineY);
+        }
         lineY += nameFit.lineHeight;
       }
     } else if (elem.role === 'role' && roleFit && spec.role) {
@@ -687,6 +704,20 @@ function renderElement(
         lineY += roleFit.lineHeight;
       }
     }
+  } else if (elem.type === 'icon' && elem.content) {
+    const iconColor = elem.style.fill || primaryColor;
+    const iconSize =
+      (elem.geometry.width && typeof elem.geometry.width === 'number' ? elem.geometry.width : 24) *
+      scale;
+    drawVectorIcon(
+      ctx,
+      elem.content as GenericIconName,
+      iconSize / 2,
+      iconSize / 2,
+      iconSize,
+      iconColor,
+      2 * scale,
+    );
   } else if (elem.type === 'image' || elem.role === 'photo') {
     const photoSize = 64 * scale;
     drawPhotoElement(ctx, 0, 0, photoSize, photoImage, spec.name);

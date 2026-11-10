@@ -30,7 +30,7 @@ export const lowerThirdInAnimationSchema = z.object({
     'glitchCut',
   ]),
   duration: z.number().min(0.05).max(3.0).default(0.7),
-  delay: z.number().min(0).max(2.0).optional().default(0),
+  delay: z.number().min(0).max(2.0).optional(),
   easing: lowerThirdEasingSchema.optional(),
   direction: z.enum(['left', 'right', 'top', 'bottom']).optional(),
   overshoot: z.number().min(0).max(0.3).optional(), // for scalePop
@@ -39,8 +39,8 @@ export const lowerThirdInAnimationSchema = z.object({
 export const lowerThirdHoldAnimationSchema = z
   .object({
     type: z.enum(['static', 'drift', 'accentPulse']).default('static'),
-    amplitude: z.number().min(0).max(0.1).optional().default(0.02),
-    period: z.number().min(0.5).max(10).optional().default(3.0),
+    amplitude: z.number().min(0).max(0.1).optional(),
+    period: z.number().min(0.5).max(10).optional(),
   })
   .optional();
 
@@ -56,7 +56,7 @@ export const lowerThirdOutAnimationSchema = z.object({
     'reverse',
   ]),
   duration: z.number().min(0.05).max(3.0).default(0.6),
-  delay: z.number().min(0).max(2.0).optional().default(0),
+  delay: z.number().min(0).max(2.0).optional(),
   easing: lowerThirdEasingSchema.optional(),
   direction: z.enum(['left', 'right', 'top', 'bottom']).optional(),
 });
@@ -68,22 +68,16 @@ export const lowerThirdAnimationBlockSchema = z.object({
 });
 
 export const lowerThirdGeometrySchema = z.object({
-  x: z.number().optional().default(0),
-  y: z.number().optional().default(0),
-  width: z
-    .union([z.number(), z.literal('content'), z.literal('full')])
-    .optional()
-    .default('content'),
-  height: z
-    .union([z.number(), z.literal('content'), z.literal('auto')])
-    .optional()
-    .default('content'),
-  align: z.enum(['left', 'center', 'right']).optional().default('left'),
-  anchor: z.enum(['frame', 'name', 'photo', 'parent']).optional().default('frame'),
+  x: z.number().optional(),
+  y: z.number().optional(),
+  width: z.union([z.number(), z.literal('content'), z.literal('full')]).optional(),
+  height: z.union([z.number(), z.literal('content'), z.literal('auto')]).optional(),
+  align: z.enum(['left', 'center', 'right']).optional(),
+  anchor: z.enum(['frame', 'name', 'photo', 'parent']).optional(),
 });
 
 export const lowerThirdStyleSchema = z.object({
-  fill: z.string().min(1).default('#ffffff'),
+  fill: z.string().min(1).optional(),
   stroke: z.string().optional(),
   strokeWidth: z.number().min(0).max(20).optional(),
   radius: z
@@ -160,12 +154,19 @@ export const lowerThirdTemplateSchema = z.object({
   autoFit: lowerThirdAutoFitSchema,
 });
 
-export const lowerThirdPackSchema = z.object({
-  packId: z.string().min(1).max(64),
-  name: z.string().min(1).max(100),
-  description: z.string().max(300).optional(),
-  templates: z.array(lowerThirdTemplateSchema),
-});
+export const lowerThirdPackSchema = z
+  .object({
+    id: z.string().min(1).max(64).optional(),
+    packId: z.string().min(1).max(64).optional(),
+    name: z.string().min(1).max(100),
+    description: z.string().max(300).optional(),
+    templates: z.array(lowerThirdTemplateSchema),
+  })
+  .transform((p) => ({
+    ...p,
+    id: p.id || p.packId || 'pack',
+    packId: p.packId || p.id || 'pack',
+  }));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 2. TypeScript Types
