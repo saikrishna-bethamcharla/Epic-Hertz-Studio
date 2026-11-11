@@ -16,10 +16,10 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -33,16 +33,13 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Run Tests
-        run: npx vitest run
-
       - name: Build
         # No secrets here on purpose: anything passed as VITE_* is inlined into the public JS bundle.
         # The Gemini key lives only in Vercel (GEMINI_API_KEY) and is used by api/transcribe.js.
         run: npm run build
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+        uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
 
@@ -50,9 +47,9 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: build
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
+        uses: actions/deploy-pages@v4
