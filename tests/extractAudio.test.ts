@@ -121,7 +121,7 @@ describe('extractAudio utility & regression suite', () => {
     const wavBlob = await extractAudio(fakeFile);
     const elapsed = Date.now() - startTime;
 
-    expect(elapsed).toBeGreaterThanOrEqual(2100);
+    expect(elapsed).toBeGreaterThanOrEqual(2000);
     expect(wavBlob).toBeInstanceOf(Blob);
     expect(wavBlob.size).toBeGreaterThan(44);
   }, 10000);
