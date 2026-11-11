@@ -315,7 +315,10 @@ function LibraryPanel({
   const targetCaptionIndex = segments.findIndex((s) => s.id === targetCaptionId);
 
   // Helper to add a new text segment at current playhead
-  const handleAddTextSegment = (text = 'Default text', override?: Partial<SegmentStyleOverride>) => {
+  const handleAddTextSegment = (
+    text = 'Default text',
+    override?: Partial<SegmentStyleOverride>,
+  ) => {
     const curTime = currentTime || 0;
     const duration = 2.0;
     const start = Math.max(0, parseFloat(curTime.toFixed(2)));
@@ -476,9 +479,7 @@ function LibraryPanel({
   );
 
   const showScopeHeader =
-    activeTabKey === 'templates' ||
-    activeTabKey === 'effects' ||
-    activeTabKey === 'animations';
+    activeTabKey === 'templates' || activeTabKey === 'effects' || activeTabKey === 'animations';
 
   return (
     <div className="h-full flex bg-[#141413] border-r border-white/10 select-none overflow-hidden">

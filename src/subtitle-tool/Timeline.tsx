@@ -829,7 +829,9 @@ function Timeline({
                             if (onDeleteLowerThird) {
                               onDeleteLowerThird(lt.id);
                             } else {
-                              const nextLt = (lowerThirds || []).filter((item) => item.id !== lt.id);
+                              const nextLt = (lowerThirds || []).filter(
+                                (item) => item.id !== lt.id,
+                              );
                               onLowerThirdsChange?.(nextLt);
                               onSelectLowerThird?.(null);
                             }

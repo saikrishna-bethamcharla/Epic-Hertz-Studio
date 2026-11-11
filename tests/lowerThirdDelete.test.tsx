@@ -41,7 +41,6 @@ import Timeline from '../src/subtitle-tool/Timeline';
 import LowerThirdInspector from '../src/subtitle-tool/v2/inspector/LowerThirdInspector';
 import { DEFAULT_LOWER_THIRD } from '../src/subtitle-tool/engine/spec';
 import type { LowerThirdSpec } from '../src/subtitle-tool/engine/spec';
-import type { Segment } from '../src/subtitle-tool/types';
 
 describe('Lower Third Deletion Verification Suite', () => {
   describe('TimelineToolbar Delete Button State', () => {

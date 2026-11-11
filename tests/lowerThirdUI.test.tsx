@@ -38,7 +38,7 @@ import LibraryLowerThirdsTab from '../src/subtitle-tool/v2/library/LibraryLowerT
 import SpeakerListModal from '../src/subtitle-tool/v2/library/SpeakerListModal';
 import PackImportExportModal from '../src/subtitle-tool/v2/library/PackImportExportModal';
 import LowerThirdInspector from '../src/subtitle-tool/v2/inspector/LowerThirdInspector';
-import { ALL_PACK_TEMPLATES, LOWER_THIRD_PACKS } from '../src/subtitle-tool/engine/lowerThirdPacks';
+import { LOWER_THIRD_PACKS } from '../src/subtitle-tool/engine/lowerThirdPacks';
 import type { LowerThirdSpec } from '../src/subtitle-tool/engine/spec';
 import { DEFAULT_LOWER_THIRD } from '../src/subtitle-tool/engine/spec';
 

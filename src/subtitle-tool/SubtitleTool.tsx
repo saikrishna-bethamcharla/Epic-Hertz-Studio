@@ -268,11 +268,14 @@ export default function SubtitleTool({
     setLowerThirds((prev) => prev.map((lt) => (lt.id === updated.id ? updated : lt)));
   }, []);
 
-  const handleDeleteLowerThird = useCallback((id: string) => {
-    setLowerThirds((prev) => prev.filter((lt) => lt.id !== id));
-    setActiveLowerThirdId((cur) => (cur === id ? null : cur));
-    showToast('Lower third deleted');
-  }, [showToast]);
+  const handleDeleteLowerThird = useCallback(
+    (id: string) => {
+      setLowerThirds((prev) => prev.filter((lt) => lt.id !== id));
+      setActiveLowerThirdId((cur) => (cur === id ? null : cur));
+      showToast('Lower third deleted');
+    },
+    [showToast],
+  );
 
   const handlePhotoUploaded = useCallback((photoBlobId: string, img: HTMLImageElement) => {
     setPhotoCache((prev) => {
