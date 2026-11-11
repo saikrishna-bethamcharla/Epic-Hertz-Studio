@@ -102,7 +102,7 @@ export default function LibraryLowerThirdsTab({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search 48 lower thirds..."
+            placeholder="Search 72 titles & lower thirds (e.g. Cinema, End Cards)..."
             aria-label="Search lower third templates"
             className="w-full bg-[#18181b] border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs text-bone placeholder:text-smoke/60 focus:outline-none focus:border-amber-400"
           />

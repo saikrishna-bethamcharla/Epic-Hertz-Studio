@@ -208,11 +208,11 @@ const SUB_SECTIONS: Array<{
   },
   {
     id: 'lowerThirds',
-    label: 'Lower thirds',
+    label: 'Titles & Lower thirds',
     icon: Layers,
     badge: '72',
-    title: 'Lower Thirds',
-    description: 'Broadcast name cards, titles & ticker packs',
+    title: 'Titles & Lower Thirds',
+    description: 'Cinema title cards, end cards, broadcast name tags & tickers',
   },
   {
     id: 'effects',
@@ -741,9 +741,9 @@ function LibraryPanel({
                     <Layers className="w-4 h-4 text-amber-400" />
                   </div>
                   <div className="min-w-0">
-                    <div className="text-xs font-bold text-bone">Lower Thirds Library</div>
+                    <div className="text-xs font-bold text-bone">Titles & Lower Thirds Library</div>
                     <div className="text-[10px] text-smoke truncate">
-                      48 broadcast, cinematic & social name cards
+                      72 cinema titles, end cards & name tags
                     </div>
                   </div>
                 </div>
@@ -783,6 +783,7 @@ function LibraryPanel({
                 onApplyPreset={applyPresetToScope}
                 onUserPresetsChange={setUserPresetsList}
                 onNotification={onNotification}
+                onNavigateTab={(tab) => onTabChange(tab)}
               />
             </div>
           )}

@@ -1,6 +1,6 @@
 // ─── LibraryStylesTab — Epic Hertz Studio v2 ──────────────────────────────────
 import React, { useState, useMemo, useRef } from 'react';
-import { Search, Heart, Download, Upload, Trash2 } from 'lucide-react';
+import { Search, Heart, Download, Upload, Trash2, Film } from 'lucide-react';
 import type { Segment, CaptionStyle } from '../../types';
 import { PRESETS } from '../../engine/presets';
 import { CAPTION_TEMPLATES } from '../../engine/templateCatalog';
@@ -24,17 +24,18 @@ export interface LibraryStylesTabProps {
   onApplyPreset: (targetStyle: CaptionStyle, name: string) => void;
   onUserPresetsChange?: (presets: UserPreset[]) => void;
   onNotification?: (msg: string) => void;
+  onNavigateTab?: (tab: 'lowerThirds') => void;
 }
 
 const CATEGORIES = [
   'All',
   'Yours',
   'Favourites',
+  'Cinematic',
   'Social',
   'Minimal',
   'Fun',
   'Gaming',
-  'Cinematic',
   'Bold',
   'Podcast',
   'Motivational',
@@ -51,6 +52,7 @@ export const LibraryStylesTab: React.FC<LibraryStylesTabProps> = ({
   onApplyPreset,
   onUserPresetsChange,
   onNotification,
+  onNavigateTab,
 }) => {
   const [search, setSearch] = useState('');
   const [styleCategory, setStyleCategory] = useState<string>('All');
@@ -191,6 +193,25 @@ export const LibraryStylesTab: React.FC<LibraryStylesTabProps> = ({
           placeholder="Search styles and templates..."
           className="w-full bg-[#171716] border border-white/10 focus:border-amber-400 rounded-lg pl-8 pr-3 py-1.5 text-xs text-bone placeholder:text-smoke/60 focus:outline-none"
         />
+      </div>
+
+      {/* Quick Jump Banner to Cinema Titles & End Cards */}
+      <div className="px-2.5 py-1.5 rounded-lg bg-amber-400/10 border border-amber-400/20 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <Film className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+          <span className="text-[11px] text-bone font-medium truncate">
+            Looking for <strong className="text-amber-300">Cinema Title Cards</strong>?
+          </span>
+        </div>
+        {onNavigateTab && (
+          <button
+            type="button"
+            onClick={() => onNavigateTab('lowerThirds')}
+            className="px-2 py-0.5 rounded bg-amber-400 text-black text-[10px] font-bold hover:bg-amber-300 transition-colors shrink-0 cursor-pointer"
+          >
+            View Titles (72)
+          </button>
+        )}
       </div>
 
       {/* Category Chips */}
