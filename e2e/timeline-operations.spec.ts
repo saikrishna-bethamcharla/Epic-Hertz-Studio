@@ -10,7 +10,10 @@ test.describe('Timeline Operations (Split, Delete, Undo, Redo)', () => {
 
   test('split caption at playhead and undo/redo', async ({ page }) => {
     // Switch to captions tab
-    await page.getByRole('tab', { name: /captions/i }).click();
+    await page
+      .getByRole('tab', { name: /captions/i })
+      .first()
+      .click();
 
     // Count initial caption textareas
     const initialCards = await page.locator('textarea').count();

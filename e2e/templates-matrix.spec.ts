@@ -9,8 +9,11 @@ test.describe('Templates Matrix (40 Catalog Templates)', () => {
   });
 
   test('applies templates globally in all scope', async ({ page }) => {
-    // Switch to Styles tab in Library panel
-    await page.getByRole('tab', { name: /Styles/i }).click();
+    // Switch to Templates/Styles tab in Library panel
+    await page
+      .getByRole('tab', { name: /Templates|Styles/i })
+      .first()
+      .click();
 
     // Scope should default to 'all'
     const allScopeBtn = page.getByRole('button', { name: 'All', exact: true }).first();
@@ -37,9 +40,9 @@ test.describe('Templates Matrix (40 Catalog Templates)', () => {
     await expect(firstCaption).toBeVisible();
     await firstCaption.click();
 
-    // Switch to Styles tab and verify scope is 'Caption'
+    // Switch to Templates/Styles tab and verify scope is 'Caption'
     await page
-      .getByRole('tab', { name: /Styles/i })
+      .getByRole('tab', { name: /Templates|Styles/i })
       .first()
       .click();
 

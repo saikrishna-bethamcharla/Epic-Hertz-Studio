@@ -27,8 +27,11 @@ test.describe('Projects, Presets & Font Management', () => {
   });
 
   test('preset import rejects malformed JSON cleanly without crash', async ({ page }) => {
-    // Switch to Styles tab in Library panel
-    await page.getByRole('tab', { name: /Styles/i }).click();
+    // Switch to Templates/Styles tab in Library panel
+    await page
+      .getByRole('tab', { name: /Templates|Styles/i })
+      .first()
+      .click();
 
     // Trigger import with malformed JSON file via DOM evaluation
     const result = await page.evaluate(async () => {

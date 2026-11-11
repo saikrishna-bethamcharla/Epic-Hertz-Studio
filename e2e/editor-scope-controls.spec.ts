@@ -21,7 +21,7 @@ test.describe('Editor Scope & Control Interactions', () => {
     await firstCaptionCard.click();
 
     // If mobile, switch to styles or inspector tab to check scope button
-    const stylesTab = page.getByRole('tab', { name: /styles/i }).first();
+    const stylesTab = page.getByRole('tab', { name: /templates|styles/i }).first();
     const inspectorTab = page.getByRole('tab', { name: /inspector/i }).first();
     if (await inspectorTab.isVisible()) {
       await inspectorTab.click();
@@ -35,7 +35,10 @@ test.describe('Editor Scope & Control Interactions', () => {
   });
 
   test('typography toggles (bold, italic, underline) operate without crash', async ({ page }) => {
-    await page.getByRole('tab', { name: /captions/i }).click();
+    await page
+      .getByRole('tab', { name: /captions/i })
+      .first()
+      .click();
     const firstCaptionCard = page.locator('text=Prathi frame lo oka katha').first();
     await expect(firstCaptionCard).toBeVisible();
     await firstCaptionCard.click();
@@ -70,7 +73,7 @@ test.describe('Editor Scope & Control Interactions', () => {
     await expect(firstCaptionCard).toBeVisible();
     await firstCaptionCard.click();
 
-    const stylesTab = page.getByRole('tab', { name: /styles/i }).first();
+    const stylesTab = page.getByRole('tab', { name: /templates|styles/i }).first();
     const inspectorTab = page.getByRole('tab', { name: /inspector/i }).first();
     if (await inspectorTab.isVisible()) {
       await inspectorTab.click();
@@ -108,7 +111,10 @@ test.describe('Editor Scope & Control Interactions', () => {
   });
 
   test('Reset all overrides is accessible from options menu', async ({ page }) => {
-    await page.getByRole('tab', { name: /captions/i }).click();
+    await page
+      .getByRole('tab', { name: /captions/i })
+      .first()
+      .click();
     const firstCaptionCard = page.locator('text=Prathi frame lo oka katha').first();
     await expect(firstCaptionCard).toBeVisible();
     await firstCaptionCard.click();

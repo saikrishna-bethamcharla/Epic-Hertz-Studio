@@ -500,6 +500,7 @@ function LibraryPanel({
                 id={`tab-${sub.id}`}
                 type="button"
                 role="tab"
+                aria-label={sub.id === 'templates' ? 'Templates / Styles' : sub.label}
                 aria-selected={isActive}
                 aria-controls={`panel-${sub.id}`}
                 onClick={() => onTabChange(sub.id)}
