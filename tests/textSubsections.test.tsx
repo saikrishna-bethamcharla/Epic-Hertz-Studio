@@ -63,7 +63,7 @@ describe('Text Section Sub-Sections Navigation & Quick Text Layout', () => {
     vi.clearAllMocks();
   });
 
-  it('renders all 7 sub-sections in the vertical sub-nav rail with proper labels and badges', () => {
+  it('renders all 8 sub-sections in the vertical sub-nav rail with proper labels and badges', () => {
     const handleTabChange = vi.fn();
     render(
       <LibraryPanel
@@ -82,18 +82,27 @@ describe('Text Section Sub-Sections Navigation & Quick Text Layout', () => {
       />,
     );
 
-    // Verify all 7 sub-section navigation buttons exist
+    // Verify all 8 sub-section navigation buttons exist
     expect(screen.getByRole('tab', { name: /add text/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /templates/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /title cards/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /lower thirds/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /text effects/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /animations/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /yours/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /captions/i })).toBeDefined();
 
-    // Verify Lower Thirds badge shows '72'
+    // Verify Title Cards badge shows '12'
+    const titleCardsTab = screen.getByRole('tab', { name: /title cards/i });
+    expect(titleCardsTab.textContent).toContain('12');
+
+    // Verify Lower Thirds badge shows '60'
     const lowerThirdTab = screen.getByRole('tab', { name: /lower thirds/i });
-    expect(lowerThirdTab.textContent).toContain('72');
+    expect(lowerThirdTab.textContent).toContain('60');
+
+    // Verify Templates badge shows '54'
+    const templatesTab = screen.getByRole('tab', { name: /templates/i });
+    expect(templatesTab.textContent).toContain('54');
   });
 
   it('switches sub-sections when tab buttons are clicked', () => {
@@ -118,6 +127,10 @@ describe('Text Section Sub-Sections Navigation & Quick Text Layout', () => {
     // Click on 'Add text'
     fireEvent.click(screen.getByRole('tab', { name: /add text/i }));
     expect(handleTabChange).toHaveBeenCalledWith('addText');
+
+    // Click on 'Title cards'
+    fireEvent.click(screen.getByRole('tab', { name: /title cards/i }));
+    expect(handleTabChange).toHaveBeenCalledWith('titleCards');
 
     // Click on 'Lower thirds'
     fireEvent.click(screen.getByRole('tab', { name: /lower thirds/i }));

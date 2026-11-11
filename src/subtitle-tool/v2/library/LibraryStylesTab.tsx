@@ -24,7 +24,7 @@ export interface LibraryStylesTabProps {
   onApplyPreset: (targetStyle: CaptionStyle, name: string) => void;
   onUserPresetsChange?: (presets: UserPreset[]) => void;
   onNotification?: (msg: string) => void;
-  onNavigateTab?: (tab: 'lowerThirds') => void;
+  onNavigateTab?: (tab: 'titleCards' | 'lowerThirds') => void;
 }
 
 const CATEGORIES = [
@@ -206,10 +206,10 @@ export const LibraryStylesTab: React.FC<LibraryStylesTabProps> = ({
         {onNavigateTab && (
           <button
             type="button"
-            onClick={() => onNavigateTab('lowerThirds')}
+            onClick={() => onNavigateTab('titleCards')}
             className="px-2 py-0.5 rounded bg-amber-400 text-black text-[10px] font-bold hover:bg-amber-300 transition-colors shrink-0 cursor-pointer"
           >
-            View Titles (72)
+            View Titles (12)
           </button>
         )}
       </div>

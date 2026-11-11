@@ -25,6 +25,7 @@ interface LibraryLowerThirdsTabProps {
   onAddLowerThird: (spec: LowerThirdSpec) => void;
   onUpdateLowerThird?: (spec: LowerThirdSpec) => void;
   onAddMultipleLowerThirds?: (specs: LowerThirdSpec[]) => void;
+  excludePackId?: string;
 }
 
 export default function LibraryLowerThirdsTab({
@@ -34,6 +35,7 @@ export default function LibraryLowerThirdsTab({
   onAddLowerThird,
   onUpdateLowerThird,
   onAddMultipleLowerThirds,
+  excludePackId,
 }: LibraryLowerThirdsTabProps) {
   const [selectedPackId, setSelectedPackId] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,11 +44,19 @@ export default function LibraryLowerThirdsTab({
   const [customTemplates, setCustomTemplates] = useState<LowerThirdTemplate[]>([]);
   const [appliedTemplateId, setAppliedTemplateId] = useState<string | null>(null);
 
+  const packs = useMemo(() => {
+    return excludePackId
+      ? LOWER_THIRD_PACKS.filter((p) => p.id !== excludePackId)
+      : LOWER_THIRD_PACKS;
+  }, [excludePackId]);
+
   // Combine built-in templates with custom imported templates
-  const allTemplates = useMemo(
-    () => [...ALL_PACK_TEMPLATES, ...customTemplates],
-    [customTemplates],
-  );
+  const allTemplates = useMemo(() => {
+    const base = excludePackId
+      ? ALL_PACK_TEMPLATES.filter((t) => t.packId !== excludePackId)
+      : ALL_PACK_TEMPLATES;
+    return [...base, ...customTemplates];
+  }, [customTemplates, excludePackId]);
 
   // Filter templates by pack and search query
   const filteredTemplates = useMemo(() => {
@@ -102,7 +112,7 @@ export default function LibraryLowerThirdsTab({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search 72 titles & lower thirds (e.g. Cinema, End Cards)..."
+            placeholder={`Search ${allTemplates.length} lower thirds...`}
             aria-label="Search lower third templates"
             className="w-full bg-[#18181b] border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs text-bone placeholder:text-smoke/60 focus:outline-none focus:border-amber-400"
           />
@@ -141,7 +151,7 @@ export default function LibraryLowerThirdsTab({
         >
           All ({allTemplates.length})
         </button>
-        {LOWER_THIRD_PACKS.map((pack) => {
+        {packs.map((pack) => {
           const isActive = selectedPackId === pack.id;
           return (
             <button

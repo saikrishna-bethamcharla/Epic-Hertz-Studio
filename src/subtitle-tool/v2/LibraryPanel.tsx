@@ -14,6 +14,7 @@ import {
   LayoutGrid,
   Bookmark,
   Quote,
+  Clapperboard,
 } from 'lucide-react';
 
 import type {
@@ -37,10 +38,12 @@ import { checkReadability } from '../utils/readability';
 import LibraryStylesTab from './library/LibraryStylesTab';
 import LibraryBrandTab from './library/LibraryBrandTab';
 import LibraryLowerThirdsTab from './library/LibraryLowerThirdsTab';
+import LibraryTitleCardsTab from './library/LibraryTitleCardsTab';
 
 export type LibraryTab =
   | 'addText'
   | 'templates'
+  | 'titleCards'
   | 'styles'
   | 'lowerThirds'
   | 'effects'
@@ -207,12 +210,20 @@ const SUB_SECTIONS: Array<{
     description: 'Viral subtitles & social preset templates',
   },
   {
+    id: 'titleCards',
+    label: 'Title cards',
+    icon: Clapperboard,
+    badge: '12',
+    title: 'Title Cards & End Cards',
+    description: 'Cinematic title cards, chapter headers, end cards & credits',
+  },
+  {
     id: 'lowerThirds',
-    label: 'Titles & Lower thirds',
+    label: 'Lower thirds',
     icon: Layers,
-    badge: '72',
-    title: 'Titles & Lower Thirds',
-    description: 'Cinema title cards, end cards, broadcast name tags & tickers',
+    badge: '60',
+    title: 'Lower Thirds',
+    description: 'Broadcast name cards, speaker tags & tickers',
   },
   {
     id: 'effects',
@@ -789,7 +800,21 @@ function LibraryPanel({
           )}
 
           {/* ─────────────────────────────────────────────────────────────
-              SUB-SECTION 3: LOWER THIRDS PACK LIBRARY
+              SUB-SECTION 3: TITLE CARDS & END CARDS
+          ────────────────────────────────────────────────────────────── */}
+          {activeTabKey === 'titleCards' && (
+            <LibraryTitleCardsTab
+              currentTime={currentTime}
+              selectedLowerThirdId={selectedLowerThirdId}
+              selectedLowerThirdSpec={selectedLowerThirdSpec}
+              onAddLowerThird={(spec) => onAddLowerThird?.(spec)}
+              onUpdateLowerThird={(spec) => onUpdateLowerThird?.(spec)}
+              onAddMultipleLowerThirds={(specs) => onAddMultipleLowerThirds?.(specs)}
+            />
+          )}
+
+          {/* ─────────────────────────────────────────────────────────────
+              SUB-SECTION 4: LOWER THIRDS PACK LIBRARY
           ────────────────────────────────────────────────────────────── */}
           {activeTabKey === 'lowerThirds' && (
             <LibraryLowerThirdsTab
@@ -799,6 +824,7 @@ function LibraryPanel({
               onAddLowerThird={(spec) => onAddLowerThird?.(spec)}
               onUpdateLowerThird={(spec) => onUpdateLowerThird?.(spec)}
               onAddMultipleLowerThirds={(specs) => onAddMultipleLowerThirds?.(specs)}
+              excludePackId="title-end"
             />
           )}
 
