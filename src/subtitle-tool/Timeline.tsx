@@ -13,6 +13,7 @@ import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import { formatTimecode, formatRulerTick } from './utils/formatTime';
 import { getSpeakerStyle, getSpeakerShortCode } from './utils/speakers';
 import type { Segment, LowerThirdSpec } from './types';
+import { Trash2 } from 'lucide-react';
 import TimelineToolbar from './editor/TimelineToolbar';
 import { timeStore, usePlayheadTime } from './store/timeStore';
 
@@ -51,6 +52,7 @@ export interface TimelineProps {
   activeLowerThirdId?: string | null;
   onLowerThirdsChange?: (lowerThirds: LowerThirdSpec[]) => void;
   onSelectLowerThird?: (id: string | null) => void;
+  onDeleteLowerThird?: (id: string) => void;
   onAddLowerThird?: () => void;
   onSeek: (time: number) => void;
   onTogglePlay: () => void;
@@ -81,6 +83,7 @@ function Timeline({
   activeLowerThirdId,
   onLowerThirdsChange,
   onSelectLowerThird,
+  onDeleteLowerThird,
   onAddLowerThird,
   onSeek,
   onTogglePlay,
@@ -263,6 +266,7 @@ function Timeline({
     e.stopPropagation();
     e.preventDefault();
     onSelectSegment?.(seg.id);
+    onSelectLowerThird?.(null);
 
     dragStateRef.current = {
       type,
@@ -400,6 +404,7 @@ function Timeline({
     e.stopPropagation();
     e.preventDefault();
     onSelectLowerThird?.(lt.id);
+    onSelectSegment?.('');
 
     dragStateRef.current = {
       type,
@@ -541,8 +546,18 @@ function Timeline({
     pushState(updated);
   };
 
-  // ── Delete Current Segment ────────────────────────────────────────────────
+  // ── Delete Current Segment or Selected Lower Third ──────────────────────────
   const handleDelete = () => {
+    if (activeLowerThirdId) {
+      if (onDeleteLowerThird) {
+        onDeleteLowerThird(activeLowerThirdId);
+      } else {
+        const nextLt = (lowerThirds || []).filter((lt) => lt.id !== activeLowerThirdId);
+        onLowerThirdsChange?.(nextLt);
+        onSelectLowerThird?.(null);
+      }
+      return;
+    }
     if (!currentSeg) return;
     const updated = segments
       .filter((s) => s.id !== currentSeg.id)
@@ -593,6 +608,7 @@ function Timeline({
         isPlaying={isPlaying}
         onTogglePlay={onTogglePlay}
         currentSeg={currentSeg}
+        activeLowerThirdId={activeLowerThirdId}
         onAddText={handleAddText}
         onAddLowerThird={onAddLowerThird}
         onSplit={handleSplit}
@@ -795,9 +811,36 @@ function Timeline({
                         {lt.name || 'Lower Third'}
                       </span>
                     </div>
-                    <span className="text-[8px] text-smoke font-mono shrink-0 pl-1">
-                      {(lt.end - lt.start).toFixed(1)}s
-                    </span>
+                    <div className="flex items-center gap-1 shrink-0 pl-1">
+                      <span className="text-[8px] text-smoke font-mono">
+                        {(lt.end - lt.start).toFixed(1)}s
+                      </span>
+                      {isActive && (
+                        <button
+                          type="button"
+                          aria-label={`Delete lower third ${lt.name}`}
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            if (onDeleteLowerThird) {
+                              onDeleteLowerThird(lt.id);
+                            } else {
+                              const nextLt = (lowerThirds || []).filter((item) => item.id !== lt.id);
+                              onLowerThirdsChange?.(nextLt);
+                              onSelectLowerThird?.(null);
+                            }
+                          }}
+                          className="p-0.5 rounded text-red-400 hover:text-red-200 hover:bg-red-500/20 z-30 transition-colors cursor-pointer"
+                          title="Delete lower third"
+                        >
+                          <Trash2 className="w-2.5 h-2.5" />
+                        </button>
+                      )}
+                    </div>
 
                     {/* Right Trim Handle */}
                     <div

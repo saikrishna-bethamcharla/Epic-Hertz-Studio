@@ -36,6 +36,7 @@ export interface TimelineToolbarProps {
   isPlaying: boolean;
   onTogglePlay: () => void;
   currentSeg: Segment | null | undefined;
+  activeLowerThirdId?: string | null;
   onAddText: () => void;
   onAddLowerThird?: () => void;
   onSplit: () => void;
@@ -60,6 +61,7 @@ export const TimelineToolbar: React.FC<TimelineToolbarProps> = ({
   isPlaying,
   onTogglePlay,
   currentSeg,
+  activeLowerThirdId,
   onAddText,
   onAddLowerThird,
   onSplit,
@@ -205,8 +207,12 @@ export const TimelineToolbar: React.FC<TimelineToolbarProps> = ({
           <div className="relative group/tip flex items-center">
             <button
               onClick={onDelete}
-              disabled={!currentSeg}
-              aria-label="Delete active caption (Delete)"
+              disabled={!currentSeg && !activeLowerThirdId}
+              aria-label={
+                activeLowerThirdId
+                  ? 'Delete active lower third (Delete)'
+                  : 'Delete active caption (Delete)'
+              }
               className="w-7 h-7 flex items-center justify-center rounded-lg text-crimson-2 hover:bg-crimson/15 disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-crimson-2"
             >
               <Trash2 className="w-3.5 h-3.5 text-crimson-2" />
@@ -214,7 +220,7 @@ export const TimelineToolbar: React.FC<TimelineToolbarProps> = ({
             <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
               <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
                 <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
-                <span>Delete</span>
+                <span>{activeLowerThirdId ? 'Delete Lower Third' : 'Delete'}</span>
                 <kbd className="px-1 py-0.2 rounded bg-white/10 text-[9px] text-smoke font-mono font-semibold">
                   Del
                 </kbd>

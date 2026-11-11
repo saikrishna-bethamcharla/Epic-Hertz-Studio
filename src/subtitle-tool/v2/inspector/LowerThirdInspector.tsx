@@ -227,10 +227,12 @@ export default function LowerThirdInspector({
           <button
             type="button"
             onClick={() => onDelete(spec.id)}
-            className="p-1.5 rounded-lg border border-white/10 hover:border-red-500/50 bg-[#1c1c1a] hover:bg-red-500/10 text-smoke hover:text-red-400 transition-colors"
+            className="px-2 py-1.5 rounded-lg border border-red-500/30 hover:border-red-500/60 bg-red-500/10 hover:bg-red-500/20 text-red-300 hover:text-red-200 transition-colors flex items-center gap-1.5"
             title="Delete this Lower Third"
+            aria-label="Delete this Lower Third"
           >
             <Trash2 className="w-3.5 h-3.5" />
+            <span className="text-[11px] font-medium">Delete</span>
           </button>
         </div>
       </div>
@@ -758,6 +760,18 @@ export default function LowerThirdInspector({
             />
           </div>
         </div>
+      </div>
+
+      {/* ── Danger / Delete Action ───────────────────────────────────────── */}
+      <div className="pt-2 border-t border-white/10">
+        <button
+          type="button"
+          onClick={() => onDelete(spec.id)}
+          className="w-full py-2 px-3 rounded-xl border border-red-500/30 hover:border-red-500/60 bg-red-500/10 hover:bg-red-500/20 text-red-300 hover:text-red-100 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+          <span>Delete Lower Third</span>
+        </button>
       </div>
     </div>
   );

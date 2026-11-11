@@ -271,7 +271,8 @@ export default function SubtitleTool({
   const handleDeleteLowerThird = useCallback((id: string) => {
     setLowerThirds((prev) => prev.filter((lt) => lt.id !== id));
     setActiveLowerThirdId((cur) => (cur === id ? null : cur));
-  }, []);
+    showToast('Lower third deleted');
+  }, [showToast]);
 
   const handlePhotoUploaded = useCallback((photoBlobId: string, img: HTMLImageElement) => {
     setPhotoCache((prev) => {
@@ -374,13 +375,25 @@ export default function SubtitleTool({
   }, [segments, updateSegments, setActiveId]);
 
   const handleDeleteActive = useCallback(() => {
+    if (activeLowerThirdId) {
+      handleDeleteLowerThird(activeLowerThirdId);
+      return;
+    }
     const targetId = selectedId ?? activeId;
     if (!targetId) return;
     const next = segments.filter((s) => s.id !== targetId).map((s, i) => ({ ...s, index: i + 1 }));
     updateSegments(next);
     setSelectedId(null);
     setActiveId(null);
-  }, [selectedId, activeId, segments, updateSegments, setActiveId]);
+  }, [
+    activeLowerThirdId,
+    handleDeleteLowerThird,
+    selectedId,
+    activeId,
+    segments,
+    updateSegments,
+    setActiveId,
+  ]);
 
   const handleJumpPrevCaption = useCallback(() => {
     const curTime = currentTimeRef.current;
@@ -1250,6 +1263,7 @@ export default function SubtitleTool({
                       activeLowerThirdId={activeLowerThirdId}
                       onLowerThirdsChange={setLowerThirds}
                       onSelectLowerThird={setActiveLowerThirdId}
+                      onDeleteLowerThird={handleDeleteLowerThird}
                       onAddLowerThird={handleAddLowerThird}
                       onSeek={(t) => videoRef.current?.seekTo(t)}
                       onTogglePlay={() => videoRef.current?.togglePlay()}
@@ -1427,6 +1441,7 @@ export default function SubtitleTool({
                         activeLowerThirdId={activeLowerThirdId}
                         onLowerThirdsChange={setLowerThirds}
                         onSelectLowerThird={setActiveLowerThirdId}
+                        onDeleteLowerThird={handleDeleteLowerThird}
                         onAddLowerThird={handleAddLowerThird}
                         onSeek={(t) => videoRef.current?.seekTo(t)}
                         onTogglePlay={() => videoRef.current?.togglePlay()}
