@@ -4049,8 +4049,11 @@ export const MODERN_PACK: LowerThirdPack = {
   templates: MODERN_TEMPLATES,
 };
 
+import { TITLE_END_TEMPLATES, TITLE_END_PACK } from './title-end-cards';
+export { TITLE_END_TEMPLATES, TITLE_END_PACK };
+
 // ─────────────────────────────────────────────────────────────────────────────
-// Complete 7 Packs Definition
+// Complete 8 Packs Definition (72 templates total)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const ALL_PACK_TEMPLATES: LowerThirdTemplate[] = [
@@ -4061,6 +4064,7 @@ export const ALL_PACK_TEMPLATES: LowerThirdTemplate[] = [
   ...GAMING_TECH_TEMPLATES,
   ...INDIC_PACK_TEMPLATES,
   ...MODERN_TEMPLATES,
+  ...TITLE_END_TEMPLATES,
 ];
 
 export const LOWER_THIRD_PACKS: LowerThirdPack[] = [
@@ -4107,6 +4111,7 @@ export const LOWER_THIRD_PACKS: LowerThirdPack[] = [
     templates: INDIC_PACK_TEMPLATES,
   },
   MODERN_PACK,
+  TITLE_END_PACK,
 ];
 
 export function getLowerThirdTemplateById(id: string): LowerThirdTemplate | undefined {

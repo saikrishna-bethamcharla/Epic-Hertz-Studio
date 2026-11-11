@@ -19,9 +19,9 @@ import { DEFAULT_LOWER_THIRD, type LowerThirdSpec } from '../src/subtitle-tool/e
 import { createRecorderCanvasContext } from './goldenLowerThirds.test';
 
 describe('Phase D: Lower Third 60-Template Catalog & Distinctness Suite', () => {
-  it('contains exactly 7 packs with 60 templates total', () => {
-    expect(LOWER_THIRD_PACKS).toHaveLength(7);
-    expect(ALL_PACK_TEMPLATES).toHaveLength(60);
+  it('contains exactly 8 packs with 72 templates total', () => {
+    expect(LOWER_THIRD_PACKS).toHaveLength(8);
+    expect(ALL_PACK_TEMPLATES).toHaveLength(72);
 
     expect(CLEAN_CORPORATE_TEMPLATES).toHaveLength(8);
     expect(CREATOR_REELS_TEMPLATES).toHaveLength(8);
@@ -44,14 +44,14 @@ describe('Phase D: Lower Third 60-Template Catalog & Distinctness Suite', () => 
       expect(validated.autoFit.minScale).toBeGreaterThanOrEqual(0.2);
     }
 
-    expect(ids.size).toBe(60);
+    expect(ids.size).toBe(72);
   });
 
-  it('validates all 7 packs through validateLowerThirdPack', () => {
+  it('validates all 8 packs through validateLowerThirdPack', () => {
     for (const pack of LOWER_THIRD_PACKS) {
       const validated = validateLowerThirdPack(pack);
       expect(validated.id).toBe(pack.id);
-      if (pack.id === 'modern') {
+      if (pack.id === 'modern' || pack.id === 'title-end') {
         expect(validated.templates).toHaveLength(12);
       } else {
         expect(validated.templates).toHaveLength(8);
@@ -101,13 +101,16 @@ describe('Phase D: Lower Third 60-Template Catalog & Distinctness Suite', () => 
       );
 
       const serialized = ctx.log
-        .map((op) => `${op.op}:${op.args.join(',')}|${op.fillStyle || ''}|${op.strokeStyle || ''}`)
+        .map(
+          (op) =>
+            `${op.op}:${op.args.join(',')}|${op.fillStyle || ''}|${op.strokeStyle || ''}|${op.globalAlpha !== undefined ? Math.round(op.globalAlpha * 100) / 100 : ''}`,
+        )
         .join(';');
 
       expect(signatures.has(serialized)).toBe(false);
       signatures.set(serialized, template.id);
     }
 
-    expect(signatures.size).toBe(60);
+    expect(signatures.size).toBe(72);
   });
 });

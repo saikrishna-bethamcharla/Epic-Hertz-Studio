@@ -210,7 +210,7 @@ const SUB_SECTIONS: Array<{
     id: 'lowerThirds',
     label: 'Lower thirds',
     icon: Layers,
-    badge: '60',
+    badge: '72',
     title: 'Lower Thirds',
     description: 'Broadcast name cards, titles & ticker packs',
   },
