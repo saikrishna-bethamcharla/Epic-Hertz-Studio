@@ -7,9 +7,9 @@ import {
   templateToStyle,
 } from '../src/subtitle-tool/engine/templateSchema';
 
-describe('Phase B & D: Caption Template Catalog (54 Templates)', () => {
-  it('contains exactly 54 unique, validated templates across 10 mood categories', () => {
-    expect(CAPTION_TEMPLATES.length).toBe(54);
+describe('Phase B & D: Caption Template Catalog (68 Templates)', () => {
+  it('contains exactly 68 unique, validated templates across 10 mood categories', () => {
+    expect(CAPTION_TEMPLATES.length).toBe(68);
 
     const ids = new Set<string>();
     for (const t of CAPTION_TEMPLATES) {

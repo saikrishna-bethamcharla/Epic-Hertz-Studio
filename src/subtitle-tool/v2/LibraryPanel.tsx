@@ -14,7 +14,6 @@ import {
   LayoutGrid,
   Bookmark,
   Quote,
-  Clapperboard,
 } from 'lucide-react';
 
 import type {
@@ -38,12 +37,10 @@ import { checkReadability } from '../utils/readability';
 import LibraryStylesTab from './library/LibraryStylesTab';
 import LibraryBrandTab from './library/LibraryBrandTab';
 import LibraryLowerThirdsTab from './library/LibraryLowerThirdsTab';
-import LibraryTitleCardsTab from './library/LibraryTitleCardsTab';
 
 export type LibraryTab =
   | 'addText'
   | 'templates'
-  | 'titleCards'
   | 'styles'
   | 'lowerThirds'
   | 'effects'
@@ -205,17 +202,9 @@ const SUB_SECTIONS: Array<{
     id: 'templates',
     label: 'Templates',
     icon: LayoutGrid,
-    badge: '54',
+    badge: '68',
     title: 'Text Templates',
-    description: 'Viral subtitles & social preset templates',
-  },
-  {
-    id: 'titleCards',
-    label: 'Title cards',
-    icon: Clapperboard,
-    badge: '12',
-    title: 'Title Cards & End Cards',
-    description: 'Cinematic title cards, chapter headers, end cards & credits',
+    description: 'Viral subtitles & cinematic movie preset templates',
   },
   {
     id: 'lowerThirds',
@@ -794,27 +783,12 @@ function LibraryPanel({
                 onApplyPreset={applyPresetToScope}
                 onUserPresetsChange={setUserPresetsList}
                 onNotification={onNotification}
-                onNavigateTab={(tab) => onTabChange(tab)}
               />
             </div>
           )}
 
           {/* ─────────────────────────────────────────────────────────────
-              SUB-SECTION 3: TITLE CARDS & END CARDS
-          ────────────────────────────────────────────────────────────── */}
-          {activeTabKey === 'titleCards' && (
-            <LibraryTitleCardsTab
-              currentTime={currentTime}
-              selectedLowerThirdId={selectedLowerThirdId}
-              selectedLowerThirdSpec={selectedLowerThirdSpec}
-              onAddLowerThird={(spec) => onAddLowerThird?.(spec)}
-              onUpdateLowerThird={(spec) => onUpdateLowerThird?.(spec)}
-              onAddMultipleLowerThirds={(specs) => onAddMultipleLowerThirds?.(specs)}
-            />
-          )}
-
-          {/* ─────────────────────────────────────────────────────────────
-              SUB-SECTION 4: LOWER THIRDS PACK LIBRARY
+              SUB-SECTION 3: LOWER THIRDS PACK LIBRARY
           ────────────────────────────────────────────────────────────── */}
           {activeTabKey === 'lowerThirds' && (
             <LibraryLowerThirdsTab

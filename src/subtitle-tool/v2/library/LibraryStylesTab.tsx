@@ -24,14 +24,13 @@ export interface LibraryStylesTabProps {
   onApplyPreset: (targetStyle: CaptionStyle, name: string) => void;
   onUserPresetsChange?: (presets: UserPreset[]) => void;
   onNotification?: (msg: string) => void;
-  onNavigateTab?: (tab: 'titleCards' | 'lowerThirds') => void;
 }
 
 const CATEGORIES = [
   'All',
+  'Cinematic',
   'Yours',
   'Favourites',
-  'Cinematic',
   'Social',
   'Minimal',
   'Fun',
@@ -52,7 +51,6 @@ export const LibraryStylesTab: React.FC<LibraryStylesTabProps> = ({
   onApplyPreset,
   onUserPresetsChange,
   onNotification,
-  onNavigateTab,
 }) => {
   const [search, setSearch] = useState('');
   const [styleCategory, setStyleCategory] = useState<string>('All');
@@ -195,23 +193,25 @@ export const LibraryStylesTab: React.FC<LibraryStylesTabProps> = ({
         />
       </div>
 
-      {/* Quick Jump Banner to Cinema Titles & End Cards */}
+      {/* Quick Filter Banner for Movie Style Text Templates */}
       <div className="px-2.5 py-1.5 rounded-lg bg-amber-400/10 border border-amber-400/20 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <Film className="w-3.5 h-3.5 text-amber-400 shrink-0" />
           <span className="text-[11px] text-bone font-medium truncate">
-            Looking for <strong className="text-amber-300">Cinema Title Cards</strong>?
+            🎬 <strong className="text-amber-300">Movie Style Text Templates</strong> (20 styles)
           </span>
         </div>
-        {onNavigateTab && (
-          <button
-            type="button"
-            onClick={() => onNavigateTab('titleCards')}
-            className="px-2 py-0.5 rounded bg-amber-400 text-black text-[10px] font-bold hover:bg-amber-300 transition-colors shrink-0 cursor-pointer"
-          >
-            View Titles (12)
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => setStyleCategory('Cinematic')}
+          className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors shrink-0 cursor-pointer ${
+            styleCategory === 'Cinematic'
+              ? 'bg-amber-300 text-black'
+              : 'bg-amber-400 text-black hover:bg-amber-300'
+          }`}
+        >
+          {styleCategory === 'Cinematic' ? 'Active' : 'Show Movie Styles'}
+        </button>
       </div>
 
       {/* Category Chips */}
