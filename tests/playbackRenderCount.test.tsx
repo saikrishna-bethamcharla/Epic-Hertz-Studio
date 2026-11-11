@@ -39,6 +39,35 @@ if (typeof window !== 'undefined') {
       disconnect() {}
     } as unknown as typeof ResizeObserver;
   }
+  HTMLCanvasElement.prototype.getContext = vi.fn(
+    () =>
+      ({
+        clearRect: vi.fn(),
+        fillRect: vi.fn(),
+        save: vi.fn(),
+        restore: vi.fn(),
+        measureText: vi.fn(() => ({ width: 100 })),
+        fillText: vi.fn(),
+        strokeText: vi.fn(),
+        beginPath: vi.fn(),
+        closePath: vi.fn(),
+        rect: vi.fn(),
+        roundRect: vi.fn(),
+        fill: vi.fn(),
+        stroke: vi.fn(),
+        moveTo: vi.fn(),
+        lineTo: vi.fn(),
+        arc: vi.fn(),
+        createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+        setTransform: vi.fn(),
+        resetTransform: vi.fn(),
+        scale: vi.fn(),
+        translate: vi.fn(),
+        rotate: vi.fn(),
+        drawImage: vi.fn(),
+        clip: vi.fn(),
+      }) as any,
+  );
   window.HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined);
   window.HTMLMediaElement.prototype.pause = vi.fn();
   window.HTMLMediaElement.prototype.load = vi.fn();

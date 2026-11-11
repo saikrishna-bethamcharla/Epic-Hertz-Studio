@@ -39,7 +39,7 @@ jobs:
         run: npm run typecheck
 
       - name: Run Unit & Integration Tests
-        run: npx vitest run --reporter=default --reporter=github-actions
+        run: npx vitest run --reporter=verbose
 
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium firefox webkit
