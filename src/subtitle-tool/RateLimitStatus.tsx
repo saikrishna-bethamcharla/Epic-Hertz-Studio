@@ -94,11 +94,6 @@ export default function RateLimitStatusBar() {
     return () => clearTimeout(timeoutId);
   }, []);
 
-  // If no status info available, still show the bar if using shared key
-  if (status.remainingThisMinute === 999 && status.remainingThisDay === 999) {
-    setIsVisible(status.usingSharedKey);
-  }
-
   if (!isVisible) return null;
 
   const minutePct = Math.max(0, Math.min(100, 100 - (status.remainingThisMinute / 8) * 100));

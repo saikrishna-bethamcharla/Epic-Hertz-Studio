@@ -108,16 +108,21 @@ export default function ExportModal({
       )
     : null;
 
-  // Auto-enforce recommendations if memory is high to prevent browser OOM
+  // Auto-enforce recommendations if memory is high to prevent browser OOM.
+  // Guarded on equality so the effect settles instead of re-applying forever.
+  const recommendedResolution =
+    memoryEstimate?.recommendedResolution === '1080' ? '1080' : 'original';
   useEffect(() => {
-    if (memoryEstimate?.isHighMemory) {
-      setQuality(memoryEstimate.recommendedQuality);
-      setResolution(memoryEstimate.recommendedResolution === '1080' ? '1080' : 'original');
-      onBurnStatus?.(
-        `High memory footprint detected. Auto-selected ${memoryEstimate.recommendedQuality} quality at ${memoryEstimate.recommendedResolution === '1080' ? '1080p' : 'original'} resolution to prevent browser memory limits.`,
-      );
+    if (!isOpen || !memoryEstimate?.isHighMemory) return;
+    if (quality === memoryEstimate.recommendedQuality && resolution === recommendedResolution) {
+      return;
     }
-  }, [memoryEstimate, onBurnStatus]);
+    setQuality(memoryEstimate.recommendedQuality);
+    setResolution(recommendedResolution);
+    onBurnStatus?.(
+      `High memory footprint detected. Auto-selected ${memoryEstimate.recommendedQuality} quality at ${recommendedResolution === '1080' ? '1080p' : 'original'} resolution to prevent browser memory limits.`,
+    );
+  }, [isOpen, memoryEstimate, quality, resolution, recommendedResolution, onBurnStatus]);
 
   if (!isOpen) return null;
 
