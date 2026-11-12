@@ -101,6 +101,9 @@ describe('Requirement 2: Visibly Distinct Animations Suite', () => {
       'flip-in',
       'drop-in',
       'clip-reveal',
+      'elastic-pop',
+      'rack-focus',
+      'tracking-in',
     ];
 
     const signatures = new Map<EntranceType, string>();
@@ -151,6 +154,7 @@ describe('Requirement 2: Visibly Distinct Animations Suite', () => {
       'color-flip',
       'scale-slam',
       'wobble',
+      'hop',
     ];
 
     const signatures = new Map<EmphasisType, string>();
@@ -206,6 +210,7 @@ describe('Requirement 2: Visibly Distinct Animations Suite', () => {
       'typewriter-erase',
       'drop-out',
       'glitch-out',
+      'slide-up',
     ];
 
     const signatures = new Map<ExitType, string>();

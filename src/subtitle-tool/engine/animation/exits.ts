@@ -36,6 +36,13 @@ export function calculateExitTransform(
       break;
     }
 
+    case 'slide-up': {
+      const dist = (params.distance ?? 0.35) * px;
+      tx.dy = -e * dist;
+      tx.alpha = 1 - e;
+      break;
+    }
+
     case 'slide-left': {
       const dist = (params.distance ?? 0.6) * px;
       tx.dx = -e * dist;

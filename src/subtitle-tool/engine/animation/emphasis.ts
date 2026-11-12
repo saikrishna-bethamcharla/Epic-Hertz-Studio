@@ -97,6 +97,15 @@ export function calculateEmphasisTransform(
       break;
     }
 
+    case 'hop': {
+      // Active word hops off the baseline and lands back in place.
+      const arc = Math.sin(normP * Math.PI);
+      tx.dy = -arc * px * (params.height ?? 0.22);
+      tx.scale = 1 + arc * (params.scale ?? 0.08);
+      tx.colorMix = clamp01(normP * 2.5);
+      break;
+    }
+
     default:
       tx.colorMix = 1;
       break;

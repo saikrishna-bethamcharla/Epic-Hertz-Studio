@@ -122,6 +122,32 @@ export function calculateEntranceTransform(
       break;
     }
 
+    case 'elastic-pop': {
+      // CapCut-style spring: starts small, overshoots past full size, settles.
+      const initial = params.initialScale ?? 0.7;
+      tx.scale = initial + (1 - initial) * getEasing('spring', normP, params.bounce ?? 0.9);
+      tx.alpha = clamp01(normP * 5);
+      break;
+    }
+
+    case 'rack-focus': {
+      // Rack focus from soft blur into sharp, with a subtle push in.
+      const maxBlur = (params.maxBlur ?? 0.5) * px;
+      tx.blur = (1 - clamp01(e)) * maxBlur;
+      tx.scale = 0.96 + 0.04 * clamp01(e);
+      tx.dy = (1 - clamp01(e)) * px * 0.08;
+      tx.alpha = clamp01(normP * 1.8);
+      break;
+    }
+
+    case 'tracking-in': {
+      // Wide tracked type tightens into its final spacing.
+      const spread = params.spread ?? 0.3;
+      tx.scaleX = 1 + spread * q;
+      tx.alpha = clamp01(normP * 2.2);
+      break;
+    }
+
     default:
       tx.alpha = normP;
       break;

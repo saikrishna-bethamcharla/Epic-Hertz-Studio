@@ -790,6 +790,7 @@ export function renderCaptions(
     [
       'fade',
       'slide-down',
+      'slide-up',
       'slide-left',
       'slide-right',
       'scale-out',
@@ -1118,6 +1119,9 @@ export function renderCaptions(
           'flip-in',
           'drop-in',
           'clip-reveal',
+          'elastic-pop',
+          'rack-focus',
+          'tracking-in',
           'slide-left',
           'slide-right',
           'slide-up',

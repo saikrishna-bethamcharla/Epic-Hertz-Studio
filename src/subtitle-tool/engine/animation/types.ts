@@ -46,7 +46,10 @@ export type EntranceType =
   | 'wave'
   | 'flip-in'
   | 'drop-in'
-  | 'clip-reveal';
+  | 'clip-reveal'
+  | 'elastic-pop'
+  | 'rack-focus'
+  | 'tracking-in';
 
 export type EmphasisType =
   | 'pop'
@@ -56,11 +59,13 @@ export type EmphasisType =
   | 'highlight-box-sweep'
   | 'color-flip'
   | 'scale-slam'
-  | 'wobble';
+  | 'wobble'
+  | 'hop';
 
 export type ExitType =
   | 'fade'
   | 'slide-down'
+  | 'slide-up'
   | 'slide-left'
   | 'slide-right'
   | 'scale-out'

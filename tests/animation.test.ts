@@ -45,7 +45,7 @@ describe('Phase C: Easing Functions Endpoint and Monotonicity Tests', () => {
   });
 });
 
-describe('Phase C: 12 Entrance Animations at Progress 0, 0.5, and 1', () => {
+describe('Phase C: Entrance Animations at Progress 0, 0.5, and 1', () => {
   const entrances: EntranceType[] = [
     'fade',
     'slide-up',
@@ -60,6 +60,9 @@ describe('Phase C: 12 Entrance Animations at Progress 0, 0.5, and 1', () => {
     'flip-in',
     'drop-in',
     'clip-reveal',
+    'elastic-pop',
+    'rack-focus',
+    'tracking-in',
   ];
 
   for (const ent of entrances) {
@@ -90,7 +93,7 @@ describe('Phase C: 12 Entrance Animations at Progress 0, 0.5, and 1', () => {
   }
 });
 
-describe('Phase C: 8 Active Word Emphasis Animations at Progress 0, 0.5, and 1', () => {
+describe('Phase C: Active Word Emphasis Animations at Progress 0, 0.5, and 1', () => {
   const emphasisList: EmphasisType[] = [
     'pop',
     'shake',
@@ -100,6 +103,7 @@ describe('Phase C: 8 Active Word Emphasis Animations at Progress 0, 0.5, and 1',
     'color-flip',
     'scale-slam',
     'wobble',
+    'hop',
   ];
 
   for (const emp of emphasisList) {
@@ -117,7 +121,7 @@ describe('Phase C: 8 Active Word Emphasis Animations at Progress 0, 0.5, and 1',
   }
 });
 
-describe('Phase C: 8 Exit Animations at Progress 0, 0.5, and 1', () => {
+describe('Phase C: Exit Animations at Progress 0, 0.5, and 1', () => {
   const exitList: ExitType[] = [
     'fade',
     'slide-down',
@@ -127,6 +131,7 @@ describe('Phase C: 8 Exit Animations at Progress 0, 0.5, and 1', () => {
     'typewriter-erase',
     'drop-out',
     'glitch-out',
+    'slide-up',
   ];
 
   for (const ext of exitList) {

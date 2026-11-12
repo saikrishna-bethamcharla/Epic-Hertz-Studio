@@ -125,6 +125,9 @@ export const captionTemplateSchema = z.object({
         'flip-in',
         'drop-in',
         'clip-reveal',
+        'elastic-pop',
+        'rack-focus',
+        'tracking-in',
       ])
       .default('scale-pop'),
     duration: z.number().min(0.01).max(2.0).default(0.28), // seconds
@@ -155,6 +158,7 @@ export const captionTemplateSchema = z.object({
         'color-flip',
         'scale-slam',
         'wobble',
+        'hop',
       ])
       .default('color-flip'),
     duration: z.number().min(0.01).max(2.0).default(0.12), // seconds
@@ -180,6 +184,7 @@ export const captionTemplateSchema = z.object({
       .enum([
         'fade',
         'slide-down',
+        'slide-up',
         'slide-left',
         'slide-right',
         'scale-out',

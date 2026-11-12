@@ -5,3 +5,4 @@ export * from './easing';
 export * from './entrances';
 export * from './emphasis';
 export * from './exits';
+export * from './presets';

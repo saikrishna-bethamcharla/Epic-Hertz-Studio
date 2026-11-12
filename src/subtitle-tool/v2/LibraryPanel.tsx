@@ -39,6 +39,7 @@ import LibraryStylesTab from './library/LibraryStylesTab';
 import LibraryMovieStylesTab from './library/LibraryMovieStylesTab';
 import LibraryBrandTab from './library/LibraryBrandTab';
 import LibraryLowerThirdsTab from './library/LibraryLowerThirdsTab';
+import { ENTRANCE_PRESETS, EXIT_PRESETS, HIGHLIGHT_PRESETS } from '../engine/animation/presets';
 
 export type LibraryTab =
   | 'addText'
@@ -893,99 +894,102 @@ function LibraryPanel({
 
               {animSubTab === 'entrance' && (
                 <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { id: 'pop', name: 'Pop Bounce' },
-                    { id: 'slide-up', name: 'Slide Up' },
-                    { id: 'slide-down', name: 'Slide Down' },
-                    { id: 'zoom', name: 'Zoom Slam' },
-                    { id: 'blur', name: 'Blur In' },
-                    { id: 'mask-up', name: 'Mask Reveal' },
-                    { id: 'drop', name: 'Drop' },
-                    { id: 'typewriter', name: 'Typewriter' },
-                    { id: 'glitch', name: 'Glitch' },
-                    { id: 'fade', name: 'Fade' },
-                    { id: 'none', name: 'None' },
-                  ].map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => {
-                        onStyleChange({
-                          ...style,
-                          motion: { ...style.motion, in: item.id as any },
-                        });
-                        if (onNotification) onNotification(`Entrance set to: ${item.name}`);
-                      }}
-                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                        style.motion.in === item.id
-                          ? 'bg-amber-400/15 border-amber-400 text-amber-300 font-bold'
-                          : 'bg-[#181817] border-white/10 hover:border-white/20 text-bone'
-                      }`}
-                    >
-                      <span className="text-xs">{item.name}</span>
-                    </button>
-                  ))}
+                  {ENTRANCE_PRESETS.map((item) => {
+                    const active = style.motion.entranceType
+                      ? style.motion.entranceType === item.motion.entranceType
+                      : style.motion.in === item.motion.in;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          onStyleChange({
+                            ...style,
+                            motion: { ...style.motion, ...item.motion },
+                          });
+                          if (onNotification) onNotification(`Entrance: ${item.name}`);
+                        }}
+                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                          active
+                            ? 'bg-amber-400/15 border-amber-400 text-amber-300 font-bold'
+                            : 'bg-[#181817] border-white/10 hover:border-white/20 text-bone'
+                        }`}
+                      >
+                        <span className="text-xs">{item.name}</span>
+                        <span className="block text-[9px] leading-tight text-smoke mt-0.5">
+                          {item.hint}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 
               {animSubTab === 'exit' && (
                 <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { id: 'none', name: 'None' },
-                    { id: 'fade', name: 'Fade Out' },
-                    { id: 'slide-down', name: 'Slide Down' },
-                    { id: 'shrink', name: 'Shrink' },
-                  ].map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => {
-                        onStyleChange({
-                          ...style,
-                          motion: { ...style.motion, out: item.id as any },
-                        });
-                        if (onNotification) onNotification(`Exit set to: ${item.name}`);
-                      }}
-                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                        style.motion.out === item.id
-                          ? 'bg-amber-400/15 border-amber-400 text-amber-300 font-bold'
-                          : 'bg-[#181817] border-white/10 hover:border-white/20 text-bone'
-                      }`}
-                    >
-                      <span className="text-xs">{item.name}</span>
-                    </button>
-                  ))}
+                  {EXIT_PRESETS.map((item) => {
+                    const active = style.motion.exitType
+                      ? style.motion.exitType === item.motion.exitType
+                      : style.motion.out === item.motion.out;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          onStyleChange({
+                            ...style,
+                            motion: { ...style.motion, ...item.motion },
+                          });
+                          if (onNotification) onNotification(`Exit: ${item.name}`);
+                        }}
+                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                          active
+                            ? 'bg-amber-400/15 border-amber-400 text-amber-300 font-bold'
+                            : 'bg-[#181817] border-white/10 hover:border-white/20 text-bone'
+                        }`}
+                      >
+                        <span className="text-xs">{item.name}</span>
+                        <span className="block text-[9px] leading-tight text-smoke mt-0.5">
+                          {item.hint}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 
               {animSubTab === 'highlight' && (
                 <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { id: 'box', name: 'Highlight Box' },
-                    { id: 'color', name: 'Active Color' },
-                    { id: 'underline', name: 'Underline Sweep' },
-                    { id: 'sweep', name: 'Karaoke Sweep' },
-                    { id: 'none', name: 'None' },
-                  ].map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => {
-                        onStyleChange({
-                          ...style,
-                          highlight: { ...style.highlight, mode: item.id as any },
-                        });
-                        if (onNotification) onNotification(`Highlight set to: ${item.name}`);
-                      }}
-                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                        style.highlight.mode === item.id
-                          ? 'bg-amber-400/15 border-amber-400 text-amber-300 font-bold'
-                          : 'bg-[#181817] border-white/10 hover:border-white/20 text-bone'
-                      }`}
-                    >
-                      <span className="text-xs">{item.name}</span>
-                    </button>
-                  ))}
+                  {HIGHLIGHT_PRESETS.map((item) => {
+                    const active =
+                      style.highlight.mode === item.highlight.mode &&
+                      (item.highlight.emphasisType
+                        ? style.highlight.emphasisType === item.highlight.emphasisType
+                        : true);
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          onStyleChange({
+                            ...style,
+                            highlight: { ...style.highlight, ...item.highlight },
+                          });
+                          if (onNotification) onNotification(`Highlight: ${item.name}`);
+                        }}
+                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                          active
+                            ? 'bg-amber-400/15 border-amber-400 text-amber-300 font-bold'
+                            : 'bg-[#181817] border-white/10 hover:border-white/20 text-bone'
+                        }`}
+                      >
+                        <span className="text-xs">{item.name}</span>
+                        <span className="block text-[9px] leading-tight text-smoke mt-0.5">
+                          {item.hint}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
