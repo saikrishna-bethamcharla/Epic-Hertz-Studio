@@ -279,11 +279,11 @@ function LibraryPanel({
   style,
   onStyleChange,
   onSegmentOverrideChange,
-  spokenLanguage,
-  scriptOutput,
+  spokenLanguage: _spokenLanguage,
+  scriptOutput: _scriptOutput,
   onRetranscribe,
   scope,
-  onScopeChange,
+  onScopeChange: _onScopeChange,
   onClearAllOverrides,
   onNotification,
   onToggleCollapse,
@@ -580,59 +580,6 @@ function LibraryPanel({
     }
   };
 
-  const renderScopeBanner = () => (
-    <div className="flex items-center justify-between p-2 rounded-lg bg-[#181817] border border-white/5 text-xs mb-1">
-      <div className="flex items-center gap-1.5 min-w-0">
-        <span className="text-[10px] uppercase font-bold text-mist tracking-wider">Target:</span>
-        <span className="font-semibold text-bone truncate">
-          {scope === 'all'
-            ? `All (${segments.length} captions)`
-            : targetCaptionIndex >= 0
-              ? `Caption #${targetCaptionIndex + 1}`
-              : 'None selected'}
-        </span>
-      </div>
-      <div className="flex items-center gap-1 shrink-0">
-        <button
-          type="button"
-          onClick={() => onScopeChange?.('all')}
-          className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${
-            scope === 'all'
-              ? 'bg-amber-400 text-black shadow-xs'
-              : 'text-smoke hover:text-bone bg-white/5'
-          }`}
-        >
-          All
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            if (targetCaptionId) onScopeChange?.('caption');
-            else if (onNotification)
-              onNotification('Select a caption in the list or timeline first');
-          }}
-          disabled={!targetCaptionId}
-          title="Apply styles to this caption only"
-          className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${
-            scope === 'caption'
-              ? 'bg-amber-400 text-black shadow-xs'
-              : targetCaptionId
-                ? 'text-smoke hover:text-bone bg-white/5'
-                : 'text-smoke/40 bg-white/5 cursor-not-allowed'
-          }`}
-        >
-          Caption
-        </button>
-      </div>
-    </div>
-  );
-
-  const showScopeHeader =
-    activeTabKey === 'templates' ||
-    activeTabKey === 'movieStyles' ||
-    activeTabKey === 'effects' ||
-    activeTabKey === 'animations';
-
   return (
     <div className="h-full w-full flex flex-col bg-[#141413] border-r border-white/10 select-none overflow-hidden">
       {/* ── CapCut-style Top Header spanning 100% width: Captions, Text, Animations ── */}
@@ -722,56 +669,14 @@ function LibraryPanel({
 
         {/* Header Action Items (Contextual based on active section) */}
         <div className="flex items-center gap-2 shrink-0">
-          {isCaptionsActive && (
-            <>
-              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/20 font-mono font-bold uppercase">
-                {spokenLanguage} · {scriptOutput}
-              </span>
-              {onRetranscribe && (
-                <button
-                  type="button"
-                  onClick={onRetranscribe}
-                  className="px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-mist hover:text-bone text-[10px] font-medium transition-colors cursor-pointer"
-                >
-                  Re-transcribe
-                </button>
-              )}
-            </>
-          )}
-
-          {showScopeHeader && (
-            <div className="flex items-center gap-1 bg-[#181817] p-0.5 rounded-md border border-white/5 text-xs">
-              <button
-                type="button"
-                onClick={() => onScopeChange?.('all')}
-                className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${
-                  scope === 'all'
-                    ? 'bg-amber-400 text-black shadow-xs'
-                    : 'text-smoke hover:text-bone hover:bg-white/5'
-                }`}
-              >
-                All
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (targetCaptionId) onScopeChange?.('caption');
-                  else if (onNotification)
-                    onNotification('Select a caption in the list or timeline first');
-                }}
-                disabled={!targetCaptionId}
-                title="Apply to active caption only"
-                className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${
-                  scope === 'caption'
-                    ? 'bg-amber-400 text-black shadow-xs'
-                    : targetCaptionId
-                      ? 'text-smoke hover:text-bone hover:bg-white/5'
-                      : 'text-smoke/40 cursor-not-allowed'
-                }`}
-              >
-                Caption
-              </button>
-            </div>
+          {isCaptionsActive && onRetranscribe && (
+            <button
+              type="button"
+              onClick={onRetranscribe}
+              className="px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-mist hover:text-bone text-[10px] font-medium transition-colors cursor-pointer"
+            >
+              Re-transcribe
+            </button>
           )}
         </div>
       </div>
@@ -983,7 +888,6 @@ function LibraryPanel({
           ────────────────────────────────────────────────────────────── */}
             {activeTabKey === 'templates' && (
               <div className="space-y-3">
-                {renderScopeBanner()}
                 <LibraryStylesTab
                   style={style}
                   sampleSegment={sampleSegment}
@@ -1002,7 +906,6 @@ function LibraryPanel({
           ────────────────────────────────────────────────────────────── */}
             {activeTabKey === 'movieStyles' && (
               <div className="space-y-3">
-                {renderScopeBanner()}
                 <LibraryMovieStylesTab
                   style={style}
                   sampleSegment={sampleSegment}
@@ -1049,7 +952,6 @@ function LibraryPanel({
           ────────────────────────────────────────────────────────────── */}
             {activeTabKey === 'effects' && (
               <div className="space-y-3">
-                {renderScopeBanner()}
                 <p className="text-[11px] text-smoke">
                   Applies styling treatments (fill, stroke, shadow, glow, 3D) without altering your
                   font or animation timings.
@@ -1086,7 +988,6 @@ function LibraryPanel({
           ────────────────────────────────────────────────────────────── */}
             {activeTabKey === 'animations' && (
               <div className="space-y-3">
-                {renderScopeBanner()}
                 <div className="flex items-center justify-between gap-2 pb-1 border-b border-white/5">
                   <span className="text-[10px] font-medium text-smoke uppercase tracking-wider">
                     Motion Presets
