@@ -643,8 +643,8 @@ function LibraryPanel({
 
   return (
     <div className="h-full flex bg-[#141413] border-r border-white/10 select-none overflow-hidden">
-      {/* ── Sub-Sections Vertical Navigation Rail (Left Rail) ── */}
-      <div className="w-[102px] shrink-0 border-r border-white/10 bg-[#121211] p-1.5 flex flex-col justify-between overflow-y-auto no-scrollbar">
+      {/* ── CapCut-style Sub-Sections Vertical Navigation Rail (Left Rail) ── */}
+      <div className="w-[124px] sm:w-[138px] shrink-0 border-r border-white/10 bg-[#121211] p-1.5 flex flex-col justify-between overflow-y-auto no-scrollbar">
         <div
           role="tablist"
           aria-label="Text sub-sections navigation"
@@ -664,26 +664,28 @@ function LibraryPanel({
                 aria-selected={isActive}
                 aria-controls={`panel-${sub.id}`}
                 onClick={() => onTabChange(sub.id)}
-                className={`w-full py-2.5 px-1.5 flex flex-col items-center justify-center gap-1 rounded-lg text-center transition-all cursor-pointer relative group ${
+                className={`w-full py-2 px-2 flex items-center justify-between gap-1.5 rounded-lg text-left transition-all cursor-pointer relative group ${
                   isActive
-                    ? 'bg-amber-400/15 text-amber-300 border border-amber-400/30 shadow-xs font-semibold'
-                    : 'text-smoke hover:text-bone hover:bg-white/5 border border-transparent font-medium'
+                    ? 'bg-[#272727] text-white shadow-xs font-semibold'
+                    : 'text-[#8b8b8b] hover:text-white hover:bg-white/5 font-medium'
                 }`}
                 title={sub.description}
               >
-                <Icon
-                  className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${
-                    isActive ? 'text-amber-400' : 'text-smoke group-hover:text-bone'
-                  }`}
-                />
-                <span className="text-[10px] leading-tight tracking-tight break-words text-center">
-                  {sub.label}
-                </span>
+                <div className="flex items-center gap-2 min-w-0">
+                  <Icon
+                    className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-105 ${
+                      isActive ? 'text-[#00b8a9]' : 'text-smoke group-hover:text-bone'
+                    }`}
+                  />
+                  <span className="text-[11px] leading-tight tracking-tight truncate">
+                    {sub.label}
+                  </span>
+                </div>
                 {sub.badge && (
                   <span
-                    className={`text-[8px] px-1 py-0.2 rounded-full font-mono ${
+                    className={`text-[8.5px] px-1.5 py-0.2 rounded-full font-mono shrink-0 ${
                       isActive
-                        ? 'bg-amber-400/25 text-amber-300 font-bold'
+                        ? 'bg-[#00b8a9]/20 text-[#00d2c4] font-bold'
                         : 'bg-white/5 text-mist group-hover:text-smoke'
                     }`}
                   >
@@ -691,7 +693,7 @@ function LibraryPanel({
                   </span>
                 )}
                 {isActive && (
-                  <div className="absolute left-0 top-2 bottom-2 w-[2.5px] bg-amber-400 rounded-r-full" />
+                  <div className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-[#00b8a9] rounded-r-full" />
                 )}
               </button>
             );
@@ -806,12 +808,12 @@ function LibraryPanel({
                 <button
                   type="button"
                   onClick={() => handleAddTextSegment('Default text')}
-                  className="group p-3.5 rounded-xl bg-[#181817] border border-white/10 hover:border-amber-400/80 hover:bg-[#1f1f1d] flex flex-col items-center justify-center gap-2 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  className="group p-3.5 rounded-xl bg-[#181817] border border-white/10 hover:border-[#00b8a9] hover:bg-[#1e1e1e] flex flex-col items-center justify-center gap-2 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
                 >
-                  <div className="w-9 h-9 rounded-lg bg-amber-400/10 border border-amber-400/20 group-hover:bg-amber-400/20 group-hover:border-amber-400 flex items-center justify-center transition-colors">
-                    <Plus className="w-5 h-5 text-amber-400 group-hover:scale-110 transition-transform" />
+                  <div className="w-9 h-9 rounded-lg bg-[#00b8a9]/10 border border-[#00b8a9]/30 group-hover:bg-[#00b8a9]/20 group-hover:border-[#00b8a9] flex items-center justify-center transition-colors">
+                    <Plus className="w-5 h-5 text-[#00b8a9] group-hover:scale-110 transition-transform" />
                   </div>
-                  <span className="text-xs font-bold text-bone group-hover:text-amber-300">
+                  <span className="text-xs font-bold text-bone group-hover:text-[#00d2c4]">
                     Default text
                   </span>
                   <span className="text-[10px] text-smoke">Add at playhead</span>

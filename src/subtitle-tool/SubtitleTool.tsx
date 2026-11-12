@@ -98,6 +98,14 @@ export default function SubtitleTool({
   const [layout, setLayout] = useState<WorkspaceLayout>(() => getStoredLayout());
   const [scope, setScope] = useState<'all' | 'caption' | 'words'>('all');
   const [leftTab, setLeftTab] = useState<LibraryTab>('captions');
+  const [lastTextTab, setLastTextTab] = useState<LibraryTab>('templates');
+
+  const handleTabChange = useCallback((tab: LibraryTab) => {
+    setLeftTab(tab);
+    if (tab !== 'captions') {
+      setLastTextTab(tab);
+    }
+  }, []);
   const [selectedWordIndices, setSelectedWordIndices] = useState<number[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const currentTimeRef = useRef(0);
@@ -1036,6 +1044,17 @@ export default function SubtitleTool({
                 onOpenProjects={() => setIsProjectManagerOpen(true)}
                 onOpenShortcuts={() => setIsShortcutsOpen(true)}
                 onOpenExport={() => setIsExportModalOpen(true)}
+                activeCategory={leftTab === 'captions' ? 'captions' : 'text'}
+                onSelectCategory={(category) => {
+                  if (layout.isLeftCollapsed) {
+                    setLayout((prev) => ({ ...prev, isLeftCollapsed: false }));
+                  }
+                  if (category === 'captions') {
+                    setLeftTab('captions');
+                  } else {
+                    setLeftTab(lastTextTab === 'captions' ? 'templates' : lastTextTab);
+                  }
+                }}
               />
 
               {isDesktop ? (
@@ -1051,7 +1070,7 @@ export default function SubtitleTool({
                         >
                           <LibraryPanel
                             leftTab={leftTab}
-                            onTabChange={setLeftTab}
+                            onTabChange={handleTabChange}
                             segments={segments}
                             activeId={activeId}
                             selectedId={selectedId}

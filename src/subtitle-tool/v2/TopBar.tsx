@@ -12,6 +12,8 @@ import {
   Check,
   FileVideo,
   FolderOpen,
+  Type,
+  Captions,
 } from 'lucide-react';
 
 interface TopBarProps {
@@ -28,6 +30,8 @@ interface TopBarProps {
   onOpenProjects?: () => void;
   onOpenShortcuts: () => void;
   onOpenExport: () => void;
+  activeCategory?: 'text' | 'captions';
+  onSelectCategory?: (category: 'text' | 'captions') => void;
 }
 
 export default function TopBar({
@@ -44,6 +48,8 @@ export default function TopBar({
   onOpenProjects,
   onOpenShortcuts,
   onOpenExport,
+  activeCategory,
+  onSelectCategory,
 }: TopBarProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(projectName);
@@ -122,6 +128,52 @@ export default function TopBar({
               Epic Hertz <span className="text-amber-400 font-normal">Studio</span>
             </span>
           </div>
+        )}
+
+        {/* CapCut-style Primary Top-List Categories (Text & Captions) */}
+        {onSelectCategory && (
+          <nav
+            aria-label="Editor primary categories"
+            className="flex items-center gap-1 sm:gap-1.5 ml-1 sm:ml-2 pl-2 border-l border-white/10 shrink-0"
+          >
+            <button
+              type="button"
+              onClick={() => onSelectCategory('text')}
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs transition-all cursor-pointer relative ${
+                activeCategory === 'text'
+                  ? 'bg-white/10 text-[#00d2c4] font-semibold shadow-xs'
+                  : 'text-smoke hover:text-bone hover:bg-white/5 font-medium'
+              }`}
+              title="Text (Templates, Titles, Lower Thirds, Effects, Animations)"
+            >
+              <Type
+                className={`w-3.5 h-3.5 ${activeCategory === 'text' ? 'text-[#00d2c4]' : 'text-smoke'}`}
+              />
+              <span>Text</span>
+              {activeCategory === 'text' && (
+                <span className="absolute -bottom-[9px] left-1.5 right-1.5 h-[2px] bg-[#00b8a9] rounded-full" />
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onSelectCategory('captions')}
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs transition-all cursor-pointer relative ${
+                activeCategory === 'captions'
+                  ? 'bg-white/10 text-[#00d2c4] font-semibold shadow-xs'
+                  : 'text-smoke hover:text-bone hover:bg-white/5 font-medium'
+              }`}
+              title="Captions (Auto Subtitles, Speech Transcript & Timings)"
+            >
+              <Captions
+                className={`w-3.5 h-3.5 ${activeCategory === 'captions' ? 'text-[#00d2c4]' : 'text-smoke'}`}
+              />
+              <span>Captions</span>
+              {activeCategory === 'captions' && (
+                <span className="absolute -bottom-[9px] left-1.5 right-1.5 h-[2px] bg-[#00b8a9] rounded-full" />
+              )}
+            </button>
+          </nav>
         )}
 
         <div className="h-4 w-px bg-white/10 mx-0.5 shrink-0 hidden sm:block" />
