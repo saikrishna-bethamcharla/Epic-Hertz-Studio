@@ -982,6 +982,135 @@ export const TITLE_END_TEMPLATES: LowerThirdTemplate[] = [
     ],
     autoFit: AUTO_FIT,
   },
+
+  // 13. Spin & Twist Title Block (Mixkit 222 MOGRT exact replication)
+  {
+    id: 'title-spin-twist',
+    packId: 'title-end',
+    name: 'Spin & Twist Title Block',
+    version: 1,
+    category: 'Title Card',
+    tags: ['geometric', 'spin', 'twist', 'brackets', 'motion', 'minimal', 'mixkit'],
+    author: 'Epic Hertz Studio',
+    license: 'OFL-1.1 / MIT',
+    canvas: { ...CANVAS },
+    elements: [
+      {
+        id: 'bracket-left',
+        type: 'shape',
+        role: 'decor',
+        geometry: { x: -0.15, y: 0, width: 40, height: 100, align: 'center', anchor: 'frame' },
+        style: { fill: '$colors.primary', opacity: 1 },
+        animation: {
+          in: { type: 'scalePop', duration: 0.8, delay: 0.1, easing: 'easeOutExpo' },
+          hold: { type: 'static' },
+          out: { type: 'fade', duration: 0.6, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+      {
+        id: 'title-text',
+        type: 'text',
+        role: 'name',
+        geometry: {
+          x: 0,
+          y: 0,
+          width: 'content',
+          height: 'content',
+          align: 'center',
+          anchor: 'frame',
+        },
+        style: { fill: '$colors.textPrimary', opacity: 1 },
+        animation: {
+          in: { type: 'scalePop', duration: 0.8, delay: 0.25, easing: 'easeOutCubic' },
+          hold: { type: 'static' },
+          out: { type: 'fade', duration: 0.6, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+      {
+        id: 'subtitle-text',
+        type: 'text',
+        role: 'role',
+        geometry: {
+          x: 0,
+          y: 0.08,
+          width: 'content',
+          height: 'content',
+          align: 'center',
+          anchor: 'name',
+        },
+        style: { fill: '$colors.textSecondary', opacity: 1 },
+        animation: {
+          in: { type: 'fadeUp', duration: 0.7, delay: 0.45, easing: 'easeOutCubic' },
+          hold: { type: 'static' },
+          out: { type: 'fade', duration: 0.5, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+    ],
+    slots: [
+      { ...TITLE_SLOTS[0], default: '#FFFFFF' },
+      { ...TITLE_SLOTS[1], default: 'transparent' },
+      { ...TITLE_SLOTS[2], default: '#FFFFFF' },
+      { ...TITLE_SLOTS[3], default: '#CBD5E1' },
+      { ...TITLE_SLOTS[4], default: 'inter' },
+      TITLE_SLOTS[5],
+    ],
+    autoFit: AUTO_FIT,
+  },
+
+  // 14. Mirror Splash Title (Mixkit 28 MOGRT exact replication)
+  {
+    id: 'title-mirror-splash',
+    packId: 'title-end',
+    name: 'Mirror Splash Title',
+    version: 1,
+    category: 'Title Card',
+    tags: ['comic', 'cartoon', 'bubble', 'splash', 'burst', 'pop', 'mixkit'],
+    author: 'Epic Hertz Studio',
+    license: 'OFL-1.1 / MIT',
+    canvas: { ...CANVAS },
+    elements: [
+      {
+        id: 'splash-particles',
+        type: 'shape',
+        role: 'decor',
+        geometry: { x: 0, y: 0, width: 200, height: 120, align: 'center', anchor: 'frame' },
+        style: { fill: '$colors.primary', opacity: 1 },
+        animation: {
+          in: { type: 'scalePop', duration: 0.7, delay: 0.05, easing: 'easeOutExpo' },
+          hold: { type: 'static' },
+          out: { type: 'fade', duration: 0.5, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+      {
+        id: 'title-text',
+        type: 'text',
+        role: 'name',
+        geometry: {
+          x: 0,
+          y: 0,
+          width: 'content',
+          height: 'content',
+          align: 'center',
+          anchor: 'frame',
+        },
+        style: { fill: '$colors.textPrimary', opacity: 1 },
+        animation: {
+          in: { type: 'scalePop', duration: 0.8, delay: 0.15, easing: 'easeOutBack' },
+          hold: { type: 'static' },
+          out: { type: 'fade', duration: 0.5, delay: 0, easing: 'easeOutCubic' },
+        },
+      },
+    ],
+    slots: [
+      { ...TITLE_SLOTS[0], default: '#A7F7FF' },
+      { ...TITLE_SLOTS[1], default: 'transparent' },
+      { ...TITLE_SLOTS[2], default: '#A7F7FF' },
+      { ...TITLE_SLOTS[3], default: '#FFFA6F' },
+      { ...TITLE_SLOTS[4], default: 'bangers' },
+      TITLE_SLOTS[5],
+    ],
+    autoFit: AUTO_FIT,
+  },
 ];
 
 /** Pack wrapper for pack-based loading. */
@@ -990,6 +1119,6 @@ export const TITLE_END_PACK: LowerThirdPack = {
   packId: 'title-end',
   name: 'Title Cards & End Cards',
   description:
-    '12 cinematic title and end cards — movie serif, trailer impact, chapter cards, thanks/subscribe, credits, neon close.',
+    '14 cinematic title and end cards — movie serif, trailer impact, spin & twist, mirror splash, chapter cards, thanks/subscribe, credits, neon close.',
   templates: TITLE_END_TEMPLATES,
 };

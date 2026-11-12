@@ -4,6 +4,7 @@
 // Shared across Preview and MP4 Export paths.
 
 import type { LowerThirdSpec } from './spec';
+import { easeOutExpo, easeOutCubic, easeInOutCubic } from './lowerThirds';
 import {
   type LowerThirdTemplate,
   type LowerThirdElement,
@@ -453,6 +454,36 @@ export function renderTemplateLowerThird(
     posX -= nameBoxW;
   }
 
+  // 4b. Dedicated High-Fidelity MOGRT Template Renderers
+  if (template.id === 'title-spin-twist') {
+    const cx = spec.position?.x !== undefined ? spec.position.x * w : w / 2;
+    const cy = spec.position?.y !== undefined ? spec.position.y * h : h / 2;
+    drawSpinTwistTitle(
+      ctx,
+      spec,
+      phase,
+      phaseProgress,
+      cx,
+      cy,
+      nameFit,
+      roleFit,
+      textPrimaryColor,
+      textSecondaryColor,
+      primaryColor,
+      scale,
+    );
+    ctx.restore();
+    return;
+  }
+
+  if (template.id === 'title-mirror-splash') {
+    const cx = spec.position?.x !== undefined ? spec.position.x * w : w / 2;
+    const cy = spec.position?.y !== undefined ? spec.position.y * h : h / 2;
+    drawMirrorSplashTitle(ctx, spec, phase, phaseProgress, cx, cy, scale);
+    ctx.restore();
+    return;
+  }
+
   // 5. Render elements in declaration order
   for (const element of template.elements) {
     renderElement(
@@ -770,4 +801,344 @@ function drawPhotoFallback(
   ctx.textBaseline = 'middle';
   const initials = (name.trim().slice(0, 2) || 'EH').toUpperCase();
   ctx.fillText(initials, x + size / 2, y + size / 2);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. Dedicated MOGRT Replication Renderers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Exact replication of Mixkit 222: Spin and Twist Title Block MOGRT.
+ * - Center line appears and spins 180° into a central framing square
+ * - Square splits and brackets expand horizontally: [ TITLE ]
+ * - Subtitle slides into the bottom bracket gap
+ * - Outro reverses brackets, twists back into vertical line, and fades
+ */
+function drawSpinTwistTitle(
+  ctx: CanvasRenderingContext2D,
+  spec: LowerThirdSpec,
+  phase: 'intro' | 'hold' | 'outro',
+  phaseProgress: number,
+  baseX: number,
+  baseY: number,
+  nameFit: AutoFitResult,
+  _roleFit: AutoFitResult | null,
+  textPrimaryColor: string,
+  textSecondaryColor: string,
+  bracketColor: string,
+  scale: number,
+): void {
+  const cx = baseX;
+  const cy = baseY;
+
+  const titleText = (spec.name || 'MOTION').toUpperCase();
+  const subtitleText = spec.role ? spec.role.toUpperCase() : 'DESIGN';
+
+  ctx.save();
+
+  let spinProgress = 1;
+  let expandProgress = 1;
+  let textProgress = 1;
+  let subtitleProgress = 1;
+  let globalAlpha = 1;
+
+  if (phase === 'intro') {
+    spinProgress = clamp01(phaseProgress / 0.35);
+    expandProgress = clamp01((phaseProgress - 0.28) / 0.45);
+    textProgress = clamp01((phaseProgress - 0.35) / 0.4);
+    subtitleProgress = clamp01((phaseProgress - 0.55) / 0.45);
+    globalAlpha = clamp01(phaseProgress / 0.15);
+  } else if (phase === 'outro') {
+    subtitleProgress = 1 - clamp01(phaseProgress / 0.3);
+    textProgress = 1 - clamp01((phaseProgress - 0.15) / 0.4);
+    expandProgress = 1 - clamp01((phaseProgress - 0.2) / 0.45);
+    spinProgress = 1 - clamp01((phaseProgress - 0.55) / 0.45);
+    globalAlpha = 1 - clamp01((phaseProgress - 0.75) / 0.25);
+  }
+
+  if (globalAlpha <= 0.001) {
+    ctx.restore();
+    return;
+  }
+  ctx.globalAlpha *= globalAlpha;
+
+  const titleFontSize = Math.max(28 * scale, nameFit.fontSize || 54 * scale);
+  const subtitleFontSize = Math.max(12 * scale, titleFontSize * 0.34);
+  const fontFamily = spec.font.family || 'Inter';
+
+  ctx.font = `800 ${titleFontSize.toFixed(1)}px "${fontFamily}", system-ui, sans-serif`;
+  const titleWidth = ctx.measureText(titleText).width;
+
+  ctx.font = `600 ${subtitleFontSize.toFixed(1)}px "${fontFamily}", system-ui, sans-serif`;
+  const subtitleWidth = ctx.measureText(subtitleText).width;
+
+  const targetBoxWidth = Math.max(
+    titleWidth + 80 * scale,
+    subtitleWidth + 100 * scale,
+    240 * scale,
+  );
+  const boxHeight = titleFontSize * 1.55;
+  const bracketArm = Math.min(36 * scale, targetBoxWidth * 0.18);
+  const lineWidth = Math.max(2, 3.5 * scale);
+
+  const easedExpand = easeOutExpo(expandProgress);
+  const currentBoxWidth = 50 * scale + (targetBoxWidth - 50 * scale) * easedExpand;
+  const halfW = currentBoxWidth / 2;
+  const halfH = boxHeight / 2;
+
+  // 1. Initial spin phase: line rotating and forming square
+  if (expandProgress < 0.999 && spinProgress < 0.999) {
+    const easedSpin = easeInOutCubic(spinProgress);
+    const rotationRad = easedSpin * Math.PI;
+    const lineH = Math.min(boxHeight, boxHeight * Math.sin(easedSpin * Math.PI * 0.5));
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(rotationRad);
+    ctx.strokeStyle = bracketColor || '#FFFFFF';
+    ctx.lineWidth = lineWidth;
+    ctx.beginPath();
+    ctx.moveTo(0, -lineH / 2);
+    ctx.lineTo(0, lineH / 2);
+    ctx.stroke();
+
+    if (spinProgress > 0.4) {
+      const sqP = clamp01((spinProgress - 0.4) / 0.6);
+      const sqSize = 38 * scale * sqP;
+      ctx.strokeRect(-sqSize / 2, -sqSize / 2, sqSize, sqSize);
+    }
+    ctx.restore();
+  }
+
+  // 2. Expanding framing brackets [ and ]
+  if (expandProgress > 0.05) {
+    ctx.strokeStyle = bracketColor || '#FFFFFF';
+    ctx.lineWidth = lineWidth;
+    ctx.lineCap = 'square';
+    ctx.lineJoin = 'miter';
+
+    // Left Bracket [
+    ctx.beginPath();
+    ctx.moveTo(cx - halfW + bracketArm, cy - halfH);
+    ctx.lineTo(cx - halfW, cy - halfH);
+    ctx.lineTo(cx - halfW, cy + halfH);
+    ctx.lineTo(cx - halfW + bracketArm, cy + halfH);
+    ctx.stroke();
+
+    // Right Bracket ]
+    ctx.beginPath();
+    ctx.moveTo(cx + halfW - bracketArm, cy - halfH);
+    ctx.lineTo(cx + halfW, cy - halfH);
+    ctx.lineTo(cx + halfW, cy + halfH);
+    ctx.lineTo(cx + halfW - bracketArm, cy + halfH);
+    ctx.stroke();
+  }
+
+  // 3. Main Title Text
+  if (textProgress > 0.05) {
+    const textAlpha = clamp01(textProgress / 0.7);
+    const textScale = 0.85 + 0.15 * easeOutCubic(textProgress);
+
+    ctx.save();
+    ctx.globalAlpha *= textAlpha;
+    ctx.translate(cx, cy);
+    ctx.scale(textScale, textScale);
+
+    ctx.fillStyle = textPrimaryColor || '#FFFFFF';
+    ctx.font = `800 ${titleFontSize.toFixed(1)}px "${fontFamily}", system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(titleText, 0, -2 * scale);
+    ctx.restore();
+  }
+
+  // 4. Subtitle Text (sliding up into bottom opening)
+  if (subtitleProgress > 0.05 && subtitleText) {
+    const subAlpha = clamp01(subtitleProgress / 0.7);
+    const subSlideY = (1 - easeOutCubic(subtitleProgress)) * 14 * scale;
+
+    ctx.save();
+    ctx.globalAlpha *= subAlpha;
+    ctx.translate(cx, cy + halfH + subSlideY);
+
+    ctx.fillStyle = textSecondaryColor || '#CBD5E1';
+    ctx.font = `600 ${subtitleFontSize.toFixed(1)}px "${fontFamily}", system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+
+    const spaced = subtitleText.split('').join(' ');
+    ctx.fillText(spaced, 0, 6 * scale);
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+/**
+ * Exact replication of Mixkit 28: Mirror Splash Title MOGRT.
+ * - Cyan liquid streams shoot from left & right, collide in center
+ * - Explodes into radial splash droplets (#A7F7FF, #FFFA6F, #FFFFFF)
+ * - Dual-color cartoon bubble typography pops in with elastic bounce
+ * - Outro squeezes liquid blobs inward and bursts text away
+ */
+function drawMirrorSplashTitle(
+  ctx: CanvasRenderingContext2D,
+  spec: LowerThirdSpec,
+  phase: 'intro' | 'hold' | 'outro',
+  phaseProgress: number,
+  baseX: number,
+  baseY: number,
+  scale: number,
+): void {
+  const cx = baseX;
+  const cy = baseY;
+
+  let line1 = 'TYPE YOUR';
+  let line2 = 'TEXT HERE';
+
+  if (spec.name) {
+    const words = spec.name.trim().split(/\s+/);
+    if (words.length === 1) {
+      line1 = words[0];
+      line2 = spec.role ? spec.role.toUpperCase() : '';
+    } else {
+      const mid = Math.ceil(words.length / 2);
+      line1 = words.slice(0, mid).join(' ').toUpperCase();
+      line2 = (words.slice(mid).join(' ') + (spec.role ? ' ' + spec.role : ''))
+        .trim()
+        .toUpperCase();
+    }
+  }
+
+  ctx.save();
+
+  let streamProgress = 1;
+  let splashProgress = 1;
+  let textScale = 1;
+  let globalAlpha = 1;
+
+  if (phase === 'intro') {
+    streamProgress = clamp01(phaseProgress / 0.35);
+    splashProgress = clamp01((phaseProgress - 0.25) / 0.6);
+    const textP = clamp01((phaseProgress - 0.28) / 0.6);
+    textScale = textP < 0.6 ? (textP / 0.6) * 1.18 : 1.18 - ((textP - 0.6) / 0.4) * 0.18;
+    globalAlpha = clamp01(phaseProgress / 0.1);
+  } else if (phase === 'outro') {
+    const outroP = phaseProgress;
+    streamProgress = 1 - clamp01(outroP / 0.4);
+    splashProgress = clamp01((outroP - 0.2) / 0.7);
+    textScale = Math.max(0, 1 - outroP * 1.2);
+    globalAlpha = 1 - clamp01((outroP - 0.7) / 0.3);
+  }
+
+  if (globalAlpha <= 0.001) {
+    ctx.restore();
+    return;
+  }
+  ctx.globalAlpha *= globalAlpha;
+
+  // 1. Converging liquid streams
+  if (phase === 'intro' && streamProgress < 0.95) {
+    const streamP = easeOutCubic(streamProgress);
+    const streamDist = (1 - streamP) * 350 * scale;
+
+    ctx.save();
+    ctx.fillStyle = '#A7F7FF';
+    ctx.beginPath();
+    ctx.arc(cx - streamDist, cy - 10 * scale, 14 * scale, 0, Math.PI * 2);
+    ctx.arc(cx - streamDist - 25 * scale, cy - 15 * scale, 9 * scale, 0, Math.PI * 2);
+    ctx.arc(cx - streamDist - 45 * scale, cy - 8 * scale, 6 * scale, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(cx + streamDist, cy + 10 * scale, 14 * scale, 0, Math.PI * 2);
+    ctx.arc(cx + streamDist + 25 * scale, cy + 15 * scale, 9 * scale, 0, Math.PI * 2);
+    ctx.arc(cx + streamDist + 45 * scale, cy + 8 * scale, 6 * scale, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // 2. Radial splash droplets explosion
+  if (splashProgress > 0.05 && splashProgress < 0.98) {
+    const sP = easeOutCubic(splashProgress);
+    const dropAlpha = (1 - sP) * 0.95;
+
+    ctx.save();
+    ctx.globalAlpha *= dropAlpha;
+
+    const droplets = [
+      { angle: 0.1, dist: 140, r: 6, col: '#A7F7FF' },
+      { angle: 0.45, dist: 180, r: 8, col: '#FFFA6F' },
+      { angle: 0.85, dist: 130, r: 5, col: '#FFFFFF' },
+      { angle: 1.25, dist: 160, r: 7, col: '#A7F7FF' },
+      { angle: 1.7, dist: 190, r: 9, col: '#FFFA6F' },
+      { angle: 2.1, dist: 140, r: 5, col: '#FFFFFF' },
+      { angle: 2.5, dist: 175, r: 8, col: '#A7F7FF' },
+      { angle: 2.95, dist: 150, r: 6, col: '#FFFA6F' },
+      { angle: 3.4, dist: 185, r: 7, col: '#FFFFFF' },
+      { angle: 3.85, dist: 135, r: 6, col: '#A7F7FF' },
+      { angle: 4.3, dist: 195, r: 8, col: '#FFFA6F' },
+      { angle: 4.75, dist: 145, r: 5, col: '#FFFFFF' },
+      { angle: 5.15, dist: 170, r: 7, col: '#A7F7FF' },
+      { angle: 5.6, dist: 160, r: 6, col: '#FFFA6F' },
+      { angle: 5.95, dist: 180, r: 8, col: '#FFFFFF' },
+      { angle: 6.25, dist: 130, r: 5, col: '#A7F7FF' },
+    ];
+
+    for (const d of droplets) {
+      const curDist = d.dist * scale * sP;
+      const dx = cx + Math.cos(d.angle) * curDist;
+      const dy = cy + Math.sin(d.angle) * curDist * 0.65;
+      const curR = Math.max(1, d.r * scale * (1 - sP * 0.5));
+
+      ctx.fillStyle = d.col;
+      ctx.beginPath();
+      ctx.arc(dx, dy, curR, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // 3. Bubbly Comic Lettering
+  if (textScale > 0.05) {
+    const fontSize = Math.max(26 * scale, 58 * scale);
+    const strokeWidth = Math.max(4, 9 * scale);
+    const shadowOffset = 5 * scale;
+    const fontFamily = spec.font.family || 'Bangers';
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(textScale, textScale);
+
+    ctx.font = `900 ${fontSize.toFixed(1)}px "${fontFamily}", "Arial Black", Impact, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.lineJoin = 'round';
+    ctx.miterLimit = 2;
+
+    const lineGap = fontSize * 0.95;
+    const y1 = line2 ? -lineGap * 0.55 : 0;
+    const y2 = lineGap * 0.55;
+
+    const drawComicLine = (text: string, yPos: number, fillColor: string) => {
+      if (!text) return;
+      ctx.fillStyle = '#000000';
+      ctx.fillText(text, shadowOffset, yPos + shadowOffset);
+
+      ctx.strokeStyle = '#050505';
+      ctx.lineWidth = strokeWidth;
+      ctx.strokeText(text, 0, yPos);
+
+      ctx.fillStyle = fillColor;
+      ctx.fillText(text, 0, yPos);
+    };
+
+    drawComicLine(line1, y1, '#A7F7FF');
+    if (line2) {
+      drawComicLine(line2, y2, '#FFFA6F');
+    }
+
+    ctx.restore();
+  }
+
+  ctx.restore();
 }

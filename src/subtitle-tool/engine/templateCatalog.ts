@@ -3871,6 +3871,102 @@ export const CAPTION_TEMPLATES: CaptionTemplate[] = [
     ],
     emphasisTrigger: 'activeWord',
   },
+
+  // ── Mixkit 28 MOGRT replication: Mirror Splash Title ──
+  {
+    id: 'mirror-splash',
+    name: 'Mirror Splash',
+    version: 1,
+    category: 'Fun',
+    tags: ['comic', 'cartoon', 'bubble', 'splash', 'burst', 'pop', 'mixkit'],
+    author: 'Epic Hertz Studio',
+    license: 'OFL-1.1 / MIT',
+    font: {
+      family: 'bangers',
+      weight: 400,
+      size: 0.088,
+      case: 'upper',
+      letterSpacing: 0.02,
+      lineHeight: 1.15,
+      fallbacks: {
+        telugu: 'Noto Sans Telugu',
+        devanagari: 'Noto Sans Devanagari',
+        tamil: 'Noto Sans Tamil',
+      },
+    },
+    colors: {
+      text: '#A7F7FF',
+      activeWord: '#FFFA6F',
+      outline: '#000000',
+      outlineWidth: 0.12,
+      shadow: { x: 0.02, y: 0.04, blur: 0.01, color: 'rgba(0,0,0,0.95)' },
+    },
+    container: { mode: 'none', color: 'transparent', padX: 0, padY: 0, radius: 0 },
+    layout: { align: 'center', wordsPerPage: 3, maxLines: 2, widthPct: 0.88, x: 0.5, y: 0.74 },
+    entrance: {
+      type: 'elastic-pop',
+      duration: 0.35,
+      easing: 'easeOutElastic',
+      params: { overshoot: 0.22 },
+    },
+    emphasis: {
+      type: 'wobble',
+      duration: 0.16,
+      easing: 'spring',
+      params: { scale: 1.15 },
+    },
+    exit: { type: 'scale-out', duration: 0.14, easing: 'easeOutCubic', params: {} },
+    stagger: { unit: 'word', delay: 0.04 },
+    emphasisTrigger: 'activeWord',
+  },
+
+  // ── Mixkit 222 MOGRT replication: Spin & Twist Title Block ──
+  {
+    id: 'spin-and-twist',
+    name: 'Spin & Twist',
+    version: 1,
+    category: 'Bold',
+    tags: ['geometric', 'brackets', 'twist', 'spin', 'minimal', 'mixkit'],
+    author: 'Epic Hertz Studio',
+    license: 'OFL-1.1 / MIT',
+    font: {
+      family: 'inter',
+      weight: 800,
+      size: 0.082,
+      case: 'upper',
+      letterSpacing: 0.03,
+      lineHeight: 1.18,
+      fallbacks: {
+        telugu: 'Noto Sans Telugu',
+        devanagari: 'Noto Sans Devanagari',
+        tamil: 'Noto Sans Tamil',
+      },
+    },
+    colors: {
+      text: '#FFFFFF',
+      activeWord: '#00D2C4',
+      outline: '#000000',
+      outlineWidth: 0.06,
+      shadow: { x: 0, y: 0.03, blur: 0.08, color: 'rgba(0,0,0,0.7)' },
+    },
+    container: { mode: 'none', color: 'transparent', padX: 0, padY: 0, radius: 0 },
+    layout: { align: 'center', wordsPerPage: 3, maxLines: 2, widthPct: 0.88, x: 0.5, y: 0.74 },
+    entrance: {
+      type: 'rotate-in',
+      duration: 0.36,
+      easing: 'easeOutExpo',
+      params: { degrees: 90 },
+    },
+    emphasis: {
+      type: 'pop',
+      duration: 0.14,
+      easing: 'easeOutQuad',
+      params: { scale: 1.12 },
+    },
+    exit: { type: 'fade', duration: 0.18, easing: 'easeOutCubic', params: {} },
+    stagger: { unit: 'word', delay: 0.05 },
+    emphasisTrigger: 'activeWord',
+  },
 ];
 
 /** Quick lookup map by template ID */

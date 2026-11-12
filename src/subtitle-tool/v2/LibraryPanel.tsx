@@ -239,7 +239,7 @@ const SUB_SECTIONS: Array<{
     id: 'titleCards',
     label: 'Title cards',
     icon: Film,
-    badge: '12',
+    badge: '14',
     title: 'Cinematic Title & End Cards',
     description: 'Full-frame movie titles, chapter headers, credits & ending cards',
   },

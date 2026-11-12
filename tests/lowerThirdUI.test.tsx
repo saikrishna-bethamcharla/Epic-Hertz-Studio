@@ -47,7 +47,7 @@ describe('Phase E: Lower Thirds Library UI & Interaction Suite', () => {
     render(<LibraryLowerThirdsTab currentTime={5.0} onAddLowerThird={vi.fn()} />);
 
     // Verify pack chips are rendered
-    expect(screen.getByRole('button', { name: /All \(72\)/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /All \(74\)/i })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Clean Corporate' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Gaming and Tech' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Indic Pack' })).toBeDefined();

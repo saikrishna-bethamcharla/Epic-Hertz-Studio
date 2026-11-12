@@ -19,9 +19,9 @@ import { DEFAULT_LOWER_THIRD, type LowerThirdSpec } from '../src/subtitle-tool/e
 import { createRecorderCanvasContext } from './goldenLowerThirds.test';
 
 describe('Phase D: Lower Third 60-Template Catalog & Distinctness Suite', () => {
-  it('contains exactly 8 packs with 72 templates total', () => {
+  it('contains exactly 8 packs with 74 templates total', () => {
     expect(LOWER_THIRD_PACKS).toHaveLength(8);
-    expect(ALL_PACK_TEMPLATES).toHaveLength(72);
+    expect(ALL_PACK_TEMPLATES).toHaveLength(74);
 
     expect(CLEAN_CORPORATE_TEMPLATES).toHaveLength(8);
     expect(CREATOR_REELS_TEMPLATES).toHaveLength(8);
@@ -44,15 +44,17 @@ describe('Phase D: Lower Third 60-Template Catalog & Distinctness Suite', () => 
       expect(validated.autoFit.minScale).toBeGreaterThanOrEqual(0.2);
     }
 
-    expect(ids.size).toBe(72);
+    expect(ids.size).toBe(74);
   });
 
   it('validates all 8 packs through validateLowerThirdPack', () => {
     for (const pack of LOWER_THIRD_PACKS) {
       const validated = validateLowerThirdPack(pack);
       expect(validated.id).toBe(pack.id);
-      if (pack.id === 'modern' || pack.id === 'title-end') {
+      if (pack.id === 'modern') {
         expect(validated.templates).toHaveLength(12);
+      } else if (pack.id === 'title-end') {
+        expect(validated.templates).toHaveLength(14);
       } else {
         expect(validated.templates).toHaveLength(8);
       }
@@ -111,6 +113,6 @@ describe('Phase D: Lower Third 60-Template Catalog & Distinctness Suite', () => 
       signatures.set(serialized, template.id);
     }
 
-    expect(signatures.size).toBe(72);
+    expect(signatures.size).toBe(74);
   });
 });
