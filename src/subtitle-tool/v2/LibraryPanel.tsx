@@ -41,6 +41,7 @@ import { formatTimecode } from '../utils/formatTime';
 import { checkReadability } from '../utils/readability';
 import LibraryStylesTab from './library/LibraryStylesTab';
 import LibraryMovieStylesTab from './library/LibraryMovieStylesTab';
+import LibraryTitleCardsTab from './library/LibraryTitleCardsTab';
 import LibraryBrandTab from './library/LibraryBrandTab';
 import LibraryLowerThirdsTab from './library/LibraryLowerThirdsTab';
 import { ENTRANCE_PRESETS, EXIT_PRESETS, HIGHLIGHT_PRESETS } from '../engine/animation/presets';
@@ -921,15 +922,16 @@ function LibraryPanel({
               SUB-SECTION 3B: CINEMATIC TITLE & END CARDS
           ────────────────────────────────────────────────────────────── */}
             {activeTabKey === 'titleCards' && (
-              <LibraryLowerThirdsTab
-                currentTime={currentTime}
-                selectedLowerThirdId={selectedLowerThirdId}
-                selectedLowerThirdSpec={selectedLowerThirdSpec}
-                onAddLowerThird={(spec) => onAddLowerThird?.(spec)}
-                onUpdateLowerThird={(spec) => onUpdateLowerThird?.(spec)}
-                onAddMultipleLowerThirds={(specs) => onAddMultipleLowerThirds?.(specs)}
-                onlyPackId="title-end"
-              />
+              <div className="space-y-3">
+                <LibraryTitleCardsTab
+                  style={style}
+                  sampleSegment={sampleSegment}
+                  favorites={favorites}
+                  onFavoritesChange={setFavorites}
+                  onApplyPreset={applyPresetToScope}
+                  onNotification={onNotification}
+                />
+              </div>
             )}
 
             {/* ─────────────────────────────────────────────────────────────

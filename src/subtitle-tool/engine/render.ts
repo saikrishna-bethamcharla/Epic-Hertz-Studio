@@ -1313,8 +1313,174 @@ export function renderCaptions(
     }
   }
 
+  // ── Dedicated Graphic Overlays for MOGRT Caption Styles
+  if (activeStyle.id === 'spin-and-twist' || activeStyle.id === 'title-spin-twist') {
+    drawCaptionSpinTwistBrackets(ctx, bx, by, L.w, L.h, px, t, page.start, inDur, activeStyle);
+  }
+  if (activeStyle.id === 'mirror-splash' || activeStyle.id === 'title-mirror-splash') {
+    drawCaptionMirrorSplashBursts(ctx, bx, by, L.w, L.h, px, t, page.start, inDur, activeStyle);
+  }
+
   ctx.restore();
   return { bounds: { x: bx, y: by, w: L.w, h: L.h } };
+}
+
+function drawCaptionSpinTwistBrackets(
+  ctx: CanvasRenderingContext2D,
+  bx: number,
+  by: number,
+  w: number,
+  h: number,
+  px: number,
+  t: number,
+  pageStart: number,
+  inDur: number,
+  style: CaptionStyle,
+) {
+  if (
+    typeof ctx.beginPath !== 'function' ||
+    typeof ctx.moveTo !== 'function' ||
+    typeof ctx.lineTo !== 'function' ||
+    typeof ctx.stroke !== 'function'
+  ) {
+    return;
+  }
+
+  const pIn = clamp01((t - pageStart) / Math.max(0.001, inDur));
+  const spinP = clamp01(pIn / 0.45);
+  const expandP = clamp01((pIn - 0.2) / 0.8);
+
+  const cx = bx + w / 2;
+  const cy = by + h / 2;
+  const padX = Math.max(16, px * 0.4);
+  const padY = Math.max(8, px * 0.2);
+  const targetW = w + padX * 2;
+  const targetH = h + padY * 2;
+
+  const bracketArm = Math.min(px * 0.6, targetW * 0.18);
+  const lineWidth = Math.max(2, px * 0.06);
+  const bracketColor = style.highlight.color || '#00D2C4';
+
+  ctx.save();
+  // 1. Initial rotating line
+  if (spinP < 0.999) {
+    const rot = spinP * Math.PI;
+    const lineH = Math.min(targetH, targetH * Math.sin(spinP * Math.PI * 0.5));
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(rot);
+    ctx.strokeStyle = bracketColor;
+    ctx.lineWidth = lineWidth;
+    ctx.beginPath();
+    ctx.moveTo(0, -lineH / 2);
+    ctx.lineTo(0, lineH / 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // 2. Expanding framing brackets [ and ]
+  if (expandP > 0.05) {
+    const easedExpand = 1 - Math.pow(1 - expandP, 3);
+    const curW = targetW * (0.3 + 0.7 * easedExpand);
+    const halfW = curW / 2;
+    const halfH = targetH / 2;
+
+    ctx.strokeStyle = bracketColor;
+    ctx.lineWidth = lineWidth;
+    ctx.lineCap = 'square';
+    ctx.lineJoin = 'miter';
+
+    // Left Bracket [
+    ctx.beginPath();
+    ctx.moveTo(cx - halfW + bracketArm, cy - halfH);
+    ctx.lineTo(cx - halfW, cy - halfH);
+    ctx.lineTo(cx - halfW, cy + halfH);
+    ctx.lineTo(cx - halfW + bracketArm, cy + halfH);
+    ctx.stroke();
+
+    // Right Bracket ]
+    ctx.beginPath();
+    ctx.moveTo(cx + halfW - bracketArm, cy - halfH);
+    ctx.lineTo(cx + halfW, cy - halfH);
+    ctx.lineTo(cx + halfW, cy + halfH);
+    ctx.lineTo(cx + halfW - bracketArm, cy + halfH);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawCaptionMirrorSplashBursts(
+  ctx: CanvasRenderingContext2D,
+  bx: number,
+  by: number,
+  w: number,
+  h: number,
+  px: number,
+  t: number,
+  pageStart: number,
+  inDur: number,
+  _style: CaptionStyle,
+) {
+  if (
+    typeof ctx.beginPath !== 'function' ||
+    typeof ctx.fill !== 'function' ||
+    typeof ctx.save !== 'function' ||
+    typeof ctx.restore !== 'function'
+  ) {
+    return;
+  }
+
+  const pIn = clamp01((t - pageStart) / Math.max(0.001, inDur));
+  if (pIn >= 0.999) return;
+
+  const streamP = clamp01(pIn / 0.35);
+  const splashP = clamp01((pIn - 0.2) / 0.8);
+  const cx = bx + w / 2;
+  const cy = by + h / 2;
+
+  const drawCircle = (x: number, y: number, r: number) => {
+    if (typeof ctx.arc === 'function') {
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+    } else {
+      ctx.rect(x - r, y - r, r * 2, r * 2);
+    }
+  };
+
+  ctx.save();
+  // 1. Converging streams
+  if (streamP < 0.95) {
+    const dist = (1 - (1 - Math.pow(1 - streamP, 3))) * px * 3;
+    ctx.fillStyle = '#A7F7FF';
+    ctx.beginPath();
+    drawCircle(cx - dist, cy - px * 0.1, px * 0.18);
+    drawCircle(cx - dist - px * 0.3, cy - px * 0.15, px * 0.12);
+    drawCircle(cx + dist, cy + px * 0.1, px * 0.18);
+    drawCircle(cx + dist + px * 0.3, cy + px * 0.15, px * 0.12);
+    ctx.fill();
+  }
+
+  // 2. Radial droplet explosion
+  if (splashP > 0.05 && splashP < 0.99) {
+    const splashAlpha = 1 - splashP;
+    ctx.globalAlpha *= splashAlpha;
+    const baseRadius = (w / 2 + px * 0.5) * (0.2 + 0.9 * splashP);
+    const dropColors = ['#A7F7FF', '#FFFA6F', '#FFFFFF', '#A7F7FF'];
+
+    for (let i = 0; i < 12; i++) {
+      const angle = (i / 12) * Math.PI * 2 + (i % 2 === 0 ? 0.1 : -0.1);
+      const radVariation = 1 + 0.25 * Math.sin(i * 3.7);
+      const r = baseRadius * radVariation;
+      const dx = cx + Math.cos(angle) * r;
+      const dy = cy + Math.sin(angle) * r * 0.6;
+      const dropSize = Math.max(2, px * (0.1 - 0.06 * splashP));
+
+      ctx.fillStyle = dropColors[i % dropColors.length];
+      ctx.beginPath();
+      drawCircle(dx, dy, dropSize);
+      ctx.fill();
+    }
+  }
+  ctx.restore();
 }
 
 /** Drop cached layouts (e.g. when the loaded segment list is replaced). */
