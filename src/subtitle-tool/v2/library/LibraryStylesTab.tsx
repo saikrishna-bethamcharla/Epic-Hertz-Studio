@@ -1,6 +1,6 @@
 // ─── LibraryStylesTab — Epic Hertz Studio v2 ──────────────────────────────────
 import React, { useState, useMemo, useRef } from 'react';
-import { Search, Heart, Download, Upload, Trash2, Film } from 'lucide-react';
+import { Search, Heart, Download, Upload, Trash2 } from 'lucide-react';
 import type { Segment, CaptionStyle } from '../../types';
 import { PRESETS } from '../../engine/presets';
 import { CAPTION_TEMPLATES } from '../../engine/templateCatalog';
@@ -203,32 +203,6 @@ export const LibraryStylesTab: React.FC<LibraryStylesTabProps> = ({
           placeholder="Search styles and templates..."
           className="w-full bg-[#171716] border border-white/10 focus:border-amber-400 rounded-lg pl-8 pr-3 py-1.5 text-xs text-bone placeholder:text-smoke/60 focus:outline-none"
         />
-      </div>
-
-      {/* Quick Filter Banner for Movie Style Text Templates */}
-      <div className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-400/20 via-amber-400/10 to-transparent border border-amber-400/30 flex items-center justify-between gap-2 shadow-xs">
-        <div className="flex items-center gap-2 min-w-0">
-          <Film className="w-4 h-4 text-amber-400 shrink-0" />
-          <div className="min-w-0">
-            <span className="text-[11px] text-bone font-bold truncate block">
-              🎬 <strong className="text-amber-300">Movie Style Text Templates</strong> (20 styles)
-            </span>
-            <span className="text-[10px] text-smoke block truncate">
-              Trailer Impact, Noir, Sci-Fi, Vintage 35mm, Gold Serif
-            </span>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => setStyleCategory(styleCategory === 'Cinematic' ? 'All' : 'Cinematic')}
-          className={`px-2.5 py-1 rounded text-[10px] font-bold transition-all shrink-0 cursor-pointer ${
-            styleCategory === 'Cinematic'
-              ? 'bg-amber-400 text-black shadow-xs'
-              : 'bg-amber-400 text-black hover:bg-amber-300'
-          }`}
-        >
-          {styleCategory === 'Cinematic' ? '✓ Showing Movie' : 'Filter Movie'}
-        </button>
       </div>
 
       {/* Category Chips */}

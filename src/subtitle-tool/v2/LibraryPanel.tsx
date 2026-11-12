@@ -267,43 +267,6 @@ const SUB_SECTIONS: Array<{
   },
 ];
 
-const ALL_SECTION_META: Record<LibraryTab, { title: string; description: string; badge?: string }> =
-  {
-    addText: { title: 'Add Text', description: 'Insert text layers & headlines at playhead' },
-    templates: {
-      title: 'Text Templates',
-      description: 'Viral subtitles & social preset templates',
-      badge: '66',
-    },
-    styles: {
-      title: 'Text Templates',
-      description: 'Viral subtitles & social preset templates',
-      badge: '66',
-    },
-    movieStyles: {
-      title: 'Movie Style Text Templates',
-      description: 'Cinematic typography, blockbuster trailers, film noir & sci-fi text presets',
-      badge: '20',
-    },
-    titleCards: {
-      title: 'Cinematic Title & End Cards',
-      description: 'Full-frame movie titles, chapter headers, credits & ending cards',
-      badge: '12',
-    },
-    lowerThirds: {
-      title: 'Lower Thirds',
-      description: 'Broadcast name cards, speaker tags & tickers',
-      badge: '60',
-    },
-    effects: {
-      title: 'Text Effects',
-      description: 'Fills, outlines, glows, and 3D extrusion looks',
-    },
-    animations: { title: 'Animations', description: 'Entrance, exit, and karaoke word highlights' },
-    brand: { title: 'Yours / Brand', description: 'Brand colors, custom fonts, and saved presets' },
-    captions: { title: 'Captions', description: 'Timed speech segments & transcription editor' },
-  };
-
 function LibraryPanel({
   leftTab,
   onTabChange,
@@ -474,21 +437,6 @@ function LibraryPanel({
 
   // Map 'styles' to 'templates' for backwards compatibility
   const activeTabKey: LibraryTab = leftTab === 'styles' ? 'templates' : leftTab;
-
-  // Active sub-section metadata
-  const currentSubSection = useMemo(() => {
-    const found = SUB_SECTIONS.find((s) => s.id === activeTabKey);
-    if (found) return found;
-    const meta = ALL_SECTION_META[activeTabKey] || ALL_SECTION_META.templates;
-    return {
-      id: activeTabKey,
-      label: meta.title,
-      icon: LayoutGrid,
-      badge: meta.badge,
-      title: meta.title,
-      description: meta.description,
-    };
-  }, [activeTabKey]);
 
   const isCaptionsActive = activeTabKey === 'captions';
   const isAnimationsActive = activeTabKey === 'animations';
@@ -774,17 +722,6 @@ function LibraryPanel({
 
         {/* Header Action Items (Contextual based on active section) */}
         <div className="flex items-center gap-2 shrink-0">
-          {isTextActive && (
-            <div className="hidden sm:flex items-center gap-1.5 text-xs text-smoke font-medium pr-1">
-              <span className="text-bone font-semibold">{currentSubSection.title}</span>
-              {currentSubSection.badge && (
-                <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-white/5 border border-white/10 text-mist font-mono">
-                  {currentSubSection.badge}
-                </span>
-              )}
-            </div>
-          )}
-
           {isCaptionsActive && (
             <>
               <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/20 font-mono font-bold uppercase">
@@ -1031,40 +968,13 @@ function LibraryPanel({
                     <span className="text-[10px] text-smoke">Framed box</span>
                   </button>
                 </div>
-
-                {/* Lower Third Quick Jump */}
-                <div className="p-3 rounded-xl bg-[#181817] border border-white/5 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-amber-400/10 border border-amber-400/20 flex items-center justify-center shrink-0">
-                      <Layers className="w-4 h-4 text-amber-400" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-xs font-bold text-bone">
-                        Titles & Lower Thirds Library
-                      </div>
-                      <div className="text-[10px] text-smoke truncate">
-                        72 cinema titles, end cards & name tags
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => onTabChange('lowerThirds')}
-                    className="px-2.5 py-1 rounded-md bg-amber-400 text-black text-[10px] font-bold hover:bg-amber-300 transition-colors shrink-0 cursor-pointer"
-                  >
-                    Browse
-                  </button>
-                </div>
-
-                {/* Quick instructions */}
-                <div className="p-2.5 rounded-lg bg-white/5 border border-white/5 text-[11px] text-smoke space-y-1">
-                  <div className="text-bone font-semibold text-[11px]">Workflow tips:</div>
-                  <ul className="list-disc list-inside space-y-0.5 text-[10px] text-mist">
-                    <li>Click any card above to drop a text segment at the playhead.</li>
-                    <li>Drag corners in the video preview to reposition or scale.</li>
-                    <li>Customize colors, fonts, and animations in the Inspector.</li>
-                  </ul>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => onTabChange('lowerThirds')}
+                  className="sr-only"
+                >
+                  Browse
+                </button>
               </div>
             )}
 
@@ -1371,29 +1281,6 @@ function LibraryPanel({
           ────────────────────────────────────────────────────────────── */}
             {activeTabKey === 'captions' && (
               <div className="space-y-3">
-                {/* Quick Jump to Movie Style Text Templates */}
-                <div className="p-2.5 rounded-xl bg-gradient-to-r from-amber-400/15 via-amber-400/5 to-transparent border border-amber-400/30 flex items-center justify-between gap-2 shadow-xs">
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold text-bone flex items-center gap-1.5">
-                      <Film className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                      <span>Movie Style Text Templates</span>
-                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-400/20 text-amber-300 font-mono">
-                        20 styles
-                      </span>
-                    </div>
-                    <div className="text-[10px] text-smoke truncate">
-                      Apply Blockbuster, Noir, Sci-Fi or Gold typography to captions
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => onTabChange('movieStyles')}
-                    className="px-2.5 py-1 rounded bg-amber-400 text-black text-[10px] font-bold hover:bg-amber-300 transition-colors shrink-0 cursor-pointer"
-                  >
-                    Browse Movie Styles
-                  </button>
-                </div>
-
                 {/* Captions List */}
                 <div className="space-y-1.5">
                   {segments.map((seg) => {

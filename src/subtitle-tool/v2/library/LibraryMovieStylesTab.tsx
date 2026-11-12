@@ -3,7 +3,7 @@
 // - Blockbuster action trailers, Film Noir, Sci-Fi Odyssey, Vintage 35mm, Hollywood Gold, etc.
 // - Formats video text and captions with cinematic typography, animations, colors, and letter-spacing.
 import React, { useState, useMemo } from 'react';
-import { Search, Heart, Clapperboard } from 'lucide-react';
+import { Search, Heart } from 'lucide-react';
 import type { Segment, CaptionStyle } from '../../types';
 import { CAPTION_TEMPLATES } from '../../engine/templateCatalog';
 import { templateToStyle } from '../../engine/templateSchema';
@@ -118,25 +118,11 @@ export const LibraryMovieStylesTab: React.FC<LibraryMovieStylesTabProps> = ({
 
   return (
     <div className="space-y-3 pb-8">
-      {/* Header Banner */}
-      <div className="p-3 rounded-xl bg-gradient-to-r from-amber-400/20 via-amber-400/10 to-transparent border border-amber-400/30 flex items-center justify-between gap-3 shadow-xs">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 rounded-lg bg-amber-400/20 border border-amber-400/30 flex items-center justify-center shrink-0">
-            <Clapperboard className="w-4 h-4 text-amber-400" />
-          </div>
-          <div className="min-w-0">
-            <div className="text-xs font-bold text-bone flex items-center gap-1.5">
-              <span>Movie Style Text Templates</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-400/25 text-amber-300 font-mono">
-                20 styles
-              </span>
-            </div>
-            <div className="text-[10px] text-smoke truncate">
-              Cinematic typography & animation presets for video text and captions
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Screen-reader accessible section header */}
+      <h2 className="sr-only">
+        <span>Movie Style Text Templates</span>
+        <span>20 styles</span>
+      </h2>
 
       {/* Search Input */}
       <div className="relative">
