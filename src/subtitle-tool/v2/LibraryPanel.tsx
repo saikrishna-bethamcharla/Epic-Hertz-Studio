@@ -979,6 +979,29 @@ function LibraryPanel({
           ────────────────────────────────────────────────────────────── */}
           {activeTabKey === 'captions' && (
             <div className="space-y-3">
+              {/* Quick Jump to Movie Style Text Templates */}
+              <div className="p-2.5 rounded-xl bg-gradient-to-r from-amber-400/15 via-amber-400/5 to-transparent border border-amber-400/30 flex items-center justify-between gap-2 shadow-xs">
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-bone flex items-center gap-1.5">
+                    <Film className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span>Movie Style Text Templates</span>
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-400/20 text-amber-300 font-mono">
+                      68 presets
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-smoke truncate">
+                    Apply Blockbuster, Noir, Sci-Fi or Gold typography to captions
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onTabChange('templates')}
+                  className="px-2.5 py-1 rounded bg-amber-400 text-black text-[10px] font-bold hover:bg-amber-300 transition-colors shrink-0 cursor-pointer"
+                >
+                  Browse Styles
+                </button>
+              </div>
+
               {/* Captions List */}
               <div className="space-y-1.5">
                 {segments.map((seg) => {

@@ -66,7 +66,7 @@ export const LibraryStylesTab: React.FC<LibraryStylesTabProps> = ({
   }, []);
 
   const filteredTemplates = useMemo(() => {
-    return templateItems.filter(({ template }) => {
+    const list = templateItems.filter(({ template }) => {
       const q = search.toLowerCase().trim();
       const matchSearch =
         !q ||
@@ -81,6 +81,17 @@ export const LibraryStylesTab: React.FC<LibraryStylesTabProps> = ({
       if (styleCategory === 'Yours') return false;
       return template.category.toLowerCase() === styleCategory.toLowerCase();
     });
+
+    // When viewing "All" and not actively searching, prioritize Cinema & Movie styles at the top
+    if (styleCategory === 'All' && !search.trim()) {
+      return [...list].sort((a, b) => {
+        const aCin = a.template.category === 'Cinematic' ? 1 : 0;
+        const bCin = b.template.category === 'Cinematic' ? 1 : 0;
+        return bCin - aCin;
+      });
+    }
+
+    return list;
   }, [templateItems, search, styleCategory, favorites]);
 
   const filteredUserPresets = useMemo(() => {
@@ -194,23 +205,28 @@ export const LibraryStylesTab: React.FC<LibraryStylesTabProps> = ({
       </div>
 
       {/* Quick Filter Banner for Movie Style Text Templates */}
-      <div className="px-2.5 py-1.5 rounded-lg bg-amber-400/10 border border-amber-400/20 flex items-center justify-between gap-2">
+      <div className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-400/20 via-amber-400/10 to-transparent border border-amber-400/30 flex items-center justify-between gap-2 shadow-xs">
         <div className="flex items-center gap-2 min-w-0">
-          <Film className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-          <span className="text-[11px] text-bone font-medium truncate">
-            🎬 <strong className="text-amber-300">Movie Style Text Templates</strong> (20 styles)
-          </span>
+          <Film className="w-4 h-4 text-amber-400 shrink-0" />
+          <div className="min-w-0">
+            <span className="text-[11px] text-bone font-bold truncate block">
+              🎬 <strong className="text-amber-300">Movie Style Text Templates</strong> (20 styles)
+            </span>
+            <span className="text-[10px] text-smoke block truncate">
+              Trailer Impact, Noir, Sci-Fi, Vintage 35mm, Gold Serif
+            </span>
+          </div>
         </div>
         <button
           type="button"
-          onClick={() => setStyleCategory('Cinematic')}
-          className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors shrink-0 cursor-pointer ${
+          onClick={() => setStyleCategory(styleCategory === 'Cinematic' ? 'All' : 'Cinematic')}
+          className={`px-2.5 py-1 rounded text-[10px] font-bold transition-all shrink-0 cursor-pointer ${
             styleCategory === 'Cinematic'
-              ? 'bg-amber-300 text-black'
+              ? 'bg-amber-400 text-black shadow-xs'
               : 'bg-amber-400 text-black hover:bg-amber-300'
           }`}
         >
-          {styleCategory === 'Cinematic' ? 'Active' : 'Show Movie Styles'}
+          {styleCategory === 'Cinematic' ? '✓ Showing Movie' : 'Filter Movie'}
         </button>
       </div>
 
