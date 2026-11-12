@@ -14,6 +14,7 @@ import {
   LayoutGrid,
   Bookmark,
   Quote,
+  Clapperboard,
 } from 'lucide-react';
 
 import type {
@@ -35,12 +36,14 @@ import { listCustomFonts, type CustomFontRecord } from '../utils/projectStorage'
 import { formatTimecode } from '../utils/formatTime';
 import { checkReadability } from '../utils/readability';
 import LibraryStylesTab from './library/LibraryStylesTab';
+import LibraryMovieStylesTab from './library/LibraryMovieStylesTab';
 import LibraryBrandTab from './library/LibraryBrandTab';
 import LibraryLowerThirdsTab from './library/LibraryLowerThirdsTab';
 
 export type LibraryTab =
   | 'addText'
   | 'templates'
+  | 'movieStyles'
   | 'styles'
   | 'lowerThirds'
   | 'effects'
@@ -202,9 +205,17 @@ const SUB_SECTIONS: Array<{
     id: 'templates',
     label: 'Templates',
     icon: LayoutGrid,
-    badge: '68',
+    badge: '48',
     title: 'Text Templates',
-    description: 'Viral subtitles & cinematic movie preset templates',
+    description: 'Viral subtitles & social preset templates',
+  },
+  {
+    id: 'movieStyles',
+    label: 'Movie styles',
+    icon: Clapperboard,
+    badge: '20',
+    title: 'Movie Style Text Templates',
+    description: 'Cinematic typography, blockbuster trailers, film noir & sci-fi text presets',
   },
   {
     id: 'lowerThirds',
@@ -479,7 +490,10 @@ function LibraryPanel({
   );
 
   const showScopeHeader =
-    activeTabKey === 'templates' || activeTabKey === 'effects' || activeTabKey === 'animations';
+    activeTabKey === 'templates' ||
+    activeTabKey === 'movieStyles' ||
+    activeTabKey === 'effects' ||
+    activeTabKey === 'animations';
 
   return (
     <div className="h-full flex bg-[#141413] border-r border-white/10 select-none overflow-hidden">
@@ -788,7 +802,24 @@ function LibraryPanel({
           )}
 
           {/* ─────────────────────────────────────────────────────────────
-              SUB-SECTION 3: LOWER THIRDS PACK LIBRARY
+              SUB-SECTION 3: MOVIE STYLE TEXT TEMPLATES
+          ────────────────────────────────────────────────────────────── */}
+          {activeTabKey === 'movieStyles' && (
+            <div className="space-y-3">
+              {renderScopeBanner()}
+              <LibraryMovieStylesTab
+                style={style}
+                sampleSegment={sampleSegment}
+                favorites={favorites}
+                onFavoritesChange={setFavorites}
+                onApplyPreset={applyPresetToScope}
+                onNotification={onNotification}
+              />
+            </div>
+          )}
+
+          {/* ─────────────────────────────────────────────────────────────
+              SUB-SECTION 4: LOWER THIRDS PACK LIBRARY
           ────────────────────────────────────────────────────────────── */}
           {activeTabKey === 'lowerThirds' && (
             <LibraryLowerThirdsTab
@@ -986,7 +1017,7 @@ function LibraryPanel({
                     <Film className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                     <span>Movie Style Text Templates</span>
                     <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-400/20 text-amber-300 font-mono">
-                      68 presets
+                      20 styles
                     </span>
                   </div>
                   <div className="text-[10px] text-smoke truncate">
@@ -995,10 +1026,10 @@ function LibraryPanel({
                 </div>
                 <button
                   type="button"
-                  onClick={() => onTabChange('templates')}
+                  onClick={() => onTabChange('movieStyles')}
                   className="px-2.5 py-1 rounded bg-amber-400 text-black text-[10px] font-bold hover:bg-amber-300 transition-colors shrink-0 cursor-pointer"
                 >
-                  Browse Styles
+                  Browse Movie Styles
                 </button>
               </div>
 
