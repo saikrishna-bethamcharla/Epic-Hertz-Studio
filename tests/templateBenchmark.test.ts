@@ -98,6 +98,43 @@ describe('Phase F: Caption Template Library Parity & Benchmark Suite', () => {
     }
   });
 
+  it('renders poster role templates with distinct per-word font sizes', () => {
+    const poster = CAPTION_TEMPLATES.find((t) => t.id === 'poster-orange-impact');
+    expect(poster).toBeTruthy();
+    const style = templateToStyle(poster!);
+    const seg: Segment = {
+      id: 'poster-1',
+      index: 1,
+      start: 0.5,
+      end: 3.0,
+      text: 'i dont want a bookkeeper amazing',
+      words: [
+        { word: 'i', start: 0.5, end: 0.8 },
+        { word: 'dont', start: 0.85, end: 1.15 },
+        { word: 'want', start: 1.2, end: 1.5 },
+        { word: 'a', start: 1.55, end: 1.8 },
+        { word: 'bookkeeper', start: 1.85, end: 2.5 },
+        { word: 'amazing', start: 2.55, end: 3.0 },
+      ],
+    };
+    const ctx = createBenchmarkCanvasContext();
+    let font = '';
+    const usedFonts: string[] = [];
+    Object.defineProperty(ctx, 'font', {
+      get: () => font,
+      set: (v: string) => {
+        font = v;
+      },
+    });
+    (ctx as unknown as { fillText: (t: string) => void }).fillText = () => {
+      usedFonts.push(font);
+    };
+    renderCaptions(ctx, 1080, 1920, 2.0, [seg], style);
+    const sizes = new Set(usedFonts.map((f) => f.match(/(\d+(?:\.\d+)?)px/)?.[1]).filter(Boolean));
+    expect(usedFonts.length).toBeGreaterThanOrEqual(3);
+    expect(sizes.size).toBeGreaterThanOrEqual(2);
+  });
+
   it('correctly handles Indic script rendering with conjuncts preserved without throwing', () => {
     const W = 1080;
     const H = 1920;
