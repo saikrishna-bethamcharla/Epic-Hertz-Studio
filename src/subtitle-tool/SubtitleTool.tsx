@@ -17,7 +17,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { useDesktop } from './utils/useMedia';
-import { DEFAULT_STYLE } from './engine/presets';
+import { DEFAULT_STYLE } from './constants';
 
 const KeyboardShortcutsModal = lazy(() => import('./KeyboardShortcutsModal'));
 const ProjectManagerModal = lazy(() => import('./v2/ProjectManagerModal'));
@@ -39,7 +39,7 @@ import {
   saveStoredLayout,
   DEFAULT_LAYOUT,
   type WorkspaceLayout,
-} from './v2/userPresets';
+} from './constants';
 
 import { createDemoVideo } from './utils/createDemoVideo';
 import { saveMediaAsset, formatRelativeTime, listCustomFonts } from './utils/projectStorage';
@@ -60,7 +60,7 @@ import type {
   VideoAspectRatio,
   LowerThirdSpec,
 } from './types';
-import { DEFAULT_LOWER_THIRD } from './engine/spec';
+import { DEFAULT_LOWER_THIRD } from './constants';
 import { getPhotoBlob, deletePhotoBlob } from './utils/projectStorage';
 
 export interface SubtitleToolProps {

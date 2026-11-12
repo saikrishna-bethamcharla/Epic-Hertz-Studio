@@ -95,8 +95,6 @@ export default function ExportModal({
     return hasWebCodecs || (hasCaptureStream && hasMediaRecorder);
   }, []);
 
-  if (!isOpen) return null;
-
   const baseName = videoFile.name.replace(/\.[^.]+$/, '');
 
   // Pre-flight memory estimation
@@ -109,6 +107,19 @@ export default function ExportModal({
         resolution === '1080' ? 1080 : 0,
       )
     : null;
+
+  // Auto-enforce recommendations if memory is high to prevent browser OOM
+  useEffect(() => {
+    if (memoryEstimate?.isHighMemory) {
+      setQuality(memoryEstimate.recommendedQuality);
+      setResolution(memoryEstimate.recommendedResolution === '1080' ? '1080' : 'original');
+      onBurnStatus?.(
+        `High memory footprint detected. Auto-selected ${memoryEstimate.recommendedQuality} quality at ${memoryEstimate.recommendedResolution === '1080' ? '1080p' : 'original'} resolution to prevent browser memory limits.`,
+      );
+    }
+  }, [memoryEstimate, onBurnStatus]);
+
+  if (!isOpen) return null;
 
   const handleExport = async () => {
     setError(null);

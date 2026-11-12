@@ -196,6 +196,40 @@ async function checkRateLimit(ip) {
   }
 }
 
+// ─── Rate limit status endpoint ─────────────────────────────────────────────
+
+async function getRateLimitStatus(req) {
+  const ip = clientIp(req);
+  const now = new Date();
+  const day = now.toISOString().slice(0, 10);
+  const minute = Math.floor(now.getTime() / 60000);
+
+  // Per-minute check
+  const perMinKey = `epic:rl:m:${ip}:${minute}`;
+  const perMin = await hit(perMinKey, 60);
+  const perMinRemaining = Math.max(0, LIMIT_PER_MIN - perMin);
+
+  // Per-day check
+  const perDayKey = `epic:rl:d:${ip}:${day}`;
+  const perDay = await hit(perDayKey, 86400);
+  const perDayRemaining = Math.max(0, LIMIT_PER_DAY - perDay);
+
+  // Global daily check (if configured)
+  let globalRemaining = perDayRemaining;
+  if (GLOBAL_DAILY_LIMIT > 0) {
+    const globalKey = `epic:rl:global:${day}`;
+    const global = await hit(globalKey, 86400);
+    const globalLeft = Math.max(0, GLOBAL_DAILY_LIMIT - global);
+    globalRemaining = globalLeft;
+  }
+
+  return {
+    remainingThisMinute: perMinRemaining,
+    remainingThisDay: perDayRemaining,
+    usingSharedKey: true,
+  };
+}
+
 // ─── Request handling ───────────────────────────────────────────────────────
 
 function applyCors(req, res) {
@@ -489,5 +523,19 @@ export default async function handler(req, res) {
     }
     console.error('Transcription error:', error);
     res.status(500).json({ error: 'Something went wrong while transcribing. Please try again.' });
+  }
+}
+
+// ─── Rate limit status endpoint ────────────────────────────────────────────────────────────
+
+export async function GET(req) {
+  try {
+    const status = getRateLimitStatus(req);
+    res.status(200).json(status);
+    return;
+  } catch (err) {
+    console.error('Rate limit status error:', err);
+    res.status(500).json({ error: 'Failed to fetch rate limit status.' });
+    return;
   }
 }

@@ -43,6 +43,7 @@ export function webCodecsSupported(): boolean {
 /**
  * Pre-flight memory estimator based on video duration, dimensions, and target quality.
  * Flags scenarios above ~950MB that risk crashing browser tabs on mobile or low-RAM environments.
+ * Also returns recommended quality/resolution to keep export safe.
  */
 export function estimateExportMemory(
   durationSec: number,
@@ -50,7 +51,12 @@ export function estimateExportMemory(
   srcHeight: number,
   quality: ExportQuality,
   maxShortSide?: number,
-): { estimatedBytes: number; isHighMemory: boolean } {
+): {
+  estimatedBytes: number;
+  isHighMemory: boolean;
+  recommendedQuality: ExportQuality;
+  recommendedResolution: 'original' | '1080';
+} {
   const cap = maxShortSide ?? 0;
   const scale = cap > 0 ? Math.min(1, cap / Math.min(srcWidth, srcHeight)) : 1;
   const outW = srcWidth * scale;
@@ -66,7 +72,25 @@ export function estimateExportMemory(
   const estimatedBytes = Math.round((bitrate * durationSec) / 8);
   const isHighMemory = estimatedBytes > 950_000_000 || (pixels > 1920 * 1080 && durationSec > 180);
 
-  return { estimatedBytes, isHighMemory };
+  // Recommend quality/resolution based on memory budget
+  let recommendedQuality: ExportQuality;
+  let recommendedResolution: 'original' | '1080';
+
+  if (isHighMemory) {
+    // If over 950MB or large pixels + long duration, downgrade
+    recommendedQuality = 'standard';
+    recommendedResolution = '1080';
+  } else if (pixels > 1920 * 1080 && durationSec > 60) {
+    // Large video but moderate duration - medium quality at 1080
+    recommendedQuality = 'standard';
+    recommendedResolution = '1080';
+  } else {
+    // Normal case - keep user's selection
+    recommendedQuality = quality;
+    recommendedResolution = maxShortSide ? '1080' : 'original';
+  }
+
+  return { estimatedBytes, isHighMemory, recommendedQuality, recommendedResolution };
 }
 
 /**
