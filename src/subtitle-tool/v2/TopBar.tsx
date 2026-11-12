@@ -12,12 +12,7 @@ import {
   Check,
   FileVideo,
   FolderOpen,
-  Type,
-  Captions,
-  Film,
 } from 'lucide-react';
-
-export type TopMenuSection = 'captions' | 'text' | 'animations';
 
 interface TopBarProps {
   projectName: string;
@@ -33,10 +28,6 @@ interface TopBarProps {
   onOpenProjects?: () => void;
   onOpenShortcuts: () => void;
   onOpenExport: () => void;
-  activeSection?: TopMenuSection;
-  onSelectSection?: (section: TopMenuSection) => void;
-  activeCategory?: 'text' | 'captions';
-  onSelectCategory?: (category: 'text' | 'captions') => void;
 }
 
 export default function TopBar({
@@ -53,10 +44,6 @@ export default function TopBar({
   onOpenProjects,
   onOpenShortcuts,
   onOpenExport,
-  activeSection,
-  onSelectSection,
-  activeCategory,
-  onSelectCategory,
 }: TopBarProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(projectName);
@@ -135,90 +122,6 @@ export default function TopBar({
               Epic Hertz <span className="text-amber-400 font-normal">Studio</span>
             </span>
           </div>
-        )}
-
-        {/* CapCut-style Primary Top Menu (Captions, Text, Animations) */}
-        {(onSelectSection || onSelectCategory) && (
-          <nav
-            aria-label="Editor top menu"
-            className="flex items-center gap-1 sm:gap-1.5 ml-1 sm:ml-2 pl-2 border-l border-white/10 shrink-0"
-          >
-            {/* Captions */}
-            <button
-              type="button"
-              onClick={() =>
-                onSelectSection ? onSelectSection('captions') : onSelectCategory?.('captions')
-              }
-              className={`flex flex-col items-center justify-center px-2.5 sm:px-3 py-1 rounded-md transition-all cursor-pointer relative group ${
-                (activeSection ?? activeCategory) === 'captions'
-                  ? 'text-[#00d2c4] font-semibold'
-                  : 'text-[#8b8b8b] hover:text-white hover:bg-white/5 font-medium'
-              }`}
-              title="Captions (Speech-to-text, transcript & timing sync)"
-            >
-              <Captions
-                className={`w-4 h-4 mb-0.5 transition-colors ${
-                  (activeSection ?? activeCategory) === 'captions'
-                    ? 'text-[#00d2c4]'
-                    : 'text-smoke group-hover:text-bone'
-                }`}
-              />
-              <span className="text-[10px] leading-tight tracking-tight">Captions</span>
-              {(activeSection ?? activeCategory) === 'captions' && (
-                <span className="absolute -bottom-[9px] left-1.5 right-1.5 h-[2px] bg-[#00b8a9] rounded-full" />
-              )}
-            </button>
-
-            {/* Text */}
-            <button
-              type="button"
-              onClick={() =>
-                onSelectSection ? onSelectSection('text') : onSelectCategory?.('text')
-              }
-              className={`flex flex-col items-center justify-center px-2.5 sm:px-3 py-1 rounded-md transition-all cursor-pointer relative group ${
-                (activeSection ?? activeCategory) === 'text'
-                  ? 'text-[#00d2c4] font-semibold'
-                  : 'text-[#8b8b8b] hover:text-white hover:bg-white/5 font-medium'
-              }`}
-              title="Text (Templates, Movie Styles, Lower Thirds, Title Cards)"
-            >
-              <Type
-                className={`w-4 h-4 mb-0.5 transition-colors ${
-                  (activeSection ?? activeCategory) === 'text'
-                    ? 'text-[#00d2c4]'
-                    : 'text-smoke group-hover:text-bone'
-                }`}
-              />
-              <span className="text-[10px] leading-tight tracking-tight">Text</span>
-              {(activeSection ?? activeCategory) === 'text' && (
-                <span className="absolute -bottom-[9px] left-1.5 right-1.5 h-[2px] bg-[#00b8a9] rounded-full" />
-              )}
-            </button>
-
-            {/* Animations */}
-            <button
-              type="button"
-              onClick={() => onSelectSection?.('animations')}
-              className={`flex flex-col items-center justify-center px-2.5 sm:px-3 py-1 rounded-md transition-all cursor-pointer relative group ${
-                activeSection === 'animations'
-                  ? 'text-[#00d2c4] font-semibold'
-                  : 'text-[#8b8b8b] hover:text-white hover:bg-white/5 font-medium'
-              }`}
-              title="Animations (Entrances, Exits, Karaoke & Motion Packs)"
-            >
-              <Film
-                className={`w-4 h-4 mb-0.5 transition-colors ${
-                  activeSection === 'animations'
-                    ? 'text-[#00d2c4]'
-                    : 'text-smoke group-hover:text-bone'
-                }`}
-              />
-              <span className="text-[10px] leading-tight tracking-tight">Animations</span>
-              {activeSection === 'animations' && (
-                <span className="absolute -bottom-[9px] left-1.5 right-1.5 h-[2px] bg-[#00b8a9] rounded-full" />
-              )}
-            </button>
-          </nav>
         )}
 
         <div className="h-4 w-px bg-white/10 mx-0.5 shrink-0 hidden sm:block" />

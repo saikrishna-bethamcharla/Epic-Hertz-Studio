@@ -18,6 +18,7 @@ import {
   Upload,
   Download,
   X,
+  Type,
 } from 'lucide-react';
 
 import type {
@@ -731,24 +732,108 @@ function LibraryPanel({
         aria-labelledby={`tab-${activeTabKey}`}
         className="flex-1 min-w-0 h-full flex flex-col overflow-hidden bg-[#141413]"
       >
-        {/* Top Header of Active Sub-Section */}
-        <div className="h-11 px-3 border-b border-white/10 bg-[#121211]/60 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2 min-w-0">
-            <h3 className="text-xs font-bold text-bone truncate">{currentSubSection.title}</h3>
-            {currentSubSection.badge && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-mist font-mono">
-                {currentSubSection.badge} presets
-              </span>
-            )}
-            {activeTabKey === 'captions' && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/20 font-mono font-bold uppercase">
-                {spokenLanguage} · {scriptOutput}
-              </span>
-            )}
-          </div>
+        {/* Top Header with CapCut-style Menu Icons: Captions, Text, Animations */}
+        <div className="h-12 px-3 border-b border-white/10 bg-[#121211] flex items-center justify-between shrink-0">
+          <nav aria-label="Editor sections menu" className="flex items-center gap-1 sm:gap-2">
+            {/* Captions */}
+            <button
+              type="button"
+              onClick={() => onTabChange('captions')}
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs transition-all cursor-pointer relative ${
+                activeTabKey === 'captions'
+                  ? 'bg-white/10 text-[#00d2c4] font-semibold shadow-xs'
+                  : 'text-[#8b8b8b] hover:text-white hover:bg-white/5 font-medium'
+              }`}
+              title="Captions (Timed speech segments & transcript editor)"
+            >
+              <Captions
+                className={`w-3.5 h-3.5 ${activeTabKey === 'captions' ? 'text-[#00d2c4]' : 'text-smoke'}`}
+              />
+              <span>Captions</span>
+              {activeTabKey === 'captions' && (
+                <span className="absolute -bottom-[9px] left-1.5 right-1.5 h-[2px] bg-[#00b8a9] rounded-full" />
+              )}
+            </button>
 
-          {/* Header Action Items */}
-          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Text */}
+            <button
+              type="button"
+              onClick={() => {
+                if (activeTabKey === 'captions' || activeTabKey === 'animations') {
+                  onTabChange('templates');
+                }
+              }}
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs transition-all cursor-pointer relative ${
+                activeTabKey !== 'captions' && activeTabKey !== 'animations'
+                  ? 'bg-white/10 text-[#00d2c4] font-semibold shadow-xs'
+                  : 'text-[#8b8b8b] hover:text-white hover:bg-white/5 font-medium'
+              }`}
+              title="Text (Templates, Movie Styles, Title Cards, Lower Thirds, Effects)"
+            >
+              <Type
+                className={`w-3.5 h-3.5 ${
+                  activeTabKey !== 'captions' && activeTabKey !== 'animations'
+                    ? 'text-[#00d2c4]'
+                    : 'text-smoke'
+                }`}
+              />
+              <span>Text</span>
+              {activeTabKey !== 'captions' && activeTabKey !== 'animations' && (
+                <span className="absolute -bottom-[9px] left-1.5 right-1.5 h-[2px] bg-[#00b8a9] rounded-full" />
+              )}
+            </button>
+
+            {/* Animations */}
+            <button
+              type="button"
+              onClick={() => onTabChange('animations')}
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs transition-all cursor-pointer relative ${
+                activeTabKey === 'animations'
+                  ? 'bg-white/10 text-[#00d2c4] font-semibold shadow-xs'
+                  : 'text-[#8b8b8b] hover:text-white hover:bg-white/5 font-medium'
+              }`}
+              title="Animations (Entrances, Exits, Karaoke & Motion Packs)"
+            >
+              <Film
+                className={`w-3.5 h-3.5 ${activeTabKey === 'animations' ? 'text-[#00d2c4]' : 'text-smoke'}`}
+              />
+              <span>Animations</span>
+              {activeTabKey === 'animations' && (
+                <span className="absolute -bottom-[9px] left-1.5 right-1.5 h-[2px] bg-[#00b8a9] rounded-full" />
+              )}
+            </button>
+          </nav>
+
+          {/* Header Action Items (Contextual based on active section) */}
+          <div className="flex items-center gap-2 shrink-0">
+            {activeTabKey !== 'captions' && activeTabKey !== 'animations' && (
+              <div className="hidden sm:flex items-center gap-1.5 text-xs text-smoke font-medium pr-1">
+                <span className="text-bone font-semibold">{currentSubSection.title}</span>
+                {currentSubSection.badge && (
+                  <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-white/5 border border-white/10 text-mist font-mono">
+                    {currentSubSection.badge}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {activeTabKey === 'captions' && (
+              <>
+                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/20 font-mono font-bold uppercase">
+                  {spokenLanguage} · {scriptOutput}
+                </span>
+                {onRetranscribe && (
+                  <button
+                    type="button"
+                    onClick={onRetranscribe}
+                    className="px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-mist hover:text-bone text-[10px] font-medium transition-colors cursor-pointer"
+                  >
+                    Re-transcribe
+                  </button>
+                )}
+              </>
+            )}
+
             {showScopeHeader && (
               <div className="flex items-center gap-1 bg-[#181817] p-0.5 rounded-md border border-white/5 text-xs">
                 <button
@@ -782,15 +867,6 @@ function LibraryPanel({
                   Caption
                 </button>
               </div>
-            )}
-            {activeTabKey === 'captions' && onRetranscribe && (
-              <button
-                type="button"
-                onClick={onRetranscribe}
-                className="px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-mist hover:text-bone text-[10px] font-medium transition-colors cursor-pointer"
-              >
-                Re-transcribe
-              </button>
             )}
           </div>
         </div>
