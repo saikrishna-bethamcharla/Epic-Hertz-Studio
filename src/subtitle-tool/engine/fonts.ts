@@ -74,9 +74,7 @@ export function fontStack(style: CaptionStyle): string {
 
 export function canvasFont(style: CaptionStyle, px: number): string {
   const f = style.font;
-  const fam = fontById(f.family);
-  const file = nearestFile(fam.files, f.weight, f.italic);
-  const italic = file?.style === 'italic' ? 'italic ' : '';
+  const italic = f.italic ? 'italic ' : '';
   return `${italic}${effectiveWeight(style)} ${px.toFixed(2)}px ${fontStack(style)}`;
 }
 

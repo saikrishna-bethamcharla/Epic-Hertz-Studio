@@ -213,6 +213,51 @@ export const captionTemplateSchema = z.object({
     delay: z.number().min(0).max(0.5).default(0.045), // seconds
   }),
 
+  /** Fixed typography roles: consecutive words get their own font, size and colour. */
+  roles: z
+    .array(
+      z.object({
+        words: z.number().int().min(1).max(12).default(1),
+        scale: z.number().min(0.2).max(3.0).optional(),
+        family: z.string().min(1).max(50).optional(),
+        weight: z.number().int().min(100).max(1000).optional(),
+        italic: z.boolean().optional(),
+        case: z.enum(['none', 'upper', 'lower', 'title']).optional(),
+        fill: z.string().min(1).max(60).optional(),
+        gradient: z
+          .object({
+            angle: z.number().min(0).max(360),
+            stops: z.array(z.tuple([z.number().min(0).max(1), z.string()])),
+          })
+          .nullable()
+          .optional(),
+        stroke: z
+          .object({
+            width: z.number().min(0).max(0.4).optional(),
+            color: z.string().max(60).optional(),
+          })
+          .optional(),
+        glow: z
+          .object({
+            color: z.string().max(60).optional(),
+            blur: z.number().min(0).max(1).optional(),
+            strength: z.number().min(0).max(10).optional(),
+          })
+          .optional(),
+        shadow: z
+          .object({
+            x: z.number().min(-0.5).max(0.5).optional(),
+            y: z.number().min(-0.5).max(0.5).optional(),
+            blur: z.number().min(0).max(0.5).optional(),
+            color: z.string().max(60).optional(),
+          })
+          .optional(),
+        gap: z.number().min(0).max(1).optional(),
+      }),
+    )
+    .max(8)
+    .optional(),
+
   emphasisTrigger: z.enum(['activeWord', 'keyword', 'always']).default('activeWord'),
   syncOffset: z.number().min(-1.0).max(1.0).optional(),
 });
@@ -392,6 +437,19 @@ export function templateToStyle(t: CaptionTemplate): CaptionStyle {
       emphasisType: t.emphasis.type,
       emphasisParams: t.emphasis.params,
     },
+    wordRoles: t.roles?.map((r) => ({
+      words: r.words,
+      scale: r.scale,
+      family: r.family,
+      weight: r.weight,
+      italic: r.italic,
+      textCase: r.case,
+      fill: r.gradient ? { angle: r.gradient.angle, stops: r.gradient.stops } : r.fill,
+      stroke: r.stroke,
+      glow: r.glow,
+      shadow: r.shadow,
+      gap: r.gap,
+    })),
     reveal: {
       mode: 'page',
       dimUnspoken: 1,
@@ -541,6 +599,23 @@ export function styleToTemplate(
       unit: s.motion.unit === 'char' ? 'letter' : s.motion.unit,
       delay: s.motion.stagger / 1000,
     },
+    roles: s.wordRoles?.map((r) => ({
+      words: r.words,
+      scale: r.scale,
+      family: r.family,
+      weight: r.weight,
+      italic: r.italic,
+      case: r.textCase,
+      fill: typeof r.fill === 'string' ? r.fill : undefined,
+      gradient:
+        r.fill && typeof r.fill !== 'string'
+          ? { angle: r.fill.angle, stops: r.fill.stops }
+          : undefined,
+      stroke: r.stroke,
+      glow: r.glow,
+      shadow: r.shadow,
+      gap: r.gap,
+    })),
     emphasisTrigger: 'activeWord',
     syncOffset: s.syncOffset,
     ...overrides,

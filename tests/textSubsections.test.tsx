@@ -100,9 +100,9 @@ describe('Text Section Sub-Sections Navigation & Quick Text Layout', () => {
     const lowerThirdTab = screen.getByRole('tab', { name: /lower thirds/i });
     expect(lowerThirdTab.textContent).toContain('60');
 
-    // Verify Templates badge shows '60' (48 base templates + 12 premium)
+    // Verify Templates badge shows '66' (48 base templates + 18 premium)
     const templatesTab = screen.getByRole('tab', { name: /templates/i });
-    expect(templatesTab.textContent).toContain('60');
+    expect(templatesTab.textContent).toContain('66');
   });
 
   it('switches sub-sections when tab buttons are clicked', () => {

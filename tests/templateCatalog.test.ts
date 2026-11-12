@@ -7,9 +7,9 @@ import {
   templateToStyle,
 } from '../src/subtitle-tool/engine/templateSchema';
 
-describe('Phase B & D: Caption Template Catalog (80 Templates)', () => {
-  it('contains exactly 80 unique, validated templates across 10 mood categories', () => {
-    expect(CAPTION_TEMPLATES.length).toBe(80);
+describe('Phase B & D: Caption Template Catalog (86 Templates)', () => {
+  it('contains exactly 86 unique, validated templates across 10 mood categories', () => {
+    expect(CAPTION_TEMPLATES.length).toBe(86);
 
     const ids = new Set<string>();
     for (const t of CAPTION_TEMPLATES) {
@@ -53,6 +53,17 @@ describe('Phase B & D: Caption Template Catalog (80 Templates)', () => {
       expect(style.layout.wordsPerPage).toBe(t.layout.wordsPerPage);
       expect(style.motion.inMs).toBe(Math.round(t.entrance.duration * 1000));
       expect(style.motion.outMs).toBe(Math.round(t.exit.duration * 1000));
+    }
+  });
+
+  it('maps fixed typography roles into renderable word roles', () => {
+    const posters = CAPTION_TEMPLATES.filter((t) => (t.roles?.length ?? 0) > 0);
+    expect(posters.length).toBeGreaterThanOrEqual(6);
+    for (const t of posters) {
+      const style = templateToStyle(t);
+      expect(style.wordRoles?.length).toBe(t.roles!.length);
+      expect(style.wordRoles![0].words).toBe(t.roles![0].words);
+      expect(style.wordRoles!.some((r) => (r.scale ?? 1) !== 1)).toBe(true);
     }
   });
 

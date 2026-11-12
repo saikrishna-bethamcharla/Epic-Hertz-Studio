@@ -205,7 +205,7 @@ const SUB_SECTIONS: Array<{
     id: 'templates',
     label: 'Templates',
     icon: LayoutGrid,
-    badge: '60',
+    badge: '66',
     title: 'Text Templates',
     description: 'Viral subtitles & social preset templates',
   },

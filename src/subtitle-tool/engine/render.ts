@@ -25,6 +25,7 @@ import {
   type GradientPaint,
   type InAnim,
   type Paint,
+  type WordRole,
 } from './spec';
 import { canvasFont, fontsVersion } from './fonts';
 import { clamp01, ease, hash01, lerp, mixColor, spring } from './util';
@@ -135,6 +136,13 @@ interface WordLayout {
   w: number;
   line: number;
   chars?: CharLayout[];
+  /** Font size in px for this word (role-based templates vary it per word). */
+  px?: number;
+  baseline?: number;
+  asc?: number;
+  desc?: number;
+  /** Index into style.wordRoles when the style uses fixed typography roles. */
+  role?: number;
 }
 interface PageLayout {
   px: number;
@@ -148,6 +156,8 @@ interface PageLayout {
   asc: number;
   desc: number;
   tracking: number;
+  /** Top edge of each rendered line, in block-local px. */
+  lineTops: number[];
 }
 
 const layoutCache = new Map<string, PageLayout>();
@@ -168,6 +178,7 @@ function styleLayoutKey(style: CaptionStyle): string {
       style.highlight.mode,
       style.highlight.boxPadX,
       style.stroke.width,
+      style.wordRoles,
     ]);
     layoutKeyCache.set(style, k);
   }
@@ -196,6 +207,35 @@ function graphemes(text: string): string[] {
   return segmenter ? Array.from(segmenter.segment(text), (x) => x.segment) : Array.from(text);
 }
 
+function roleStyleFor(style: CaptionStyle, role: WordRole): CaptionStyle {
+  return {
+    ...style,
+    font: {
+      ...style.font,
+      family: role.family ?? style.font.family,
+      weight: role.weight ?? style.font.weight,
+      italic: role.italic ?? style.font.italic,
+      textCase: role.textCase ?? style.font.textCase,
+    },
+    fill: role.fill ?? style.fill,
+    stroke: { ...style.stroke, ...(role.stroke ?? {}) },
+    glow: { ...style.glow, ...(role.glow ?? {}) },
+    shadow: { ...style.shadow, ...(role.shadow ?? {}) },
+  };
+}
+
+/** Assign a role index to each word, repeating the role list when needed. */
+function roleIndexesFor(roles: WordRole[], count: number): number[] {
+  const out: number[] = [];
+  let r = 0;
+  while (out.length < count) {
+    const n = Math.max(1, Math.floor(roles[r % roles.length].words) || 1);
+    for (let k = 0; k < n && out.length < count; k++) out.push(r % roles.length);
+    r++;
+  }
+  return out;
+}
+
 function layoutPage(
   ctx: CanvasRenderingContext2D,
   texts: string[],
@@ -208,51 +248,109 @@ function layoutPage(
   // Indic glyphs have a smaller x-height and tall matras/subscripts: draw them a touch larger
   // and never squeeze their line spacing the way tight Latin display faces can.
   let px = style.font.size * ref * (complex ? 1.12 : 1);
-  const tracking = complex ? 0 : style.font.tracking;
+  const baseTracking = complex ? 0 : style.font.tracking;
   const maxW = style.layout.widthPct * W;
   const maxLines = Math.max(1, style.layout.maxLines);
 
+  const roles = style.wordRoles && style.wordRoles.length > 0 ? style.wordRoles : null;
+  const roleIdx = roles ? roleIndexesFor(roles, texts.length) : [];
+  const roleStyles = roles ? roles.map((r) => roleStyleFor(style, r)) : [];
+  const rolePx = (i: number) =>
+    px * (roles && roleIdx[i] !== undefined ? (roles[roleIdx[i]].scale ?? 1) : 1);
+
   let widths: number[] = [];
-  let spaceW = 0;
   let lines: number[][] = [];
+  let lineSpace: number[] = [];
 
   for (let attempt = 0; attempt < 10; attempt++) {
-    ctx.font = canvasFont(style, px);
-    setSpacing(ctx, tracking * px);
-    spaceW =
-      (ctx.measureText(' ').width || px * 0.3) + Math.max(0, style.highlight.scale - 1) * px * 0.25;
-    // The outline is drawn centred on the glyph edge, so it eats into the space from both sides.
-    spaceW += style.stroke.width * px * 1.3;
-    // A highlight box pads out past the word on both sides — keep it clear of the neighbours.
-    if (style.highlight.mode === 'box')
-      spaceW = Math.max(spaceW, style.highlight.boxPadX * px * 1.9);
-    widths = texts.map((t) => ctx.measureText(t).width);
+    if (roles) {
+      widths = texts.map((t, i) => {
+        const rs = roleStyles[roleIdx[i]];
+        const rpx = rolePx(i);
+        ctx.font = canvasFont(rs, rpx);
+        setSpacing(ctx, (rs.font.tracking ?? 0) * rpx);
+        return ctx.measureText(t).width + (rs.stroke.width ?? 0) * rpx * 1.3;
+      });
+      // Each role group is its own line: intro line, keyword line, kicker line…
+      lines = [];
+      texts.forEach((_, i) => {
+        const last = lines[lines.length - 1];
+        if (!last || roleIdx[last[0]] !== roleIdx[i]) lines.push([i]);
+        else last.push(i);
+      });
+      lineSpace = lines.map((idx) => {
+        const rpx = rolePx(idx[0]);
+        return rpx * 0.3 + (roleStyles[roleIdx[idx[0]]].stroke.width ?? 0) * rpx * 1.3;
+      });
+    } else {
+      ctx.font = canvasFont(style, px);
+      setSpacing(ctx, baseTracking * px);
+      let spaceW =
+        (ctx.measureText(' ').width || px * 0.3) +
+        Math.max(0, style.highlight.scale - 1) * px * 0.25;
+      // The outline is drawn centred on the glyph edge, so it eats into the space from both sides.
+      spaceW += style.stroke.width * px * 1.3;
+      // A highlight box pads out past the word on both sides — keep it clear of the neighbours.
+      if (style.highlight.mode === 'box')
+        spaceW = Math.max(spaceW, style.highlight.boxPadX * px * 1.9);
+      widths = texts.map((t) => ctx.measureText(t).width);
 
-    lines = [];
-    let cur: number[] = [];
-    let curW = 0;
-    widths.forEach((w, i) => {
-      if (cur.length && curW + spaceW + w > maxW) {
-        lines.push(cur);
-        cur = [];
-        curW = 0;
-      }
-      curW += (cur.length ? spaceW : 0) + w;
-      cur.push(i);
-    });
-    if (cur.length) lines.push(cur);
+      lines = [];
+      let cur: number[] = [];
+      let curW = 0;
+      widths.forEach((w, i) => {
+        if (cur.length && curW + spaceW + w > maxW) {
+          lines.push(cur);
+          cur = [];
+          curW = 0;
+        }
+        curW += (cur.length ? spaceW : 0) + w;
+        cur.push(i);
+      });
+      if (cur.length) lines.push(cur);
+      lineSpace = lines.map(() => spaceW);
+    }
 
-    if (lines.length <= maxLines && widths.every((w) => w <= maxW)) break;
+    const lineWidths = lines.map((idx, li) =>
+      idx.reduce((sum, i, k) => sum + widths[i] + (k ? lineSpace[li] : 0), 0),
+    );
+    if (lineWidths.length <= maxLines && lineWidths.every((w) => w <= maxW)) break;
     px *= 0.92;
   }
 
-  const m = ctx.measureText('Hg');
-  const asc = m.fontBoundingBoxAscent ?? px * 0.8;
-  const desc = m.fontBoundingBoxDescent ?? px * 0.2;
-  const lineBox = (complex ? Math.max(style.font.lineHeight, 1.42) : style.font.lineHeight) * px;
-  const baseline = (lineBox - (asc + desc)) / 2 + asc;
+  const linePx = lines.map((idx) => Math.max(...idx.map((i) => rolePx(i))));
+  const ascArr: number[] = [];
+  const descArr: number[] = [];
+  lines.forEach((idx, li) => {
+    if (roles) {
+      ctx.font = canvasFont(roleStyles[roleIdx[idx[0]]], linePx[li]);
+    } else {
+      ctx.font = canvasFont(style, px);
+    }
+    const m = ctx.measureText('Hg');
+    ascArr.push(m.fontBoundingBoxAscent ?? linePx[li] * 0.8);
+    descArr.push(m.fontBoundingBoxDescent ?? linePx[li] * 0.2);
+  });
 
-  const lineW = lines.map((idx) => idx.reduce((s, i, k) => s + widths[i] + (k ? spaceW : 0), 0));
+  const lineBoxes = lines.map(
+    (_, li) =>
+      (complex ? Math.max(style.font.lineHeight, 1.42) : style.font.lineHeight) * linePx[li],
+  );
+  const gaps = lines.map((idx, li) =>
+    li === 0 ? 0 : (roles ? (roles[roleIdx[idx[0]]].gap ?? 0) : 0) * px,
+  );
+  const lineTops: number[] = [];
+  let cursorY = 0;
+  lines.forEach((_, li) => {
+    cursorY += gaps[li];
+    lineTops.push(cursorY);
+    cursorY += lineBoxes[li];
+  });
+  const blockH = Math.max(cursorY, 1);
+
+  const lineW = lines.map((idx, li) =>
+    idx.reduce((sum, i, k) => sum + widths[i] + (k ? lineSpace[li] : 0), 0),
+  );
   const blockW = Math.max(...lineW, 1);
   const lineX = lineW.map((w) =>
     style.layout.align === 'center'
@@ -267,8 +365,21 @@ function layoutPage(
   lines.forEach((idx, li) => {
     let x = lineX[li];
     idx.forEach((i) => {
-      const wl: WordLayout = { text: texts[i], x, w: widths[i], line: li };
+      const wpx = linePx[li];
+      const wl: WordLayout = {
+        text: texts[i],
+        x,
+        w: widths[i],
+        line: li,
+        px: wpx,
+        asc: ascArr[li],
+        desc: descArr[li],
+        baseline: lineTops[li] + (lineBoxes[li] - (ascArr[li] + descArr[li])) / 2 + ascArr[li],
+        role: roles ? roleIdx[i] : undefined,
+      };
       if (charMode) {
+        if (roles) ctx.font = canvasFont(roleStyles[roleIdx[i]], wpx);
+        setSpacing(ctx, (roles ? 0 : baseTracking) * wpx);
         const gs = graphemes(texts[i]);
         let prefix = '';
         wl.chars = gs.map((g) => {
@@ -279,7 +390,7 @@ function layoutPage(
         });
       }
       words[i] = wl;
-      x += widths[i] + spaceW;
+      x += widths[i] + lineSpace[li];
     });
   });
 
@@ -289,12 +400,13 @@ function layoutPage(
     lineX,
     lineW,
     w: blockW,
-    h: lines.length * lineBox,
-    lineBox,
-    baseline,
-    asc,
-    desc,
-    tracking,
+    h: blockH,
+    lineBox: Math.max(...lineBoxes),
+    baseline: words[0]?.baseline ?? 0,
+    asc: ascArr[0] ?? px * 0.8,
+    desc: descArr[0] ?? px * 0.2,
+    tracking: baseTracking,
+    lineTops,
   };
 }
 
@@ -630,7 +742,17 @@ export function renderCaptions(
   const page = pages[pageIdx];
   const visEnd = page.isLast ? seg.end + 0.15 : pages[pageIdx + 1].start;
 
-  const texts = page.words.map((w) => applyCase(w.text, activeStyle.font.textCase));
+  const pageRoles =
+    activeStyle.wordRoles && activeStyle.wordRoles.length > 0 ? activeStyle.wordRoles : null;
+  const pageRoleIdx = pageRoles ? roleIndexesFor(pageRoles, page.words.length) : [];
+  const texts = page.words.map((w, i) =>
+    applyCase(
+      w.text,
+      pageRoleIdx.length
+        ? (pageRoles![pageRoleIdx[i]].textCase ?? activeStyle.font.textCase)
+        : activeStyle.font.textCase,
+    ),
+  );
   ctx.save();
   ctx.textBaseline = 'alphabetic';
   ctx.textAlign = 'left';
@@ -856,8 +978,12 @@ export function renderCaptions(
   for (let i = 0; i < page.words.length; i++) {
     const w = page.words[i];
     const wl = L.words[i];
+    const role =
+      wl.role !== undefined && activeStyle.wordRoles ? activeStyle.wordRoles[wl.role] : undefined;
+    const wordStyle = role ? roleStyleFor(activeStyle, role) : activeStyle;
+    const wpx = wl.px ?? px;
     const x0 = bx + wl.x + shift[i];
-    const y0 = lineTop(wl.line) + L.baseline;
+    const y0 = wl.baseline ?? lineTop(wl.line) + L.baseline;
 
     // Emphasis amounts for this word
     const started = t >= w.start;
@@ -894,7 +1020,7 @@ export function renderCaptions(
       const emphTx = calculateEmphasisTransform(
         activeEmphasisType,
         wordProg,
-        px,
+        wpx,
         'spring',
         hl.emphasisParams,
       );
@@ -910,8 +1036,8 @@ export function renderCaptions(
       }
       const isShake = w.emphasis === 'shake' && (isActive || (t >= w.start && t <= w.end));
       if (isShake) {
-        emphDx = Math.sin(t * 70 + i * 5) * px * 0.08;
-        emphDy = Math.cos(t * 60 + i * 7) * px * 0.06;
+        emphDx = Math.sin(t * 70 + i * 5) * wpx * 0.08;
+        emphDy = Math.cos(t * 60 + i * 7) * wpx * 0.06;
       }
     }
 
@@ -921,7 +1047,7 @@ export function renderCaptions(
     }
 
     // Colour for this word
-    let fill: Paint = activeStyle.fill;
+    let fill: Paint = wordStyle.fill;
     let tint: DrawOpts['tint'];
     const hasWordHl = !!w.highlightColor;
     if (
@@ -940,20 +1066,20 @@ export function renderCaptions(
               ? 1
               : emphColorMix
             : emphColorMix;
-      if (!isGradient(activeStyle.fill)) fill = mixColor(activeStyle.fill, wordHlColor, amt);
+      if (!isGradient(wordStyle.fill)) fill = mixColor(wordStyle.fill, wordHlColor, amt);
       else tint = { color: wordHlColor, amount: amt };
     } else if (hl.mode === 'box' && hl.textColor) {
-      if (!isGradient(activeStyle.fill)) fill = mixColor(activeStyle.fill, hl.textColor, colourAmt);
+      if (!isGradient(wordStyle.fill)) fill = mixColor(wordStyle.fill, hl.textColor, colourAmt);
       else tint = { color: hl.textColor, amount: colourAmt };
     }
 
     // Italic accent on the spoken word (opt-in, synthesised when no italic face exists)
     const wordItalic = !!hl.italic && (isActive || emphColorMix > 0.5);
-    if (wordItalic) ctx.font = emphasisItalicFont(activeStyle, px);
+    ctx.font = wordItalic ? emphasisItalicFont(wordStyle, wpx) : canvasFont(wordStyle, wpx);
 
     const units = charMode && wl.chars ? wl.chars : [{ t: wl.text, x: 0, w: wl.w }];
     const pivotX = x0 + wl.w / 2;
-    const pivotY = y0 - px * 0.32;
+    const pivotY = y0 - wpx * 0.32;
     const wobbleDeg = m.wobble ? (hash01(page.first + i + 1, 3) * 2 - 1) * m.wobble : 0;
 
     units.forEach((u, k) => {
@@ -1059,14 +1185,14 @@ export function renderCaptions(
         const wipe = tx.clip.wipeProgress ?? 1;
         ctx.beginPath();
         ctx.rect(
-          ux - px * 0.1,
-          y0 - L.asc - px * 0.2,
-          (u.w + px * 0.2) * wipe,
-          L.asc + L.desc + px * 0.4,
+          ux - wpx * 0.1,
+          y0 - (wl.asc ?? L.asc) - wpx * 0.2,
+          (u.w + wpx * 0.2) * wipe,
+          (wl.asc ?? L.asc) + (wl.desc ?? L.desc) + wpx * 0.4,
         );
         ctx.clip();
       } else if (tx.clipBelow) {
-        const edge = lineTop(wl.line) + L.lineBox + px * 0.05;
+        const edge = (wl.baseline ?? y0) + (wl.desc ?? L.desc) + wpx * 0.05;
         ctx.beginPath();
         ctx.rect(bx - px, by - px * 2, L.w + px * 2, edge - (by - px * 2));
         ctx.clip();
@@ -1113,15 +1239,22 @@ export function renderCaptions(
       if (w.emphasis === 'glow' && (isActive || (t >= w.start && t <= w.end))) {
         ctx.save();
         ctx.shadowColor = wordHlColor;
-        ctx.shadowBlur = px * 0.55;
+        ctx.shadowBlur = wpx * 0.55;
         ctx.fillStyle = wordHlColor;
         ctx.fillText(u.t, ux, y0);
         ctx.restore();
       }
 
-      const fillStyle = makeFill(ctx, fill, bx, lineTop(wl.line), L.w, L.lineBox);
+      const fillStyle = makeFill(
+        ctx,
+        fill,
+        bx,
+        y0 - (wl.asc ?? L.asc),
+        L.w,
+        (wl.asc ?? L.asc) + (wl.desc ?? L.desc),
+      );
       const jitter = hash01(Math.floor(t * 30), i * 7 + k);
-      drawText(ctx, u.t, ux, y0, px, activeStyle, {
+      drawText(ctx, u.t, ux, y0, wpx, wordStyle, {
         fill: fillStyle,
         tint,
         glitch: tx.glitch,
@@ -1134,10 +1267,10 @@ export function renderCaptions(
         ctx.save();
         ctx.beginPath();
         ctx.rect(
-          x0 - px * 0.2,
-          y0 - L.asc - px * 0.3,
-          wl.w * prog + px * 0.2,
-          L.asc + L.desc + px * 0.6,
+          x0 - wpx * 0.2,
+          y0 - (wl.asc ?? L.asc) - wpx * 0.3,
+          wl.w * prog + wpx * 0.2,
+          (wl.asc ?? L.asc) + (wl.desc ?? L.desc) + wpx * 0.6,
         );
         ctx.clip();
         ctx.fillStyle = wordHlColor;
@@ -1147,7 +1280,7 @@ export function renderCaptions(
       ctx.restore();
     });
     charCounter += units.length;
-    if (wordItalic) ctx.font = canvasFont(activeStyle, px);
+    ctx.font = canvasFont(activeStyle, px);
 
     // Underline accent (from font style or highlight mode or word emphasis)
     const hasUnderline =
@@ -1164,7 +1297,7 @@ export function renderCaptions(
         (hl.keep && t > w.end) || activeStyle.font.underline
           ? 1
           : ease('out', clamp01((t - w.start) / 0.16));
-      const thick = Math.max(2, px * 0.085);
+      const thick = Math.max(2, wpx * 0.085);
       ctx.save();
       ctx.fillStyle = wordHlColor;
       roundRect(ctx, x0, y0 + px * 0.13, wl.w * prog, thick, thick / 2);

@@ -31,6 +31,29 @@ export type HighlightMode = 'none' | 'color' | 'box' | 'underline' | 'sweep';
 export type TextCase = 'none' | 'upper' | 'lower' | 'title';
 export type MotionUnit = 'line' | 'word' | 'char';
 
+/**
+ * A fixed typography role for poster-style caption templates. Captions assign
+ * consecutive words to roles in order (each role covers `words` words), so a
+ * template can put an intro line, a giant keyword and an italic kicker on
+ * separate lines with their own font, size, colour and glow.
+ */
+export interface WordRole {
+  /** How many consecutive words use this role before the next role begins. */
+  words: number;
+  /** Font size multiplier of the caption's base size. */
+  scale?: number;
+  family?: string;
+  weight?: number;
+  italic?: boolean;
+  textCase?: TextCase;
+  fill?: Paint;
+  stroke?: { width?: number; color?: string };
+  glow?: { color?: string; blur?: number; strength?: number };
+  shadow?: { x?: number; y?: number; blur?: number; color?: string };
+  /** Extra spacing above this role's line, as a fraction of the base size. */
+  gap?: number;
+}
+
 export interface CaptionStyle {
   id: string;
   name: string;
@@ -75,6 +98,9 @@ export interface CaptionStyle {
     padY: number;
     radius: number;
   };
+
+  /** Optional fixed typography roles; when set they override font/size/colour per word. */
+  wordRoles?: WordRole[];
 
   highlight: {
     mode: HighlightMode;
