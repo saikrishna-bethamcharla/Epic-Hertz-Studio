@@ -29,6 +29,7 @@ export interface LibraryStylesTabProps {
 const CATEGORIES = [
   'All',
   'Cinematic',
+  'Premium',
   'Yours',
   'Favourites',
   'Social',

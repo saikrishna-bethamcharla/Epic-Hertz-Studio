@@ -573,6 +573,20 @@ function supportsFilter(ctx: CanvasRenderingContext2D): boolean {
   }
 }
 
+/** Italiased font string for emphasis; synthesised when the family has no italic face. */
+function emphasisItalicFont(style: CaptionStyle, px: number): string {
+  const f = canvasFont(style, px);
+  return f.startsWith('italic') ? f : `italic ${f}`;
+}
+
+/** Accent colour for a word: explicit override, then the template cycle, then the style colour. */
+function accentColorAt(hl: CaptionStyle['highlight'], wordIndex: number): string {
+  if (hl.colors && hl.colors.length > 0) {
+    return hl.colors[Math.abs(wordIndex) % hl.colors.length];
+  }
+  return hl.color;
+}
+
 export function renderCaptions(
   ctx: CanvasRenderingContext2D,
   W: number,
@@ -820,7 +834,8 @@ export function renderCaptions(
     const enter = prev ? 1 : ease('out', clamp01((t - page.words[0].start) / 0.12));
     ctx.save();
     ctx.globalAlpha *= enter;
-    const activeColor = page.words[active]?.highlightColor || hl.color;
+    const activeColor =
+      page.words[active]?.highlightColor || accentColorAt(hl, page.first + active);
     ctx.fillStyle = activeColor;
     const cx = r.x + r.w / 2;
     const cy = r.y + r.h / 2;
@@ -856,7 +871,7 @@ export function renderCaptions(
       colourAmt = boxIn * (1 - boxOut);
     }
     const isActive = i === active;
-    const wordHlColor = w.highlightColor || hl.color;
+    const wordHlColor = w.highlightColor || accentColorAt(hl, page.first + i);
     let emphScale = emph[i];
     let emphDx = 0;
     let emphDy = 0;
@@ -931,6 +946,10 @@ export function renderCaptions(
       if (!isGradient(activeStyle.fill)) fill = mixColor(activeStyle.fill, hl.textColor, colourAmt);
       else tint = { color: hl.textColor, amount: colourAmt };
     }
+
+    // Italic accent on the spoken word (opt-in, synthesised when no italic face exists)
+    const wordItalic = !!hl.italic && (isActive || emphColorMix > 0.5);
+    if (wordItalic) ctx.font = emphasisItalicFont(activeStyle, px);
 
     const units = charMode && wl.chars ? wl.chars : [{ t: wl.text, x: 0, w: wl.w }];
     const pivotX = x0 + wl.w / 2;
@@ -1128,6 +1147,7 @@ export function renderCaptions(
       ctx.restore();
     });
     charCounter += units.length;
+    if (wordItalic) ctx.font = canvasFont(activeStyle, px);
 
     // Underline accent (from font style or highlight mode or word emphasis)
     const hasUnderline =

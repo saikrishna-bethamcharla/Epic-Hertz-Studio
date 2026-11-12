@@ -82,6 +82,7 @@ export const TimelineToolbar: React.FC<TimelineToolbarProps> = ({
   const [showDictionary, setShowDictionary] = useState(false);
   const [findWord, setFindWord] = useState('');
   const [replaceWord, setReplaceWord] = useState('');
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
 
   const handleBulkReplaceSubmit = () => {
     if (!findWord.trim()) return;
@@ -118,10 +119,30 @@ export const TimelineToolbar: React.FC<TimelineToolbarProps> = ({
               <span className="text-bone font-medium">{formatTimecode(currentTime)}</span>
               <span className="text-smoke mx-1">/</span>
               <span>{formatTimecode(totalDuration)}</span>
+              <span className="text-[10px] ml-2">{playbackSpeed}x</span>
             </span>
           ) : (
             <TimelineTimeDisplay totalDuration={totalDuration} />
           )}
+
+          {/* Playback Speed Controls */}
+          <div className="flex items-center gap-1" aria-label="Playback speed controls">
+            <button
+              onClick={() => setPlaybackSpeed((s) => Math.max(0.5, s - 0.5))}
+              className="w-6 h-6 rounded bg-white/10 hover:bg-white/15 text-amber-300 text-[10px] font-bold transition-colors cursor-pointer"
+              title="Slow down (0.5x)"
+            >
+              −
+            </button>
+            <span className="text-[10px] text-smoke">{playbackSpeed}x</span>
+            <button
+              onClick={() => setPlaybackSpeed((s) => Math.min(2, s + 0.5))}
+              className="w-6 h-6 rounded bg-white/10 hover:bg-white/15 text-amber-300 text-[10px] font-bold transition-colors cursor-pointer"
+              title="Speed up (2x)"
+            >
+              +
+            </button>
+          </div>
         </div>
 
         {/* Center: Editing tools (+ Text, Split, Merge, Delete, Snap, Ripple, Undo/Redo, Dictionary) */}

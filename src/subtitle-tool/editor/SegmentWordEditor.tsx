@@ -111,7 +111,7 @@ export function SegmentWordEditor({
                     ? 'bg-amber-400 text-black shadow-xs'
                     : 'text-smoke/50 hover:text-smoke hover:bg-white/5'
                 }`}
-                title={`Animation FX: ${w.emphasis || 'None'} (Click to cycle: pop, shake, glow, underline)`}
+                title={`Animation FX: ${w.emphasis || 'None'}. Cycle: pop (bounce), shake, glow (neon), underline. Sweep = karaoke highlight`}
               >
                 {w.emphasis && w.emphasis !== 'none' ? w.emphasis : '+fx'}
               </button>

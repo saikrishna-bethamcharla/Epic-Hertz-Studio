@@ -54,6 +54,10 @@ export const captionTemplateSchema = z.object({
     text: z.string().min(1).max(60),
     activeWord: z.string().min(1).max(60),
     activeText: z.string().max(60).optional(),
+    /** Optional per-word accent palette; cycles by word index for multi-colour emphasis. */
+    activeWordCycle: z.array(z.string().min(1).max(60)).max(8).optional(),
+    /** Draw the spoken word in italic for editorial emphasis. */
+    activeItalic: z.boolean().optional(),
     outline: z.string().min(1).max(60).default('#000000'),
     outlineWidth: z.number().min(0).max(0.4).default(0),
     shadow: z
@@ -383,6 +387,8 @@ export function templateToStyle(t: CaptionTemplate): CaptionStyle {
       boxPadX: (t.emphasis.params as Record<string, any>)?.boxPadX ?? 0.22,
       boxPadY: (t.emphasis.params as Record<string, any>)?.boxPadY ?? 0.08,
       boxRadius: (t.emphasis.params as Record<string, any>)?.boxRadius ?? 0.24,
+      colors: t.colors.activeWordCycle,
+      italic: t.colors.activeItalic,
       emphasisType: t.emphasis.type,
       emphasisParams: t.emphasis.params,
     },
@@ -476,6 +482,8 @@ export function styleToTemplate(
       text: textColor,
       activeWord: s.highlight.color,
       activeText: s.highlight.textColor || undefined,
+      activeWordCycle: s.highlight.colors,
+      activeItalic: s.highlight.italic,
       outline: s.stroke.color,
       outlineWidth: s.stroke.width,
       shadow: s.shadow,

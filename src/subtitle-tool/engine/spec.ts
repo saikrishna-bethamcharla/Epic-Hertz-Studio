@@ -88,6 +88,10 @@ export interface CaptionStyle {
     boxPadX: number;
     boxPadY: number;
     boxRadius: number;
+    /** Optional per-word accent colours, cycled by word index (e.g. orange, lime, red). */
+    colors?: string[];
+    /** Draw the emphasised (spoken) word in italic, synthesised when the family lacks one. */
+    italic?: boolean;
     emphasisType?: EmphasisType;
     emphasisParams?: Record<string, any>;
   };
