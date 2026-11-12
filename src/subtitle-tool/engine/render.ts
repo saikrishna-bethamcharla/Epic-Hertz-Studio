@@ -885,14 +885,17 @@ export function renderCaptions(
     });
   }
 
-  const lineTop = (li: number) => by + li * L.lineBox;
+  const lineTop = (li: number) => by + (L.lineTops ? L.lineTops[li] : li * L.lineBox);
   const wordRect = (i: number) => {
     const wl = L.words[i];
+    const asc = wl.asc ?? L.asc;
+    const desc = wl.desc ?? L.desc;
+    const baseline = wl.baseline !== undefined ? by + wl.baseline : lineTop(wl.line) + L.baseline;
     return {
       x: bx + wl.x + shift[i] - hl.boxPadX * px,
-      y: lineTop(wl.line) + L.baseline - L.asc * 0.92 - hl.boxPadY * px,
+      y: baseline - asc * 0.92 - hl.boxPadY * px,
       w: wl.w + hl.boxPadX * px * 2,
-      h: (L.asc + L.desc) * 0.92 + hl.boxPadY * px * 2,
+      h: (asc + desc) * 0.92 + hl.boxPadY * px * 2,
     };
   };
 
@@ -984,7 +987,7 @@ export function renderCaptions(
     const wordStyle = role ? roleStyleFor(activeStyle, role) : activeStyle;
     const wpx = wl.px ?? px;
     const x0 = bx + wl.x + shift[i];
-    const y0 = wl.baseline ?? lineTop(wl.line) + L.baseline;
+    const y0 = wl.baseline !== undefined ? by + wl.baseline : lineTop(wl.line) + L.baseline;
 
     // Emphasis amounts for this word
     const started = t >= w.start;
@@ -1196,7 +1199,7 @@ export function renderCaptions(
         );
         ctx.clip();
       } else if (tx.clipBelow) {
-        const edge = (wl.baseline ?? y0) + (wl.desc ?? L.desc) + wpx * 0.05;
+        const edge = y0 + (wl.desc ?? L.desc) + wpx * 0.05;
         ctx.beginPath();
         ctx.rect(bx - px, by - px * 2, L.w + px * 2, edge - (by - px * 2));
         ctx.clip();
