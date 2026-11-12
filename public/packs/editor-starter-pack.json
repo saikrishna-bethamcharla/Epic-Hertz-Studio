@@ -1,0 +1,314 @@
+{
+  "app": "Epic Hertz Studio",
+  "format": "epic-hertz-motion-pack",
+  "version": 1,
+  "name": "Editor Starter Pack",
+  "author": "Epic Hertz Studio",
+  "presets": [
+    {
+      "id": "staircase-rise",
+      "name": "Staircase Rise",
+      "hint": "Words climb in one after another",
+      "group": "entrance",
+      "motion": {
+        "in": "slide-up",
+        "entranceType": "slide-up",
+        "inMs": 260,
+        "stagger": 90,
+        "unit": "word",
+        "easing": "easeOutCubic",
+        "entranceParams": { "distance": 0.55 }
+      }
+    },
+    {
+      "id": "snap-in",
+      "name": "Snap In",
+      "hint": "Tight back-ease snap for the whole line",
+      "group": "entrance",
+      "motion": {
+        "in": "scale-pop",
+        "entranceType": "scale-pop",
+        "inMs": 140,
+        "stagger": 0,
+        "unit": "line",
+        "easing": "easeOutBack",
+        "entranceParams": { "initialScale": 0.86, "bounce": 0.3 }
+      }
+    },
+    {
+      "id": "spin-pop",
+      "name": "Spin Pop",
+      "hint": "Words twist upright as they land",
+      "group": "entrance",
+      "motion": {
+        "in": "rotate-in",
+        "entranceType": "rotate-in",
+        "inMs": 340,
+        "stagger": 55,
+        "unit": "word",
+        "easing": "easeOutBack",
+        "entranceParams": { "angle": -25 }
+      }
+    },
+    {
+      "id": "float-up",
+      "name": "Float Up",
+      "hint": "Slow, weightless rise for whole lines",
+      "group": "entrance",
+      "motion": {
+        "in": "slide-up",
+        "entranceType": "slide-up",
+        "inMs": 620,
+        "stagger": 0,
+        "unit": "line",
+        "easing": "easeOutExpo",
+        "entranceParams": { "distance": 0.22 }
+      }
+    },
+    {
+      "id": "whip-in",
+      "name": "Whip In",
+      "hint": "Fast horizontal words with deceleration",
+      "group": "entrance",
+      "motion": {
+        "in": "slide-left",
+        "entranceType": "slide-left",
+        "inMs": 240,
+        "stagger": 35,
+        "unit": "word",
+        "easing": "easeOutExpo",
+        "entranceParams": { "distance": 0.9 }
+      }
+    },
+    {
+      "id": "soft-focus",
+      "name": "Soft Focus",
+      "hint": "Heavy blur resolving slowly into sharp",
+      "group": "entrance",
+      "motion": {
+        "in": "rack-focus",
+        "entranceType": "rack-focus",
+        "inMs": 700,
+        "stagger": 0,
+        "unit": "line",
+        "easing": "easeOutCubic",
+        "entranceParams": { "maxBlur": 0.9 }
+      }
+    },
+    {
+      "id": "elastic-word",
+      "name": "Elastic Word",
+      "hint": "Each word springs past its size and settles",
+      "group": "entrance",
+      "motion": {
+        "in": "elastic-pop",
+        "entranceType": "elastic-pop",
+        "inMs": 460,
+        "stagger": 50,
+        "unit": "word",
+        "easing": "spring",
+        "bounce": 0.7,
+        "entranceParams": { "initialScale": 0.8, "bounce": 0.7 }
+      }
+    },
+    {
+      "id": "tracking-slow",
+      "name": "Tracking Slow",
+      "hint": "Wide tracking tightening across a full second",
+      "group": "entrance",
+      "motion": {
+        "in": "tracking-in",
+        "entranceType": "tracking-in",
+        "inMs": 700,
+        "stagger": 0,
+        "unit": "line",
+        "easing": "easeInOutCubic",
+        "entranceParams": { "spread": 0.45 }
+      }
+    },
+    {
+      "id": "slam-settle",
+      "name": "Slam Settle",
+      "hint": "Starts oversized and snaps down onto the line",
+      "group": "entrance",
+      "motion": {
+        "in": "scale-pop",
+        "entranceType": "scale-pop",
+        "inMs": 190,
+        "stagger": 0,
+        "unit": "line",
+        "easing": "easeOutExpo",
+        "entranceParams": { "initialScale": 1.35 }
+      }
+    },
+    {
+      "id": "cascade-up",
+      "name": "Cascade Up",
+      "hint": "Deliberate word-by-word climb",
+      "group": "entrance",
+      "motion": {
+        "in": "slide-up",
+        "entranceType": "slide-up",
+        "inMs": 300,
+        "stagger": 120,
+        "unit": "word",
+        "easing": "easeOutCubic",
+        "entranceParams": { "distance": 0.45 }
+      }
+    },
+    {
+      "id": "blur-cascade",
+      "name": "Blur Cascade",
+      "hint": "Words focus in sequence, word by word",
+      "group": "entrance",
+      "motion": {
+        "in": "rack-focus",
+        "entranceType": "rack-focus",
+        "inMs": 420,
+        "stagger": 70,
+        "unit": "word",
+        "easing": "easeOutCubic",
+        "entranceParams": { "maxBlur": 0.4 }
+      }
+    },
+    {
+      "id": "lift-away",
+      "name": "Lift Away",
+      "hint": "Exit upward with a clean fade",
+      "group": "exit",
+      "motion": {
+        "out": "slide-up",
+        "exitType": "slide-up",
+        "outMs": 300,
+        "easing": "easeOutCubic",
+        "exitParams": { "distance": 0.5 }
+      }
+    },
+    {
+      "id": "sink-fade",
+      "name": "Sink Fade",
+      "hint": "Caption sinks as it dissolves",
+      "group": "exit",
+      "motion": {
+        "out": "slide-down",
+        "exitType": "slide-down",
+        "outMs": 400,
+        "easing": "easeOutCubic",
+        "exitParams": { "distance": 0.6 }
+      }
+    },
+    {
+      "id": "blur-dissolve",
+      "name": "Blur Dissolve",
+      "hint": "Defocus out over a longer beat",
+      "group": "exit",
+      "motion": {
+        "out": "blur-out",
+        "exitType": "blur-out",
+        "outMs": 420,
+        "easing": "easeOutCubic",
+        "exitParams": { "maxBlur": 0.45 }
+      }
+    },
+    {
+      "id": "drop-away",
+      "name": "Drop Away",
+      "hint": "Gravity fall with a long tail",
+      "group": "exit",
+      "motion": {
+        "out": "drop-out",
+        "exitType": "drop-out",
+        "outMs": 500,
+        "easing": "linear",
+        "exitParams": { "distance": 1.8 }
+      }
+    },
+    {
+      "id": "glitch-cut",
+      "name": "Glitch Cut",
+      "hint": "Quick chromatic break before the cut",
+      "group": "exit",
+      "motion": {
+        "out": "glitch-out",
+        "exitType": "glitch-out",
+        "outMs": 200,
+        "easing": "linear"
+      }
+    },
+    {
+      "id": "shrink-soft",
+      "name": "Shrink Soft",
+      "hint": "Quiet pull inward",
+      "group": "exit",
+      "motion": {
+        "out": "shrink",
+        "outMs": 320,
+        "easing": "easeOutCubic"
+      }
+    },
+    {
+      "id": "karaoke-lime",
+      "name": "Karaoke Lime",
+      "hint": "Lime fill sweeps across the spoken words",
+      "group": "highlight",
+      "highlight": {
+        "mode": "sweep",
+        "color": "#C6FF3D",
+        "textColor": "#07130A",
+        "keep": false,
+        "emphasisType": "highlight-box-sweep"
+      }
+    },
+    {
+      "id": "box-ink",
+      "name": "Box Ink",
+      "hint": "White box, black text, pop on the jump",
+      "group": "highlight",
+      "highlight": {
+        "mode": "box",
+        "color": "#FFFFFF",
+        "textColor": "#0B0B0B",
+        "boxPadX": 0.18,
+        "boxPadY": 0.08,
+        "boxRadius": 0.22,
+        "emphasisType": "pop",
+        "emphasisParams": { "scale": 1.1 }
+      }
+    },
+    {
+      "id": "underline-amber",
+      "name": "Underline Amber",
+      "hint": "Amber rule draws under the spoken word",
+      "group": "highlight",
+      "highlight": {
+        "mode": "underline",
+        "color": "#FFB020",
+        "emphasisType": "underline-draw"
+      }
+    },
+    {
+      "id": "hop-red",
+      "name": "Hop Red",
+      "hint": "Red word hops off the baseline",
+      "group": "highlight",
+      "highlight": {
+        "mode": "color",
+        "color": "#FF3B30",
+        "emphasisType": "hop",
+        "emphasisParams": { "height": 0.3, "scale": 0.1 }
+      }
+    },
+    {
+      "id": "pop-gold",
+      "name": "Pop Gold",
+      "hint": "Gold accent with a strong scale pop",
+      "group": "highlight",
+      "highlight": {
+        "mode": "color",
+        "color": "#FFD24A",
+        "emphasisType": "pop",
+        "emphasisParams": { "scale": 1.28, "bounce": 0.6 }
+      }
+    }
+  ]
+}
