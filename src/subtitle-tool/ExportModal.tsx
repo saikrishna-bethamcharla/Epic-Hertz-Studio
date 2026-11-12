@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Download } from 'lucide-react';
 import { useModalA11y } from './hooks/useModalA11y';
 import { toSRT, toVTT, downloadText, downloadBlob } from './utils/srt';
 import { burnCaptionsCanvas } from './utils/burnCaptionsCanvas';
@@ -47,11 +47,29 @@ export default function ExportModal({
   onBurnError,
   signal,
 }: ExportModalProps) {
-  const [exportType, setExportType] = useState<'hardsub' | 'srt' | 'vtt' | 'txt'>('hardsub');
   const [quality, setQuality] = useState<ExportQuality>('high');
   const [resolution, setResolution] = useState<'original' | '1080'>('original');
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleDownloadSubtitle = (fmt: 'srt' | 'vtt' | 'txt') => {
+    try {
+      if (fmt === 'srt') {
+        downloadText(toSRT(segments), `${baseName}.srt`, 'text/plain');
+        onBurnStatus?.('Downloaded .SRT subtitle file.');
+      } else if (fmt === 'vtt') {
+        downloadText(toVTT(segments), `${baseName}.vtt`, 'text/vtt');
+        onBurnStatus?.('Downloaded .VTT subtitle file.');
+      } else if (fmt === 'txt') {
+        const txt = segments.map((s) => s.text).join('\n');
+        downloadText(txt, `${baseName}_transcript.txt`, 'text/plain');
+        onBurnStatus?.('Downloaded .TXT transcript file.');
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg);
+    }
+  };
 
   // Video metadata for memory preflight
   const [videoMeta, setVideoMeta] = useState<{
@@ -131,23 +149,6 @@ export default function ExportModal({
     setProcessing(true);
 
     try {
-      if (exportType === 'srt') {
-        downloadText(toSRT(segments), `${baseName}.srt`, 'text/plain');
-        onClose();
-        return;
-      }
-      if (exportType === 'vtt') {
-        downloadText(toVTT(segments), `${baseName}.vtt`, 'text/vtt');
-        onClose();
-        return;
-      }
-      if (exportType === 'txt') {
-        const txt = segments.map((s) => s.text).join('\n');
-        downloadText(txt, `${baseName}_transcript.txt`, 'text/plain');
-        onClose();
-        return;
-      }
-
       // Check if Chromium direct-to-disk streaming is available
       let fileStream: WritableStream | undefined;
       let streamedDirectly = false;
@@ -316,91 +317,61 @@ export default function ExportModal({
           </div>
         )}
 
-        {/* Export Formats Selection */}
-        <div className="space-y-3 mt-5">
-          {/* Animated Burn-in */}
-          <label
-            className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
-              exportType === 'hardsub'
-                ? 'bg-[#252420] border-amber-400/80 shadow-sm'
-                : 'bg-[#1c1c1a] border-white/10 hover:border-white/20'
-            }`}
-          >
-            <input
-              type="radio"
-              name="exportType"
-              checked={exportType === 'hardsub'}
-              onChange={() => setExportType('hardsub')}
-              className="mt-1 accent-amber-400"
-            />
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-bone">Animated Burn-in MP4</span>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300">
-                  RECOMMENDED · REELS / TIKTOK / SHORTS
-                </span>
-              </div>
-              <p className="text-[11px] text-smoke mt-1 leading-relaxed">
-                Burns styled, animated captions into the video file matching your preview, keeping
-                the original audio track and frame rate intact.
-              </p>
-            </div>
-          </label>
-
-          {exportType === 'hardsub' && (
-            <div className="grid grid-cols-2 gap-3 rounded-xl border border-white/10 bg-[#1c1c1a] p-3">
-              {(
+        {/* Export Settings */}
+        <div className="space-y-4 mt-5">
+          {/* Quality & Resolution */}
+          <div className="grid grid-cols-2 gap-3 rounded-xl border border-white/10 bg-[#1c1c1a] p-3">
+            {(
+              [
                 [
+                  'Quality',
+                  quality,
                   [
-                    'Quality',
-                    quality,
-                    [
-                      ['standard', 'Standard'],
-                      ['high', 'High'],
-                      ['max', 'Maximum'],
-                    ],
-                    (v: string) => setQuality(v as ExportQuality),
+                    ['standard', 'Standard'],
+                    ['high', 'High'],
+                    ['max', 'Maximum'],
                   ],
+                  (v: string) => setQuality(v as ExportQuality),
+                ],
+                [
+                  'Resolution',
+                  resolution,
                   [
-                    'Resolution',
-                    resolution,
-                    [
-                      ['original', 'Original'],
-                      ['1080', 'Up to 1080p'],
-                    ],
-                    (v: string) => setResolution(v as 'original' | '1080'),
+                    ['original', 'Original'],
+                    ['1080', 'Up to 1080p'],
                   ],
-                ] as const
-              ).map(([label, value, options, onPick]) => (
-                <div key={label}>
-                  <div className="text-[10px] font-bold tracking-[0.12em] uppercase text-smoke mb-1.5">
-                    {label}
-                  </div>
-                  <div
-                    className="flex rounded-lg overflow-hidden border border-white/10"
-                    role="group"
-                    aria-label={label}
-                  >
-                    {options.map(([v, text]) => (
-                      <button
-                        key={v}
-                        type="button"
-                        onClick={() => onPick(v)}
-                        aria-pressed={value === v}
-                        className={`flex-1 px-1.5 py-1.5 text-[11px] font-medium transition-colors cursor-pointer ${
-                          value === v
-                            ? 'bg-amber-400 text-black'
-                            : 'text-mist hover:text-bone hover:bg-white/5'
-                        }`}
-                      >
-                        {text}
-                      </button>
-                    ))}
-                  </div>
+                  (v: string) => setResolution(v as 'original' | '1080'),
+                ],
+              ] as const
+            ).map(([label, value, options, onPick]) => (
+              <div key={label}>
+                <div className="text-[10px] font-bold tracking-[0.12em] uppercase text-smoke mb-1.5">
+                  {label}
                 </div>
-              ))}
-            </div>
-          )}
+                <div
+                  className="flex rounded-lg overflow-hidden border border-white/10"
+                  role="group"
+                  aria-label={label}
+                >
+                  {options.map(([v, text]) => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => onPick(v)}
+                      aria-pressed={value === v}
+                      className={`flex-1 px-1.5 py-1.5 text-[11px] font-medium transition-colors cursor-pointer ${
+                        value === v
+                          ? 'bg-amber-400 text-black'
+                          : 'text-mist hover:text-bone hover:bg-white/5'
+                      }`}
+                    >
+                      {text}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
 
           {/* Subtitle / Transcript files */}
           <div className="pt-2">
@@ -409,32 +380,30 @@ export default function ExportModal({
             </div>
 
             <div className="grid grid-cols-3 gap-2">
-              {(['srt', 'vtt', 'txt'] as const).map((fmt) => (
-                <label
+              {(
+                [
+                  ['srt', 'SRT', 'Timestamps'],
+                  ['vtt', 'VTT', 'Timestamps'],
+                  ['txt', 'TXT', 'Plain Script'],
+                ] as const
+              ).map(([fmt, label, desc]) => (
+                <button
                   key={fmt}
-                  className={`p-3 rounded-xl border text-center cursor-pointer transition-all ${
-                    exportType === fmt
-                      ? 'bg-[#252420] border-amber-400 text-amber-200 shadow-xs'
-                      : 'bg-[#1c1c1a] border-white/10 text-mist hover:border-white/20 hover:text-bone'
-                  }`}
+                  type="button"
+                  onClick={() => handleDownloadSubtitle(fmt)}
+                  className="p-3 rounded-xl border border-white/10 bg-[#1c1c1a] hover:border-amber-400/60 hover:bg-[#252420] text-center cursor-pointer transition-all group flex flex-col items-center justify-center"
                 >
-                  <input
-                    type="radio"
-                    name="exportType"
-                    checked={exportType === fmt}
-                    onChange={() => setExportType(fmt)}
-                    className="sr-only"
-                  />
-                  <span className="block font-mono font-bold text-xs uppercase">.{fmt}</span>
-                  <span className="text-[10px] text-smoke block mt-0.5">
-                    {fmt === 'txt' ? 'Plain Script' : 'Timestamps'}
-                  </span>
-                </label>
+                  <div className="flex items-center gap-1 font-mono font-bold text-xs uppercase text-bone group-hover:text-amber-300">
+                    <span>.{label}</span>
+                    <Download className="w-3 h-3 text-smoke group-hover:text-amber-300 transition-colors" />
+                  </div>
+                  <span className="text-[10px] text-smoke block mt-0.5">{desc}</span>
+                </button>
               ))}
             </div>
           </div>
 
-          {!canExportVideo && exportType === 'hardsub' && (
+          {!canExportVideo && (
             <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs space-y-1">
               <p className="font-semibold flex items-center gap-1.5">
                 <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
@@ -442,8 +411,8 @@ export default function ExportModal({
               </p>
               <p className="text-amber-300/80 leading-relaxed">
                 Your browser lacks client-side video encoding support (WebCodecs and
-                Canvas.captureStream). You can still export SRT, VTT, or TXT subtitles, or open Epic
-                Hertz Studio in Chrome or Firefox for full MP4 video export.
+                Canvas.captureStream). You can still download SRT, VTT, or TXT subtitles above, or
+                open Epic Hertz Studio in Chrome or Firefox for full MP4 video export.
               </p>
             </div>
           )}
@@ -460,19 +429,11 @@ export default function ExportModal({
           </button>
           <button
             type="button"
-            disabled={processing || (!canExportVideo && exportType === 'hardsub')}
+            disabled={processing || !canExportVideo}
             onClick={handleExport}
             className="px-6 py-2.5 rounded-full bg-amber-400 hover:bg-amber-300 disabled:opacity-40 disabled:hover:bg-amber-400 disabled:cursor-not-allowed active:scale-95 text-black font-semibold text-xs transition-all shadow-md flex items-center gap-2 cursor-pointer"
           >
-            <span>
-              {exportType === 'srt'
-                ? 'Download .SRT'
-                : exportType === 'vtt'
-                  ? 'Download .VTT'
-                  : exportType === 'txt'
-                    ? 'Download .TXT'
-                    : 'Export Video'}
-            </span>
+            <span>{processing ? 'Exporting…' : 'Export Video'}</span>
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
