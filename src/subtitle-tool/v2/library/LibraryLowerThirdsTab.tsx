@@ -26,6 +26,8 @@ interface LibraryLowerThirdsTabProps {
   onUpdateLowerThird?: (spec: LowerThirdSpec) => void;
   onAddMultipleLowerThirds?: (specs: LowerThirdSpec[]) => void;
   excludePackId?: string;
+  onlyPackId?: string;
+  defaultPackId?: string;
 }
 
 export default function LibraryLowerThirdsTab({
@@ -36,8 +38,12 @@ export default function LibraryLowerThirdsTab({
   onUpdateLowerThird,
   onAddMultipleLowerThirds,
   excludePackId,
+  onlyPackId,
+  defaultPackId,
 }: LibraryLowerThirdsTabProps) {
-  const [selectedPackId, setSelectedPackId] = useState<string>('all');
+  const [selectedPackId, setSelectedPackId] = useState<string>(
+    onlyPackId || defaultPackId || 'all',
+  );
   const [searchQuery, setSearchQuery] = useState('');
   const [isSpeakerModalOpen, setIsSpeakerModalOpen] = useState(false);
   const [isImportExportOpen, setIsImportExportOpen] = useState(false);
@@ -45,18 +51,25 @@ export default function LibraryLowerThirdsTab({
   const [appliedTemplateId, setAppliedTemplateId] = useState<string | null>(null);
 
   const packs = useMemo(() => {
+    if (onlyPackId) {
+      return LOWER_THIRD_PACKS.filter((p) => p.id === onlyPackId);
+    }
     return excludePackId
       ? LOWER_THIRD_PACKS.filter((p) => p.id !== excludePackId)
       : LOWER_THIRD_PACKS;
-  }, [excludePackId]);
+  }, [excludePackId, onlyPackId]);
 
   // Combine built-in templates with custom imported templates
   const allTemplates = useMemo(() => {
+    if (onlyPackId) {
+      const targetPack = LOWER_THIRD_PACKS.find((p) => p.id === onlyPackId);
+      return targetPack ? [...targetPack.templates] : [];
+    }
     const base = excludePackId
       ? ALL_PACK_TEMPLATES.filter((t) => t.packId !== excludePackId)
       : ALL_PACK_TEMPLATES;
     return [...base, ...customTemplates];
-  }, [customTemplates, excludePackId]);
+  }, [customTemplates, excludePackId, onlyPackId]);
 
   // Filter templates by pack and search query
   const filteredTemplates = useMemo(() => {

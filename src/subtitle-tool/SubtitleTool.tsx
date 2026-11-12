@@ -1044,15 +1044,27 @@ export default function SubtitleTool({
                 onOpenProjects={() => setIsProjectManagerOpen(true)}
                 onOpenShortcuts={() => setIsShortcutsOpen(true)}
                 onOpenExport={() => setIsExportModalOpen(true)}
-                activeCategory={leftTab === 'captions' ? 'captions' : 'text'}
-                onSelectCategory={(category) => {
+                activeSection={
+                  leftTab === 'captions'
+                    ? 'captions'
+                    : leftTab === 'animations'
+                      ? 'animations'
+                      : 'text'
+                }
+                onSelectSection={(section) => {
                   if (layout.isLeftCollapsed) {
                     setLayout((prev) => ({ ...prev, isLeftCollapsed: false }));
                   }
-                  if (category === 'captions') {
+                  if (section === 'captions') {
                     setLeftTab('captions');
+                  } else if (section === 'animations') {
+                    setLeftTab('animations');
                   } else {
-                    setLeftTab(lastTextTab === 'captions' ? 'templates' : lastTextTab);
+                    setLeftTab(
+                      lastTextTab === 'captions' || lastTextTab === 'animations'
+                        ? 'templates'
+                        : lastTextTab,
+                    );
                   }
                 }}
               />
@@ -1071,6 +1083,13 @@ export default function SubtitleTool({
                           <LibraryPanel
                             leftTab={leftTab}
                             onTabChange={handleTabChange}
+                            activeTopSection={
+                              leftTab === 'captions'
+                                ? 'captions'
+                                : leftTab === 'animations'
+                                  ? 'animations'
+                                  : 'text'
+                            }
                             segments={segments}
                             activeId={activeId}
                             selectedId={selectedId}

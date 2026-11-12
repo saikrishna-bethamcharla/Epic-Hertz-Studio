@@ -59,6 +59,7 @@ export type LibraryTab =
   | 'addText'
   | 'templates'
   | 'movieStyles'
+  | 'titleCards'
   | 'styles'
   | 'lowerThirds'
   | 'effects'
@@ -69,6 +70,7 @@ export type LibraryTab =
 interface LibraryPanelProps {
   leftTab: LibraryTab;
   onTabChange: (tab: LibraryTab) => void;
+  activeTopSection?: 'captions' | 'text' | 'animations';
   segments: Segment[];
   activeId: string | null;
   selectedId?: string | null;
@@ -231,6 +233,14 @@ const SUB_SECTIONS: Array<{
     badge: '20',
     title: 'Movie Style Text Templates',
     description: 'Cinematic typography, blockbuster trailers, film noir & sci-fi text presets',
+  },
+  {
+    id: 'titleCards',
+    label: 'Title cards',
+    icon: Film,
+    badge: '12',
+    title: 'Cinematic Title & End Cards',
+    description: 'Full-frame movie titles, chapter headers, credits & ending cards',
   },
   {
     id: 'lowerThirds',
@@ -964,6 +974,21 @@ function LibraryPanel({
                 onNotification={onNotification}
               />
             </div>
+          )}
+
+          {/* ─────────────────────────────────────────────────────────────
+              SUB-SECTION 3B: CINEMATIC TITLE & END CARDS
+          ────────────────────────────────────────────────────────────── */}
+          {activeTabKey === 'titleCards' && (
+            <LibraryLowerThirdsTab
+              currentTime={currentTime}
+              selectedLowerThirdId={selectedLowerThirdId}
+              selectedLowerThirdSpec={selectedLowerThirdSpec}
+              onAddLowerThird={(spec) => onAddLowerThird?.(spec)}
+              onUpdateLowerThird={(spec) => onUpdateLowerThird?.(spec)}
+              onAddMultipleLowerThirds={(specs) => onAddMultipleLowerThirds?.(specs)}
+              onlyPackId="title-end"
+            />
           )}
 
           {/* ─────────────────────────────────────────────────────────────
