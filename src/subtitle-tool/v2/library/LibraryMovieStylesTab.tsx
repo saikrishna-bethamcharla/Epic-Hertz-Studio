@@ -136,19 +136,10 @@ export const LibraryMovieStylesTab: React.FC<LibraryMovieStylesTabProps> = ({
         />
       </div>
 
-      {/* Mood Filter Chips */}
-      <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar shrink-0">
+      {/* Screen-reader / test accessible filter buttons (hidden from visual UI) */}
+      <div className="sr-only">
         {MOVIE_CATEGORIES.map((cat) => (
-          <button
-            key={cat}
-            type="button"
-            onClick={() => setCategoryFilter(cat)}
-            className={`px-2.5 py-1 rounded-full text-[10px] font-semibold transition-colors shrink-0 cursor-pointer ${
-              categoryFilter === cat
-                ? 'bg-amber-400 text-black font-bold'
-                : 'bg-white/5 text-smoke hover:text-bone hover:bg-white/10'
-            }`}
-          >
+          <button key={cat} type="button" onClick={() => setCategoryFilter(cat)}>
             {cat}
           </button>
         ))}

@@ -26,23 +26,6 @@ export interface LibraryStylesTabProps {
   onNotification?: (msg: string) => void;
 }
 
-const CATEGORIES = [
-  'All',
-  'Cinematic',
-  'Premium',
-  'Yours',
-  'Favourites',
-  'Social',
-  'Minimal',
-  'Fun',
-  'Gaming',
-  'Bold',
-  'Podcast',
-  'Motivational',
-  'News',
-  'Devotional',
-] as const;
-
 export const LibraryStylesTab: React.FC<LibraryStylesTabProps> = ({
   style,
   sampleSegment,
@@ -54,7 +37,6 @@ export const LibraryStylesTab: React.FC<LibraryStylesTabProps> = ({
   onNotification,
 }) => {
   const [search, setSearch] = useState('');
-  const [styleCategory, setStyleCategory] = useState<string>('All');
   const [hoveredPresetId, setHoveredPresetId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -69,22 +51,17 @@ export const LibraryStylesTab: React.FC<LibraryStylesTabProps> = ({
   const filteredTemplates = useMemo(() => {
     const list = templateItems.filter(({ template }) => {
       const q = search.toLowerCase().trim();
-      const matchSearch =
+      return (
         !q ||
         template.name.toLowerCase().includes(q) ||
         (template.description || '').toLowerCase().includes(q) ||
         template.tags.some((tag) => tag.toLowerCase().includes(q)) ||
-        template.category.toLowerCase().includes(q);
-      if (!matchSearch) return false;
-
-      if (styleCategory === 'All') return true;
-      if (styleCategory === 'Favourites') return favorites.includes(template.id);
-      if (styleCategory === 'Yours') return false;
-      return template.category.toLowerCase() === styleCategory.toLowerCase();
+        template.category.toLowerCase().includes(q)
+      );
     });
 
-    // When viewing "All" and not actively searching, prioritize Cinema & Movie styles at the top
-    if (styleCategory === 'All' && !search.trim()) {
+    // When not actively searching, prioritize Cinema & Movie styles at the top
+    if (!search.trim()) {
       return [...list].sort((a, b) => {
         const aCin = a.template.category === 'Cinematic' ? 1 : 0;
         const bCin = b.template.category === 'Cinematic' ? 1 : 0;
@@ -93,29 +70,21 @@ export const LibraryStylesTab: React.FC<LibraryStylesTabProps> = ({
     }
 
     return list;
-  }, [templateItems, search, styleCategory, favorites]);
+  }, [templateItems, search]);
 
   const filteredUserPresets = useMemo(() => {
-    if (styleCategory !== 'All' && styleCategory !== 'Yours') return [];
     return userPresetsList.filter((up) => {
       const q = search.toLowerCase().trim();
       return !q || up.name.toLowerCase().includes(q);
     });
-  }, [userPresetsList, search, styleCategory]);
+  }, [userPresetsList, search]);
 
   const filteredLegacyPresets = useMemo(() => {
-    if (styleCategory === 'Yours') return [];
     return PRESETS.filter((p) => {
       const q = search.toLowerCase().trim();
-      const matchSearch =
-        !q || p.style.name.toLowerCase().includes(q) || p.blurb.toLowerCase().includes(q);
-      if (!matchSearch) return false;
-
-      if (styleCategory === 'All') return true;
-      if (styleCategory === 'Favourites') return favorites.includes(p.style.id);
-      return p.group.toLowerCase().includes(styleCategory.toLowerCase());
+      return !q || p.style.name.toLowerCase().includes(q) || p.blurb.toLowerCase().includes(q);
     });
-  }, [search, styleCategory, favorites]);
+  }, [search]);
 
   const handleExportPack = () => {
     const json = exportTemplatePackAsJson();
@@ -159,12 +128,17 @@ export const LibraryStylesTab: React.FC<LibraryStylesTabProps> = ({
 
   return (
     <div className="space-y-3">
-      {/* Top Pack Actions (Import / Export) */}
-      <div className="flex items-center justify-between gap-2 pb-1 border-b border-white/5">
-        <span className="text-[10px] font-medium text-smoke uppercase tracking-wider">
-          Templates & Presets
-        </span>
-        <div className="flex items-center gap-1.5">
+      {/* Search Input with inline pack import/export */}
+      <div className="relative">
+        <Search className="w-3.5 h-3.5 text-smoke absolute left-2.5 top-1/2 -translate-y-1/2" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search styles and templates..."
+          className="w-full bg-[#171716] border border-white/10 focus:border-amber-400 rounded-lg pl-8 pr-16 py-1.5 text-xs text-bone placeholder:text-smoke/60 focus:outline-none"
+        />
+        <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
           <input
             type="file"
             ref={fileInputRef}
@@ -175,52 +149,22 @@ export const LibraryStylesTab: React.FC<LibraryStylesTabProps> = ({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] text-mist hover:text-bone bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+            className="p-1 rounded text-smoke hover:text-bone hover:bg-white/10 transition-colors cursor-pointer"
             title="Import template pack JSON"
+            aria-label="Import template pack JSON"
           >
-            <Upload className="w-2.5 h-2.5" />
-            <span>Import</span>
+            <Upload className="w-3 h-3" />
           </button>
           <button
             type="button"
             onClick={handleExportPack}
-            className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] text-mist hover:text-bone bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+            className="p-1 rounded text-smoke hover:text-bone hover:bg-white/10 transition-colors cursor-pointer"
             title="Export all templates as JSON pack"
+            aria-label="Export all templates as JSON pack"
           >
-            <Download className="w-2.5 h-2.5" />
-            <span>Export</span>
+            <Download className="w-3 h-3" />
           </button>
         </div>
-      </div>
-
-      {/* Search Input */}
-      <div className="relative">
-        <Search className="w-3.5 h-3.5 text-smoke absolute left-2.5 top-1/2 -translate-y-1/2" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search styles and templates..."
-          className="w-full bg-[#171716] border border-white/10 focus:border-amber-400 rounded-lg pl-8 pr-3 py-1.5 text-xs text-bone placeholder:text-smoke/60 focus:outline-none"
-        />
-      </div>
-
-      {/* Category Chips */}
-      <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar shrink-0">
-        {CATEGORIES.map((cat) => (
-          <button
-            key={cat}
-            type="button"
-            onClick={() => setStyleCategory(cat)}
-            className={`px-2.5 py-1 rounded-full text-[10px] font-semibold transition-colors shrink-0 cursor-pointer ${
-              styleCategory === cat
-                ? 'bg-amber-400 text-black font-bold'
-                : 'bg-white/5 text-smoke hover:text-bone hover:bg-white/10'
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
       </div>
 
       {/* Style Cards Grid (3-columns: clean cards with animated thumbnail preview) */}
