@@ -259,27 +259,50 @@ const SUB_SECTIONS: Array<{
     description: 'Fills, outlines, glows, and 3D extrusion looks',
   },
   {
-    id: 'animations',
-    label: 'Animations',
-    icon: Film,
-    title: 'Animations',
-    description: 'Entrance, exit, and karaoke word highlights',
-  },
-  {
     id: 'brand',
     label: 'Yours',
     icon: Bookmark,
     title: 'Yours / Brand',
     description: 'Brand colors, custom fonts, and saved presets',
   },
-  {
-    id: 'captions',
-    label: 'Captions',
-    icon: Captions,
-    title: 'Captions',
-    description: 'Timed speech segments & transcription editor',
-  },
 ];
+
+const ALL_SECTION_META: Record<LibraryTab, { title: string; description: string; badge?: string }> =
+  {
+    addText: { title: 'Add Text', description: 'Insert text layers & headlines at playhead' },
+    templates: {
+      title: 'Text Templates',
+      description: 'Viral subtitles & social preset templates',
+      badge: '66',
+    },
+    styles: {
+      title: 'Text Templates',
+      description: 'Viral subtitles & social preset templates',
+      badge: '66',
+    },
+    movieStyles: {
+      title: 'Movie Style Text Templates',
+      description: 'Cinematic typography, blockbuster trailers, film noir & sci-fi text presets',
+      badge: '20',
+    },
+    titleCards: {
+      title: 'Cinematic Title & End Cards',
+      description: 'Full-frame movie titles, chapter headers, credits & ending cards',
+      badge: '12',
+    },
+    lowerThirds: {
+      title: 'Lower Thirds',
+      description: 'Broadcast name cards, speaker tags & tickers',
+      badge: '60',
+    },
+    effects: {
+      title: 'Text Effects',
+      description: 'Fills, outlines, glows, and 3D extrusion looks',
+    },
+    animations: { title: 'Animations', description: 'Entrance, exit, and karaoke word highlights' },
+    brand: { title: 'Yours / Brand', description: 'Brand colors, custom fonts, and saved presets' },
+    captions: { title: 'Captions', description: 'Timed speech segments & transcription editor' },
+  };
 
 function LibraryPanel({
   leftTab,
@@ -454,12 +477,22 @@ function LibraryPanel({
 
   // Active sub-section metadata
   const currentSubSection = useMemo(() => {
-    return (
-      SUB_SECTIONS.find((s) => s.id === activeTabKey) ||
-      SUB_SECTIONS.find((s) => s.id === 'templates') ||
-      SUB_SECTIONS[0]
-    );
+    const found = SUB_SECTIONS.find((s) => s.id === activeTabKey);
+    if (found) return found;
+    const meta = ALL_SECTION_META[activeTabKey] || ALL_SECTION_META.templates;
+    return {
+      id: activeTabKey,
+      label: meta.title,
+      icon: LayoutGrid,
+      badge: meta.badge,
+      title: meta.title,
+      description: meta.description,
+    };
   }, [activeTabKey]);
+
+  const isCaptionsActive = activeTabKey === 'captions';
+  const isAnimationsActive = activeTabKey === 'animations';
+  const isTextActive = !isCaptionsActive && !isAnimationsActive;
 
   // Sample segment for thumbnail rendering (rule: user's first caption or fallback)
   const sampleSegment: Segment = useMemo(() => {
@@ -653,781 +686,803 @@ function LibraryPanel({
     activeTabKey === 'animations';
 
   return (
-    <div className="h-full flex bg-[#141413] border-r border-white/10 select-none overflow-hidden">
-      {/* ── CapCut-style Sub-Sections Vertical Navigation Rail (Left Rail) ── */}
-      <div className="w-[124px] sm:w-[138px] shrink-0 border-r border-white/10 bg-[#121211] p-1.5 flex flex-col justify-between overflow-y-auto no-scrollbar">
-        <div
+    <div className="h-full w-full flex flex-col bg-[#141413] border-r border-white/10 select-none overflow-hidden">
+      {/* ── CapCut-style Top Header spanning 100% width: Captions, Text, Animations ── */}
+      <div className="h-12 px-3 border-b border-white/10 bg-[#121211] flex items-center justify-between shrink-0">
+        <nav
           role="tablist"
-          aria-label="Text sub-sections navigation"
-          aria-orientation="vertical"
-          className="flex flex-col gap-1 w-full"
+          aria-label="Editor sections menu"
+          className="flex items-center gap-1 sm:gap-2"
         >
-          {SUB_SECTIONS.map((sub) => {
-            const Icon = sub.icon;
-            const isActive = activeTabKey === sub.id;
-            return (
-              <button
-                key={sub.id}
-                id={`tab-${sub.id}`}
-                type="button"
-                role="tab"
-                aria-label={sub.id === 'templates' ? 'Templates / Styles' : sub.label}
-                aria-selected={isActive}
-                aria-controls={`panel-${sub.id}`}
-                onClick={() => onTabChange(sub.id)}
-                className={`w-full py-2 px-2 flex items-center justify-between gap-1.5 rounded-lg text-left transition-all cursor-pointer relative group ${
-                  isActive
-                    ? 'bg-[#272727] text-white shadow-xs font-semibold'
-                    : 'text-[#8b8b8b] hover:text-white hover:bg-white/5 font-medium'
-                }`}
-                title={sub.description}
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <Icon
-                    className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-105 ${
-                      isActive ? 'text-[#00b8a9]' : 'text-smoke group-hover:text-bone'
-                    }`}
-                  />
-                  <span className="text-[11px] leading-tight tracking-tight truncate">
-                    {sub.label}
-                  </span>
-                </div>
-                {sub.badge && (
-                  <span
-                    className={`text-[8.5px] px-1.5 py-0.2 rounded-full font-mono shrink-0 ${
-                      isActive
-                        ? 'bg-[#00b8a9]/20 text-[#00d2c4] font-bold'
-                        : 'bg-white/5 text-mist group-hover:text-smoke'
-                    }`}
-                  >
-                    {sub.badge}
-                  </span>
-                )}
-                {isActive && (
-                  <div className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-[#00b8a9] rounded-r-full" />
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {onToggleCollapse && (
+          {/* Captions */}
           <button
+            id="tab-captions"
             type="button"
-            onClick={onToggleCollapse}
-            className="w-full mt-2 py-1.5 flex items-center justify-center gap-1 text-smoke hover:text-bone hover:bg-white/5 rounded-lg border border-transparent transition-colors text-[10px] font-medium cursor-pointer shrink-0"
-            title="Collapse text panel ([)"
-            aria-label="Collapse library panel"
+            role="tab"
+            aria-label="Captions"
+            aria-selected={isCaptionsActive}
+            aria-controls="panel-captions"
+            onClick={() => onTabChange('captions')}
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs transition-all cursor-pointer relative ${
+              isCaptionsActive
+                ? 'bg-white/10 text-[#00d2c4] font-semibold shadow-xs'
+                : 'text-[#8b8b8b] hover:text-white hover:bg-white/5 font-medium'
+            }`}
+            title="Captions (Timed speech segments & transcript editor)"
           >
-            <ChevronLeft className="w-3.5 h-3.5" />
-            <span>Collapse</span>
+            <Captions
+              className={`w-3.5 h-3.5 ${isCaptionsActive ? 'text-[#00d2c4]' : 'text-smoke'}`}
+            />
+            <span>Captions</span>
+            {isCaptionsActive && (
+              <span className="absolute -bottom-[9px] left-1.5 right-1.5 h-[2px] bg-[#00b8a9] rounded-full" />
+            )}
           </button>
-        )}
+
+          {/* Text */}
+          <button
+            id="tab-text"
+            type="button"
+            role="tab"
+            aria-label="Text"
+            aria-selected={isTextActive}
+            aria-controls={`panel-${isTextActive ? activeTabKey : 'templates'}`}
+            onClick={() => {
+              if (!isTextActive) {
+                onTabChange('templates');
+              }
+            }}
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs transition-all cursor-pointer relative ${
+              isTextActive
+                ? 'bg-white/10 text-[#00d2c4] font-semibold shadow-xs'
+                : 'text-[#8b8b8b] hover:text-white hover:bg-white/5 font-medium'
+            }`}
+            title="Text (Templates, Movie Styles, Title Cards, Lower Thirds, Effects)"
+          >
+            <Type className={`w-3.5 h-3.5 ${isTextActive ? 'text-[#00d2c4]' : 'text-smoke'}`} />
+            <span>Text</span>
+            {isTextActive && (
+              <span className="absolute -bottom-[9px] left-1.5 right-1.5 h-[2px] bg-[#00b8a9] rounded-full" />
+            )}
+          </button>
+
+          {/* Animations */}
+          <button
+            id="tab-animations"
+            type="button"
+            role="tab"
+            aria-label="Animations"
+            aria-selected={isAnimationsActive}
+            aria-controls="panel-animations"
+            onClick={() => onTabChange('animations')}
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs transition-all cursor-pointer relative ${
+              isAnimationsActive
+                ? 'bg-white/10 text-[#00d2c4] font-semibold shadow-xs'
+                : 'text-[#8b8b8b] hover:text-white hover:bg-white/5 font-medium'
+            }`}
+            title="Animations (Entrances, Exits, Karaoke & Motion Packs)"
+          >
+            <Film
+              className={`w-3.5 h-3.5 ${isAnimationsActive ? 'text-[#00d2c4]' : 'text-smoke'}`}
+            />
+            <span>Animations</span>
+            {isAnimationsActive && (
+              <span className="absolute -bottom-[9px] left-1.5 right-1.5 h-[2px] bg-[#00b8a9] rounded-full" />
+            )}
+          </button>
+        </nav>
+
+        {/* Header Action Items (Contextual based on active section) */}
+        <div className="flex items-center gap-2 shrink-0">
+          {isTextActive && (
+            <div className="hidden sm:flex items-center gap-1.5 text-xs text-smoke font-medium pr-1">
+              <span className="text-bone font-semibold">{currentSubSection.title}</span>
+              {currentSubSection.badge && (
+                <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-white/5 border border-white/10 text-mist font-mono">
+                  {currentSubSection.badge}
+                </span>
+              )}
+            </div>
+          )}
+
+          {isCaptionsActive && (
+            <>
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/20 font-mono font-bold uppercase">
+                {spokenLanguage} · {scriptOutput}
+              </span>
+              {onRetranscribe && (
+                <button
+                  type="button"
+                  onClick={onRetranscribe}
+                  className="px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-mist hover:text-bone text-[10px] font-medium transition-colors cursor-pointer"
+                >
+                  Re-transcribe
+                </button>
+              )}
+            </>
+          )}
+
+          {showScopeHeader && (
+            <div className="flex items-center gap-1 bg-[#181817] p-0.5 rounded-md border border-white/5 text-xs">
+              <button
+                type="button"
+                onClick={() => onScopeChange?.('all')}
+                className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${
+                  scope === 'all'
+                    ? 'bg-amber-400 text-black shadow-xs'
+                    : 'text-smoke hover:text-bone hover:bg-white/5'
+                }`}
+              >
+                All
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (targetCaptionId) onScopeChange?.('caption');
+                  else if (onNotification)
+                    onNotification('Select a caption in the list or timeline first');
+                }}
+                disabled={!targetCaptionId}
+                title="Apply to active caption only"
+                className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${
+                  scope === 'caption'
+                    ? 'bg-amber-400 text-black shadow-xs'
+                    : targetCaptionId
+                      ? 'text-smoke hover:text-bone hover:bg-white/5'
+                      : 'text-smoke/40 cursor-not-allowed'
+                }`}
+              >
+                Caption
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* ── Sub-Section Content Area (Right Panel) ── */}
-      <div
-        id={`panel-${activeTabKey}`}
-        role="tabpanel"
-        aria-labelledby={`tab-${activeTabKey}`}
-        className="flex-1 min-w-0 h-full flex flex-col overflow-hidden bg-[#141413]"
-      >
-        {/* Top Header with CapCut-style Menu Icons: Captions, Text, Animations */}
-        <div className="h-12 px-3 border-b border-white/10 bg-[#121211] flex items-center justify-between shrink-0">
-          <nav aria-label="Editor sections menu" className="flex items-center gap-1 sm:gap-2">
-            {/* Captions */}
-            <button
-              type="button"
-              onClick={() => onTabChange('captions')}
-              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs transition-all cursor-pointer relative ${
-                activeTabKey === 'captions'
-                  ? 'bg-white/10 text-[#00d2c4] font-semibold shadow-xs'
-                  : 'text-[#8b8b8b] hover:text-white hover:bg-white/5 font-medium'
-              }`}
-              title="Captions (Timed speech segments & transcript editor)"
+      {/* ── Sub-Section Content Area (Below Top Menu) ── */}
+      <div className="flex-1 flex min-h-0 overflow-hidden">
+        {/* Sub-categories Vertical Rail: ONLY visible for Text section */}
+        {isTextActive && (
+          <div className="w-[124px] sm:w-[138px] shrink-0 border-r border-white/10 bg-[#121211] p-1.5 flex flex-col justify-between overflow-y-auto no-scrollbar">
+            <div
+              role="tablist"
+              aria-label="Text sub-sections navigation"
+              aria-orientation="vertical"
+              className="flex flex-col gap-1 w-full"
             >
-              <Captions
-                className={`w-3.5 h-3.5 ${activeTabKey === 'captions' ? 'text-[#00d2c4]' : 'text-smoke'}`}
-              />
-              <span>Captions</span>
-              {activeTabKey === 'captions' && (
-                <span className="absolute -bottom-[9px] left-1.5 right-1.5 h-[2px] bg-[#00b8a9] rounded-full" />
-              )}
-            </button>
+              {SUB_SECTIONS.map((sub) => {
+                const Icon = sub.icon;
+                const isActive = activeTabKey === sub.id;
+                return (
+                  <button
+                    key={sub.id}
+                    id={`tab-${sub.id}`}
+                    type="button"
+                    role="tab"
+                    aria-label={sub.id === 'templates' ? 'Templates / Styles' : sub.label}
+                    aria-selected={isActive}
+                    aria-controls={`panel-${sub.id}`}
+                    onClick={() => onTabChange(sub.id)}
+                    className={`w-full py-2 px-2 flex items-center justify-between gap-1.5 rounded-lg text-left transition-all cursor-pointer relative group ${
+                      isActive
+                        ? 'bg-[#272727] text-white shadow-xs font-semibold'
+                        : 'text-[#8b8b8b] hover:text-white hover:bg-white/5 font-medium'
+                    }`}
+                    title={sub.description}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Icon
+                        className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-105 ${
+                          isActive ? 'text-[#00b8a9]' : 'text-smoke group-hover:text-bone'
+                        }`}
+                      />
+                      <span className="text-[11px] leading-tight tracking-tight truncate">
+                        {sub.label}
+                      </span>
+                    </div>
+                    {sub.badge && (
+                      <span
+                        className={`text-[8.5px] px-1.5 py-0.2 rounded-full font-mono shrink-0 ${
+                          isActive
+                            ? 'bg-[#00b8a9]/20 text-[#00d2c4] font-bold'
+                            : 'bg-white/5 text-mist group-hover:text-smoke'
+                        }`}
+                      >
+                        {sub.badge}
+                      </span>
+                    )}
+                    {isActive && (
+                      <div className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-[#00b8a9] rounded-r-full" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
 
-            {/* Text */}
-            <button
-              type="button"
-              onClick={() => {
-                if (activeTabKey === 'captions' || activeTabKey === 'animations') {
-                  onTabChange('templates');
-                }
-              }}
-              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs transition-all cursor-pointer relative ${
-                activeTabKey !== 'captions' && activeTabKey !== 'animations'
-                  ? 'bg-white/10 text-[#00d2c4] font-semibold shadow-xs'
-                  : 'text-[#8b8b8b] hover:text-white hover:bg-white/5 font-medium'
-              }`}
-              title="Text (Templates, Movie Styles, Title Cards, Lower Thirds, Effects)"
-            >
-              <Type
-                className={`w-3.5 h-3.5 ${
-                  activeTabKey !== 'captions' && activeTabKey !== 'animations'
-                    ? 'text-[#00d2c4]'
-                    : 'text-smoke'
-                }`}
-              />
-              <span>Text</span>
-              {activeTabKey !== 'captions' && activeTabKey !== 'animations' && (
-                <span className="absolute -bottom-[9px] left-1.5 right-1.5 h-[2px] bg-[#00b8a9] rounded-full" />
-              )}
-            </button>
+            {onToggleCollapse && (
+              <button
+                type="button"
+                onClick={onToggleCollapse}
+                className="w-full mt-2 py-1.5 flex items-center justify-center gap-1 text-smoke hover:text-bone hover:bg-white/5 rounded-lg border border-transparent transition-colors text-[10px] font-medium cursor-pointer shrink-0"
+                title="Collapse text panel ([)"
+                aria-label="Collapse library panel"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span>Collapse</span>
+              </button>
+            )}
+          </div>
+        )}
 
-            {/* Animations */}
-            <button
-              type="button"
-              onClick={() => onTabChange('animations')}
-              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs transition-all cursor-pointer relative ${
-                activeTabKey === 'animations'
-                  ? 'bg-white/10 text-[#00d2c4] font-semibold shadow-xs'
-                  : 'text-[#8b8b8b] hover:text-white hover:bg-white/5 font-medium'
-              }`}
-              title="Animations (Entrances, Exits, Karaoke & Motion Packs)"
-            >
-              <Film
-                className={`w-3.5 h-3.5 ${activeTabKey === 'animations' ? 'text-[#00d2c4]' : 'text-smoke'}`}
-              />
-              <span>Animations</span>
-              {activeTabKey === 'animations' && (
-                <span className="absolute -bottom-[9px] left-1.5 right-1.5 h-[2px] bg-[#00b8a9] rounded-full" />
-              )}
-            </button>
-          </nav>
+        {/* ── Active Panel Content (Takes remaining space, or 100% when side rail is hidden) ── */}
+        <div
+          id={`panel-${activeTabKey}`}
+          role="tabpanel"
+          aria-labelledby={`tab-${activeTabKey}`}
+          className="flex-1 min-w-0 h-full flex flex-col overflow-hidden bg-[#141413]"
+        >
+          {/* Scrollable Sub-Section Body */}
+          <div className="flex-1 overflow-y-auto p-3 space-y-3">
+            {/* ─────────────────────────────────────────────────────────────
+              SUB-SECTION 1: ADD TEXT
+          ────────────────────────────────────────────────────────────── */}
+            {activeTabKey === 'addText' && (
+              <div className="space-y-4">
+                <div>
+                  <p className="text-[11px] text-smoke leading-relaxed">
+                    Insert text overlays and titles at playhead{' '}
+                    <span className="font-mono text-amber-400 font-semibold">
+                      ({formatTimecode(currentTime)})
+                    </span>
+                    .
+                  </p>
+                </div>
 
-          {/* Header Action Items (Contextual based on active section) */}
-          <div className="flex items-center gap-2 shrink-0">
-            {activeTabKey !== 'captions' && activeTabKey !== 'animations' && (
-              <div className="hidden sm:flex items-center gap-1.5 text-xs text-smoke font-medium pr-1">
-                <span className="text-bone font-semibold">{currentSubSection.title}</span>
-                {currentSubSection.badge && (
-                  <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-white/5 border border-white/10 text-mist font-mono">
-                    {currentSubSection.badge}
+                {/* Quick Text Starter Tiles */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  {/* Default Text Card (CapCut style) */}
+                  <button
+                    type="button"
+                    onClick={() => handleAddTextSegment('Default text')}
+                    className="group p-3.5 rounded-xl bg-[#181817] border border-white/10 hover:border-[#00b8a9] hover:bg-[#1e1e1e] flex flex-col items-center justify-center gap-2 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-[#00b8a9]/10 border border-[#00b8a9]/30 group-hover:bg-[#00b8a9]/20 group-hover:border-[#00b8a9] flex items-center justify-center transition-colors">
+                      <Plus className="w-5 h-5 text-[#00b8a9] group-hover:scale-110 transition-transform" />
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-[#00d2c4]">
+                      Default text
+                    </span>
+                    <span className="text-[10px] text-smoke">Add at playhead</span>
+                  </button>
+
+                  {/* Bold Headline Card */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddTextSegment('HEADLINE TITLE', {
+                        fontSize: 0.12,
+                        fontWeight: 900,
+                        textCase: 'upper',
+                        fillColor: '#FFFFFF',
+                        strokeColor: '#000000',
+                      })
+                    }
+                    className="group p-3.5 rounded-xl bg-[#181817] border border-white/10 hover:border-amber-400/80 hover:bg-[#1f1f1d] flex flex-col items-center justify-center gap-2 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 group-hover:border-amber-400 flex items-center justify-center font-black text-sm text-bone group-hover:text-amber-300">
+                      H1
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-amber-300">
+                      Headline
+                    </span>
+                    <span className="text-[10px] text-smoke">Bold title</span>
+                  </button>
+
+                  {/* Subheading Card */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddTextSegment('Subtitle context', {
+                        fontSize: 0.07,
+                        fontWeight: 600,
+                        textCase: 'none',
+                        fillColor: '#E4E4E7',
+                        strokeColor: '#000000',
+                      })
+                    }
+                    className="group p-3.5 rounded-xl bg-[#181817] border border-white/10 hover:border-amber-400/80 hover:bg-[#1f1f1d] flex flex-col items-center justify-center gap-2 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 group-hover:border-amber-400 flex items-center justify-center font-medium text-xs text-bone group-hover:text-amber-300">
+                      H2
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-amber-300">
+                      Subheading
+                    </span>
+                    <span className="text-[10px] text-smoke">Supporting line</span>
+                  </button>
+
+                  {/* Callout Quote Card */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddTextSegment('Highlight Quote', {
+                        fontSize: 0.08,
+                        fontWeight: 700,
+                        fillColor: '#FFFFFF',
+                        customStyle: {
+                          plate: {
+                            mode: 'line',
+                            color: 'rgba(20,20,25,0.85)',
+                            padX: 0.35,
+                            padY: 0.15,
+                            radius: 0.25,
+                          },
+                        },
+                      })
+                    }
+                    className="group p-3.5 rounded-xl bg-[#181817] border border-white/10 hover:border-amber-400/80 hover:bg-[#1f1f1d] flex flex-col items-center justify-center gap-2 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 group-hover:border-amber-400 flex items-center justify-center text-smoke group-hover:text-amber-300">
+                      <Quote className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-amber-300">
+                      Callout Plate
+                    </span>
+                    <span className="text-[10px] text-smoke">Framed box</span>
+                  </button>
+                </div>
+
+                {/* Lower Third Quick Jump */}
+                <div className="p-3 rounded-xl bg-[#181817] border border-white/5 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-amber-400/10 border border-amber-400/20 flex items-center justify-center shrink-0">
+                      <Layers className="w-4 h-4 text-amber-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-bone">
+                        Titles & Lower Thirds Library
+                      </div>
+                      <div className="text-[10px] text-smoke truncate">
+                        72 cinema titles, end cards & name tags
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onTabChange('lowerThirds')}
+                    className="px-2.5 py-1 rounded-md bg-amber-400 text-black text-[10px] font-bold hover:bg-amber-300 transition-colors shrink-0 cursor-pointer"
+                  >
+                    Browse
+                  </button>
+                </div>
+
+                {/* Quick instructions */}
+                <div className="p-2.5 rounded-lg bg-white/5 border border-white/5 text-[11px] text-smoke space-y-1">
+                  <div className="text-bone font-semibold text-[11px]">Workflow tips:</div>
+                  <ul className="list-disc list-inside space-y-0.5 text-[10px] text-mist">
+                    <li>Click any card above to drop a text segment at the playhead.</li>
+                    <li>Drag corners in the video preview to reposition or scale.</li>
+                    <li>Customize colors, fonts, and animations in the Inspector.</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            {/* ─────────────────────────────────────────────────────────────
+              SUB-SECTION 2: TEMPLATES (FULL STYLES GALLERY)
+          ────────────────────────────────────────────────────────────── */}
+            {activeTabKey === 'templates' && (
+              <div className="space-y-3">
+                {renderScopeBanner()}
+                <LibraryStylesTab
+                  style={style}
+                  sampleSegment={sampleSegment}
+                  userPresetsList={userPresetsList}
+                  favorites={favorites}
+                  onFavoritesChange={setFavorites}
+                  onApplyPreset={applyPresetToScope}
+                  onUserPresetsChange={setUserPresetsList}
+                  onNotification={onNotification}
+                />
+              </div>
+            )}
+
+            {/* ─────────────────────────────────────────────────────────────
+              SUB-SECTION 3: MOVIE STYLE TEXT TEMPLATES
+          ────────────────────────────────────────────────────────────── */}
+            {activeTabKey === 'movieStyles' && (
+              <div className="space-y-3">
+                {renderScopeBanner()}
+                <LibraryMovieStylesTab
+                  style={style}
+                  sampleSegment={sampleSegment}
+                  favorites={favorites}
+                  onFavoritesChange={setFavorites}
+                  onApplyPreset={applyPresetToScope}
+                  onNotification={onNotification}
+                />
+              </div>
+            )}
+
+            {/* ─────────────────────────────────────────────────────────────
+              SUB-SECTION 3B: CINEMATIC TITLE & END CARDS
+          ────────────────────────────────────────────────────────────── */}
+            {activeTabKey === 'titleCards' && (
+              <LibraryLowerThirdsTab
+                currentTime={currentTime}
+                selectedLowerThirdId={selectedLowerThirdId}
+                selectedLowerThirdSpec={selectedLowerThirdSpec}
+                onAddLowerThird={(spec) => onAddLowerThird?.(spec)}
+                onUpdateLowerThird={(spec) => onUpdateLowerThird?.(spec)}
+                onAddMultipleLowerThirds={(specs) => onAddMultipleLowerThirds?.(specs)}
+                onlyPackId="title-end"
+              />
+            )}
+
+            {/* ─────────────────────────────────────────────────────────────
+              SUB-SECTION 4: LOWER THIRDS PACK LIBRARY
+          ────────────────────────────────────────────────────────────── */}
+            {activeTabKey === 'lowerThirds' && (
+              <LibraryLowerThirdsTab
+                currentTime={currentTime}
+                selectedLowerThirdId={selectedLowerThirdId}
+                selectedLowerThirdSpec={selectedLowerThirdSpec}
+                onAddLowerThird={(spec) => onAddLowerThird?.(spec)}
+                onUpdateLowerThird={(spec) => onUpdateLowerThird?.(spec)}
+                onAddMultipleLowerThirds={(specs) => onAddMultipleLowerThirds?.(specs)}
+                excludePackId="title-end"
+              />
+            )}
+
+            {/* ─────────────────────────────────────────────────────────────
+              SUB-SECTION 4: TEXT EFFECTS (LOOK-ONLY PRESETS)
+          ────────────────────────────────────────────────────────────── */}
+            {activeTabKey === 'effects' && (
+              <div className="space-y-3">
+                {renderScopeBanner()}
+                <p className="text-[11px] text-smoke">
+                  Applies styling treatments (fill, stroke, shadow, glow, 3D) without altering your
+                  font or animation timings.
+                </p>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {/* None / Reset tile */}
+                  <button
+                    type="button"
+                    onClick={() => applyLookToScope(NONE_LOOK, 'None')}
+                    className="group p-2 rounded-lg bg-[#181817] border border-white/10 hover:border-amber-400 flex items-center justify-center transition-all hover:scale-102 min-h-[46px] cursor-pointer"
+                    title="None (reset text effect)"
+                    aria-label="None (reset text effect)"
+                  >
+                    <Ban className="w-5 h-5 text-smoke/70 group-hover:text-amber-400 group-hover:scale-110 transition-all" />
+                  </button>
+
+                  {LOOK_PRESETS.map((eff) => (
+                    <button
+                      key={eff.id}
+                      type="button"
+                      onClick={() => applyLookToScope(eff.look, eff.name)}
+                      className="p-2 rounded-lg bg-[#181817] border border-white/10 hover:border-amber-400 text-left transition-all hover:scale-102 flex flex-col gap-0.5 min-h-[46px] cursor-pointer"
+                    >
+                      <span className="text-[11px] font-bold text-bone truncate">{eff.name}</span>
+                      <span className="text-[9px] text-smoke">Effect</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ─────────────────────────────────────────────────────────────
+              SUB-SECTION 5: ANIMATIONS (MOTION-ONLY PRESETS)
+          ────────────────────────────────────────────────────────────── */}
+            {activeTabKey === 'animations' && (
+              <div className="space-y-3">
+                {renderScopeBanner()}
+                <div className="flex items-center justify-between gap-2 pb-1 border-b border-white/5">
+                  <span className="text-[10px] font-medium text-smoke uppercase tracking-wider">
+                    Motion Presets
                   </span>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="file"
+                      ref={motionPackInputRef}
+                      accept=".json"
+                      onChange={handleImportMotionPack}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => motionPackInputRef.current?.click()}
+                      title="Install a motion preset pack (.json)"
+                      className="flex items-center gap-1 px-2 py-1 rounded bg-[#181817] border border-white/10 hover:border-amber-400 text-bone text-[10px] font-semibold transition-colors cursor-pointer"
+                    >
+                      <Upload className="w-3 h-3" /> Import pack
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleExportMotionPack}
+                      title="Download every preset as a shareable pack"
+                      className="flex items-center gap-1 px-2 py-1 rounded bg-[#181817] border border-white/10 hover:border-amber-400 text-bone text-[10px] font-semibold transition-colors cursor-pointer"
+                    >
+                      <Download className="w-3 h-3" /> Export
+                    </button>
+                  </div>
+                </div>
+
+                {motionPacks.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {motionPacks.map((pack) => (
+                      <span
+                        key={pack.id}
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-400/10 border border-amber-400/25 text-[9px] text-amber-200"
+                      >
+                        {pack.name}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveMotionPack(pack.id, pack.name)}
+                          aria-label={`Remove ${pack.name}`}
+                          className="hover:text-white cursor-pointer"
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-1 bg-[#121211] p-0.5 rounded-lg border border-white/10">
+                  {(['entrance', 'exit', 'highlight'] as const).map((sub) => (
+                    <button
+                      key={sub}
+                      type="button"
+                      onClick={() => setAnimSubTab(sub)}
+                      className={`flex-1 py-1 rounded text-[11px] font-semibold capitalize transition-colors cursor-pointer ${
+                        animSubTab === sub
+                          ? 'bg-amber-400 text-black'
+                          : 'text-smoke hover:text-bone'
+                      }`}
+                    >
+                      {sub}
+                    </button>
+                  ))}
+                </div>
+
+                {animSubTab === 'entrance' && (
+                  <div className="grid grid-cols-2 gap-2">
+                    {entrancePresets.map((item) => {
+                      const active = style.motion.entranceType
+                        ? style.motion.entranceType === item.motion.entranceType
+                        : style.motion.in === item.motion.in;
+                      return (
+                        <button
+                          key={item.key}
+                          type="button"
+                          title={item.packName ? `From ${item.packName}` : undefined}
+                          onClick={() => {
+                            onStyleChange({
+                              ...style,
+                              motion: { ...style.motion, ...item.motion },
+                            });
+                            if (onNotification) onNotification(`Entrance: ${item.name}`);
+                          }}
+                          className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                            active
+                              ? 'bg-amber-400/15 border-amber-400 text-amber-300 font-bold'
+                              : 'bg-[#181817] border-white/10 hover:border-white/20 text-bone'
+                          }`}
+                        >
+                          <span className="text-xs">{item.name}</span>
+                          <span className="block text-[9px] leading-tight text-smoke mt-0.5">
+                            {item.hint}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {animSubTab === 'exit' && (
+                  <div className="grid grid-cols-2 gap-2">
+                    {exitPresets.map((item) => {
+                      const active = style.motion.exitType
+                        ? style.motion.exitType === item.motion.exitType
+                        : style.motion.out === item.motion.out;
+                      return (
+                        <button
+                          key={item.key}
+                          type="button"
+                          title={item.packName ? `From ${item.packName}` : undefined}
+                          onClick={() => {
+                            onStyleChange({
+                              ...style,
+                              motion: { ...style.motion, ...item.motion },
+                            });
+                            if (onNotification) onNotification(`Exit: ${item.name}`);
+                          }}
+                          className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                            active
+                              ? 'bg-amber-400/15 border-amber-400 text-amber-300 font-bold'
+                              : 'bg-[#181817] border-white/10 hover:border-white/20 text-bone'
+                          }`}
+                        >
+                          <span className="text-xs">{item.name}</span>
+                          <span className="block text-[9px] leading-tight text-smoke mt-0.5">
+                            {item.hint}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {animSubTab === 'highlight' && (
+                  <div className="grid grid-cols-2 gap-2">
+                    {highlightPresets.map((item) => {
+                      const active =
+                        style.highlight.mode === item.highlight.mode &&
+                        (item.highlight.emphasisType
+                          ? style.highlight.emphasisType === item.highlight.emphasisType
+                          : true);
+                      return (
+                        <button
+                          key={item.key}
+                          type="button"
+                          title={item.packName ? `From ${item.packName}` : undefined}
+                          onClick={() => {
+                            onStyleChange({
+                              ...style,
+                              highlight: { ...style.highlight, ...item.highlight },
+                            });
+                            if (onNotification) onNotification(`Highlight: ${item.name}`);
+                          }}
+                          className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                            active
+                              ? 'bg-amber-400/15 border-amber-400 text-amber-300 font-bold'
+                              : 'bg-[#181817] border-white/10 hover:border-white/20 text-bone'
+                          }`}
+                        >
+                          <span className="text-xs">{item.name}</span>
+                          <span className="block text-[9px] leading-tight text-smoke mt-0.5">
+                            {item.hint}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             )}
 
-            {activeTabKey === 'captions' && (
-              <>
-                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/20 font-mono font-bold uppercase">
-                  {spokenLanguage} · {scriptOutput}
-                </span>
-                {onRetranscribe && (
-                  <button
-                    type="button"
-                    onClick={onRetranscribe}
-                    className="px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-mist hover:text-bone text-[10px] font-medium transition-colors cursor-pointer"
-                  >
-                    Re-transcribe
-                  </button>
-                )}
-              </>
+            {/* ─────────────────────────────────────────────────────────────
+              SUB-SECTION 6: YOURS / BRAND KIT
+          ────────────────────────────────────────────────────────────── */}
+            {activeTabKey === 'brand' && (
+              <LibraryBrandTab
+                brandColors={brandColors}
+                setBrandColors={setBrandColors}
+                customFonts={customFonts}
+                setCustomFonts={setCustomFonts}
+                setUserPresetsList={setUserPresetsList}
+                onNotification={onNotification}
+              />
             )}
 
-            {showScopeHeader && (
-              <div className="flex items-center gap-1 bg-[#181817] p-0.5 rounded-md border border-white/5 text-xs">
-                <button
-                  type="button"
-                  onClick={() => onScopeChange?.('all')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${
-                    scope === 'all'
-                      ? 'bg-amber-400 text-black shadow-xs'
-                      : 'text-smoke hover:text-bone hover:bg-white/5'
-                  }`}
-                >
-                  All
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (targetCaptionId) onScopeChange?.('caption');
-                    else if (onNotification)
-                      onNotification('Select a caption in the list or timeline first');
-                  }}
-                  disabled={!targetCaptionId}
-                  title="Apply to active caption only"
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${
-                    scope === 'caption'
-                      ? 'bg-amber-400 text-black shadow-xs'
-                      : targetCaptionId
-                        ? 'text-smoke hover:text-bone hover:bg-white/5'
-                        : 'text-smoke/40 cursor-not-allowed'
-                  }`}
-                >
-                  Caption
-                </button>
+            {/* ─────────────────────────────────────────────────────────────
+              SUB-SECTION 7: CAPTIONS LIST
+          ────────────────────────────────────────────────────────────── */}
+            {activeTabKey === 'captions' && (
+              <div className="space-y-3">
+                {/* Quick Jump to Movie Style Text Templates */}
+                <div className="p-2.5 rounded-xl bg-gradient-to-r from-amber-400/15 via-amber-400/5 to-transparent border border-amber-400/30 flex items-center justify-between gap-2 shadow-xs">
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-bone flex items-center gap-1.5">
+                      <Film className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <span>Movie Style Text Templates</span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-400/20 text-amber-300 font-mono">
+                        20 styles
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-smoke truncate">
+                      Apply Blockbuster, Noir, Sci-Fi or Gold typography to captions
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onTabChange('movieStyles')}
+                    className="px-2.5 py-1 rounded bg-amber-400 text-black text-[10px] font-bold hover:bg-amber-300 transition-colors shrink-0 cursor-pointer"
+                  >
+                    Browse Movie Styles
+                  </button>
+                </div>
+
+                {/* Captions List */}
+                <div className="space-y-1.5">
+                  {segments.map((seg) => {
+                    const isSelected = seg.id === (selectedId ?? activeId);
+                    const issues = checkReadability(seg);
+                    const hasWarning = issues.length > 0;
+                    const hasOverride = !!seg.styleOverride;
+
+                    return (
+                      <div
+                        key={seg.id}
+                        onClick={() => {
+                          onSelectSegment(seg.id);
+                          onSeek(seg.start);
+                        }}
+                        className={`p-2.5 rounded-xl border transition-all cursor-pointer group flex flex-col gap-1.5 ${
+                          isSelected
+                            ? 'bg-amber-400/10 border-amber-400/60 shadow-xs'
+                            : 'bg-[#181817] border-white/5 hover:border-white/15'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between text-[11px]">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono text-smoke text-[10px]">#{seg.index}</span>
+                            <span className="font-mono text-amber-400/90 text-[10px]">
+                              {formatTimecode(seg.start)}
+                            </span>
+                            {hasOverride && (
+                              <span
+                                className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"
+                                title="Has custom style override"
+                              />
+                            )}
+                            {hasWarning && (
+                              <span title={issues.map((i) => i.message).join(', ')}>
+                                <AlertTriangle className="w-3 h-3 text-amber-400/80" />
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] text-smoke">
+                              {(seg.end - seg.start).toFixed(2)}s
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const updated = segments
+                                  .filter((s) => s.id !== seg.id)
+                                  .map((s, i) => ({ ...s, index: i + 1 }));
+                                onSegmentsChange(updated);
+                              }}
+                              aria-label={`Delete caption ${seg.index}`}
+                              title="Delete segment"
+                              className="p-1 rounded hover:bg-white/10 text-smoke hover:text-crimson-2 transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <textarea
+                          aria-label={`Caption segment ${seg.index + 1}`}
+                          value={seg.text}
+                          onChange={(e) => {
+                            const updated = segments.map((s) =>
+                              s.id === seg.id ? { ...s, text: e.target.value } : s,
+                            );
+                            onSegmentsChange(updated);
+                          }}
+                          onFocus={() => {
+                            onSelectSegment(seg.id);
+                            onSeek(seg.start);
+                          }}
+                          rows={2}
+                          className="w-full bg-transparent text-bone text-xs leading-relaxed resize-none focus:outline-none rounded hover:bg-white/5 focus:bg-white/5 p-1 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectSegment(seg.id);
+                            onSeek(seg.start);
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
-        </div>
-
-        {/* Scrollable Sub-Section Body */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-3">
-          {/* ─────────────────────────────────────────────────────────────
-              SUB-SECTION 1: ADD TEXT
-          ────────────────────────────────────────────────────────────── */}
-          {activeTabKey === 'addText' && (
-            <div className="space-y-4">
-              <div>
-                <p className="text-[11px] text-smoke leading-relaxed">
-                  Insert text overlays and titles at playhead{' '}
-                  <span className="font-mono text-amber-400 font-semibold">
-                    ({formatTimecode(currentTime)})
-                  </span>
-                  .
-                </p>
-              </div>
-
-              {/* Quick Text Starter Tiles */}
-              <div className="grid grid-cols-2 gap-2.5">
-                {/* Default Text Card (CapCut style) */}
-                <button
-                  type="button"
-                  onClick={() => handleAddTextSegment('Default text')}
-                  className="group p-3.5 rounded-xl bg-[#181817] border border-white/10 hover:border-[#00b8a9] hover:bg-[#1e1e1e] flex flex-col items-center justify-center gap-2 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
-                >
-                  <div className="w-9 h-9 rounded-lg bg-[#00b8a9]/10 border border-[#00b8a9]/30 group-hover:bg-[#00b8a9]/20 group-hover:border-[#00b8a9] flex items-center justify-center transition-colors">
-                    <Plus className="w-5 h-5 text-[#00b8a9] group-hover:scale-110 transition-transform" />
-                  </div>
-                  <span className="text-xs font-bold text-bone group-hover:text-[#00d2c4]">
-                    Default text
-                  </span>
-                  <span className="text-[10px] text-smoke">Add at playhead</span>
-                </button>
-
-                {/* Bold Headline Card */}
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleAddTextSegment('HEADLINE TITLE', {
-                      fontSize: 0.12,
-                      fontWeight: 900,
-                      textCase: 'upper',
-                      fillColor: '#FFFFFF',
-                      strokeColor: '#000000',
-                    })
-                  }
-                  className="group p-3.5 rounded-xl bg-[#181817] border border-white/10 hover:border-amber-400/80 hover:bg-[#1f1f1d] flex flex-col items-center justify-center gap-2 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
-                >
-                  <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 group-hover:border-amber-400 flex items-center justify-center font-black text-sm text-bone group-hover:text-amber-300">
-                    H1
-                  </div>
-                  <span className="text-xs font-bold text-bone group-hover:text-amber-300">
-                    Headline
-                  </span>
-                  <span className="text-[10px] text-smoke">Bold title</span>
-                </button>
-
-                {/* Subheading Card */}
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleAddTextSegment('Subtitle context', {
-                      fontSize: 0.07,
-                      fontWeight: 600,
-                      textCase: 'none',
-                      fillColor: '#E4E4E7',
-                      strokeColor: '#000000',
-                    })
-                  }
-                  className="group p-3.5 rounded-xl bg-[#181817] border border-white/10 hover:border-amber-400/80 hover:bg-[#1f1f1d] flex flex-col items-center justify-center gap-2 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
-                >
-                  <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 group-hover:border-amber-400 flex items-center justify-center font-medium text-xs text-bone group-hover:text-amber-300">
-                    H2
-                  </div>
-                  <span className="text-xs font-bold text-bone group-hover:text-amber-300">
-                    Subheading
-                  </span>
-                  <span className="text-[10px] text-smoke">Supporting line</span>
-                </button>
-
-                {/* Callout Quote Card */}
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleAddTextSegment('Highlight Quote', {
-                      fontSize: 0.08,
-                      fontWeight: 700,
-                      fillColor: '#FFFFFF',
-                      customStyle: {
-                        plate: {
-                          mode: 'line',
-                          color: 'rgba(20,20,25,0.85)',
-                          padX: 0.35,
-                          padY: 0.15,
-                          radius: 0.25,
-                        },
-                      },
-                    })
-                  }
-                  className="group p-3.5 rounded-xl bg-[#181817] border border-white/10 hover:border-amber-400/80 hover:bg-[#1f1f1d] flex flex-col items-center justify-center gap-2 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
-                >
-                  <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 group-hover:border-amber-400 flex items-center justify-center text-smoke group-hover:text-amber-300">
-                    <Quote className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-bold text-bone group-hover:text-amber-300">
-                    Callout Plate
-                  </span>
-                  <span className="text-[10px] text-smoke">Framed box</span>
-                </button>
-              </div>
-
-              {/* Lower Third Quick Jump */}
-              <div className="p-3 rounded-xl bg-[#181817] border border-white/5 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-amber-400/10 border border-amber-400/20 flex items-center justify-center shrink-0">
-                    <Layers className="w-4 h-4 text-amber-400" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold text-bone">Titles & Lower Thirds Library</div>
-                    <div className="text-[10px] text-smoke truncate">
-                      72 cinema titles, end cards & name tags
-                    </div>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onTabChange('lowerThirds')}
-                  className="px-2.5 py-1 rounded-md bg-amber-400 text-black text-[10px] font-bold hover:bg-amber-300 transition-colors shrink-0 cursor-pointer"
-                >
-                  Browse
-                </button>
-              </div>
-
-              {/* Quick instructions */}
-              <div className="p-2.5 rounded-lg bg-white/5 border border-white/5 text-[11px] text-smoke space-y-1">
-                <div className="text-bone font-semibold text-[11px]">Workflow tips:</div>
-                <ul className="list-disc list-inside space-y-0.5 text-[10px] text-mist">
-                  <li>Click any card above to drop a text segment at the playhead.</li>
-                  <li>Drag corners in the video preview to reposition or scale.</li>
-                  <li>Customize colors, fonts, and animations in the Inspector.</li>
-                </ul>
-              </div>
-            </div>
-          )}
-
-          {/* ─────────────────────────────────────────────────────────────
-              SUB-SECTION 2: TEMPLATES (FULL STYLES GALLERY)
-          ────────────────────────────────────────────────────────────── */}
-          {activeTabKey === 'templates' && (
-            <div className="space-y-3">
-              {renderScopeBanner()}
-              <LibraryStylesTab
-                style={style}
-                sampleSegment={sampleSegment}
-                userPresetsList={userPresetsList}
-                favorites={favorites}
-                onFavoritesChange={setFavorites}
-                onApplyPreset={applyPresetToScope}
-                onUserPresetsChange={setUserPresetsList}
-                onNotification={onNotification}
-              />
-            </div>
-          )}
-
-          {/* ─────────────────────────────────────────────────────────────
-              SUB-SECTION 3: MOVIE STYLE TEXT TEMPLATES
-          ────────────────────────────────────────────────────────────── */}
-          {activeTabKey === 'movieStyles' && (
-            <div className="space-y-3">
-              {renderScopeBanner()}
-              <LibraryMovieStylesTab
-                style={style}
-                sampleSegment={sampleSegment}
-                favorites={favorites}
-                onFavoritesChange={setFavorites}
-                onApplyPreset={applyPresetToScope}
-                onNotification={onNotification}
-              />
-            </div>
-          )}
-
-          {/* ─────────────────────────────────────────────────────────────
-              SUB-SECTION 3B: CINEMATIC TITLE & END CARDS
-          ────────────────────────────────────────────────────────────── */}
-          {activeTabKey === 'titleCards' && (
-            <LibraryLowerThirdsTab
-              currentTime={currentTime}
-              selectedLowerThirdId={selectedLowerThirdId}
-              selectedLowerThirdSpec={selectedLowerThirdSpec}
-              onAddLowerThird={(spec) => onAddLowerThird?.(spec)}
-              onUpdateLowerThird={(spec) => onUpdateLowerThird?.(spec)}
-              onAddMultipleLowerThirds={(specs) => onAddMultipleLowerThirds?.(specs)}
-              onlyPackId="title-end"
-            />
-          )}
-
-          {/* ─────────────────────────────────────────────────────────────
-              SUB-SECTION 4: LOWER THIRDS PACK LIBRARY
-          ────────────────────────────────────────────────────────────── */}
-          {activeTabKey === 'lowerThirds' && (
-            <LibraryLowerThirdsTab
-              currentTime={currentTime}
-              selectedLowerThirdId={selectedLowerThirdId}
-              selectedLowerThirdSpec={selectedLowerThirdSpec}
-              onAddLowerThird={(spec) => onAddLowerThird?.(spec)}
-              onUpdateLowerThird={(spec) => onUpdateLowerThird?.(spec)}
-              onAddMultipleLowerThirds={(specs) => onAddMultipleLowerThirds?.(specs)}
-              excludePackId="title-end"
-            />
-          )}
-
-          {/* ─────────────────────────────────────────────────────────────
-              SUB-SECTION 4: TEXT EFFECTS (LOOK-ONLY PRESETS)
-          ────────────────────────────────────────────────────────────── */}
-          {activeTabKey === 'effects' && (
-            <div className="space-y-3">
-              {renderScopeBanner()}
-              <p className="text-[11px] text-smoke">
-                Applies styling treatments (fill, stroke, shadow, glow, 3D) without altering your
-                font or animation timings.
-              </p>
-              <div className="grid grid-cols-3 gap-1.5">
-                {/* None / Reset tile */}
-                <button
-                  type="button"
-                  onClick={() => applyLookToScope(NONE_LOOK, 'None')}
-                  className="group p-2 rounded-lg bg-[#181817] border border-white/10 hover:border-amber-400 flex items-center justify-center transition-all hover:scale-102 min-h-[46px] cursor-pointer"
-                  title="None (reset text effect)"
-                  aria-label="None (reset text effect)"
-                >
-                  <Ban className="w-5 h-5 text-smoke/70 group-hover:text-amber-400 group-hover:scale-110 transition-all" />
-                </button>
-
-                {LOOK_PRESETS.map((eff) => (
-                  <button
-                    key={eff.id}
-                    type="button"
-                    onClick={() => applyLookToScope(eff.look, eff.name)}
-                    className="p-2 rounded-lg bg-[#181817] border border-white/10 hover:border-amber-400 text-left transition-all hover:scale-102 flex flex-col gap-0.5 min-h-[46px] cursor-pointer"
-                  >
-                    <span className="text-[11px] font-bold text-bone truncate">{eff.name}</span>
-                    <span className="text-[9px] text-smoke">Effect</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ─────────────────────────────────────────────────────────────
-              SUB-SECTION 5: ANIMATIONS (MOTION-ONLY PRESETS)
-          ────────────────────────────────────────────────────────────── */}
-          {activeTabKey === 'animations' && (
-            <div className="space-y-3">
-              {renderScopeBanner()}
-              <div className="flex items-center justify-between gap-2 pb-1 border-b border-white/5">
-                <span className="text-[10px] font-medium text-smoke uppercase tracking-wider">
-                  Motion Presets
-                </span>
-                <div className="flex items-center gap-1.5">
-                  <input
-                    type="file"
-                    ref={motionPackInputRef}
-                    accept=".json"
-                    onChange={handleImportMotionPack}
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => motionPackInputRef.current?.click()}
-                    title="Install a motion preset pack (.json)"
-                    className="flex items-center gap-1 px-2 py-1 rounded bg-[#181817] border border-white/10 hover:border-amber-400 text-bone text-[10px] font-semibold transition-colors cursor-pointer"
-                  >
-                    <Upload className="w-3 h-3" /> Import pack
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleExportMotionPack}
-                    title="Download every preset as a shareable pack"
-                    className="flex items-center gap-1 px-2 py-1 rounded bg-[#181817] border border-white/10 hover:border-amber-400 text-bone text-[10px] font-semibold transition-colors cursor-pointer"
-                  >
-                    <Download className="w-3 h-3" /> Export
-                  </button>
-                </div>
-              </div>
-
-              {motionPacks.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {motionPacks.map((pack) => (
-                    <span
-                      key={pack.id}
-                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-400/10 border border-amber-400/25 text-[9px] text-amber-200"
-                    >
-                      {pack.name}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveMotionPack(pack.id, pack.name)}
-                        aria-label={`Remove ${pack.name}`}
-                        className="hover:text-white cursor-pointer"
-                      >
-                        <X className="w-2.5 h-2.5" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              <div className="flex items-center gap-1 bg-[#121211] p-0.5 rounded-lg border border-white/10">
-                {(['entrance', 'exit', 'highlight'] as const).map((sub) => (
-                  <button
-                    key={sub}
-                    type="button"
-                    onClick={() => setAnimSubTab(sub)}
-                    className={`flex-1 py-1 rounded text-[11px] font-semibold capitalize transition-colors cursor-pointer ${
-                      animSubTab === sub ? 'bg-amber-400 text-black' : 'text-smoke hover:text-bone'
-                    }`}
-                  >
-                    {sub}
-                  </button>
-                ))}
-              </div>
-
-              {animSubTab === 'entrance' && (
-                <div className="grid grid-cols-2 gap-2">
-                  {entrancePresets.map((item) => {
-                    const active = style.motion.entranceType
-                      ? style.motion.entranceType === item.motion.entranceType
-                      : style.motion.in === item.motion.in;
-                    return (
-                      <button
-                        key={item.key}
-                        type="button"
-                        title={item.packName ? `From ${item.packName}` : undefined}
-                        onClick={() => {
-                          onStyleChange({
-                            ...style,
-                            motion: { ...style.motion, ...item.motion },
-                          });
-                          if (onNotification) onNotification(`Entrance: ${item.name}`);
-                        }}
-                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                          active
-                            ? 'bg-amber-400/15 border-amber-400 text-amber-300 font-bold'
-                            : 'bg-[#181817] border-white/10 hover:border-white/20 text-bone'
-                        }`}
-                      >
-                        <span className="text-xs">{item.name}</span>
-                        <span className="block text-[9px] leading-tight text-smoke mt-0.5">
-                          {item.hint}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
-              {animSubTab === 'exit' && (
-                <div className="grid grid-cols-2 gap-2">
-                  {exitPresets.map((item) => {
-                    const active = style.motion.exitType
-                      ? style.motion.exitType === item.motion.exitType
-                      : style.motion.out === item.motion.out;
-                    return (
-                      <button
-                        key={item.key}
-                        type="button"
-                        title={item.packName ? `From ${item.packName}` : undefined}
-                        onClick={() => {
-                          onStyleChange({
-                            ...style,
-                            motion: { ...style.motion, ...item.motion },
-                          });
-                          if (onNotification) onNotification(`Exit: ${item.name}`);
-                        }}
-                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                          active
-                            ? 'bg-amber-400/15 border-amber-400 text-amber-300 font-bold'
-                            : 'bg-[#181817] border-white/10 hover:border-white/20 text-bone'
-                        }`}
-                      >
-                        <span className="text-xs">{item.name}</span>
-                        <span className="block text-[9px] leading-tight text-smoke mt-0.5">
-                          {item.hint}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
-              {animSubTab === 'highlight' && (
-                <div className="grid grid-cols-2 gap-2">
-                  {highlightPresets.map((item) => {
-                    const active =
-                      style.highlight.mode === item.highlight.mode &&
-                      (item.highlight.emphasisType
-                        ? style.highlight.emphasisType === item.highlight.emphasisType
-                        : true);
-                    return (
-                      <button
-                        key={item.key}
-                        type="button"
-                        title={item.packName ? `From ${item.packName}` : undefined}
-                        onClick={() => {
-                          onStyleChange({
-                            ...style,
-                            highlight: { ...style.highlight, ...item.highlight },
-                          });
-                          if (onNotification) onNotification(`Highlight: ${item.name}`);
-                        }}
-                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                          active
-                            ? 'bg-amber-400/15 border-amber-400 text-amber-300 font-bold'
-                            : 'bg-[#181817] border-white/10 hover:border-white/20 text-bone'
-                        }`}
-                      >
-                        <span className="text-xs">{item.name}</span>
-                        <span className="block text-[9px] leading-tight text-smoke mt-0.5">
-                          {item.hint}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ─────────────────────────────────────────────────────────────
-              SUB-SECTION 6: YOURS / BRAND KIT
-          ────────────────────────────────────────────────────────────── */}
-          {activeTabKey === 'brand' && (
-            <LibraryBrandTab
-              brandColors={brandColors}
-              setBrandColors={setBrandColors}
-              customFonts={customFonts}
-              setCustomFonts={setCustomFonts}
-              setUserPresetsList={setUserPresetsList}
-              onNotification={onNotification}
-            />
-          )}
-
-          {/* ─────────────────────────────────────────────────────────────
-              SUB-SECTION 7: CAPTIONS LIST
-          ────────────────────────────────────────────────────────────── */}
-          {activeTabKey === 'captions' && (
-            <div className="space-y-3">
-              {/* Quick Jump to Movie Style Text Templates */}
-              <div className="p-2.5 rounded-xl bg-gradient-to-r from-amber-400/15 via-amber-400/5 to-transparent border border-amber-400/30 flex items-center justify-between gap-2 shadow-xs">
-                <div className="min-w-0">
-                  <div className="text-xs font-bold text-bone flex items-center gap-1.5">
-                    <Film className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                    <span>Movie Style Text Templates</span>
-                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-400/20 text-amber-300 font-mono">
-                      20 styles
-                    </span>
-                  </div>
-                  <div className="text-[10px] text-smoke truncate">
-                    Apply Blockbuster, Noir, Sci-Fi or Gold typography to captions
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onTabChange('movieStyles')}
-                  className="px-2.5 py-1 rounded bg-amber-400 text-black text-[10px] font-bold hover:bg-amber-300 transition-colors shrink-0 cursor-pointer"
-                >
-                  Browse Movie Styles
-                </button>
-              </div>
-
-              {/* Captions List */}
-              <div className="space-y-1.5">
-                {segments.map((seg) => {
-                  const isSelected = seg.id === (selectedId ?? activeId);
-                  const issues = checkReadability(seg);
-                  const hasWarning = issues.length > 0;
-                  const hasOverride = !!seg.styleOverride;
-
-                  return (
-                    <div
-                      key={seg.id}
-                      onClick={() => {
-                        onSelectSegment(seg.id);
-                        onSeek(seg.start);
-                      }}
-                      className={`p-2.5 rounded-xl border transition-all cursor-pointer group flex flex-col gap-1.5 ${
-                        isSelected
-                          ? 'bg-amber-400/10 border-amber-400/60 shadow-xs'
-                          : 'bg-[#181817] border-white/5 hover:border-white/15'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between text-[11px]">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-mono text-smoke text-[10px]">#{seg.index}</span>
-                          <span className="font-mono text-amber-400/90 text-[10px]">
-                            {formatTimecode(seg.start)}
-                          </span>
-                          {hasOverride && (
-                            <span
-                              className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"
-                              title="Has custom style override"
-                            />
-                          )}
-                          {hasWarning && (
-                            <span title={issues.map((i) => i.message).join(', ')}>
-                              <AlertTriangle className="w-3 h-3 text-amber-400/80" />
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] text-smoke">
-                            {(seg.end - seg.start).toFixed(2)}s
-                          </span>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const updated = segments
-                                .filter((s) => s.id !== seg.id)
-                                .map((s, i) => ({ ...s, index: i + 1 }));
-                              onSegmentsChange(updated);
-                            }}
-                            aria-label={`Delete caption ${seg.index}`}
-                            title="Delete segment"
-                            className="p-1 rounded hover:bg-white/10 text-smoke hover:text-crimson-2 transition-colors cursor-pointer"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-
-                      <textarea
-                        aria-label={`Caption segment ${seg.index + 1}`}
-                        value={seg.text}
-                        onChange={(e) => {
-                          const updated = segments.map((s) =>
-                            s.id === seg.id ? { ...s, text: e.target.value } : s,
-                          );
-                          onSegmentsChange(updated);
-                        }}
-                        onFocus={() => {
-                          onSelectSegment(seg.id);
-                          onSeek(seg.start);
-                        }}
-                        rows={2}
-                        className="w-full bg-transparent text-bone text-xs leading-relaxed resize-none focus:outline-none rounded hover:bg-white/5 focus:bg-white/5 p-1 transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onSelectSegment(seg.id);
-                          onSeek(seg.start);
-                        }}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
