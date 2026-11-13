@@ -35,7 +35,7 @@ export const CAPTION_TEMPLATES: CaptionTemplate[] = [
       shadow: { x: 0, y: 0.04, blur: 0.08, color: 'rgba(0,0,0,0.6)' },
     },
     container: { mode: 'none', color: 'rgba(0,0,0,0.6)', padX: 0.35, padY: 0.12, radius: 0.3 },
-    layout: { align: 'center', wordsPerPage: 3, maxLines: 2, widthPct: 0.88, x: 0.5, y: 0.74 },
+    layout: { align: 'center', wordsPerPage: 4, maxLines: 2, widthPct: 0.88, x: 0.5, y: 0.74 },
     entrance: {
       type: 'slide-up',
       duration: 0.26,
@@ -319,7 +319,7 @@ export const CAPTION_TEMPLATES: CaptionTemplate[] = [
       outlineWidth: 0.05,
     },
     container: { mode: 'none', color: 'transparent', padX: 0, padY: 0, radius: 0 },
-    layout: { align: 'center', wordsPerPage: 3, maxLines: 2, widthPct: 0.88, x: 0.5, y: 0.74 },
+    layout: { align: 'center', wordsPerPage: 4, maxLines: 2, widthPct: 0.88, x: 0.5, y: 0.74 },
     entrance: {
       type: 'clip-reveal',
       duration: 0.22,
@@ -556,7 +556,7 @@ export const CAPTION_TEMPLATES: CaptionTemplate[] = [
       shadow: { x: 0, y: 0.04, blur: 0.12, color: 'rgba(236,72,153,0.6)' },
     },
     container: { mode: 'none', color: 'transparent', padX: 0, padY: 0, radius: 0 },
-    layout: { align: 'center', wordsPerPage: 3, maxLines: 2, widthPct: 0.88, x: 0.5, y: 0.74 },
+    layout: { align: 'center', wordsPerPage: 4, maxLines: 2, widthPct: 0.88, x: 0.5, y: 0.74 },
     entrance: { type: 'blur-in', duration: 0.25, easing: 'easeOutCubic', params: {} },
     emphasis: { type: 'glow-pulse', duration: 0.18, easing: 'spring', params: { scale: 1.15 } },
     exit: { type: 'fade', duration: 0.16, easing: 'easeOutCubic', params: { maxBlur: 0.3 } },
@@ -634,7 +634,7 @@ export const CAPTION_TEMPLATES: CaptionTemplate[] = [
       glow: { color: '#10B981', blur: 0.22, strength: 1.3 },
     },
     container: { mode: 'none', color: 'transparent', padX: 0, padY: 0, radius: 0 },
-    layout: { align: 'center', wordsPerPage: 3, maxLines: 2, widthPct: 0.88, x: 0.5, y: 0.74 },
+    layout: { align: 'center', wordsPerPage: 4, maxLines: 2, widthPct: 0.88, x: 0.5, y: 0.74 },
     entrance: { type: 'drop-in', duration: 0.06, easing: 'linear', params: {} },
     emphasis: { type: 'scale-slam', duration: 0.14, easing: 'spring', params: { scale: 1.14 } },
     exit: { type: 'typewriter-erase', duration: 0.15, easing: 'linear', params: {} },
@@ -844,7 +844,7 @@ export const CAPTION_TEMPLATES: CaptionTemplate[] = [
       shadow: { x: 0, y: 0.06, blur: 0.12, color: 'rgba(0,0,0,0.9)' },
     },
     container: { mode: 'none', color: 'transparent', padX: 0, padY: 0, radius: 0 },
-    layout: { align: 'center', wordsPerPage: 3, maxLines: 2, widthPct: 0.88, x: 0.5, y: 0.74 },
+    layout: { align: 'center', wordsPerPage: 4, maxLines: 2, widthPct: 0.88, x: 0.5, y: 0.74 },
     entrance: {
       type: 'scale-pop',
       duration: 0.28,
@@ -1277,7 +1277,7 @@ export const CAPTION_TEMPLATES: CaptionTemplate[] = [
       shadow: { x: 0.03, y: 0.04, blur: 0.08, color: 'rgba(76,5,25,0.85)' },
     },
     container: { mode: 'none', color: 'transparent', padX: 0, padY: 0, radius: 0 },
-    layout: { align: 'center', wordsPerPage: 3, maxLines: 2, widthPct: 0.88, x: 0.5, y: 0.74 },
+    layout: { align: 'center', wordsPerPage: 4, maxLines: 2, widthPct: 0.88, x: 0.5, y: 0.74 },
     entrance: { type: 'wave', duration: 0.3, easing: 'easeOutCubic', params: {} },
     emphasis: {
       type: 'glow-pulse',
@@ -1610,7 +1610,7 @@ export const CAPTION_TEMPLATES: CaptionTemplate[] = [
       outlineWidth: 0.08,
     },
     container: { mode: 'none', color: 'transparent', padX: 0, padY: 0, radius: 0 },
-    layout: { align: 'center', wordsPerPage: 3, maxLines: 2, widthPct: 0.88, x: 0.5, y: 0.74 },
+    layout: { align: 'center', wordsPerPage: 4, maxLines: 2, widthPct: 0.88, x: 0.5, y: 0.74 },
     entrance: {
       type: 'scale-pop',
       duration: 0.26,
@@ -2058,7 +2058,7 @@ export const CAPTION_TEMPLATES: CaptionTemplate[] = [
       outlineWidth: 0.065,
     },
     container: { mode: 'box', color: 'rgba(15,23,42,0.88)', padX: 0.35, padY: 0.14, radius: 0.2 },
-    layout: { align: 'center', wordsPerPage: 3, maxLines: 2, widthPct: 0.88, x: 0.5, y: 0.74 },
+    layout: { align: 'center', wordsPerPage: 4, maxLines: 2, widthPct: 0.88, x: 0.5, y: 0.74 },
     entrance: {
       type: 'typewriter',
       duration: 0.26,
@@ -3902,7 +3902,7 @@ export const CAPTION_TEMPLATES: CaptionTemplate[] = [
       shadow: { x: 0.02, y: 0.04, blur: 0.01, color: 'rgba(0,0,0,0.95)' },
     },
     container: { mode: 'none', color: 'transparent', padX: 0, padY: 0, radius: 0 },
-    layout: { align: 'center', wordsPerPage: 3, maxLines: 2, widthPct: 0.88, x: 0.5, y: 0.74 },
+    layout: { align: 'center', wordsPerPage: 4, maxLines: 2, widthPct: 0.88, x: 0.5, y: 0.74 },
     entrance: {
       type: 'elastic-pop',
       duration: 0.35,
@@ -3950,7 +3950,7 @@ export const CAPTION_TEMPLATES: CaptionTemplate[] = [
       shadow: { x: 0, y: 0.03, blur: 0.08, color: 'rgba(0,0,0,0.7)' },
     },
     container: { mode: 'none', color: 'transparent', padX: 0, padY: 0, radius: 0 },
-    layout: { align: 'center', wordsPerPage: 3, maxLines: 2, widthPct: 0.88, x: 0.5, y: 0.74 },
+    layout: { align: 'center', wordsPerPage: 4, maxLines: 2, widthPct: 0.88, x: 0.5, y: 0.74 },
     entrance: {
       type: 'rotate-in',
       duration: 0.36,

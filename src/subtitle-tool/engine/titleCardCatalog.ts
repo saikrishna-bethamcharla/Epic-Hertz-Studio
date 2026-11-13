@@ -44,7 +44,7 @@ export const TITLE_CARD_STYLES: TitleCardDefinition[] = [
         highlight: { color: '#00D2C4', scale: 1.08 },
         stroke: { color: '#000000', width: 0.06 },
         shadow: { x: 0, y: 0.03, blur: 0.08, color: 'rgba(0,0,0,0.7)' },
-        layout: { wordsPerPage: 3, maxLines: 2, widthPct: 0.88, x: 0.5, y: 0.5 },
+        layout: { wordsPerPage: 4, maxLines: 2, widthPct: 0.88, x: 0.5, y: 0.5 },
         motion: { in: 'pop', inMs: 360, unit: 'word', ease: 'out', stagger: 40, bounce: 0.3 },
       });
     })(),
@@ -75,7 +75,7 @@ export const TITLE_CARD_STYLES: TitleCardDefinition[] = [
         highlight: { color: '#FFFA6F', scale: 1.15 },
         stroke: { color: '#000000', width: 0.12 },
         shadow: { x: 0.02, y: 0.04, blur: 0.01, color: 'rgba(0,0,0,0.95)' },
-        layout: { wordsPerPage: 3, maxLines: 2, widthPct: 0.88, x: 0.5, y: 0.5 },
+        layout: { wordsPerPage: 4, maxLines: 2, widthPct: 0.88, x: 0.5, y: 0.5 },
         motion: { in: 'pop', inMs: 350, unit: 'word', ease: 'spring', stagger: 40, bounce: 0.55 },
       });
     })(),

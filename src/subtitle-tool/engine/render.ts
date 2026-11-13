@@ -309,6 +309,19 @@ function layoutPage(
       });
       if (cur.length) lines.push(cur);
       lineSpace = lines.map(() => spaceW);
+
+      // Dedicated Mixkit 28 structure: enforce exactly 2 balanced lines for mirror-splash
+      if (
+        (style.id === 'mirror-splash' || style.id === 'title-mirror-splash') &&
+        texts.length >= 2
+      ) {
+        const mid = Math.ceil(texts.length / 2);
+        lines = [
+          Array.from({ length: mid }, (_, i) => i),
+          Array.from({ length: texts.length - mid }, (_, i) => i + mid),
+        ];
+        lineSpace = [spaceW, spaceW];
+      }
     }
 
     const lineWidths = lines.map((idx, li) =>
@@ -568,34 +581,19 @@ function drawText(
   const { stroke, shadow, glow, extrude } = style;
   const strokeW = stroke.width * px * 2; // centred stroke; the fill hides the inner half
 
-  // Dedicated Mixkit 28 Comic Sticker treatment: 100% solid 3D black shadow + bold round stroke
+  // Dedicated Mixkit 28 Watercolor Typography: clean pastel fill with soft depth shadow
   if (style.id === 'mirror-splash' || style.id === 'title-mirror-splash') {
-    const shadowDist = Math.max(3, px * 0.05);
-    const thickStroke = Math.max(3.5, strokeW > 0.01 ? strokeW : px * 0.16);
-
     ctx.save();
     ctx.lineJoin = 'round';
     ctx.miterLimit = 2;
 
-    // 1. Solid hard 3D black drop shadow (NO blur, authentic cartoon sticker depth)
-    ctx.lineWidth = thickStroke;
-    ctx.strokeStyle = '#000000';
-    if (typeof ctx.strokeText === 'function') {
-      ctx.strokeText(text, x + shadowDist, y + shadowDist);
-    }
-    ctx.fillStyle = '#000000';
-    if (typeof ctx.fillText === 'function') {
-      ctx.fillText(text, x + shadowDist, y + shadowDist);
-    }
+    const shadowDist = Math.max(2, px * 0.035);
+    const shadowBlur = Math.max(3, px * 0.05);
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+    ctx.shadowBlur = shadowBlur;
+    ctx.shadowOffsetX = shadowDist;
+    ctx.shadowOffsetY = shadowDist;
 
-    // 2. Thick black comic book outline
-    ctx.lineWidth = thickStroke;
-    ctx.strokeStyle = '#050505';
-    if (typeof ctx.strokeText === 'function') {
-      ctx.strokeText(text, x, y);
-    }
-
-    // 3. Crisp comic fill (Cyan / Yellow / White active pop)
     ctx.fillStyle = o.fill;
     if (typeof ctx.fillText === 'function') {
       ctx.fillText(text, x, y);
@@ -1099,17 +1097,9 @@ export function renderCaptions(
       activeStyle.id === 'mirror-splash' || activeStyle.id === 'title-mirror-splash';
 
     if (isMirrorSplash) {
-      // Authentic Mixkit 28 Comic Two-Tone: Line 1 / first half is Cyan (#A7F7FF), Line 2 / second half is Lemon Yellow (#FFFA6F)
-      const isTopSection =
-        L.lineW.length > 1 ? wl.line === 0 : i < Math.ceil(page.words.length / 2);
-      const splashLineColor = isTopSection ? '#A7F7FF' : '#FFFA6F';
-
-      if (isActive || (t >= w.start && t <= w.end)) {
-        // Active word pops in pure white with subtle elastic bounce
-        fill = '#FFFFFF';
-      } else {
-        fill = splashLineColor;
-      }
+      // Authentic Mixkit 28: 2 lines with top line ONE colour (Cyan #A7F7FF) and bottom line ONE colour (Yellow #FFFA6F)
+      const isTopLine = L.lineW.length > 1 ? wl.line === 0 : i < Math.ceil(page.words.length / 2);
+      fill = isTopLine ? '#A7F7FF' : '#FFFA6F';
     } else if (
       hl.mode === 'color' ||
       (hl.mode === 'sweep' && hl.keep && t > w.end) ||
@@ -1492,98 +1482,193 @@ function drawCaptionMirrorSplashBackground(
   const remain = Math.max(0, visEnd - t);
 
   const introP = clamp01(elapsed / Math.max(0.001, inDur));
-  const streamP = clamp01(elapsed / (inDur * 0.7));
+  const streamP = clamp01(elapsed / (inDur * 0.65));
   const outroP = remain < 0.25 ? clamp01((0.25 - remain) / 0.25) : 0;
 
   ctx.save();
 
-  // 1. Converging Cyan Streams (during intro)
+  // 1. Dual Inward Watercolor Fluid Streams (0s to ~0.4s)
   if (streamP < 0.98) {
-    const sP = Math.pow(streamP, 2);
-    const streamDist = (1 - sP) * Math.max(w * 1.8, px * 8);
+    [-1, 1].forEach((dir) => {
+      const startX = cx - dir * (w * 1.2 + px * 5);
+      const targetX = cx - dir * (px * 0.15);
+      const headX = lerp(startX, targetX, Math.pow(streamP, 0.72));
+      const wavePhase = streamP * Math.PI * 2.5;
+      const headY = cy + Math.sin(wavePhase) * px * 0.22;
 
-    ctx.fillStyle = '#A7F7FF';
-    ctx.strokeStyle = '#050505';
-    ctx.lineWidth = Math.max(1.5, px * 0.05);
+      ctx.save();
+      ctx.fillStyle = '#A7F7FF';
 
-    [-streamDist, streamDist].forEach((dist, sideIdx) => {
-      const dir = sideIdx === 0 ? 1 : -1;
-      const bY = cy + Math.sin(streamP * Math.PI) * px * 0.2;
-      [
-        { offX: 0, offY: 0, r: px * 0.28 },
-        { offX: dir * px * 0.45, offY: -px * 0.12, r: px * 0.18 },
-        { offX: dir * px * 0.8, offY: px * 0.1, r: px * 0.12 },
-      ].forEach((blob) => {
+      const streamLen = Math.min(Math.abs(headX - startX), px * 4.2);
+      const tailX = headX - dir * streamLen;
+      const headR = px * (0.32 + 0.12 * Math.sin(streamP * Math.PI));
+
+      // Fluid wavy stream body
+      if (typeof ctx.moveTo === 'function' && typeof ctx.bezierCurveTo === 'function') {
+        ctx.beginPath();
+        ctx.moveTo(headX, headY - headR);
+        ctx.bezierCurveTo(
+          headX + dir * headR * 1.3,
+          headY - headR * 0.8,
+          headX + dir * headR * 1.3,
+          headY + headR * 0.8,
+          headX,
+          headY + headR,
+        );
+        ctx.bezierCurveTo(
+          headX - dir * streamLen * 0.45,
+          headY + headR * 0.55 + Math.cos(wavePhase) * px * 0.15,
+          tailX + dir * streamLen * 0.2,
+          cy + px * 0.08,
+          tailX,
+          cy,
+        );
+        ctx.bezierCurveTo(
+          tailX + dir * streamLen * 0.2,
+          cy - px * 0.08,
+          headX - dir * streamLen * 0.45,
+          headY - headR * 0.55 + Math.sin(wavePhase) * px * 0.15,
+          headX,
+          headY - headR,
+        );
+        ctx.fill();
+
+        // Watercolor splash fingers branching from head just before impact
+        if (streamP > 0.45) {
+          const fingerP = (streamP - 0.45) / 0.55;
+          const FINGERS = [
+            { angle: -0.62, lenMul: 0.85, r: px * 0.12 },
+            { angle: -0.22, lenMul: 1.25, r: px * 0.16 },
+            { angle: 0.18, lenMul: 1.15, r: px * 0.15 },
+            { angle: 0.58, lenMul: 0.8, r: px * 0.11 },
+          ];
+          FINGERS.forEach((f) => {
+            const fLen = px * 0.55 * f.lenMul * fingerP;
+            const fx = headX + Math.cos(f.angle) * dir * fLen;
+            const fy = headY + Math.sin(f.angle) * fLen;
+            ctx.beginPath();
+            if (typeof ctx.arc === 'function') {
+              ctx.arc(fx, fy, Math.max(2, f.r * fingerP), 0, Math.PI * 2);
+            } else {
+              ctx.rect(fx - f.r, fy - f.r, f.r * 2, f.r * 2);
+            }
+            ctx.fill();
+          });
+        }
+      }
+
+      // Trailing watercolor droplet beads
+      const BEADS = [
+        { distMul: 0.35, offY: -px * 0.16, r: px * 0.085 },
+        { distMul: 0.58, offY: px * 0.2, r: px * 0.07 },
+        { distMul: 0.78, offY: -px * 0.1, r: px * 0.055 },
+        { distMul: 0.98, offY: px * 0.12, r: px * 0.04 },
+      ];
+      BEADS.forEach((b) => {
+        const bxPos = headX - dir * (streamLen * b.distMul);
+        const byPos = cy + b.offY + Math.sin(wavePhase + b.distMul * 3.2) * px * 0.08;
         ctx.beginPath();
         if (typeof ctx.arc === 'function') {
-          ctx.arc(cx + dist + blob.offX, bY + blob.offY, Math.max(2, blob.r), 0, Math.PI * 2);
+          ctx.arc(bxPos, byPos, Math.max(1.5, b.r), 0, Math.PI * 2);
         } else {
-          ctx.rect(cx + dist + blob.offX - blob.r, bY + blob.offY - blob.r, blob.r * 2, blob.r * 2);
+          ctx.rect(bxPos - b.r, byPos - b.r, b.r * 2, b.r * 2);
         }
         ctx.fill();
-        if (typeof ctx.stroke === 'function') ctx.stroke();
       });
+
+      ctx.restore();
     });
   }
 
-  // 2. Radial Liquid Splash Burst & Teardrop Droplets (framing the title)
-  if (introP > 0.08) {
-    const burstP = clamp01((introP - 0.08) / 0.92);
+  // 2. Central Watercolor Impact Splatter Bloom (collision eruption)
+  if (streamP > 0.4 && streamP < 0.95) {
+    const pSplatter = (streamP - 0.4) / 0.55;
+    const pEased = Math.sin(pSplatter * Math.PI);
+    const R = px * 1.5 * pEased;
+    const alpha = Math.max(0, 1 - pSplatter * 0.85);
+
+    ctx.save();
+    ctx.globalAlpha *= alpha;
+    ctx.fillStyle = '#A7F7FF';
+
+    if (typeof ctx.moveTo === 'function' && typeof ctx.quadraticCurveTo === 'function') {
+      ctx.beginPath();
+      const count = 12;
+      for (let i = 0; i <= count; i++) {
+        const a = (i / count) * Math.PI * 2;
+        const mod = 1 + 0.32 * Math.sin(i * 2.3) + 0.22 * Math.cos(i * 3.7);
+        const r = R * mod;
+        const sx = cx + Math.cos(a) * r;
+        const sy = cy + Math.sin(a) * r * 0.72;
+        if (i === 0) ctx.moveTo(sx, sy);
+        else {
+          const prevA = ((i - 0.5) / count) * Math.PI * 2;
+          const prevMod = 1 + 0.38 * Math.sin((i - 0.5) * 2.3);
+          const cpx = cx + Math.cos(prevA) * R * prevMod * 1.15;
+          const cpy = cy + Math.sin(prevA) * R * prevMod * 0.85;
+          ctx.quadraticCurveTo(cpx, cpy, sx, sy);
+        }
+      }
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // 3. Radial Yellow & Cyan Watercolor Teardrop Droplets (framing the 2-line title)
+  if (introP > 0.15) {
+    const burstP = clamp01((introP - 0.15) / 0.85);
     const easedBurst = 1 - Math.pow(1 - burstP, 3);
     const scaleFactor = (0.35 + 0.65 * easedBurst) * (1 - outroP * 0.85);
-    const breathe = 1 + 0.035 * Math.sin(t * 3.8);
 
-    const radiusX = (w / 2 + px * 0.8) * scaleFactor * breathe;
-    const radiusY = (h / 2 + px * 0.7) * scaleFactor * breathe;
-
-    // 16 radial splash teardrops/rays replicating Mixkit 28
+    // 18 radial yellow splash teardrop rays replicating Mixkit 28 (thumb.png & definition.json)
     const SPLASH_RAYS = [
-      { angle: 0.12, distMul: 1.15, size: px * 0.18, col: '#FFFA6F' },
-      { angle: 0.48, distMul: 1.35, size: px * 0.22, col: '#A7F7FF' },
-      { angle: 0.82, distMul: 1.05, size: px * 0.14, col: '#FFFFFF' },
-      { angle: 1.18, distMul: 1.25, size: px * 0.2, col: '#FFFA6F' },
-      { angle: 1.57, distMul: 1.4, size: px * 0.24, col: '#A7F7FF' },
-      { angle: 1.96, distMul: 1.1, size: px * 0.15, col: '#FFFFFF' },
-      { angle: 2.32, distMul: 1.3, size: px * 0.22, col: '#FFFA6F' },
-      { angle: 2.7, distMul: 1.12, size: px * 0.17, col: '#A7F7FF' },
-      { angle: 3.14, distMul: 1.28, size: px * 0.23, col: '#FFFFFF' },
-      { angle: 3.56, distMul: 1.1, size: px * 0.15, col: '#FFFA6F' },
-      { angle: 3.92, distMul: 1.35, size: px * 0.21, col: '#A7F7FF' },
-      { angle: 4.3, distMul: 1.08, size: px * 0.14, col: '#FFFFFF' },
-      { angle: 4.71, distMul: 1.42, size: px * 0.24, col: '#FFFA6F' },
-      { angle: 5.12, distMul: 1.15, size: px * 0.17, col: '#A7F7FF' },
-      { angle: 5.52, distMul: 1.32, size: px * 0.2, col: '#FFFFFF' },
-      { angle: 5.92, distMul: 1.12, size: px * 0.16, col: '#FFFA6F' },
+      { angle: 0.12, distMul: 1.16, len: px * 0.26, w: px * 0.08, col: '#FFFA6F' },
+      { angle: 0.46, distMul: 1.34, len: px * 0.3, w: px * 0.09, col: '#FFFA6F' },
+      { angle: 0.78, distMul: 1.08, len: px * 0.18, w: px * 0.06, col: '#A7F7FF' },
+      { angle: 1.14, distMul: 1.26, len: px * 0.28, w: px * 0.085, col: '#FFFA6F' },
+      { angle: 1.57, distMul: 1.4, len: px * 0.32, w: px * 0.095, col: '#FFFA6F' },
+      { angle: 1.94, distMul: 1.12, len: px * 0.2, w: px * 0.065, col: '#A7F7FF' },
+      { angle: 2.28, distMul: 1.3, len: px * 0.29, w: px * 0.085, col: '#FFFA6F' },
+      { angle: 2.66, distMul: 1.14, len: px * 0.22, w: px * 0.07, col: '#FFFA6F' },
+      { angle: 3.14, distMul: 1.32, len: px * 0.31, w: px * 0.09, col: '#FFFA6F' },
+      { angle: 3.52, distMul: 1.12, len: px * 0.19, w: px * 0.065, col: '#A7F7FF' },
+      { angle: 3.88, distMul: 1.36, len: px * 0.3, w: px * 0.088, col: '#FFFA6F' },
+      { angle: 4.24, distMul: 1.1, len: px * 0.21, w: px * 0.07, col: '#FFFA6F' },
+      { angle: 4.71, distMul: 1.42, len: px * 0.33, w: px * 0.095, col: '#FFFA6F' },
+      { angle: 5.08, distMul: 1.14, len: px * 0.19, w: px * 0.065, col: '#A7F7FF' },
+      { angle: 5.48, distMul: 1.33, len: px * 0.29, w: px * 0.085, col: '#FFFA6F' },
+      { angle: 5.88, distMul: 1.12, len: px * 0.22, w: px * 0.07, col: '#FFFA6F' },
     ];
 
     SPLASH_RAYS.forEach((ray) => {
+      // Soft breathing hover wave during hold phase
+      const breathe = 1 + 0.03 * Math.sin(t * 3.2 + ray.angle * 2);
+      const radiusX = (w / 2 + px * 0.72) * scaleFactor * breathe;
+      const radiusY = (h / 2 + px * 0.62) * scaleFactor * breathe;
+
       const rx = cx + Math.cos(ray.angle) * radiusX * ray.distMul;
       const ry = cy + Math.sin(ray.angle) * radiusY * ray.distMul;
-      const s = ray.size * scaleFactor;
+      const dropLen = ray.len * scaleFactor;
+      const dropW = ray.w * scaleFactor;
 
       ctx.save();
       ctx.translate(rx, ry);
       if (typeof ctx.rotate === 'function') ctx.rotate(ray.angle);
       ctx.fillStyle = ray.col;
 
+      // Authentic watercolor droplet: inner pointed tail facing center, outer rounded head pointing away
       if (typeof ctx.moveTo === 'function' && typeof ctx.bezierCurveTo === 'function') {
         ctx.beginPath();
-        ctx.moveTo(s * 1.5, 0);
-        ctx.bezierCurveTo(s * 0.7, -s * 0.7, -s * 0.6, -s * 0.6, -s * 0.8, 0);
-        ctx.bezierCurveTo(-s * 0.6, s * 0.6, s * 0.7, s * 0.7, s * 1.5, 0);
+        ctx.moveTo(0, 0);
+        ctx.bezierCurveTo(dropLen * 0.35, dropW * 0.7, dropLen * 0.75, dropW, dropLen, 0);
+        ctx.bezierCurveTo(dropLen * 0.75, -dropW, dropLen * 0.35, -dropW * 0.7, 0, 0);
         ctx.fill();
-
-        if (typeof ctx.stroke === 'function') {
-          ctx.strokeStyle = '#050505';
-          ctx.lineWidth = Math.max(1.2, px * 0.04);
-          ctx.stroke();
-        }
       } else if (typeof ctx.arc === 'function') {
         ctx.beginPath();
-        ctx.arc(0, 0, Math.max(2, s * 0.8), 0, Math.PI * 2);
+        ctx.arc(dropLen * 0.6, 0, Math.max(1.5, dropW), 0, Math.PI * 2);
         ctx.fill();
       } else {
-        ctx.fillRect(-s, -s, s * 2, s * 2);
+        ctx.fillRect(0, -dropW, dropLen, dropW * 2);
       }
       ctx.restore();
     });
@@ -1674,12 +1759,6 @@ function drawCaptionMirrorSplashForeground(
       ctx.quadraticCurveTo(0, 0, -size, 0);
       ctx.quadraticCurveTo(0, 0, 0, -size);
       ctx.fill();
-
-      if (typeof ctx.stroke === 'function') {
-        ctx.strokeStyle = '#050505';
-        ctx.lineWidth = Math.max(1, px * 0.03);
-        ctx.stroke();
-      }
     } else if (typeof ctx.arc === 'function') {
       ctx.beginPath();
       ctx.arc(0, 0, Math.max(2, size), 0, Math.PI * 2);
