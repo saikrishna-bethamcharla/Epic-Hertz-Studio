@@ -568,6 +568,42 @@ function drawText(
   const { stroke, shadow, glow, extrude } = style;
   const strokeW = stroke.width * px * 2; // centred stroke; the fill hides the inner half
 
+  // Dedicated Mixkit 28 Comic Sticker treatment: 100% solid 3D black shadow + bold round stroke
+  if (style.id === 'mirror-splash' || style.id === 'title-mirror-splash') {
+    const shadowDist = Math.max(3, px * 0.05);
+    const thickStroke = Math.max(3.5, strokeW > 0.01 ? strokeW : px * 0.16);
+
+    ctx.save();
+    ctx.lineJoin = 'round';
+    ctx.miterLimit = 2;
+
+    // 1. Solid hard 3D black drop shadow (NO blur, authentic cartoon sticker depth)
+    ctx.lineWidth = thickStroke;
+    ctx.strokeStyle = '#000000';
+    if (typeof ctx.strokeText === 'function') {
+      ctx.strokeText(text, x + shadowDist, y + shadowDist);
+    }
+    ctx.fillStyle = '#000000';
+    if (typeof ctx.fillText === 'function') {
+      ctx.fillText(text, x + shadowDist, y + shadowDist);
+    }
+
+    // 2. Thick black comic book outline
+    ctx.lineWidth = thickStroke;
+    ctx.strokeStyle = '#050505';
+    if (typeof ctx.strokeText === 'function') {
+      ctx.strokeText(text, x, y);
+    }
+
+    // 3. Crisp comic fill (Cyan / Yellow / White active pop)
+    ctx.fillStyle = o.fill;
+    if (typeof ctx.fillText === 'function') {
+      ctx.fillText(text, x, y);
+    }
+    ctx.restore();
+    return;
+  }
+
   const outline = () => {
     if (strokeW > 0.01) {
       ctx.lineJoin = 'round';
@@ -929,6 +965,11 @@ export function renderCaptions(
     ctx.restore();
   }
 
+  // ── Background Splash Burst for Mirror Splash (behind text)
+  if (activeStyle.id === 'mirror-splash' || activeStyle.id === 'title-mirror-splash') {
+    drawCaptionMirrorSplashBackground(ctx, bx, by, L.w, L.h, px, t, page.start, visEnd, inDur);
+  }
+
   // ── Sliding highlight box (under the text)
   if ((hl.mode === 'box' || hl.emphasisType === 'highlight-box-sweep') && active >= 0) {
     const cur = wordRect(active);
@@ -1054,7 +1095,22 @@ export function renderCaptions(
     let fill: Paint = wordStyle.fill;
     let tint: DrawOpts['tint'];
     const hasWordHl = !!w.highlightColor;
-    if (
+    const isMirrorSplash =
+      activeStyle.id === 'mirror-splash' || activeStyle.id === 'title-mirror-splash';
+
+    if (isMirrorSplash) {
+      // Authentic Mixkit 28 Comic Two-Tone: Line 1 / first half is Cyan (#A7F7FF), Line 2 / second half is Lemon Yellow (#FFFA6F)
+      const isTopSection =
+        L.lineW.length > 1 ? wl.line === 0 : i < Math.ceil(page.words.length / 2);
+      const splashLineColor = isTopSection ? '#A7F7FF' : '#FFFA6F';
+
+      if (isActive || (t >= w.start && t <= w.end)) {
+        // Active word pops in pure white with subtle elastic bounce
+        fill = '#FFFFFF';
+      } else {
+        fill = splashLineColor;
+      }
+    } else if (
       hl.mode === 'color' ||
       (hl.mode === 'sweep' && hl.keep && t > w.end) ||
       hasWordHl ||
@@ -1318,7 +1374,7 @@ export function renderCaptions(
     drawCaptionSpinTwistBrackets(ctx, bx, by, L.w, L.h, px, t, page.start, inDur, activeStyle);
   }
   if (activeStyle.id === 'mirror-splash' || activeStyle.id === 'title-mirror-splash') {
-    drawCaptionMirrorSplashBursts(ctx, bx, by, L.w, L.h, px, t, page.start, inDur, activeStyle);
+    drawCaptionMirrorSplashForeground(ctx, bx, by, L.w, L.h, px, t, page.start, visEnd, inDur);
   }
 
   ctx.restore();
@@ -1409,7 +1465,7 @@ function drawCaptionSpinTwistBrackets(
   ctx.restore();
 }
 
-function drawCaptionMirrorSplashBursts(
+function drawCaptionMirrorSplashBackground(
   ctx: CanvasRenderingContext2D,
   bx: number,
   by: number,
@@ -1418,8 +1474,8 @@ function drawCaptionMirrorSplashBursts(
   px: number,
   t: number,
   pageStart: number,
+  visEnd: number,
   inDur: number,
-  _style: CaptionStyle,
 ) {
   if (
     typeof ctx.beginPath !== 'function' ||
@@ -1430,56 +1486,211 @@ function drawCaptionMirrorSplashBursts(
     return;
   }
 
-  const pIn = clamp01((t - pageStart) / Math.max(0.001, inDur));
-  if (pIn >= 0.999) return;
-
-  const streamP = clamp01(pIn / 0.35);
-  const splashP = clamp01((pIn - 0.2) / 0.8);
   const cx = bx + w / 2;
   const cy = by + h / 2;
+  const elapsed = Math.max(0, t - pageStart);
+  const remain = Math.max(0, visEnd - t);
 
-  const drawCircle = (x: number, y: number, r: number) => {
-    if (typeof ctx.arc === 'function') {
-      ctx.arc(x, y, r, 0, Math.PI * 2);
-    } else {
-      ctx.rect(x - r, y - r, r * 2, r * 2);
-    }
-  };
+  const introP = clamp01(elapsed / Math.max(0.001, inDur));
+  const streamP = clamp01(elapsed / (inDur * 0.7));
+  const outroP = remain < 0.25 ? clamp01((0.25 - remain) / 0.25) : 0;
 
   ctx.save();
-  // 1. Converging streams
-  if (streamP < 0.95) {
-    const dist = (1 - (1 - Math.pow(1 - streamP, 3))) * px * 3;
+
+  // 1. Converging Cyan Streams (during intro)
+  if (streamP < 0.98) {
+    const sP = Math.pow(streamP, 2);
+    const streamDist = (1 - sP) * Math.max(w * 1.8, px * 8);
+
     ctx.fillStyle = '#A7F7FF';
-    ctx.beginPath();
-    drawCircle(cx - dist, cy - px * 0.1, px * 0.18);
-    drawCircle(cx - dist - px * 0.3, cy - px * 0.15, px * 0.12);
-    drawCircle(cx + dist, cy + px * 0.1, px * 0.18);
-    drawCircle(cx + dist + px * 0.3, cy + px * 0.15, px * 0.12);
-    ctx.fill();
+    ctx.strokeStyle = '#050505';
+    ctx.lineWidth = Math.max(1.5, px * 0.05);
+
+    [-streamDist, streamDist].forEach((dist, sideIdx) => {
+      const dir = sideIdx === 0 ? 1 : -1;
+      const bY = cy + Math.sin(streamP * Math.PI) * px * 0.2;
+      [
+        { offX: 0, offY: 0, r: px * 0.28 },
+        { offX: dir * px * 0.45, offY: -px * 0.12, r: px * 0.18 },
+        { offX: dir * px * 0.8, offY: px * 0.1, r: px * 0.12 },
+      ].forEach((blob) => {
+        ctx.beginPath();
+        if (typeof ctx.arc === 'function') {
+          ctx.arc(cx + dist + blob.offX, bY + blob.offY, Math.max(2, blob.r), 0, Math.PI * 2);
+        } else {
+          ctx.rect(cx + dist + blob.offX - blob.r, bY + blob.offY - blob.r, blob.r * 2, blob.r * 2);
+        }
+        ctx.fill();
+        if (typeof ctx.stroke === 'function') ctx.stroke();
+      });
+    });
   }
 
-  // 2. Radial droplet explosion
-  if (splashP > 0.05 && splashP < 0.99) {
-    const splashAlpha = 1 - splashP;
-    ctx.globalAlpha *= splashAlpha;
-    const baseRadius = (w / 2 + px * 0.5) * (0.2 + 0.9 * splashP);
-    const dropColors = ['#A7F7FF', '#FFFA6F', '#FFFFFF', '#A7F7FF'];
+  // 2. Radial Liquid Splash Burst & Teardrop Droplets (framing the title)
+  if (introP > 0.08) {
+    const burstP = clamp01((introP - 0.08) / 0.92);
+    const easedBurst = 1 - Math.pow(1 - burstP, 3);
+    const scaleFactor = (0.35 + 0.65 * easedBurst) * (1 - outroP * 0.85);
+    const breathe = 1 + 0.035 * Math.sin(t * 3.8);
 
-    for (let i = 0; i < 12; i++) {
-      const angle = (i / 12) * Math.PI * 2 + (i % 2 === 0 ? 0.1 : -0.1);
-      const radVariation = 1 + 0.25 * Math.sin(i * 3.7);
-      const r = baseRadius * radVariation;
-      const dx = cx + Math.cos(angle) * r;
-      const dy = cy + Math.sin(angle) * r * 0.6;
-      const dropSize = Math.max(2, px * (0.1 - 0.06 * splashP));
+    const radiusX = (w / 2 + px * 0.8) * scaleFactor * breathe;
+    const radiusY = (h / 2 + px * 0.7) * scaleFactor * breathe;
 
-      ctx.fillStyle = dropColors[i % dropColors.length];
+    // 16 radial splash teardrops/rays replicating Mixkit 28
+    const SPLASH_RAYS = [
+      { angle: 0.12, distMul: 1.15, size: px * 0.18, col: '#FFFA6F' },
+      { angle: 0.48, distMul: 1.35, size: px * 0.22, col: '#A7F7FF' },
+      { angle: 0.82, distMul: 1.05, size: px * 0.14, col: '#FFFFFF' },
+      { angle: 1.18, distMul: 1.25, size: px * 0.2, col: '#FFFA6F' },
+      { angle: 1.57, distMul: 1.4, size: px * 0.24, col: '#A7F7FF' },
+      { angle: 1.96, distMul: 1.1, size: px * 0.15, col: '#FFFFFF' },
+      { angle: 2.32, distMul: 1.3, size: px * 0.22, col: '#FFFA6F' },
+      { angle: 2.7, distMul: 1.12, size: px * 0.17, col: '#A7F7FF' },
+      { angle: 3.14, distMul: 1.28, size: px * 0.23, col: '#FFFFFF' },
+      { angle: 3.56, distMul: 1.1, size: px * 0.15, col: '#FFFA6F' },
+      { angle: 3.92, distMul: 1.35, size: px * 0.21, col: '#A7F7FF' },
+      { angle: 4.3, distMul: 1.08, size: px * 0.14, col: '#FFFFFF' },
+      { angle: 4.71, distMul: 1.42, size: px * 0.24, col: '#FFFA6F' },
+      { angle: 5.12, distMul: 1.15, size: px * 0.17, col: '#A7F7FF' },
+      { angle: 5.52, distMul: 1.32, size: px * 0.2, col: '#FFFFFF' },
+      { angle: 5.92, distMul: 1.12, size: px * 0.16, col: '#FFFA6F' },
+    ];
+
+    SPLASH_RAYS.forEach((ray) => {
+      const rx = cx + Math.cos(ray.angle) * radiusX * ray.distMul;
+      const ry = cy + Math.sin(ray.angle) * radiusY * ray.distMul;
+      const s = ray.size * scaleFactor;
+
+      ctx.save();
+      ctx.translate(rx, ry);
+      if (typeof ctx.rotate === 'function') ctx.rotate(ray.angle);
+      ctx.fillStyle = ray.col;
+
+      if (typeof ctx.moveTo === 'function' && typeof ctx.bezierCurveTo === 'function') {
+        ctx.beginPath();
+        ctx.moveTo(s * 1.5, 0);
+        ctx.bezierCurveTo(s * 0.7, -s * 0.7, -s * 0.6, -s * 0.6, -s * 0.8, 0);
+        ctx.bezierCurveTo(-s * 0.6, s * 0.6, s * 0.7, s * 0.7, s * 1.5, 0);
+        ctx.fill();
+
+        if (typeof ctx.stroke === 'function') {
+          ctx.strokeStyle = '#050505';
+          ctx.lineWidth = Math.max(1.2, px * 0.04);
+          ctx.stroke();
+        }
+      } else if (typeof ctx.arc === 'function') {
+        ctx.beginPath();
+        ctx.arc(0, 0, Math.max(2, s * 0.8), 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.fillRect(-s, -s, s * 2, s * 2);
+      }
+      ctx.restore();
+    });
+  }
+
+  ctx.restore();
+}
+
+function drawCaptionMirrorSplashForeground(
+  ctx: CanvasRenderingContext2D,
+  bx: number,
+  by: number,
+  w: number,
+  h: number,
+  px: number,
+  t: number,
+  pageStart: number,
+  visEnd: number,
+  inDur: number,
+) {
+  if (
+    typeof ctx.beginPath !== 'function' ||
+    typeof ctx.fill !== 'function' ||
+    typeof ctx.save !== 'function' ||
+    typeof ctx.restore !== 'function'
+  ) {
+    return;
+  }
+
+  const cx = bx + w / 2;
+  const cy = by + h / 2;
+  const elapsed = Math.max(0, t - pageStart);
+  const remain = Math.max(0, visEnd - t);
+
+  const introP = clamp01(elapsed / Math.max(0.001, inDur));
+  const outroP = remain < 0.25 ? clamp01((0.25 - remain) / 0.25) : 0;
+  if (introP < 0.2) return;
+
+  ctx.save();
+  const popScale = clamp01((introP - 0.2) / 0.8) * (1 - outroP);
+
+  // 4-point cartoon sparkle stars placed around the four corners
+  const SPARKLES = [
+    {
+      offX: -w * 0.52 - px * 0.25,
+      offY: -h * 0.45 - px * 0.2,
+      baseSize: px * 0.16,
+      col: '#FFFFFF',
+      speed: 2.5,
+    },
+    {
+      offX: w * 0.52 + px * 0.2,
+      offY: -h * 0.4 - px * 0.25,
+      baseSize: px * 0.2,
+      col: '#FFFA6F',
+      speed: 3.2,
+    },
+    {
+      offX: -w * 0.48 - px * 0.18,
+      offY: h * 0.45 + px * 0.2,
+      baseSize: px * 0.18,
+      col: '#A7F7FF',
+      speed: 2.8,
+    },
+    {
+      offX: w * 0.5 + px * 0.22,
+      offY: h * 0.48 + px * 0.18,
+      baseSize: px * 0.15,
+      col: '#FFFFFF',
+      speed: 3.5,
+    },
+  ];
+
+  SPARKLES.forEach((sp, idx) => {
+    const size = sp.baseSize * popScale * (0.8 + 0.3 * Math.sin(t * sp.speed + idx));
+    const rot = t * 1.5 + idx * 1.2;
+
+    ctx.save();
+    ctx.translate(cx + sp.offX, cy + sp.offY);
+    if (typeof ctx.rotate === 'function') ctx.rotate(rot);
+    ctx.fillStyle = sp.col;
+
+    if (typeof ctx.moveTo === 'function' && typeof ctx.quadraticCurveTo === 'function') {
       ctx.beginPath();
-      drawCircle(dx, dy, dropSize);
+      ctx.moveTo(0, -size);
+      ctx.quadraticCurveTo(0, 0, size, 0);
+      ctx.quadraticCurveTo(0, 0, 0, size);
+      ctx.quadraticCurveTo(0, 0, -size, 0);
+      ctx.quadraticCurveTo(0, 0, 0, -size);
       ctx.fill();
+
+      if (typeof ctx.stroke === 'function') {
+        ctx.strokeStyle = '#050505';
+        ctx.lineWidth = Math.max(1, px * 0.03);
+        ctx.stroke();
+      }
+    } else if (typeof ctx.arc === 'function') {
+      ctx.beginPath();
+      ctx.arc(0, 0, Math.max(2, size), 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.fillRect(-size, -size, size * 2, size * 2);
     }
-  }
+
+    ctx.restore();
+  });
+
   ctx.restore();
 }
 
