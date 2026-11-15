@@ -84,8 +84,10 @@ describe('Text Section Sub-Sections Navigation & Quick Text Layout', () => {
 
     // Verify sub-section navigation buttons exist (Animations removed from left panel)
     expect(screen.getByRole('tab', { name: /add text/i })).toBeDefined();
-    expect(screen.getByRole('tab', { name: /youtube & social/i })).toBeDefined();
-    expect(screen.getByRole('tab', { name: /mogrt animations/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /call-outs/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /youtube pack/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /social handles/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /mogrt titles/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /templates/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /movie styles/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /lower thirds/i })).toBeDefined();
@@ -130,12 +132,20 @@ describe('Text Section Sub-Sections Navigation & Quick Text Layout', () => {
     fireEvent.click(screen.getByRole('tab', { name: /add text/i }));
     expect(handleTabChange).toHaveBeenCalledWith('addText');
 
-    // Click on 'YouTube & Social'
-    fireEvent.click(screen.getByRole('tab', { name: /youtube & social/i }));
+    // Click on 'Call-outs'
+    fireEvent.click(screen.getByRole('tab', { name: /call-outs/i }));
+    expect(handleTabChange).toHaveBeenCalledWith('callouts');
+
+    // Click on 'YouTube Pack'
+    fireEvent.click(screen.getByRole('tab', { name: /youtube pack/i }));
     expect(handleTabChange).toHaveBeenCalledWith('youtubeGraphics');
 
-    // Click on 'MOGRT animations'
-    fireEvent.click(screen.getByRole('tab', { name: /mogrt animations/i }));
+    // Click on 'Social handles'
+    fireEvent.click(screen.getByRole('tab', { name: /social handles/i }));
+    expect(handleTabChange).toHaveBeenCalledWith('socialGraphics');
+
+    // Click on 'MOGRT titles'
+    fireEvent.click(screen.getByRole('tab', { name: /mogrt titles/i }));
     expect(handleTabChange).toHaveBeenCalledWith('mogrtAnimations');
 
     // Click on 'Movie styles'

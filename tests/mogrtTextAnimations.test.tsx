@@ -99,22 +99,22 @@ describe('Authentic MOGRT Text Animations in Text Section', () => {
     expect(splashCall.role).toBe('TEXT HERE');
     expect((splashCall as any).isLockedMogrt).toBe(true);
 
-    // Verify RGB Glitch Title & Bold Callout
-    const rgbBtn = screen.getByRole('button', { name: /rgb glitch title/i });
+    // Verify RGB Glitch Title & Cyber Strobe
+    const rgbBtn = screen.getByRole('button', { name: /rgb glitch/i });
     expect(rgbBtn).toBeDefined();
     fireEvent.click(rgbBtn);
     expect(handleAddLowerThird).toHaveBeenCalledTimes(3);
     const rgbCall = handleAddLowerThird.mock.calls[2][0] as LowerThirdSpec;
     expect(rgbCall.templateId).toBe('mogrt-rgb-glitch');
 
-    const calloutBtn = screen.getByRole('button', { name: /bold callout/i });
-    expect(calloutBtn).toBeDefined();
-    fireEvent.click(calloutBtn);
+    const cyberBtn = screen.getByRole('button', { name: /cyber strobe/i });
+    expect(cyberBtn).toBeDefined();
+    fireEvent.click(cyberBtn);
     expect(handleAddLowerThird).toHaveBeenCalledTimes(4);
-    const calloutCall = handleAddLowerThird.mock.calls[3][0] as LowerThirdSpec;
-    expect(calloutCall.templateId).toBe('mogrt-bold-callout');
+    const cyberCall = handleAddLowerThird.mock.calls[3][0] as LowerThirdSpec;
+    expect(cyberCall.templateId).toBe('mogrt-rgb-cyber-02');
 
-    // Switch to YouTube & Social tab
+    // Switch to YouTube Pack tab
     rerender(
       <LibraryPanel
         leftTab="youtubeGraphics"
@@ -134,10 +134,11 @@ describe('Authentic MOGRT Text Animations in Text Section', () => {
       />,
     );
 
-    expect(screen.getByText('YouTube & Social Graphics')).toBeDefined();
+    expect(screen.getByText('YouTube Creator Elements')).toBeDefined();
+    expect(screen.getByText('8 MODELS')).toBeDefined();
     expect(screen.getByText('DEFAULT MODEL')).toBeDefined();
 
-    const ytBtn = screen.getByRole('button', { name: /add subscribe pill/i });
+    const ytBtn = screen.getByRole('button', { name: /add creator pill/i });
     expect(ytBtn).toBeDefined();
     fireEvent.click(ytBtn);
     expect(handleAddLowerThird).toHaveBeenCalledTimes(5);
@@ -146,13 +147,75 @@ describe('Authentic MOGRT Text Animations in Text Section', () => {
     expect(ytCall.name).toBe('CHANNEL NAME');
     expect(ytCall.role).toBe('1.2M SUBSCRIBERS');
 
+    // Test Minimal button
+    const minimalBtn = screen.getByRole('button', { name: /minimal red button/i });
+    expect(minimalBtn).toBeDefined();
+    fireEvent.click(minimalBtn);
+    expect(handleAddLowerThird).toHaveBeenCalledTimes(6);
+    expect((handleAddLowerThird.mock.calls[5][0] as LowerThirdSpec).templateId).toBe(
+      'mogrt-youtube-minimal',
+    );
+
+    // Switch to Social handles tab
+    rerender(
+      <LibraryPanel
+        leftTab="socialGraphics"
+        onTabChange={vi.fn()}
+        segments={mockSegments}
+        activeId="seg-1"
+        onSelectSegment={vi.fn()}
+        onSegmentsChange={vi.fn()}
+        onSeek={vi.fn()}
+        style={DEFAULT_STYLE}
+        onStyleChange={vi.fn()}
+        spokenLanguage="en"
+        scriptOutput="captions"
+        scope="all"
+        currentTime={2.5}
+        onAddLowerThird={handleAddLowerThird}
+      />,
+    );
+
+    expect(screen.getByText('Social Media Lower Thirds 2.0')).toBeDefined();
+    expect(screen.getByText('18 PLATFORMS')).toBeDefined();
+
     const socialBtn = screen.getByRole('button', { name: /instagram handle/i });
     expect(socialBtn).toBeDefined();
     fireEvent.click(socialBtn);
-    expect(handleAddLowerThird).toHaveBeenCalledTimes(6);
-    const socialCall = handleAddLowerThird.mock.calls[5][0] as LowerThirdSpec;
+    expect(handleAddLowerThird).toHaveBeenCalledTimes(7);
+    const socialCall = handleAddLowerThird.mock.calls[6][0] as LowerThirdSpec;
     expect(socialCall.templateId).toBe('mogrt-social-handle');
     expect(socialCall.name).toBe('@username');
+
+    // Switch to Call-outs tab
+    rerender(
+      <LibraryPanel
+        leftTab="callouts"
+        onTabChange={vi.fn()}
+        segments={mockSegments}
+        activeId="seg-1"
+        onSelectSegment={vi.fn()}
+        onSegmentsChange={vi.fn()}
+        onSeek={vi.fn()}
+        style={DEFAULT_STYLE}
+        onStyleChange={vi.fn()}
+        spokenLanguage="en"
+        scriptOutput="captions"
+        scope="all"
+        currentTime={2.5}
+        onAddLowerThird={handleAddLowerThird}
+      />,
+    );
+
+    expect(screen.getByText('Bold Call-Out Graphics')).toBeDefined();
+    expect(screen.getByText('8 STYLES')).toBeDefined();
+
+    const calloutBtn = screen.getByRole('button', { name: /right box callout/i });
+    expect(calloutBtn).toBeDefined();
+    fireEvent.click(calloutBtn);
+    expect(handleAddLowerThird).toHaveBeenCalledTimes(8);
+    const calloutCall = handleAddLowerThird.mock.calls[7][0] as LowerThirdSpec;
+    expect(calloutCall.templateId).toBe('mogrt-callout-right-box');
   });
 
   it('renders a locked, non-customizable inspector when a MOGRT animation is selected', () => {

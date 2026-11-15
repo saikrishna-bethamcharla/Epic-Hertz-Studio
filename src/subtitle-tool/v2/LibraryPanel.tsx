@@ -56,7 +56,9 @@ import LibraryLowerThirdsTab from './library/LibraryLowerThirdsTab';
 
 export type LibraryTab =
   | 'addText'
+  | 'callouts'
   | 'youtubeGraphics'
+  | 'socialGraphics'
   | 'mogrtAnimations'
   | 'templates'
   | 'movieStyles'
@@ -264,20 +266,39 @@ const TEXT_SUB_SECTIONS: Array<{
     description: 'Insert single text layers & headlines at playhead',
   },
   {
+    id: 'callouts',
+    label: 'Call-outs',
+    icon: Crosshair,
+    badge: '8',
+    title: 'Bold Call-Out Graphics',
+    description:
+      '8 directional & tech pointer callouts (Box, Reticle HUD, Brackets, Minimal Target)',
+  },
+  {
     id: 'youtubeGraphics',
-    label: 'YouTube & Social',
+    label: 'YouTube Pack',
+    icon: YouTubeIcon,
+    badge: '8',
+    title: 'YouTube Creator Elements',
+    description:
+      '8 authentic YouTube button models (Pill, Minimal, Like & Bell Bar, Channel Card, Gold, Neon, End Screen)',
+  },
+  {
+    id: 'socialGraphics',
+    label: 'Social handles',
     icon: Share2,
-    badge: '5',
-    title: 'YouTube & Social Graphics',
-    description: 'Subscribe button with bell & social handles (Default Models)',
+    badge: '18',
+    title: 'Social Media Lower Thirds 2.0',
+    description: '18 platform handle cards with animated sliding mask wipe',
   },
   {
     id: 'mogrtAnimations',
-    label: 'MOGRT animations',
+    label: 'MOGRT titles',
     icon: Sparkles,
-    badge: '4',
-    title: 'MOGRT Text Animations',
-    description: 'Authentic After Effects MOGRT motion titles (Locked Styles)',
+    badge: '5',
+    title: 'MOGRT Motion Titles',
+    description:
+      'Authentic After Effects motion titles (Spin & Twist, Mirror Splash, RGB Glitch, Cyber Strobe, Kinetic Wipe)',
   },
   {
     id: 'effects',
@@ -343,7 +364,9 @@ function LibraryPanel({
     activeTabKey === 'lowerThirds';
   const isTextActive =
     activeTabKey === 'addText' ||
+    activeTabKey === 'callouts' ||
     activeTabKey === 'youtubeGraphics' ||
+    activeTabKey === 'socialGraphics' ||
     activeTabKey === 'mogrtAnimations' ||
     activeTabKey === 'effects' ||
     activeTabKey === 'brand';
@@ -451,13 +474,7 @@ function LibraryPanel({
 
   // Helper to add locked MOGRT text & YouTube graphics animations
   const handleAddMogrtText = (
-    templateId:
-      | 'mogrt-spin-twist'
-      | 'mogrt-mirror-splash'
-      | 'mogrt-youtube-subscribe'
-      | 'mogrt-social-handle'
-      | 'mogrt-bold-callout'
-      | 'mogrt-rgb-glitch',
+    templateId: string,
     defaultName: string,
     defaultRole: string,
     extra?: string,
@@ -510,14 +527,25 @@ function LibraryPanel({
           introDuration: 0.8,
           outroDuration: 0.7,
         };
-      } else if (templateId === 'mogrt-youtube-subscribe') {
+      } else if (templateId.startsWith('mogrt-youtube')) {
+        let duration = 4.2;
+        let yPos = 0.82;
+        if (templateId === 'mogrt-youtube-minimal') duration = 3.6;
+        else if (templateId === 'mogrt-youtube-channel-card') {
+          duration = 4.8;
+          yPos = 0.8;
+        } else if (templateId === 'mogrt-youtube-end-screen') {
+          duration = 5.0;
+          yPos = 0.65;
+        }
+
         newLt = {
           ...DEFAULT_LOWER_THIRD,
           id: 'mogrt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
           templateId,
           name: defaultName,
           role: defaultRole,
-          position: { x: 0.5, y: 0.82, align: 'center' },
+          position: { x: 0.5, y: yPos, align: 'center' },
           font: { family: 'inter', weight: 800, size: 0.038 },
           scale: 1,
           colors: {
@@ -528,11 +556,11 @@ function LibraryPanel({
           },
           variant: 2,
           start: curTime,
-          end: curTime + 4.2,
+          end: curTime + duration,
           introDuration: 0.6,
           outroDuration: 0.6,
         };
-      } else if (templateId === 'mogrt-social-handle') {
+      } else if (templateId.startsWith('mogrt-social')) {
         newLt = {
           ...DEFAULT_LOWER_THIRD,
           id: 'mogrt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
@@ -555,18 +583,18 @@ function LibraryPanel({
           introDuration: 0.6,
           outroDuration: 0.5,
         };
-      } else if (templateId === 'mogrt-bold-callout') {
+      } else if (templateId.startsWith('mogrt-callout') || templateId === 'mogrt-bold-callout') {
         newLt = {
           ...DEFAULT_LOWER_THIRD,
           id: 'mogrt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
           templateId,
           name: defaultName,
           role: defaultRole,
-          position: { x: 0.6, y: 0.45, align: 'center' },
+          position: { x: 0.55, y: 0.45, align: 'center' },
           font: { family: 'montserrat', weight: 800, size: 0.036 },
           scale: 1,
           colors: {
-            primary: '#00E5FF',
+            primary: '#F59E0B',
             secondary: '#FFFFFF',
             textPrimary: '#FFFFFF',
             textSecondary: '#94A3B8',
@@ -578,7 +606,7 @@ function LibraryPanel({
           outroDuration: 0.6,
         };
       } else {
-        // mogrt-rgb-glitch
+        // mogrt-rgb-glitch, mogrt-rgb-cyber-02, mogrt-trendy-minimal-03
         newLt = {
           ...DEFAULT_LOWER_THIRD,
           id: 'mogrt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
@@ -605,17 +633,7 @@ function LibraryPanel({
       (newLt as any).isLockedMogrt = true;
       onAddLowerThird(newLt);
       if (onNotification) {
-        const labelMap: Record<string, string> = {
-          'mogrt-spin-twist': 'Spin & Twist MOGRT',
-          'mogrt-mirror-splash': 'Mirror Splash MOGRT',
-          'mogrt-youtube-subscribe': 'YouTube Subscribe & Bell Element',
-          'mogrt-social-handle': 'Social Media Handle Badge',
-          'mogrt-bold-callout': 'Bold Pointer Callout',
-          'mogrt-rgb-glitch': 'Trendy RGB Glitch Title',
-        };
-        onNotification(
-          `Added ${labelMap[templateId] || 'text animation'} at ${formatTimecode(curTime)}`,
-        );
+        onNotification(`Added text graphic at ${formatTimecode(curTime)}`);
       }
     }
   };
@@ -1169,7 +1187,234 @@ function LibraryPanel({
             )}
 
             {/* ─────────────────────────────────────────────────────────────
-              SUB-SECTION: YOUTUBE & SOCIAL GRAPHICS (DEFAULT MODELS)
+              SUB-SECTION: BOLD CALL-OUT GRAPHICS (8 STYLES)
+          ────────────────────────────────────────────────────────────── */}
+            {activeTabKey === 'callouts' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm text-bone">
+                        Bold Call-Out Graphics
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded font-mono text-[9px] font-bold border bg-amber-400/15 border-amber-400/30 text-amber-300">
+                        8 STYLES
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded font-mono text-[9px] font-bold border bg-white/10 border-white/20 text-smoke">
+                        DEFAULT MODEL
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-smoke mt-0.5">
+                      Precision target anchors, animated leader lines &amp; info cards (from Bold
+                      Call-Outs MOGRTs).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5">
+                  {/* 1. Right Box Callout */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-callout-right-box',
+                        'PRODUCT FEATURE',
+                        'Key detail highlighted here',
+                      )
+                    }
+                    className="group p-3.5 rounded-xl bg-[#181817] border border-amber-400/30 hover:border-amber-400 hover:bg-[#201d16] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center relative overflow-hidden"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-amber-400/15 border border-amber-400/40 group-hover:bg-amber-400/25 group-hover:border-amber-400 flex items-center justify-center transition-colors">
+                      <Crosshair className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-amber-300">
+                      Right Box Callout
+                    </span>
+                    <span className="text-[9.5px] text-smoke">Bottom-Left Anchor · Amber Bar</span>
+                    <span className="text-[8.5px] font-mono px-1.5 py-0.5 rounded bg-amber-400/10 text-amber-300">
+                      Style 01
+                    </span>
+                  </button>
+
+                  {/* 2. Left Box Callout */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-callout-left-box',
+                        'SPECIFICATION',
+                        'Technical parameter note',
+                      )
+                    }
+                    className="group p-3.5 rounded-xl bg-[#181817] border border-cyan-400/30 hover:border-cyan-400 hover:bg-[#152023] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center relative overflow-hidden"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-cyan-400/15 border border-cyan-400/40 group-hover:bg-cyan-400/25 group-hover:border-cyan-400 flex items-center justify-center transition-colors">
+                      <Crosshair className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-cyan-300">
+                      Left Box Callout
+                    </span>
+                    <span className="text-[9.5px] text-smoke">Bottom-Right Anchor · Cyan Bar</span>
+                    <span className="text-[8.5px] font-mono px-1.5 py-0.5 rounded bg-cyan-400/10 text-cyan-300">
+                      Style 02
+                    </span>
+                  </button>
+
+                  {/* 3. Top Pointer Callout */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-callout-top-pointer',
+                        'HEADER CALLOUT',
+                        'Direct vertical leader up',
+                      )
+                    }
+                    className="group p-3.5 rounded-xl bg-[#181817] border border-lime-400/30 hover:border-lime-400 hover:bg-[#182216] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center relative overflow-hidden"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-lime-400/15 border border-lime-400/40 group-hover:bg-lime-400/25 group-hover:border-lime-400 flex items-center justify-center transition-colors">
+                      <Crosshair className="w-4 h-4 text-lime-400 group-hover:scale-110 transition-transform" />
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-lime-300">
+                      Top Pointer Callout
+                    </span>
+                    <span className="text-[9.5px] text-smoke">Vertical Down · Lime Accent</span>
+                    <span className="text-[8.5px] font-mono px-1.5 py-0.5 rounded bg-lime-400/10 text-lime-300">
+                      Style 03
+                    </span>
+                  </button>
+
+                  {/* 4. Bottom Pointer Callout */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-callout-bottom-pointer',
+                        'BOTTOM ANCHOR',
+                        'Direct vertical leader down',
+                      )
+                    }
+                    className="group p-3.5 rounded-xl bg-[#181817] border border-orange-400/30 hover:border-orange-400 hover:bg-[#221a16] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center relative overflow-hidden"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-orange-400/15 border border-orange-400/40 group-hover:bg-orange-400/25 group-hover:border-orange-400 flex items-center justify-center transition-colors">
+                      <Crosshair className="w-4 h-4 text-orange-400 group-hover:scale-110 transition-transform" />
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-orange-300">
+                      Bottom Pointer Callout
+                    </span>
+                    <span className="text-[9.5px] text-smoke">Vertical Up · Orange Accent</span>
+                    <span className="text-[8.5px] font-mono px-1.5 py-0.5 rounded bg-orange-400/10 text-orange-300">
+                      Style 04
+                    </span>
+                  </button>
+
+                  {/* 5. HUD Tech Reticle */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-callout-reticle-hud',
+                        'TARGET IDENTIFIED',
+                        'Telemetry lock • 37.77° N',
+                      )
+                    }
+                    className="group p-3.5 rounded-xl bg-[#181817] border border-red-500/30 hover:border-red-500 hover:bg-[#221516] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center relative overflow-hidden"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-red-500/15 border border-red-500/40 group-hover:bg-red-500/25 group-hover:border-red-500 flex items-center justify-center transition-colors">
+                      <Crosshair className="w-4 h-4 text-red-400 group-hover:scale-110 transition-transform" />
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-red-300">
+                      HUD Tech Reticle
+                    </span>
+                    <span className="text-[9.5px] text-smoke">Rotating Crosshair · Telemetry</span>
+                    <span className="text-[8.5px] font-mono px-1.5 py-0.5 rounded bg-red-500/10 text-red-300">
+                      Style 05 · Cyber
+                    </span>
+                  </button>
+
+                  {/* 6. Corner Brackets */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-callout-bracket-card',
+                        'METRIC VALUE',
+                        'Precision corner bracket frame',
+                      )
+                    }
+                    className="group p-3.5 rounded-xl bg-[#181817] border border-sky-400/30 hover:border-sky-400 hover:bg-[#161d22] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center relative overflow-hidden"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-sky-400/15 border border-sky-400/40 group-hover:bg-sky-400/25 group-hover:border-sky-400 flex items-center justify-center transition-colors">
+                      <span className="text-sm font-mono font-bold text-sky-400 tracking-tighter">
+                        [ ]
+                      </span>
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-sky-300">
+                      Corner Brackets
+                    </span>
+                    <span className="text-[9.5px] text-smoke">Framing Corners · Target Dot</span>
+                    <span className="text-[8.5px] font-mono px-1.5 py-0.5 rounded bg-sky-400/10 text-sky-300">
+                      Style 06
+                    </span>
+                  </button>
+
+                  {/* 7. Minimal Target Ring */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-callout-minimal-target',
+                        'MINIMAL POINTER',
+                        'Clean architectural callout',
+                      )
+                    }
+                    className="group p-3.5 rounded-xl bg-[#181817] border border-white/20 hover:border-white hover:bg-[#202020] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center relative overflow-hidden"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-white/10 border border-white/25 group-hover:bg-white/20 group-hover:border-white flex items-center justify-center transition-colors">
+                      <div className="w-4 h-4 rounded-full border border-white flex items-center justify-center">
+                        <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-white">
+                      Minimal Target Ring
+                    </span>
+                    <span className="text-[9.5px] text-smoke">
+                      Concentric Rings · Floating Text
+                    </span>
+                    <span className="text-[8.5px] font-mono px-1.5 py-0.5 rounded bg-white/10 text-bone">
+                      Style 07
+                    </span>
+                  </button>
+
+                  {/* 8. Solid Badge Capsule */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-callout-solid-badge',
+                        'POPULAR CHOICE',
+                        'Highlight badge',
+                      )
+                    }
+                    className="group p-3.5 rounded-xl bg-[#181817] border border-amber-500/30 hover:border-amber-500 hover:bg-[#221c15] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center relative overflow-hidden"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-amber-500/15 border border-amber-500/40 group-hover:bg-amber-500/25 group-hover:border-amber-500 flex items-center justify-center transition-colors">
+                      <Sparkles className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-amber-300">
+                      Solid Badge Capsule
+                    </span>
+                    <span className="text-[9.5px] text-smoke">Vibrant Pill · Pointer Needle</span>
+                    <span className="text-[8.5px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300">
+                      Style 08
+                    </span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ─────────────────────────────────────────────────────────────
+              SUB-SECTION: YOUTUBE PACK GRAPHICS (8 MODELS)
           ────────────────────────────────────────────────────────────── */}
             {activeTabKey === 'youtubeGraphics' && (
               <div className="space-y-4">
@@ -1177,182 +1422,651 @@ function LibraryPanel({
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-sm text-bone">
-                        YouTube &amp; Social Graphics
+                        YouTube Creator Elements
                       </span>
                       <span className="px-1.5 py-0.5 rounded font-mono text-[9px] font-bold border bg-red-500/15 border-red-500/30 text-red-300">
+                        8 MODELS
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded font-mono text-[9px] font-bold border bg-white/10 border-white/20 text-smoke">
                         DEFAULT MODEL
                       </span>
                     </div>
                     <p className="text-[11px] text-smoke mt-0.5">
-                      Subscribe button with bell chime &amp; multi-platform social handles.
+                      Recreated from YouTube Pack (82 button styles) with authentic transitions
+                      &amp; bell chimes.
                     </p>
                   </div>
                 </div>
 
-                {/* Hero Feature: YouTube Subscribe & Bell Element */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10.5px] font-bold uppercase tracking-wider text-red-400">
-                      YouTube Subscribe Element
-                    </span>
-                    <span className="text-[9.5px] text-smoke">
-                      Avatar · Bell Ring · Sound Waves
-                    </span>
+                {/* Hero Feature: Model 01 - YouTube Subscribe Creator Pill */}
+                <div className="p-3.5 rounded-xl bg-[#181817] border border-red-500/30 hover:border-red-500/60 transition-all flex flex-col gap-3">
+                  <div className="p-3 rounded-lg bg-[#0e0e0d] border border-white/5 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-red-600 to-red-400 flex items-center justify-center shrink-0 shadow-md">
+                        <YouTubeIcon className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-white tracking-tight truncate">
+                          CHANNEL NAME
+                        </div>
+                        <div className="text-[10px] text-zinc-400 font-mono">1.2M SUBSCRIBERS</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="px-2.5 py-1 rounded-full bg-red-600 text-white font-bold text-[10px] tracking-wide">
+                        SUBSCRIBE
+                      </div>
+                      <div className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center text-amber-400">
+                        <Sparkles className="w-3 h-3" />
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="p-3.5 rounded-xl bg-[#181817] border border-red-500/30 hover:border-red-500/60 transition-all flex flex-col gap-3">
-                    {/* Realistic Preview Mockup */}
-                    <div className="p-3 rounded-lg bg-[#0e0e0d] border border-white/5 flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-red-600 to-red-400 flex items-center justify-center shrink-0 shadow-md">
-                          <YouTubeIcon className="w-5 h-5 text-white" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="text-xs font-bold text-white tracking-tight truncate">
-                            CHANNEL NAME
-                          </div>
-                          <div className="text-[10px] text-zinc-400 font-mono">
-                            1.2M SUBSCRIBERS
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <div className="px-2.5 py-1 rounded-full bg-red-600 text-white font-bold text-[10px] tracking-wide">
-                          SUBSCRIBE
-                        </div>
-                        <div className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center text-amber-400">
-                          <Sparkles className="w-3 h-3" />
-                        </div>
-                      </div>
+                  <div className="flex items-center justify-between pt-1">
+                    <div className="text-[10.5px] text-smoke">
+                      Model 01: Creator Pill · Clicks from{' '}
+                      <span className="text-red-400 font-semibold">SUBSCRIBE</span> to{' '}
+                      <span className="text-zinc-300 font-semibold">SUBSCRIBED</span> + bell
                     </div>
-
-                    <div className="flex items-center justify-between pt-1">
-                      <div className="text-[10.5px] text-smoke">
-                        Clicks from <span className="text-red-400 font-semibold">SUBSCRIBE</span> to{' '}
-                        <span className="text-zinc-300 font-semibold">SUBSCRIBED</span> + bell
-                        vibrations
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleAddMogrtText(
-                            'mogrt-youtube-subscribe',
-                            'CHANNEL NAME',
-                            '1.2M SUBSCRIBERS',
-                          )
-                        }
-                        className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white font-semibold text-xs transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Add Subscribe Pill</span>
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleAddMogrtText(
+                          'mogrt-youtube-subscribe',
+                          'CHANNEL NAME',
+                          '1.2M SUBSCRIBERS',
+                        )
+                      }
+                      className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white font-semibold text-xs transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Creator Pill</span>
+                    </button>
                   </div>
                 </div>
 
-                {/* Social Media Handle Badges */}
-                <div className="space-y-2 pt-2 border-t border-white/10">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10.5px] font-bold uppercase tracking-wider text-mist">
-                      Social Media Handle Badges
+                {/* Additional 7 YouTube Models Grid */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  {/* Model 02: Minimal Red Button */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText('mogrt-youtube-minimal', 'SUBSCRIBE', 'CHANNEL')
+                    }
+                    className="group p-3.5 rounded-xl bg-[#181817] border border-red-500/30 hover:border-red-500 hover:bg-[#221515] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-red-600 flex items-center justify-center text-white shadow-sm">
+                      <YouTubeIcon className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-red-300">
+                      Minimal Red Button
                     </span>
-                    <span className="text-[9.5px] text-smoke">
-                      Sliding Mask Wipe · Verified Accents
+                    <span className="text-[9.5px] text-smoke font-mono">▶ SUBSCRIBE Pill Pop</span>
+                    <span className="text-[8.5px] font-mono px-1.5 py-0.5 rounded bg-red-500/10 text-red-300">
+                      Model 02
                     </span>
+                  </button>
+
+                  {/* Model 03: 3-in-1 Engagement Bar */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText('mogrt-youtube-like-bell', 'EPIC HERTZ', 'JOIN US')
+                    }
+                    className="group p-3.5 rounded-xl bg-[#181817] border border-sky-400/30 hover:border-sky-400 hover:bg-[#151c22] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-sky-500/15 border border-sky-500/40 flex items-center justify-center text-sky-400 shadow-sm">
+                      <span className="text-sm font-bold">👍</span>
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-sky-300">
+                      Like &amp; Bell Bar
+                    </span>
+                    <span className="text-[9.5px] text-smoke font-mono">
+                      Like + Subscribe + Bell
+                    </span>
+                    <span className="text-[8.5px] font-mono px-1.5 py-0.5 rounded bg-sky-400/10 text-sky-300">
+                      Model 03
+                    </span>
+                  </button>
+
+                  {/* Model 04: Channel Profile Card */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-youtube-channel-card',
+                        'CREATOR NAME',
+                        '1.2M subscribers',
+                      )
+                    }
+                    className="group p-3.5 rounded-xl bg-[#181817] border border-white/10 hover:border-white/40 hover:bg-[#1d1d1c] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-sm">
+                      <span className="text-xs font-bold">CARD</span>
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-white">
+                      Channel Profile Card
+                    </span>
+                    <span className="text-[9.5px] text-smoke font-mono">
+                      Banner + Avatar + ✓ Badge
+                    </span>
+                    <span className="text-[8.5px] font-mono px-1.5 py-0.5 rounded bg-white/10 text-bone">
+                      Model 04
+                    </span>
+                  </button>
+
+                  {/* Model 05: Gold Metallic Subscribe */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText('mogrt-youtube-gold', 'VIP CHANNEL', 'Premium Member')
+                    }
+                    className="group p-3.5 rounded-xl bg-[#181817] border border-amber-400/30 hover:border-amber-400 hover:bg-[#201d16] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center text-black font-black text-xs shadow-sm">
+                      ★
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-amber-300">
+                      Gold Metallic Subscribe
+                    </span>
+                    <span className="text-[9.5px] text-smoke font-mono">Luxury Gold Gradient</span>
+                    <span className="text-[8.5px] font-mono px-1.5 py-0.5 rounded bg-amber-400/10 text-amber-300">
+                      Model 05
+                    </span>
+                  </button>
+
+                  {/* Model 06: Cyber Neon Red */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText('mogrt-youtube-neon', 'CYBER CHANNEL', 'TECH UPLOAD')
+                    }
+                    className="group p-3.5 rounded-xl bg-[#181817] border border-pink-500/30 hover:border-pink-500 hover:bg-[#22151c] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-pink-500/20 border border-pink-500 flex items-center justify-center text-pink-400 shadow-sm">
+                      <Zap className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-pink-300">
+                      Cyber Neon Red
+                    </span>
+                    <span className="text-[9.5px] text-smoke font-mono">
+                      Neon Glow · Tech Corners
+                    </span>
+                    <span className="text-[8.5px] font-mono px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-300">
+                      Model 06
+                    </span>
+                  </button>
+
+                  {/* Model 07: End Screen Round CTA */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText('mogrt-youtube-end-screen', 'CHANNEL NAME', 'SUBSCRIBE')
+                    }
+                    className="group p-3.5 rounded-xl bg-[#181817] border border-red-500/30 hover:border-red-500 hover:bg-[#221515] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-9 h-9 rounded-full bg-red-600/20 border-2 border-red-500 flex items-center justify-center text-red-400 shadow-sm">
+                      <div className="w-3 h-3 rounded-full bg-red-500" />
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-red-300">
+                      End Screen Round CTA
+                    </span>
+                    <span className="text-[9.5px] text-smoke font-mono">Circular Radar Waves</span>
+                    <span className="text-[8.5px] font-mono px-1.5 py-0.5 rounded bg-red-500/10 text-red-300">
+                      Model 07
+                    </span>
+                  </button>
+
+                  {/* Model 08: Bell Notification Ring */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-youtube-bell-ring',
+                        'NOTIFICATIONS ON',
+                        'Never miss an upload',
+                      )
+                    }
+                    className="group p-3.5 rounded-xl bg-[#181817] border border-amber-300/30 hover:border-amber-300 hover:bg-[#201d16] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center col-span-2"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-amber-400/20 border border-amber-400 flex items-center justify-center text-amber-300 shadow-sm">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-amber-300">
+                      Bell Notification Ring
+                    </span>
+                    <span className="text-[9.5px] text-smoke font-mono">
+                      Swinging Golden Bell · Chime Soundwaves
+                    </span>
+                    <span className="text-[8.5px] font-mono px-1.5 py-0.5 rounded bg-amber-400/10 text-amber-300">
+                      Model 08
+                    </span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ─────────────────────────────────────────────────────────────
+              SUB-SECTION: SOCIAL MEDIA LOWER THIRDS 2.0 (18 PLATFORMS)
+          ────────────────────────────────────────────────────────────── */}
+            {activeTabKey === 'socialGraphics' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm text-bone">
+                        Social Media Lower Thirds 2.0
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded font-mono text-[9px] font-bold border bg-pink-500/15 border-pink-500/30 text-pink-300">
+                        18 PLATFORMS
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded font-mono text-[9px] font-bold border bg-white/10 border-white/20 text-smoke">
+                        DEFAULT MODEL
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-smoke mt-0.5">
+                      Smooth sliding mask wipe with authentic verified badge &amp; branding colors.
+                    </p>
                   </div>
+                </div>
 
-                  <div className="grid grid-cols-2 gap-2.5">
-                    {/* Instagram Handle */}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleAddMogrtText(
-                          'mogrt-social-handle',
-                          '@username',
-                          'FOLLOW ON INSTAGRAM',
-                          'instagram',
-                        )
-                      }
-                      className="group p-3 rounded-xl bg-[#181817] border border-pink-500/30 hover:border-pink-500 hover:bg-[#20151c] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-500 via-pink-500 to-purple-600 flex items-center justify-center text-white shadow-sm">
-                        <Share2 className="w-4 h-4" />
-                      </div>
-                      <span className="text-xs font-bold text-bone group-hover:text-pink-300">
-                        Instagram Handle
-                      </span>
-                      <span className="text-[9.5px] text-smoke font-mono">@username · Follow</span>
-                    </button>
+                <div className="grid grid-cols-2 gap-2.5">
+                  {/* Instagram */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-social-handle',
+                        '@username',
+                        'FOLLOW ON INSTAGRAM',
+                        'instagram',
+                      )
+                    }
+                    className="group p-3 rounded-xl bg-[#181817] border border-pink-500/30 hover:border-pink-500 hover:bg-[#20151c] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-500 via-pink-500 to-purple-600 flex items-center justify-center text-white shadow-sm">
+                      <Share2 className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-pink-300">
+                      Instagram Handle
+                    </span>
+                    <span className="text-[9.5px] text-smoke font-mono">@username · Follow</span>
+                  </button>
 
-                    {/* YouTube Channel Handle */}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleAddMogrtText(
-                          'mogrt-social-handle',
-                          '@channel',
-                          'SUBSCRIBE ON YOUTUBE',
-                          'youtube',
-                        )
-                      }
-                      className="group p-3 rounded-xl bg-[#181817] border border-red-500/30 hover:border-red-500 hover:bg-[#221515] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white shadow-sm">
-                        <YouTubeIcon className="w-4 h-4" />
-                      </div>
-                      <span className="text-xs font-bold text-bone group-hover:text-red-300">
-                        YouTube Handle
-                      </span>
-                      <span className="text-[9.5px] text-smoke font-mono">
-                        @channel · Subscribe
-                      </span>
-                    </button>
+                  {/* YouTube */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-social-handle',
+                        '@channel',
+                        'SUBSCRIBE ON YOUTUBE',
+                        'youtube',
+                      )
+                    }
+                    className="group p-3 rounded-xl bg-[#181817] border border-red-500/30 hover:border-red-500 hover:bg-[#221515] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white shadow-sm">
+                      <YouTubeIcon className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-red-300">
+                      YouTube Handle
+                    </span>
+                    <span className="text-[9.5px] text-smoke font-mono">@channel · Subscribe</span>
+                  </button>
 
-                    {/* X / Twitter Handle */}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleAddMogrtText(
-                          'mogrt-social-handle',
-                          '@username',
-                          'FOLLOW ON X',
-                          'twitter',
-                        )
-                      }
-                      className="group p-3 rounded-xl bg-[#181817] border border-sky-500/30 hover:border-sky-500 hover:bg-[#151c22] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-sky-500 flex items-center justify-center text-white shadow-sm">
-                        <span className="font-black text-xs">𝕏</span>
-                      </div>
-                      <span className="text-xs font-bold text-bone group-hover:text-sky-300">
-                        X / Twitter Handle
-                      </span>
-                      <span className="text-[9.5px] text-smoke font-mono">@handle · Follow</span>
-                    </button>
+                  {/* X / Twitter */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-social-handle',
+                        '@username',
+                        'FOLLOW ON X',
+                        'twitter',
+                      )
+                    }
+                    className="group p-3 rounded-xl bg-[#181817] border border-sky-500/30 hover:border-sky-500 hover:bg-[#151c22] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-sky-500 flex items-center justify-center text-white shadow-sm">
+                      <span className="font-black text-xs">𝕏</span>
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-sky-300">
+                      X / Twitter
+                    </span>
+                    <span className="text-[9.5px] text-smoke font-mono">@handle · Follow</span>
+                  </button>
 
-                    {/* TikTok Handle */}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleAddMogrtText(
-                          'mogrt-social-handle',
-                          '@username',
-                          'FOLLOW ON TIKTOK',
-                          'tiktok',
-                        )
-                      }
-                      className="group p-3 rounded-xl bg-[#181817] border border-cyan-500/30 hover:border-cyan-500 hover:bg-[#152020] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-cyan-400 flex items-center justify-center text-cyan-400 shadow-sm">
-                        <span className="font-bold text-xs">TT</span>
-                      </div>
-                      <span className="text-xs font-bold text-bone group-hover:text-cyan-300">
-                        TikTok Handle
-                      </span>
-                      <span className="text-[9.5px] text-smoke font-mono">@username · Follow</span>
-                    </button>
-                  </div>
+                  {/* TikTok */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-social-handle',
+                        '@username',
+                        'FOLLOW ON TIKTOK',
+                        'tiktok',
+                      )
+                    }
+                    className="group p-3 rounded-xl bg-[#181817] border border-cyan-500/30 hover:border-cyan-500 hover:bg-[#152020] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-cyan-400 flex items-center justify-center text-cyan-400 shadow-sm">
+                      <span className="font-bold text-xs">♪</span>
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-cyan-300">
+                      TikTok Handle
+                    </span>
+                    <span className="text-[9.5px] text-smoke font-mono">@username · Follow</span>
+                  </button>
+
+                  {/* WhatsApp */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-social-handle',
+                        '+1 (555) 0192',
+                        'CHAT ON WHATSAPP',
+                        'whatsapp',
+                      )
+                    }
+                    className="group p-3 rounded-xl bg-[#181817] border border-emerald-500/30 hover:border-emerald-500 hover:bg-[#152018] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-white shadow-sm font-bold text-xs">
+                      💬
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-emerald-300">
+                      WhatsApp
+                    </span>
+                    <span className="text-[9.5px] text-smoke font-mono">+phone · Message</span>
+                  </button>
+
+                  {/* Telegram */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-social-handle',
+                        '@telegram_channel',
+                        'JOIN TELEGRAM',
+                        'telegram',
+                      )
+                    }
+                    className="group p-3 rounded-xl bg-[#181817] border border-sky-400/30 hover:border-sky-400 hover:bg-[#151d22] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-sky-500 flex items-center justify-center text-white shadow-sm font-bold text-xs">
+                      ✈
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-sky-300">
+                      Telegram
+                    </span>
+                    <span className="text-[9.5px] text-smoke font-mono">@channel · Join</span>
+                  </button>
+
+                  {/* Discord */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-social-handle',
+                        'discord.gg/community',
+                        'JOIN OUR DISCORD',
+                        'discord',
+                      )
+                    }
+                    className="group p-3 rounded-xl bg-[#181817] border border-indigo-500/30 hover:border-indigo-500 hover:bg-[#181622] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-sm font-bold text-xs">
+                      🎮
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-indigo-300">
+                      Discord
+                    </span>
+                    <span className="text-[9.5px] text-smoke font-mono">Invite · Community</span>
+                  </button>
+
+                  {/* Facebook */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-social-handle',
+                        'facebook.com/page',
+                        'FOLLOW ON FACEBOOK',
+                        'facebook',
+                      )
+                    }
+                    className="group p-3 rounded-xl bg-[#181817] border border-blue-500/30 hover:border-blue-500 hover:bg-[#151922] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-sm font-black text-sm">
+                      f
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-blue-300">
+                      Facebook
+                    </span>
+                    <span className="text-[9.5px] text-smoke font-mono">Page · Follow</span>
+                  </button>
+
+                  {/* LinkedIn */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-social-handle',
+                        'linkedin.com/in/user',
+                        'CONNECT ON LINKEDIN',
+                        'linkedin',
+                      )
+                    }
+                    className="group p-3 rounded-xl bg-[#181817] border border-blue-600/30 hover:border-blue-600 hover:bg-[#151a22] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-[#0A66C2] flex items-center justify-center text-white shadow-sm font-black text-xs">
+                      in
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-blue-300">
+                      LinkedIn
+                    </span>
+                    <span className="text-[9.5px] text-smoke font-mono">Profile · Connect</span>
+                  </button>
+
+                  {/* Spotify */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-social-handle',
+                        'Artist Profile',
+                        'LISTEN ON SPOTIFY',
+                        'spotify',
+                      )
+                    }
+                    className="group p-3 rounded-xl bg-[#181817] border border-green-500/30 hover:border-green-500 hover:bg-[#152119] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-[#1DB954] flex items-center justify-center text-black shadow-sm font-black text-xs">
+                      ♫
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-green-300">
+                      Spotify
+                    </span>
+                    <span className="text-[9.5px] text-smoke font-mono">Music · Listen</span>
+                  </button>
+
+                  {/* Twitch */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-social-handle',
+                        'twitch.tv/streamer',
+                        'WATCH LIVE ON TWITCH',
+                        'twitch',
+                      )
+                    }
+                    className="group p-3 rounded-xl bg-[#181817] border border-purple-500/30 hover:border-purple-500 hover:bg-[#1d1522] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-[#9146FF] flex items-center justify-center text-white shadow-sm font-black text-xs">
+                      👾
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-purple-300">
+                      Twitch
+                    </span>
+                    <span className="text-[9.5px] text-smoke font-mono">Live · Stream</span>
+                  </button>
+
+                  {/* Snapchat */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-social-handle',
+                        '@snapchat_user',
+                        'ADD ON SNAPCHAT',
+                        'snapchat',
+                      )
+                    }
+                    className="group p-3 rounded-xl bg-[#181817] border border-yellow-400/30 hover:border-yellow-400 hover:bg-[#201f15] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-[#FFFC00] flex items-center justify-center text-black shadow-sm font-black text-xs">
+                      👻
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-yellow-300">
+                      Snapchat
+                    </span>
+                    <span className="text-[9.5px] text-smoke font-mono">Snap · Add</span>
+                  </button>
+
+                  {/* Pinterest */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-social-handle',
+                        'pinterest.com/boards',
+                        'FOLLOW ON PINTEREST',
+                        'pinterest',
+                      )
+                    }
+                    className="group p-3 rounded-xl bg-[#181817] border border-red-600/30 hover:border-red-600 hover:bg-[#221515] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-[#BD081C] flex items-center justify-center text-white shadow-sm font-black text-xs">
+                      P
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-red-300">
+                      Pinterest
+                    </span>
+                    <span className="text-[9.5px] text-smoke font-mono">Boards · Pin</span>
+                  </button>
+
+                  {/* Behance */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-social-handle',
+                        'behance.net/portfolio',
+                        'VIEW ON BEHANCE',
+                        'behance',
+                      )
+                    }
+                    className="group p-3 rounded-xl bg-[#181817] border border-blue-500/30 hover:border-blue-500 hover:bg-[#151922] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-[#1769FF] flex items-center justify-center text-white shadow-sm font-bold text-xs">
+                      Bē
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-blue-300">
+                      Behance
+                    </span>
+                    <span className="text-[9.5px] text-smoke font-mono">Portfolio · View</span>
+                  </button>
+
+                  {/* Dribbble */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-social-handle',
+                        'dribbble.com/designer',
+                        'FOLLOW ON DRIBBBLE',
+                        'dribbble',
+                      )
+                    }
+                    className="group p-3 rounded-xl bg-[#181817] border border-pink-400/30 hover:border-pink-400 hover:bg-[#20151a] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-[#EA4C89] flex items-center justify-center text-white shadow-sm font-bold text-xs">
+                      🏀
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-pink-300">
+                      Dribbble
+                    </span>
+                    <span className="text-[9.5px] text-smoke font-mono">Shots · Follow</span>
+                  </button>
+
+                  {/* Vimeo */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-social-handle',
+                        'vimeo.com/channel',
+                        'WATCH ON VIMEO',
+                        'vimeo',
+                      )
+                    }
+                    className="group p-3 rounded-xl bg-[#181817] border border-sky-400/30 hover:border-sky-400 hover:bg-[#151c22] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-[#1AB7EA] flex items-center justify-center text-white shadow-sm font-black text-xs">
+                      v
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-sky-300">
+                      Vimeo
+                    </span>
+                    <span className="text-[9.5px] text-smoke font-mono">Films · Watch</span>
+                  </button>
+
+                  {/* GitHub */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-social-handle',
+                        'github.com/developer',
+                        'STAR ON GITHUB',
+                        'github',
+                      )
+                    }
+                    className="group p-3 rounded-xl bg-[#181817] border border-white/20 hover:border-white hover:bg-[#202020] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-zinc-800 border border-white/20 flex items-center justify-center text-white shadow-sm font-bold text-xs">
+                      🐙
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-white">
+                      GitHub
+                    </span>
+                    <span className="text-[9.5px] text-smoke font-mono">Code · Star</span>
+                  </button>
+
+                  {/* Website / URL */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText(
+                        'mogrt-social-handle',
+                        'www.domain.com',
+                        'VISIT WEBSITE',
+                        'website',
+                      )
+                    }
+                    className="group p-3 rounded-xl bg-[#181817] border border-teal-500/30 hover:border-teal-500 hover:bg-[#15201d] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-white shadow-sm font-bold text-xs">
+                      🌐
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-teal-300">
+                      Website URL
+                    </span>
+                    <span className="text-[9.5px] text-smoke font-mono">Domain · Visit</span>
+                  </button>
                 </div>
               </div>
             )}
@@ -1367,6 +2081,9 @@ function LibraryPanel({
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-sm text-bone">MOGRT Text Animations</span>
                       <span className="px-1.5 py-0.5 rounded font-mono text-[9px] font-bold border bg-amber-400/15 border-amber-400/30 text-amber-300">
+                        5 STYLES
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded font-mono text-[9px] font-bold border bg-red-400/15 border-red-400/30 text-red-300">
                         NON-CUSTOMIZABLE
                       </span>
                     </div>
@@ -1429,7 +2146,7 @@ function LibraryPanel({
                     </span>
                   </button>
 
-                  {/* 3. RGB Glitch Title */}
+                  {/* 3. RGB Glitch Title 01 */}
                   <button
                     type="button"
                     onClick={() =>
@@ -1441,7 +2158,7 @@ function LibraryPanel({
                       <Zap className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
                     </div>
                     <span className="text-xs font-bold text-bone group-hover:text-cyan-300">
-                      RGB Glitch Title
+                      RGB Glitch 01
                     </span>
                     <span className="text-[9.5px] text-smoke">Trendy Titles · Chromatic</span>
                     <span className="text-[8.5px] font-mono px-1.5 py-0.5 rounded bg-cyan-400/10 text-cyan-300">
@@ -1449,27 +2166,49 @@ function LibraryPanel({
                     </span>
                   </button>
 
-                  {/* 4. Bold Pointer Callout */}
+                  {/* 4. Cyber Strobe 02 */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleAddMogrtText('mogrt-rgb-cyber-02', 'CYBER STROBE', 'NEON FLASH INTRO')
+                    }
+                    className="group p-3.5 rounded-xl bg-[#181817] border border-yellow-400/30 hover:border-yellow-400 hover:bg-[#201f16] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center relative overflow-hidden"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-yellow-400/15 border border-yellow-400/40 group-hover:bg-yellow-400/25 group-hover:border-yellow-400 flex items-center justify-center transition-colors">
+                      <Zap className="w-4 h-4 text-yellow-400 group-hover:scale-110 transition-transform" />
+                    </div>
+                    <span className="text-xs font-bold text-bone group-hover:text-yellow-300">
+                      Cyber Strobe 02
+                    </span>
+                    <span className="text-[9.5px] text-smoke">Trendy Titles · Neon Flash</span>
+                    <span className="text-[8.5px] font-mono px-1.5 py-0.5 rounded bg-yellow-400/10 text-yellow-300">
+                      3.6s duration
+                    </span>
+                  </button>
+
+                  {/* 5. Minimal Kinetic Wipe 03 */}
                   <button
                     type="button"
                     onClick={() =>
                       handleAddMogrtText(
-                        'mogrt-bold-callout',
-                        'FEATURE CALLOUT',
-                        'Key detail highlighted here',
+                        'mogrt-trendy-minimal-03',
+                        'KINETIC WIPE',
+                        'CLEAN MODERN MOTION',
                       )
                     }
-                    className="group p-3.5 rounded-xl bg-[#181817] border border-emerald-400/30 hover:border-emerald-400 hover:bg-[#15211a] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center relative overflow-hidden"
+                    className="group p-3.5 rounded-xl bg-[#181817] border border-white/20 hover:border-white hover:bg-[#202020] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center relative overflow-hidden col-span-2"
                   >
-                    <div className="w-9 h-9 rounded-lg bg-emerald-400/15 border border-emerald-400/40 group-hover:bg-emerald-400/25 group-hover:border-emerald-400 flex items-center justify-center transition-colors">
-                      <Crosshair className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+                    <div className="w-9 h-9 rounded-lg bg-white/10 border border-white/25 group-hover:bg-white/20 group-hover:border-white flex items-center justify-center transition-colors">
+                      <span className="text-xs font-mono font-bold text-white">—</span>
                     </div>
-                    <span className="text-xs font-bold text-bone group-hover:text-emerald-300">
-                      Bold Callout
+                    <span className="text-xs font-bold text-bone group-hover:text-white">
+                      Minimal Kinetic Wipe 03
                     </span>
-                    <span className="text-[9.5px] text-smoke">Target Dot · Leader Line</span>
-                    <span className="text-[8.5px] font-mono px-1.5 py-0.5 rounded bg-emerald-400/10 text-emerald-300">
-                      4.2s duration
+                    <span className="text-[9.5px] text-smoke">
+                      Trendy Titles · Clean Line Reveal
+                    </span>
+                    <span className="text-[8.5px] font-mono px-1.5 py-0.5 rounded bg-white/10 text-bone">
+                      3.6s duration
                     </span>
                   </button>
                 </div>

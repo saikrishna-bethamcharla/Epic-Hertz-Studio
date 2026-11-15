@@ -212,14 +212,21 @@ export default function LowerThirdInspector({
     spec.templateId === 'mixkit-28';
 
   const isYouTube =
-    spec.templateId === 'mogrt-youtube-subscribe' || spec.templateId === 'youtube-subscribe';
+    Boolean(spec.templateId?.startsWith('mogrt-youtube')) ||
+    spec.templateId === 'youtube-subscribe';
 
-  const isSocial = spec.templateId === 'mogrt-social-handle' || spec.templateId === 'social-handle';
+  const isSocial =
+    Boolean(spec.templateId?.startsWith('mogrt-social')) || spec.templateId === 'social-handle';
 
   const isBoldCallout =
-    spec.templateId === 'mogrt-bold-callout' || spec.templateId === 'bold-callout';
+    Boolean(spec.templateId?.startsWith('mogrt-callout')) ||
+    spec.templateId === 'mogrt-bold-callout' ||
+    spec.templateId === 'bold-callout';
 
-  const isRgbGlitch = spec.templateId === 'mogrt-rgb-glitch' || spec.templateId === 'rgb-glitch';
+  const isRgbGlitch =
+    Boolean(spec.templateId?.startsWith('mogrt-rgb')) ||
+    Boolean(spec.templateId?.startsWith('mogrt-trendy')) ||
+    spec.templateId === 'rgb-glitch';
 
   const isMogrt =
     isSpinTwist ||
@@ -228,17 +235,50 @@ export default function LowerThirdInspector({
     isSocial ||
     isBoldCallout ||
     isRgbGlitch ||
+    Boolean(spec.templateId?.startsWith('mogrt-')) ||
     Boolean((spec as any).isLockedMogrt);
 
   if (isMogrt) {
     const titleText = isYouTube
-      ? 'YouTube Subscribe'
+      ? spec.templateId === 'mogrt-youtube-minimal'
+        ? 'Minimal Red Button'
+        : spec.templateId === 'mogrt-youtube-like-bell'
+          ? 'Like & Bell Bar'
+          : spec.templateId === 'mogrt-youtube-channel-card'
+            ? 'Channel Profile Card'
+            : spec.templateId === 'mogrt-youtube-gold'
+              ? 'Gold Metallic Subscribe'
+              : spec.templateId === 'mogrt-youtube-neon'
+                ? 'Cyber Neon Subscribe'
+                : spec.templateId === 'mogrt-youtube-end-screen'
+                  ? 'End Screen Round CTA'
+                  : spec.templateId === 'mogrt-youtube-bell-ring'
+                    ? 'Bell Notification Ring'
+                    : 'YouTube Subscribe'
       : isSocial
         ? 'Social Media Handle'
         : isBoldCallout
-          ? 'Bold Pointer Callout'
+          ? spec.templateId === 'mogrt-callout-left-box'
+            ? 'Left Box Callout'
+            : spec.templateId === 'mogrt-callout-top-pointer'
+              ? 'Top Pointer Callout'
+              : spec.templateId === 'mogrt-callout-bottom-pointer'
+                ? 'Bottom Pointer Callout'
+                : spec.templateId === 'mogrt-callout-reticle-hud'
+                  ? 'HUD Tech Reticle'
+                  : spec.templateId === 'mogrt-callout-bracket-card'
+                    ? 'Corner Brackets'
+                    : spec.templateId === 'mogrt-callout-minimal-target'
+                      ? 'Minimal Target Ring'
+                      : spec.templateId === 'mogrt-callout-solid-badge'
+                        ? 'Solid Badge Capsule'
+                        : 'Right Box Callout'
           : isRgbGlitch
-            ? 'RGB Glitch Title'
+            ? spec.templateId === 'mogrt-rgb-cyber-02'
+              ? 'Cyber Strobe 02'
+              : spec.templateId === 'mogrt-trendy-minimal-03'
+                ? 'Minimal Kinetic Wipe 03'
+                : 'RGB Glitch Title 01'
             : isSpinTwist
               ? 'Spin & Twist'
               : 'Mirror Splash';
@@ -255,9 +295,10 @@ export default function LowerThirdInspector({
               ? 'Mixkit 222 · Framing Brackets'
               : 'Mixkit 28 · Watercolor Liquid Splash';
 
-    const badgeLabel = isYouTube || isSocial ? 'DEFAULT MODEL' : 'MOGRT LOCKED';
+    const badgeLabel = isYouTube || isSocial || isBoldCallout ? 'DEFAULT MODEL' : 'MOGRT LOCKED';
 
-    const currentPlatform = (spec.extra as any)?.platform || 'instagram';
+    const currentPlatform =
+      (typeof spec.extra === 'string' ? spec.extra : (spec.extra as any)?.platform) || 'instagram';
 
     return (
       <div className="flex flex-col h-full overflow-y-auto bg-[#141413] text-bone text-xs select-none p-4 space-y-5">
@@ -268,7 +309,7 @@ export default function LowerThirdInspector({
               <span className="font-semibold text-sm text-bone">{titleText}</span>
               <span
                 className={`px-1.5 py-0.5 rounded font-mono text-[9px] font-bold border ${
-                  isYouTube || isSocial
+                  isYouTube || isSocial || isBoldCallout
                     ? 'bg-red-500/15 border-red-500/30 text-red-300'
                     : 'bg-amber-400/15 border-amber-400/30 text-amber-300'
                 }`}
@@ -296,23 +337,25 @@ export default function LowerThirdInspector({
         {/* Notice Banner */}
         <div
           className={`p-2.5 rounded-xl border flex items-start gap-2 ${
-            isYouTube || isSocial
+            isYouTube || isSocial || isBoldCallout
               ? 'bg-red-500/10 border-red-500/20 text-red-200'
               : 'bg-amber-400/10 border-amber-400/20 text-amber-300'
           }`}
         >
           <Sparkles
             className={`w-4 h-4 shrink-0 mt-0.5 ${
-              isYouTube || isSocial ? 'text-red-400' : 'text-amber-400'
+              isYouTube || isSocial || isBoldCallout ? 'text-red-400' : 'text-amber-400'
             }`}
           />
           <div className="text-[11px] leading-relaxed">
             <span
               className={`font-semibold ${
-                isYouTube || isSocial ? 'text-red-300' : 'text-amber-300'
+                isYouTube || isSocial || isBoldCallout ? 'text-red-300' : 'text-amber-300'
               }`}
             >
-              {isYouTube || isSocial ? 'Default Graphic Model:' : 'Authentic MOGRT Animation:'}
+              {isYouTube || isSocial || isBoldCallout
+                ? 'Default Graphic Model:'
+                : 'Authentic MOGRT Animation:'}
             </span>{' '}
             {isYouTube
               ? 'Channel layout, animated click transition to Subscribed, and bell notification vibrations are locked to replicate standard YouTube graphics. Customize your channel name, subscriber count, and timing.'
@@ -333,7 +376,22 @@ export default function LowerThirdInspector({
               <span>Social Platform</span>
             </label>
             <div className="grid grid-cols-4 gap-1.5">
-              {(['instagram', 'youtube', 'twitter', 'tiktok'] as const).map((plat) => {
+              {(
+                [
+                  'instagram',
+                  'youtube',
+                  'twitter',
+                  'tiktok',
+                  'whatsapp',
+                  'telegram',
+                  'discord',
+                  'facebook',
+                  'linkedin',
+                  'spotify',
+                  'twitch',
+                  'website',
+                ] as const
+              ).map((plat) => {
                 const isActive = currentPlatform.toLowerCase() === plat;
                 return (
                   <button
