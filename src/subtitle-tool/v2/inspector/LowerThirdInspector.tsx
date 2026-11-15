@@ -542,13 +542,31 @@ export default function LowerThirdInspector({
 
             <div>
               <div className="flex items-center justify-between text-[10px] text-smoke">
+                <span>Horizontal Position (X)</span>
+                <span className="font-mono">{Math.round((spec.position?.x ?? 0.5) * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                aria-label="Lower third horizontal position"
+                min={0.05}
+                max={0.95}
+                step={0.01}
+                value={spec.position?.x ?? 0.5}
+                onChange={(e) => updatePosition({ x: parseFloat(e.target.value), align: 'center' })}
+                className="mt-1 w-full accent-amber-400 cursor-pointer"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between text-[10px] text-smoke">
                 <span>Vertical Position (Y)</span>
                 <span className="font-mono">{Math.round((spec.position?.y ?? 0.5) * 100)}%</span>
               </div>
               <input
                 type="range"
-                min={0.1}
-                max={0.9}
+                aria-label="Lower third vertical position"
+                min={0.05}
+                max={0.95}
                 step={0.01}
                 value={spec.position?.y ?? 0.5}
                 onChange={(e) => updatePosition({ y: parseFloat(e.target.value) })}
@@ -1200,6 +1218,25 @@ export default function LowerThirdInspector({
 
             <div>
               <div className="flex items-center justify-between text-[10px] text-smoke">
+                <span>Horizontal Position (X)</span>
+                <span className="font-mono text-amber-300">
+                  {Math.round((spec.position.x ?? 0.5) * 100)}%
+                </span>
+              </div>
+              <input
+                type="range"
+                aria-label="Lower third horizontal position"
+                min={0.05}
+                max={0.95}
+                step={0.01}
+                value={spec.position.x ?? 0.5}
+                onChange={(e) => updatePosition({ x: parseFloat(e.target.value), align: 'center' })}
+                className="mt-1 w-full accent-amber-400 cursor-pointer"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between text-[10px] text-smoke">
                 <span>Vertical Position (Y)</span>
                 <span className="font-mono text-amber-300">
                   {Math.round(spec.position.y * 100)}%
@@ -1208,8 +1245,8 @@ export default function LowerThirdInspector({
               <input
                 type="range"
                 aria-label="Lower third vertical position"
-                min={0.1}
-                max={0.92}
+                min={0.05}
+                max={0.95}
                 step={0.01}
                 value={spec.position.y}
                 onChange={(e) => updatePosition({ y: parseFloat(e.target.value) })}

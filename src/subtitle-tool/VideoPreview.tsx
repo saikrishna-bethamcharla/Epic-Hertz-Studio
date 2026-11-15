@@ -77,6 +77,11 @@ interface VideoPreviewProps {
   onDurationChange?: (duration: number) => void;
   onPlayStateChange?: (isPlaying: boolean) => void;
   lowerThirds?: LowerThirdSpec[];
+  selectedLowerThirdId?: string | null;
+  onSelectLowerThird?: (id: string | null) => void;
+  onUpdateLowerThird?: (updated: LowerThirdSpec) => void;
+  selectedSegmentId?: string | null;
+  onSelectSegment?: (id: string | null) => void;
   photoCache?: Map<string, HTMLImageElement>;
   hideCaptions?: boolean;
   onToggleHideCaptions?: () => void;
@@ -110,6 +115,11 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       onDurationChange,
       onPlayStateChange,
       lowerThirds,
+      selectedLowerThirdId,
+      onSelectLowerThird,
+      onUpdateLowerThird,
+      selectedSegmentId,
+      onSelectSegment,
       photoCache,
       hideCaptions = false,
       onToggleHideCaptions,
@@ -652,11 +662,16 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             </button>
           )}
 
-          {/* Captions: drawn by the same engine that renders the export */}
+          {/* Captions & Graphic Overlays: drawn by the same engine that renders the export */}
           <CaptionCanvas
             segments={segments}
             style={style}
             lowerThirds={lowerThirds}
+            selectedLowerThirdId={selectedLowerThirdId}
+            onSelectLowerThird={onSelectLowerThird}
+            onUpdateLowerThird={onUpdateLowerThird}
+            selectedSegmentId={selectedSegmentId}
+            onSelectSegment={onSelectSegment}
             photoCache={photoCache}
             videoRef={videoRef}
             hostRef={containerRef}

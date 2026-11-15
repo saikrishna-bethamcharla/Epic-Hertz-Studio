@@ -1140,6 +1140,15 @@ export default function SubtitleTool({
                         onStyleChange={setStyle}
                         onSegmentOverrideChange={handleSegmentOverride}
                         lowerThirds={lowerThirds}
+                        selectedLowerThirdId={activeLowerThirdId}
+                        onSelectLowerThird={setActiveLowerThirdId}
+                        onUpdateLowerThird={handleUpdateLowerThird}
+                        selectedSegmentId={selectedId ?? activeId}
+                        onSelectSegment={(id) => {
+                          setSelectedId(id);
+                          setActiveId(id);
+                          if (id) setActiveLowerThirdId(null);
+                        }}
                         photoCache={photoCache}
                         aspectRatio={aspectRatio}
                         onAspectRatioChange={setAspectRatio}
@@ -1309,6 +1318,15 @@ export default function SubtitleTool({
                       onStyleChange={setStyle}
                       onSegmentOverrideChange={handleSegmentOverride}
                       lowerThirds={lowerThirds}
+                      selectedLowerThirdId={activeLowerThirdId}
+                      onSelectLowerThird={setActiveLowerThirdId}
+                      onUpdateLowerThird={handleUpdateLowerThird}
+                      selectedSegmentId={selectedId ?? activeId}
+                      onSelectSegment={(id) => {
+                        setSelectedId(id);
+                        setActiveId(id);
+                        if (id) setActiveLowerThirdId(null);
+                      }}
                       photoCache={photoCache}
                       aspectRatio={aspectRatio}
                       onAspectRatioChange={setAspectRatio}
