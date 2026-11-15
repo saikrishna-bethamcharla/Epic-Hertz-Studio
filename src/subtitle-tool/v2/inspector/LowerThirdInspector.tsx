@@ -201,39 +201,82 @@ export default function LowerThirdInspector({
     setTimeout(() => setPresetSavedToast(false), 2500);
   };
 
-  const isMogrt =
-    spec.templateId === 'mogrt-spin-twist' ||
-    spec.templateId === 'title-spin-twist' ||
-    spec.templateId === 'mixkit-222' ||
-    spec.templateId === 'mogrt-mirror-splash' ||
-    spec.templateId === 'title-mirror-splash' ||
-    spec.templateId === 'mixkit-28' ||
-    Boolean((spec as any).isLockedMogrt);
-
   const isSpinTwist =
     spec.templateId === 'mogrt-spin-twist' ||
     spec.templateId === 'title-spin-twist' ||
     spec.templateId === 'mixkit-222';
 
+  const isMirrorSplash =
+    spec.templateId === 'mogrt-mirror-splash' ||
+    spec.templateId === 'title-mirror-splash' ||
+    spec.templateId === 'mixkit-28';
+
+  const isYouTube =
+    spec.templateId === 'mogrt-youtube-subscribe' || spec.templateId === 'youtube-subscribe';
+
+  const isSocial = spec.templateId === 'mogrt-social-handle' || spec.templateId === 'social-handle';
+
+  const isBoldCallout =
+    spec.templateId === 'mogrt-bold-callout' || spec.templateId === 'bold-callout';
+
+  const isRgbGlitch = spec.templateId === 'mogrt-rgb-glitch' || spec.templateId === 'rgb-glitch';
+
+  const isMogrt =
+    isSpinTwist ||
+    isMirrorSplash ||
+    isYouTube ||
+    isSocial ||
+    isBoldCallout ||
+    isRgbGlitch ||
+    Boolean((spec as any).isLockedMogrt);
+
   if (isMogrt) {
+    const titleText = isYouTube
+      ? 'YouTube Subscribe'
+      : isSocial
+        ? 'Social Media Handle'
+        : isBoldCallout
+          ? 'Bold Pointer Callout'
+          : isRgbGlitch
+            ? 'RGB Glitch Title'
+            : isSpinTwist
+              ? 'Spin & Twist'
+              : 'Mirror Splash';
+
+    const subTitleText = isYouTube
+      ? 'Animated Subscribe Click & Bell'
+      : isSocial
+        ? 'Platform Badge & Username'
+        : isBoldCallout
+          ? 'Target Anchor & Leader Line'
+          : isRgbGlitch
+            ? 'Trendy Titles · Chromatic Split'
+            : isSpinTwist
+              ? 'Mixkit 222 · Framing Brackets'
+              : 'Mixkit 28 · Watercolor Liquid Splash';
+
+    const badgeLabel = isYouTube || isSocial ? 'DEFAULT MODEL' : 'MOGRT LOCKED';
+
+    const currentPlatform = (spec.extra as any)?.platform || 'instagram';
+
     return (
       <div className="flex flex-col h-full overflow-y-auto bg-[#141413] text-bone text-xs select-none p-4 space-y-5">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-white/10 pb-3">
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-sm text-bone">
-                {isSpinTwist ? 'Spin & Twist' : 'Mirror Splash'}
-              </span>
-              <span className="px-1.5 py-0.5 rounded font-mono text-[9px] font-bold border bg-amber-400/15 border-amber-400/30 text-amber-300">
-                MOGRT LOCKED
+              <span className="font-semibold text-sm text-bone">{titleText}</span>
+              <span
+                className={`px-1.5 py-0.5 rounded font-mono text-[9px] font-bold border ${
+                  isYouTube || isSocial
+                    ? 'bg-red-500/15 border-red-500/30 text-red-300'
+                    : 'bg-amber-400/15 border-amber-400/30 text-amber-300'
+                }`}
+              >
+                {badgeLabel}
               </span>
             </div>
-            <span className="text-[11px] text-smoke">
-              {isSpinTwist
-                ? 'Mixkit 222 · Framing Brackets'
-                : 'Mixkit 28 · Watercolor Liquid Splash'}
-            </span>
+            <span className="text-[11px] text-smoke">{subTitleText}</span>
           </div>
 
           <div className="flex items-center gap-1.5">
@@ -250,46 +293,161 @@ export default function LowerThirdInspector({
           </div>
         </div>
 
-        {/* Locked Notice Banner */}
-        <div className="p-2.5 rounded-xl bg-amber-400/10 border border-amber-400/20 text-amber-300 flex items-start gap-2">
-          <Sparkles className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
-          <div className="text-[11px] leading-relaxed text-amber-200/90">
-            <span className="font-semibold text-amber-300">Authentic MOGRT Animation:</span>{' '}
-            Animation timing, liquid particles, colors, and typography are locked to replicate the
-            After Effects MOGRT file exactly. Customize your text lines, position, and timing below.
+        {/* Notice Banner */}
+        <div
+          className={`p-2.5 rounded-xl border flex items-start gap-2 ${
+            isYouTube || isSocial
+              ? 'bg-red-500/10 border-red-500/20 text-red-200'
+              : 'bg-amber-400/10 border-amber-400/20 text-amber-300'
+          }`}
+        >
+          <Sparkles
+            className={`w-4 h-4 shrink-0 mt-0.5 ${
+              isYouTube || isSocial ? 'text-red-400' : 'text-amber-400'
+            }`}
+          />
+          <div className="text-[11px] leading-relaxed">
+            <span
+              className={`font-semibold ${
+                isYouTube || isSocial ? 'text-red-300' : 'text-amber-300'
+              }`}
+            >
+              {isYouTube || isSocial ? 'Default Graphic Model:' : 'Authentic MOGRT Animation:'}
+            </span>{' '}
+            {isYouTube
+              ? 'Channel layout, animated click transition to Subscribed, and bell notification vibrations are locked to replicate standard YouTube graphics. Customize your channel name, subscriber count, and timing.'
+              : isSocial
+                ? 'Badge layout, verified branding accents, and kinetic animations are locked. Choose your platform, @username, and action prompt below.'
+                : isBoldCallout
+                  ? 'Pulsing target anchor and angled leader line vector drawing are locked. Customize your headline, description, and position.'
+                  : isRgbGlitch
+                    ? 'Chromatic RGB channel splitting and digital jitter scanlines are locked to replicate Trendy Titles 01. Customize your headline and subtitle.'
+                    : 'Animation timing, liquid particles, colors, and typography are locked to replicate the After Effects MOGRT file exactly. Customize your text lines, position, and timing below.'}
           </div>
         </div>
+
+        {/* Platform Selector for Social Handle */}
+        {isSocial && (
+          <div className="space-y-2">
+            <label className="text-[11px] font-semibold text-smoke uppercase tracking-wider flex items-center gap-1.5">
+              <span>Social Platform</span>
+            </label>
+            <div className="grid grid-cols-4 gap-1.5">
+              {(['instagram', 'youtube', 'twitter', 'tiktok'] as const).map((plat) => {
+                const isActive = currentPlatform.toLowerCase() === plat;
+                return (
+                  <button
+                    key={plat}
+                    type="button"
+                    onClick={() => updateSpec({ extra: plat })}
+                    className={`py-1.5 px-1 rounded-lg text-center font-semibold text-[10px] capitalize transition-all cursor-pointer border ${
+                      isActive
+                        ? plat === 'instagram'
+                          ? 'bg-pink-500/20 border-pink-500 text-pink-300 shadow-sm'
+                          : plat === 'youtube'
+                            ? 'bg-red-500/20 border-red-500 text-red-300 shadow-sm'
+                            : plat === 'twitter'
+                              ? 'bg-sky-500/20 border-sky-500 text-sky-300 shadow-sm'
+                              : 'bg-emerald-500/20 border-emerald-500 text-emerald-300 shadow-sm'
+                        : 'bg-[#1a1a18] border-white/10 text-smoke hover:text-bone hover:border-white/20'
+                    }`}
+                  >
+                    {plat === 'twitter' ? 'X / Twitter' : plat}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Text Lines Customization */}
         <div className="space-y-3">
           <label className="text-[11px] font-semibold text-smoke uppercase tracking-wider flex items-center gap-1.5">
-            <Type className="w-3.5 h-3.5 text-amber-400" />
-            <span>{isSpinTwist ? 'Title & Subtitle' : 'Top & Bottom Lines'}</span>
+            <Type
+              className={`w-3.5 h-3.5 ${isYouTube || isSocial ? 'text-red-400' : 'text-amber-400'}`}
+            />
+            <span>
+              {isYouTube
+                ? 'Channel Details'
+                : isSocial
+                  ? 'Handle & Subtitle'
+                  : isBoldCallout
+                    ? 'Headline & Detail'
+                    : isRgbGlitch
+                      ? 'Title & Subtitle'
+                      : isSpinTwist
+                        ? 'Title & Subtitle'
+                        : 'Top & Bottom Lines'}
+            </span>
           </label>
 
           <div className="space-y-2">
             <div>
               <span className="text-[10px] text-smoke">
-                {isSpinTwist ? 'Title Text (Center Bracket)' : 'Top Line (Cyan #A7F7FF)'}
+                {isYouTube
+                  ? 'Channel Name'
+                  : isSocial
+                    ? 'Username / Handle'
+                    : isBoldCallout
+                      ? 'Headline'
+                      : isRgbGlitch
+                        ? 'Title Text'
+                        : isSpinTwist
+                          ? 'Title Text (Center Bracket)'
+                          : 'Top Line (Cyan #A7F7FF)'}
               </span>
               <input
                 type="text"
                 value={spec.name}
                 onChange={(e) => updateSpec({ name: e.target.value })}
-                placeholder={isSpinTwist ? 'MOTION' : 'TYPE YOUR'}
+                placeholder={
+                  isYouTube
+                    ? 'CHANNEL NAME'
+                    : isSocial
+                      ? '@username'
+                      : isBoldCallout
+                        ? 'FEATURE CALLOUT'
+                        : isRgbGlitch
+                          ? 'FUTURE VISION'
+                          : isSpinTwist
+                            ? 'MOTION'
+                            : 'TYPE YOUR'
+                }
                 className="mt-1 w-full px-2.5 py-1.5 rounded-lg bg-[#1a1a18] border border-white/10 focus:border-amber-400 focus:outline-none text-bone font-medium"
               />
             </div>
 
             <div>
               <span className="text-[10px] text-smoke">
-                {isSpinTwist ? 'Subtitle Text (Bottom Opening)' : 'Bottom Line (Yellow #FFFA6F)'}
+                {isYouTube
+                  ? 'Subscriber Count / Handle'
+                  : isSocial
+                    ? 'Action Prompt / Subtitle'
+                    : isBoldCallout
+                      ? 'Description / Detail'
+                      : isRgbGlitch
+                        ? 'Subtitle Text'
+                        : isSpinTwist
+                          ? 'Subtitle Text (Bottom Opening)'
+                          : 'Bottom Line (Yellow #FFFA6F)'}
               </span>
               <input
                 type="text"
                 value={spec.role}
                 onChange={(e) => updateSpec({ role: e.target.value })}
-                placeholder={isSpinTwist ? 'DESIGN' : 'TEXT HERE'}
+                placeholder={
+                  isYouTube
+                    ? '1.2M SUBSCRIBERS'
+                    : isSocial
+                      ? 'FOLLOW US'
+                      : isBoldCallout
+                        ? 'Key detail highlighted here'
+                        : isRgbGlitch
+                          ? 'TRENDY RGB TITLE'
+                          : isSpinTwist
+                            ? 'DESIGN'
+                            : 'TEXT HERE'
+                }
                 className="mt-1 w-full px-2.5 py-1.5 rounded-lg bg-[#1a1a18] border border-white/10 focus:border-amber-400 focus:outline-none text-bone font-medium"
               />
             </div>

@@ -498,6 +498,58 @@ export function renderTemplateLowerThird(
     return;
   }
 
+  const isYouTubeSubscribe =
+    spec.templateId === 'mogrt-youtube-subscribe' ||
+    spec.templateId === 'youtube-subscribe' ||
+    template.id === 'youtube-subscribe';
+
+  if (isYouTubeSubscribe) {
+    const cx = spec.position?.x !== undefined ? spec.position.x * w : w / 2;
+    const cy = spec.position?.y !== undefined ? spec.position.y * h : h * 0.82;
+    drawYouTubeSubscribe(ctx, spec, options?.photoImage, phase, phaseProgress, cx, cy, scale);
+    ctx.restore();
+    return;
+  }
+
+  const isSocialHandle =
+    spec.templateId === 'mogrt-social-handle' ||
+    spec.templateId === 'social-handle' ||
+    template.id === 'social-handle';
+
+  if (isSocialHandle) {
+    const cx = spec.position?.x !== undefined ? spec.position.x * w : w / 2;
+    const cy = spec.position?.y !== undefined ? spec.position.y * h : h * 0.84;
+    drawSocialMediaHandle(ctx, spec, phase, phaseProgress, cx, cy, scale);
+    ctx.restore();
+    return;
+  }
+
+  const isBoldCallout =
+    spec.templateId === 'mogrt-bold-callout' ||
+    spec.templateId === 'bold-callout' ||
+    template.id === 'bold-callout';
+
+  if (isBoldCallout) {
+    const cx = spec.position?.x !== undefined ? spec.position.x * w : w * 0.55;
+    const cy = spec.position?.y !== undefined ? spec.position.y * h : h * 0.45;
+    drawBoldCallout(ctx, spec, phase, phaseProgress, cx, cy, scale);
+    ctx.restore();
+    return;
+  }
+
+  const isRgbGlitch =
+    spec.templateId === 'mogrt-rgb-glitch' ||
+    spec.templateId === 'rgb-glitch' ||
+    template.id === 'rgb-glitch';
+
+  if (isRgbGlitch) {
+    const cx = spec.position?.x !== undefined ? spec.position.x * w : w / 2;
+    const cy = spec.position?.y !== undefined ? spec.position.y * h : h / 2;
+    drawRgbGlitchTitle(ctx, spec, phase, phaseProgress, cx, cy, scale);
+    ctx.restore();
+    return;
+  }
+
   // 5. Render elements in declaration order
   for (const element of template.elements) {
     renderElement(
@@ -1161,6 +1213,534 @@ function drawMirrorSplashTitle(
     }
 
     ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+/**
+ * Exact replication of YouTube Subscribe Button & Bell MOGRT.
+ * Extracted from YouTube Pack / GarudaPro MOGRTs.
+ * - Floating dark pill with channel avatar on left
+ * - Channel name and subscriber count
+ * - Red "SUBSCRIBE" button that clicks and transitions to gray "SUBSCRIBED" with checkmark
+ * - Notification bell that rings with gold vibration sound waves
+ */
+function drawYouTubeSubscribe(
+  ctx: CanvasRenderingContext2D,
+  spec: LowerThirdSpec,
+  photoImage: CanvasImageSource | null | undefined,
+  phase: 'intro' | 'hold' | 'outro',
+  phaseProgress: number,
+  baseX: number,
+  baseY: number,
+  scale: number,
+): void {
+  const cx = baseX;
+  const cy = baseY;
+
+  ctx.save();
+
+  let globalAlpha = 1;
+  let slideY = 0;
+
+  if (phase === 'intro') {
+    globalAlpha = clamp01(phaseProgress / 0.2);
+    slideY = (1 - easeOutCubic(phaseProgress)) * 60 * scale;
+  } else if (phase === 'outro') {
+    globalAlpha = 1 - clamp01(phaseProgress / 0.3);
+    slideY = easeOutCubic(phaseProgress) * 60 * scale;
+  }
+
+  if (globalAlpha <= 0.001) {
+    ctx.restore();
+    return;
+  }
+  ctx.globalAlpha *= globalAlpha;
+
+  // Geometry
+  const cardW = 380 * scale;
+  const cardH = 74 * scale;
+  const cardX = cx - cardW / 2;
+  const cardY = cy - cardH / 2 + slideY;
+  const radius = cardH / 2;
+
+  // Outer shadow & background
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.55)';
+  ctx.shadowBlur = 18 * scale;
+  ctx.shadowOffsetY = 8 * scale;
+
+  ctx.fillStyle = '#0f0f0f';
+  ctx.beginPath();
+  ctx.roundRect(cardX, cardY, cardW, cardH, radius);
+  ctx.fill();
+
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+  ctx.lineWidth = Math.max(1, 1.5 * scale);
+  ctx.stroke();
+
+  // 1. Channel Avatar Circle
+  const avatarR = 24 * scale;
+  const avatarX = cardX + 16 * scale + avatarR;
+  const avatarY = cardY + cardH / 2;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(avatarX, avatarY, avatarR, 0, Math.PI * 2);
+  ctx.clip();
+
+  if (photoImage) {
+    ctx.drawImage(photoImage, avatarX - avatarR, avatarY - avatarR, avatarR * 2, avatarR * 2);
+  } else {
+    // Default red YouTube gradient badge with play triangle
+    const grad = ctx.createLinearGradient(
+      avatarX - avatarR,
+      avatarY - avatarR,
+      avatarX + avatarR,
+      avatarY + avatarR,
+    );
+    grad.addColorStop(0, '#FF0000');
+    grad.addColorStop(1, '#CC0000');
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // White play triangle
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    const triS = 10 * scale;
+    ctx.moveTo(avatarX - triS * 0.5, avatarY - triS * 0.8);
+    ctx.lineTo(avatarX + triS * 0.8, avatarY);
+    ctx.lineTo(avatarX - triS * 0.5, avatarY + triS * 0.8);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // Avatar border
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+  ctx.lineWidth = Math.max(1, 1.5 * scale);
+  ctx.beginPath();
+  ctx.arc(avatarX, avatarY, avatarR, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // 2. Channel Name and Handle / Sub count
+  const textLeft = avatarX + avatarR + 14 * scale;
+  const channelName = spec.name || 'Epic Hertz';
+  const subCount = spec.role || '1.2M subscribers';
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `700 ${(15 * scale).toFixed(1)}px system-ui, -apple-system, sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(channelName, textLeft, cardY + 32 * scale);
+
+  ctx.fillStyle = '#AAAAAA';
+  ctx.font = `500 ${(11.5 * scale).toFixed(1)}px system-ui, -apple-system, sans-serif`;
+  ctx.fillText(subCount, textLeft, cardY + 52 * scale);
+
+  // 3. Subscribe Button State & Animation
+  const isSubscribed = phase === 'hold' ? phaseProgress > 0.28 : phase === 'outro';
+  const isClicking = phase === 'hold' && phaseProgress >= 0.24 && phaseProgress <= 0.32;
+  const btnScale = isClicking ? 0.94 : 1.0;
+
+  const btnW = (isSubscribed ? 104 : 96) * scale;
+  const btnH = 34 * scale;
+  const btnX = cardX + cardW - 14 * scale - 36 * scale - btnW;
+  const btnY = cardY + (cardH - btnH) / 2;
+  const btnR = btnH / 2;
+
+  ctx.save();
+  ctx.translate(btnX + btnW / 2, btnY + btnH / 2);
+  ctx.scale(btnScale, btnScale);
+  ctx.translate(-(btnX + btnW / 2), -(btnY + btnH / 2));
+
+  ctx.fillStyle = isSubscribed ? '#272727' : '#FF0000';
+  ctx.beginPath();
+  ctx.roundRect(btnX, btnY, btnW, btnH, btnR);
+  ctx.fill();
+
+  ctx.fillStyle = isSubscribed ? '#F1F1F1' : '#FFFFFF';
+  ctx.font = `700 ${(11 * scale).toFixed(1)}px system-ui, -apple-system, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  if (isSubscribed) {
+    ctx.fillText('✓ SUBSCRIBED', btnX + btnW / 2, btnY + btnH / 2);
+  } else {
+    ctx.fillText('SUBSCRIBE', btnX + btnW / 2, btnY + btnH / 2);
+  }
+  ctx.restore();
+
+  // 4. Notification Bell Icon
+  const bellX = cardX + cardW - 14 * scale - 16 * scale;
+  const bellY = cardY + cardH / 2;
+  const isRinging =
+    isSubscribed && phase === 'hold' && phaseProgress >= 0.35 && phaseProgress <= 0.65;
+  const bellAngle = isRinging ? Math.sin((phaseProgress - 0.35) * 45) * 0.3 : 0;
+
+  ctx.save();
+  ctx.translate(bellX, bellY);
+  ctx.rotate(bellAngle);
+
+  // Bell body
+  ctx.fillStyle = isSubscribed ? '#FFD700' : '#CCCCCC';
+  ctx.beginPath();
+  ctx.arc(0, -4 * scale, 7 * scale, Math.PI, 0);
+  ctx.lineTo(8 * scale, 5 * scale);
+  ctx.lineTo(-8 * scale, 5 * scale);
+  ctx.closePath();
+  ctx.fill();
+
+  // Bell clapper
+  ctx.beginPath();
+  ctx.arc(0, 6.5 * scale, 2.5 * scale, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Chime sound wave rings if ringing
+  if (isRinging) {
+    ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = 1.5 * scale;
+    ctx.beginPath();
+    ctx.arc(0, 0, 14 * scale, -0.6, 0.6);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, 0, 14 * scale, Math.PI - 0.6, Math.PI + 0.6);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+
+  ctx.restore();
+}
+
+/**
+ * Exact replication of Social Media Lower Thirds 2.0 MOGRT.
+ * Extracted from social-media-lower-thirds-2-0-mogrt.
+ * - Icon badge on left (Instagram, YouTube, Twitter/X, TikTok)
+ * - Animated sliding handle card with smooth mask wipe
+ * - Handle @username with follower call to action
+ */
+function drawSocialMediaHandle(
+  ctx: CanvasRenderingContext2D,
+  spec: LowerThirdSpec,
+  phase: 'intro' | 'hold' | 'outro',
+  phaseProgress: number,
+  baseX: number,
+  baseY: number,
+  scale: number,
+): void {
+  const cx = baseX;
+  const cy = baseY;
+
+  ctx.save();
+
+  let globalAlpha = 1;
+  let slideX = 0;
+
+  if (phase === 'intro') {
+    globalAlpha = clamp01(phaseProgress / 0.2);
+    slideX = (1 - easeOutCubic(phaseProgress)) * -60 * scale;
+  } else if (phase === 'outro') {
+    globalAlpha = 1 - clamp01(phaseProgress / 0.3);
+    slideX = easeOutCubic(phaseProgress) * -60 * scale;
+  }
+
+  if (globalAlpha <= 0.001) {
+    ctx.restore();
+    return;
+  }
+  ctx.globalAlpha *= globalAlpha;
+
+  const handleText = spec.name || '@username';
+  const actionText = spec.role || 'Follow on Instagram';
+  const platform = (spec.extra || 'instagram').toLowerCase();
+
+  ctx.font = `700 ${(17 * scale).toFixed(1)}px system-ui, -apple-system, sans-serif`;
+  const nameW = ctx.measureText(handleText).width;
+
+  const cardW = Math.max(260 * scale, nameW + 110 * scale);
+  const cardH = 58 * scale;
+  const cardX = cx - cardW / 2 + slideX;
+  const cardY = cy - cardH / 2;
+  const radius = 16 * scale;
+
+  // Background plate
+  ctx.fillStyle = '#141413';
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+  ctx.shadowBlur = 14 * scale;
+  ctx.shadowOffsetY = 6 * scale;
+
+  ctx.beginPath();
+  ctx.roundRect(cardX, cardY, cardW, cardH, radius);
+  ctx.fill();
+
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+  ctx.lineWidth = Math.max(1, 1.5 * scale);
+  ctx.stroke();
+
+  // Platform Icon Badge on left
+  const badgeSize = cardH - 12 * scale;
+  const badgeX = cardX + 6 * scale;
+  const badgeY = cardY + 6 * scale;
+  const badgeR = 12 * scale;
+
+  const badgeGrad = ctx.createLinearGradient(
+    badgeX,
+    badgeY,
+    badgeX + badgeSize,
+    badgeY + badgeSize,
+  );
+  if (platform.includes('youtube')) {
+    badgeGrad.addColorStop(0, '#FF0000');
+    badgeGrad.addColorStop(1, '#B30000');
+  } else if (platform.includes('twitter') || platform.includes('x')) {
+    badgeGrad.addColorStop(0, '#1DA1F2');
+    badgeGrad.addColorStop(1, '#0c7abf');
+  } else if (platform.includes('tiktok')) {
+    badgeGrad.addColorStop(0, '#00f2fe');
+    badgeGrad.addColorStop(1, '#fe0979');
+  } else {
+    // Instagram gradient
+    badgeGrad.addColorStop(0, '#833AB4');
+    badgeGrad.addColorStop(0.5, '#FD1D1D');
+    badgeGrad.addColorStop(1, '#FCB045');
+  }
+
+  ctx.fillStyle = badgeGrad;
+  ctx.beginPath();
+  ctx.roundRect(badgeX, badgeY, badgeSize, badgeSize, badgeR);
+  ctx.fill();
+
+  // Draw Camera / Play Icon in badge
+  ctx.fillStyle = '#FFFFFF';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `900 ${(18 * scale).toFixed(1)}px system-ui, sans-serif`;
+  const iconSymbol = platform.includes('youtube') ? '▶' : platform.includes('twitter') ? '𝕏' : '📷';
+  ctx.fillText(iconSymbol, badgeX + badgeSize / 2, badgeY + badgeSize / 2);
+
+  // Text: Handle & Subtitle
+  const textX = badgeX + badgeSize + 14 * scale;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `700 ${(16 * scale).toFixed(1)}px system-ui, -apple-system, sans-serif`;
+  ctx.fillText(handleText, textX, cardY + 26 * scale);
+
+  ctx.fillStyle = '#9CA3AF';
+  ctx.font = `500 ${(11 * scale).toFixed(1)}px system-ui, -apple-system, sans-serif`;
+  ctx.fillText(actionText, textX, cardY + 44 * scale);
+
+  ctx.restore();
+}
+
+/**
+ * Exact replication of Bold Call-Outs MOGRT.
+ * Extracted from bold-call-outs-mogrts-2023-11-27-05-14-57-utc.zip.
+ * - Pulsing target anchor dot
+ * - Angled pointer leader line drawing on
+ * - High-contrast callout card with accent bracket and bold headline
+ */
+function drawBoldCallout(
+  ctx: CanvasRenderingContext2D,
+  spec: LowerThirdSpec,
+  phase: 'intro' | 'hold' | 'outro',
+  phaseProgress: number,
+  baseX: number,
+  baseY: number,
+  scale: number,
+): void {
+  const cx = baseX;
+  const cy = baseY;
+
+  ctx.save();
+
+  let lineProgress = 1;
+  let textAlpha = 1;
+  let globalAlpha = 1;
+
+  if (phase === 'intro') {
+    globalAlpha = clamp01(phaseProgress / 0.15);
+    lineProgress = clamp01(phaseProgress / 0.6);
+    textAlpha = clamp01((phaseProgress - 0.4) / 0.6);
+  } else if (phase === 'outro') {
+    globalAlpha = 1 - clamp01(phaseProgress / 0.3);
+    textAlpha = 1 - clamp01(phaseProgress / 0.4);
+    lineProgress = 1 - clamp01((phaseProgress - 0.2) / 0.6);
+  }
+
+  if (globalAlpha <= 0.001) {
+    ctx.restore();
+    return;
+  }
+  ctx.globalAlpha *= globalAlpha;
+
+  // Target point (anchor dot) is offset slightly to bottom-left
+  const targetX = cx - 120 * scale;
+  const targetY = cy + 90 * scale;
+  const kneeX = cx - 40 * scale;
+  const kneeY = cy;
+  const cardX = cx;
+  const cardY = cy;
+
+  // 1. Pulsing Target Dot
+  const pulseR =
+    6 * scale + (phase === 'hold' ? Math.sin(phaseProgress * Math.PI * 6) * 2 * scale : 0);
+  ctx.fillStyle = '#F59E0B';
+  ctx.beginPath();
+  ctx.arc(targetX, targetY, pulseR, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = 'rgba(245, 158, 11, 0.4)';
+  ctx.lineWidth = 2 * scale;
+  ctx.beginPath();
+  ctx.arc(targetX, targetY, pulseR + 6 * scale, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // 2. Angled Leader Line (Draws on)
+  if (lineProgress > 0.05) {
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = Math.max(2, 2.5 * scale);
+    ctx.beginPath();
+    ctx.moveTo(targetX, targetY);
+
+    if (lineProgress <= 0.5) {
+      const p = lineProgress / 0.5;
+      ctx.lineTo(targetX + (kneeX - targetX) * p, targetY + (kneeY - targetY) * p);
+    } else {
+      ctx.lineTo(kneeX, kneeY);
+      const p = (lineProgress - 0.5) / 0.5;
+      ctx.lineTo(kneeX + (cardX - kneeX) * p, kneeY);
+    }
+    ctx.stroke();
+  }
+
+  // 3. Call-out Card
+  if (textAlpha > 0.05) {
+    ctx.save();
+    ctx.globalAlpha *= textAlpha;
+
+    const titleText = (spec.name || 'PRODUCT FEATURE').toUpperCase();
+    const descText = spec.role || 'Cinematic precision callout';
+
+    ctx.font = `800 ${(17 * scale).toFixed(1)}px system-ui, -apple-system, sans-serif`;
+    const titleW = ctx.measureText(titleText).width;
+    const boxW = Math.max(220 * scale, titleW + 36 * scale);
+    const boxH = 64 * scale;
+
+    ctx.fillStyle = 'rgba(18, 18, 17, 0.92)';
+    ctx.beginPath();
+    ctx.roundRect(cardX, cardY - boxH / 2, boxW, boxH, 8 * scale);
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.lineWidth = 1.5 * scale;
+    ctx.stroke();
+
+    // Amber accent left border
+    ctx.fillStyle = '#F59E0B';
+    ctx.beginPath();
+    ctx.roundRect(cardX, cardY - boxH / 2, 4 * scale, boxH, [8 * scale, 0, 0, 8 * scale]);
+    ctx.fill();
+
+    // Text
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = `800 ${(15 * scale).toFixed(1)}px system-ui, -apple-system, sans-serif`;
+    ctx.fillText(titleText, cardX + 16 * scale, cardY - 4 * scale);
+
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = `500 ${(11 * scale).toFixed(1)}px system-ui, -apple-system, sans-serif`;
+    ctx.fillText(descText, cardX + 16 * scale, cardY + 16 * scale);
+
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+/**
+ * Exact replication of RGB Trendy Titles.
+ * Extracted from 1.zip (Trendy Titles RGB 01).
+ * - Chromatic aberration (Red & Cyan color channels offset)
+ * - Bold modern uppercase typography
+ * - High-speed digital glitch snap-in
+ */
+function drawRgbGlitchTitle(
+  ctx: CanvasRenderingContext2D,
+  spec: LowerThirdSpec,
+  phase: 'intro' | 'hold' | 'outro',
+  phaseProgress: number,
+  baseX: number,
+  baseY: number,
+  scale: number,
+): void {
+  const cx = baseX;
+  const cy = baseY;
+
+  const titleText = (spec.name || 'TRENDY TITLE').toUpperCase();
+  const subtitleText = spec.role ? spec.role.toUpperCase() : 'MOTION GRAPHICS';
+
+  ctx.save();
+
+  let globalAlpha = 1;
+  let glitchOffset = 0;
+
+  if (phase === 'intro') {
+    globalAlpha = clamp01(phaseProgress / 0.15);
+    glitchOffset = (1 - easeOutCubic(phaseProgress)) * 18 * scale * (Math.random() > 0.5 ? 1 : -1);
+  } else if (phase === 'outro') {
+    globalAlpha = 1 - clamp01(phaseProgress / 0.3);
+    glitchOffset = easeOutCubic(phaseProgress) * 18 * scale * (Math.random() > 0.5 ? 1 : -1);
+  }
+
+  if (globalAlpha <= 0.001) {
+    ctx.restore();
+    return;
+  }
+  ctx.globalAlpha *= globalAlpha;
+
+  const fontSize = Math.max(32 * scale, 56 * scale);
+  const subFontSize = fontSize * 0.32;
+  const fontFam = spec.font.family && spec.font.family !== 'Inter' ? spec.font.family : 'Unbounded';
+
+  const drawTextLayers = (text: string, yPos: number, isSub: boolean) => {
+    const fSize = isSub ? subFontSize : fontSize;
+    const fWeight = isSub ? '700' : '900';
+    ctx.font = `${fWeight} ${fSize.toFixed(1)}px "${fontFam}", "Arial Black", Impact, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    if (Math.abs(glitchOffset) > 0.5) {
+      // Red Channel Shift
+      ctx.save();
+      ctx.fillStyle = 'rgba(255, 0, 85, 0.85)';
+      ctx.fillText(text, cx + glitchOffset, yPos);
+      ctx.restore();
+
+      // Cyan Channel Shift
+      ctx.save();
+      ctx.fillStyle = 'rgba(0, 240, 255, 0.85)';
+      ctx.fillText(text, cx - glitchOffset, yPos);
+      ctx.restore();
+    }
+
+    // Main White Layer
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillText(text, cx, yPos);
+  };
+
+  drawTextLayers(titleText, cy - subFontSize * 0.6, false);
+  if (subtitleText) {
+    const spaced = subtitleText.split('').join(' ');
+    drawTextLayers(spaced, cy + fontSize * 0.7, true);
   }
 
   ctx.restore();

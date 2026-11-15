@@ -98,6 +98,42 @@ describe('Authentic MOGRT Text Animations in Text Section', () => {
     expect(splashCall.name).toBe('TYPE YOUR');
     expect(splashCall.role).toBe('TEXT HERE');
     expect((splashCall as any).isLockedMogrt).toBe(true);
+
+    // Verify YouTube Subscribe & Social Handle in YouTube & Social section
+    expect(screen.getByText('YouTube & Social')).toBeDefined();
+    expect(screen.getByText('DEFAULT MODEL')).toBeDefined();
+
+    const ytBtn = screen.getByRole('button', { name: /youtube subscribe/i });
+    expect(ytBtn).toBeDefined();
+    fireEvent.click(ytBtn);
+    expect(handleAddLowerThird).toHaveBeenCalledTimes(3);
+    const ytCall = handleAddLowerThird.mock.calls[2][0] as LowerThirdSpec;
+    expect(ytCall.templateId).toBe('mogrt-youtube-subscribe');
+    expect(ytCall.name).toBe('CHANNEL NAME');
+    expect(ytCall.role).toBe('1.2M SUBSCRIBERS');
+
+    const socialBtn = screen.getByRole('button', { name: /social handle/i });
+    expect(socialBtn).toBeDefined();
+    fireEvent.click(socialBtn);
+    expect(handleAddLowerThird).toHaveBeenCalledTimes(4);
+    const socialCall = handleAddLowerThird.mock.calls[3][0] as LowerThirdSpec;
+    expect(socialCall.templateId).toBe('mogrt-social-handle');
+    expect(socialCall.name).toBe('@username');
+
+    // Verify RGB Glitch Title & Bold Callout
+    const rgbBtn = screen.getByRole('button', { name: /rgb glitch title/i });
+    expect(rgbBtn).toBeDefined();
+    fireEvent.click(rgbBtn);
+    expect(handleAddLowerThird).toHaveBeenCalledTimes(5);
+    const rgbCall = handleAddLowerThird.mock.calls[4][0] as LowerThirdSpec;
+    expect(rgbCall.templateId).toBe('mogrt-rgb-glitch');
+
+    const calloutBtn = screen.getByRole('button', { name: /bold callout/i });
+    expect(calloutBtn).toBeDefined();
+    fireEvent.click(calloutBtn);
+    expect(handleAddLowerThird).toHaveBeenCalledTimes(6);
+    const calloutCall = handleAddLowerThird.mock.calls[5][0] as LowerThirdSpec;
+    expect(calloutCall.templateId).toBe('mogrt-bold-callout');
   });
 
   it('renders a locked, non-customizable inspector when a MOGRT animation is selected', () => {
@@ -140,5 +176,49 @@ describe('Authentic MOGRT Text Animations in Text Section', () => {
     // Generic customizers like photo upload or variant picker should be omitted
     expect(screen.queryByText('Image / Photo Avatar')).toBeNull();
     expect(screen.queryByText('Advanced Overrides (Colors, Fonts, Layout)')).toBeNull();
+  });
+
+  it('renders YouTube Subscribe and Social Media Handle inspectors with locked defaults', () => {
+    const ytSpec: LowerThirdSpec = {
+      ...DEFAULT_LOWER_THIRD,
+      id: 'yt-test',
+      templateId: 'mogrt-youtube-subscribe',
+      name: 'MY CHANNEL',
+      role: '500K SUBSCRIBERS',
+      start: 1.0,
+      end: 5.0,
+    };
+    (ytSpec as any).isLockedMogrt = true;
+
+    const { rerender } = render(
+      <LowerThirdInspector spec={ytSpec} onChange={vi.fn()} onDelete={vi.fn()} />,
+    );
+
+    expect(screen.getByText('YouTube Subscribe')).toBeDefined();
+    expect(screen.getByText('DEFAULT MODEL')).toBeDefined();
+    expect(screen.getByText(/Animated Subscribe Click & Bell/i)).toBeDefined();
+
+    const ytNameInput = screen.getByPlaceholderText('CHANNEL NAME') as HTMLInputElement;
+    expect(ytNameInput.value).toBe('MY CHANNEL');
+
+    // Test Social Handle with platform picker
+    const socialSpec: LowerThirdSpec = {
+      ...DEFAULT_LOWER_THIRD,
+      id: 'social-test',
+      templateId: 'mogrt-social-handle',
+      name: '@epichertz',
+      role: 'SUBSCRIBE NOW',
+      extra: 'youtube',
+      start: 1.0,
+      end: 4.8,
+    };
+    (socialSpec as any).isLockedMogrt = true;
+
+    rerender(<LowerThirdInspector spec={socialSpec} onChange={vi.fn()} onDelete={vi.fn()} />);
+
+    expect(screen.getByText('Social Media Handle')).toBeDefined();
+    expect(screen.getByText('Platform Badge & Username')).toBeDefined();
+    expect(screen.getByText('Social Platform')).toBeDefined();
+    expect(screen.getByText('X / Twitter')).toBeDefined();
   });
 });

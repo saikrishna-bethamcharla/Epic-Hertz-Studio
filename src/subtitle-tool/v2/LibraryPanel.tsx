@@ -18,7 +18,16 @@ import {
   Type,
   User,
   Sparkles,
+  Share2,
+  Zap,
+  Crosshair,
 } from 'lucide-react';
+
+const YouTubeIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+  </svg>
+);
 
 import {
   type Segment,
@@ -417,49 +426,172 @@ function LibraryPanel({
     }
   };
 
-  // Helper to add locked MOGRT text animations (Spin & Twist / Mirror Splash)
+  // Helper to add locked MOGRT text & YouTube graphics animations
   const handleAddMogrtText = (
-    templateId: 'mogrt-spin-twist' | 'mogrt-mirror-splash',
+    templateId:
+      | 'mogrt-spin-twist'
+      | 'mogrt-mirror-splash'
+      | 'mogrt-youtube-subscribe'
+      | 'mogrt-social-handle'
+      | 'mogrt-bold-callout'
+      | 'mogrt-rgb-glitch',
     defaultName: string,
     defaultRole: string,
+    extra?: string,
   ) => {
     if (onAddLowerThird) {
       const curTime = currentTime || 0;
-      const isSpin = templateId === 'mogrt-spin-twist';
-      const newLt: LowerThirdSpec = {
-        ...DEFAULT_LOWER_THIRD,
-        id: 'mogrt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-        templateId,
-        name: defaultName,
-        role: defaultRole,
-        position: {
-          x: 0.5,
-          y: 0.5,
-          align: 'center',
-        },
-        font: {
-          family: isSpin ? 'asap' : 'sniglet',
-          weight: 800,
-          size: 0.045,
-        },
-        scale: 1,
-        colors: {
-          primary: isSpin ? '#FFFFFF' : '#A7F7FF',
-          secondary: isSpin ? '#FFFFFF' : '#FFFA6F',
-          textPrimary: isSpin ? '#FFFFFF' : '#A7F7FF',
-          textSecondary: isSpin ? '#FFFFFF' : '#FFFA6F',
-        },
-        variant: isSpin ? 6 : 2,
-        start: curTime,
-        end: curTime + (isSpin ? 5.5 : 4.5),
-        introDuration: isSpin ? 1.4 : 0.8,
-        outroDuration: isSpin ? 1.0 : 0.7,
-      };
+      let newLt: LowerThirdSpec;
+
+      if (templateId === 'mogrt-spin-twist') {
+        newLt = {
+          ...DEFAULT_LOWER_THIRD,
+          id: 'mogrt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          templateId,
+          name: defaultName,
+          role: defaultRole,
+          position: { x: 0.5, y: 0.5, align: 'center' },
+          font: { family: 'asap', weight: 800, size: 0.045 },
+          scale: 1,
+          colors: {
+            primary: '#FFFFFF',
+            secondary: '#FFFFFF',
+            textPrimary: '#FFFFFF',
+            textSecondary: '#FFFFFF',
+          },
+          variant: 6,
+          start: curTime,
+          end: curTime + 5.5,
+          introDuration: 1.4,
+          outroDuration: 1.0,
+        };
+      } else if (templateId === 'mogrt-mirror-splash') {
+        newLt = {
+          ...DEFAULT_LOWER_THIRD,
+          id: 'mogrt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          templateId,
+          name: defaultName,
+          role: defaultRole,
+          position: { x: 0.5, y: 0.5, align: 'center' },
+          font: { family: 'sniglet', weight: 800, size: 0.045 },
+          scale: 1,
+          colors: {
+            primary: '#A7F7FF',
+            secondary: '#FFFA6F',
+            textPrimary: '#A7F7FF',
+            textSecondary: '#FFFA6F',
+          },
+          variant: 2,
+          start: curTime,
+          end: curTime + 4.5,
+          introDuration: 0.8,
+          outroDuration: 0.7,
+        };
+      } else if (templateId === 'mogrt-youtube-subscribe') {
+        newLt = {
+          ...DEFAULT_LOWER_THIRD,
+          id: 'mogrt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          templateId,
+          name: defaultName,
+          role: defaultRole,
+          position: { x: 0.5, y: 0.82, align: 'center' },
+          font: { family: 'inter', weight: 800, size: 0.038 },
+          scale: 1,
+          colors: {
+            primary: '#FF0000',
+            secondary: '#FFFFFF',
+            textPrimary: '#FFFFFF',
+            textSecondary: '#AAAAAA',
+          },
+          variant: 2,
+          start: curTime,
+          end: curTime + 4.2,
+          introDuration: 0.6,
+          outroDuration: 0.6,
+        };
+      } else if (templateId === 'mogrt-social-handle') {
+        newLt = {
+          ...DEFAULT_LOWER_THIRD,
+          id: 'mogrt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          templateId,
+          name: defaultName,
+          role: defaultRole,
+          extra: extra || 'instagram',
+          position: { x: 0.5, y: 0.85, align: 'center' },
+          font: { family: 'inter', weight: 700, size: 0.035 },
+          scale: 1,
+          colors: {
+            primary: '#E1306C',
+            secondary: '#FFFFFF',
+            textPrimary: '#FFFFFF',
+            textSecondary: '#E2E8F0',
+          },
+          variant: 2,
+          start: curTime,
+          end: curTime + 3.8,
+          introDuration: 0.6,
+          outroDuration: 0.5,
+        };
+      } else if (templateId === 'mogrt-bold-callout') {
+        newLt = {
+          ...DEFAULT_LOWER_THIRD,
+          id: 'mogrt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          templateId,
+          name: defaultName,
+          role: defaultRole,
+          position: { x: 0.6, y: 0.45, align: 'center' },
+          font: { family: 'montserrat', weight: 800, size: 0.036 },
+          scale: 1,
+          colors: {
+            primary: '#00E5FF',
+            secondary: '#FFFFFF',
+            textPrimary: '#FFFFFF',
+            textSecondary: '#94A3B8',
+          },
+          variant: 2,
+          start: curTime,
+          end: curTime + 4.2,
+          introDuration: 0.8,
+          outroDuration: 0.6,
+        };
+      } else {
+        // mogrt-rgb-glitch
+        newLt = {
+          ...DEFAULT_LOWER_THIRD,
+          id: 'mogrt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          templateId,
+          name: defaultName,
+          role: defaultRole,
+          position: { x: 0.5, y: 0.5, align: 'center' },
+          font: { family: 'montserrat', weight: 900, size: 0.052 },
+          scale: 1,
+          colors: {
+            primary: '#FF0055',
+            secondary: '#00F0FF',
+            textPrimary: '#FFFFFF',
+            textSecondary: '#FFFFFF',
+          },
+          variant: 2,
+          start: curTime,
+          end: curTime + 3.6,
+          introDuration: 0.5,
+          outroDuration: 0.5,
+        };
+      }
+
       (newLt as any).isLockedMogrt = true;
       onAddLowerThird(newLt);
       if (onNotification) {
+        const labelMap: Record<string, string> = {
+          'mogrt-spin-twist': 'Spin & Twist MOGRT',
+          'mogrt-mirror-splash': 'Mirror Splash MOGRT',
+          'mogrt-youtube-subscribe': 'YouTube Subscribe & Bell Element',
+          'mogrt-social-handle': 'Social Media Handle Badge',
+          'mogrt-bold-callout': 'Bold Pointer Callout',
+          'mogrt-rgb-glitch': 'Trendy RGB Glitch Title',
+        };
         onNotification(
-          `Added ${isSpin ? 'Spin & Twist' : 'Mirror Splash'} MOGRT animation at ${formatTimecode(curTime)}`,
+          `Added ${labelMap[templateId] || 'text animation'} at ${formatTimecode(curTime)}`,
         );
       }
     }
@@ -764,6 +896,66 @@ function LibraryPanel({
                   </p>
                 </div>
 
+                {/* ── Group 0: YouTube & Social Graphics (Default Model) ── */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10.5px] font-bold uppercase tracking-wider text-red-400">
+                        YouTube &amp; Social
+                      </span>
+                      <span className="px-1.5 py-0.2 rounded bg-red-400/15 border border-red-400/30 text-red-300 font-mono text-[8px] font-bold">
+                        DEFAULT MODEL
+                      </span>
+                    </div>
+                    <span className="text-[9.5px] text-smoke">Graphics &amp; CTA Buttons</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {/* YouTube Subscribe & Bell */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleAddMogrtText(
+                          'mogrt-youtube-subscribe',
+                          'CHANNEL NAME',
+                          '1.2M SUBSCRIBERS',
+                        )
+                      }
+                      className="group p-3 rounded-xl bg-[#181817] border border-red-500/30 hover:border-red-500 hover:bg-[#201515] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center relative overflow-hidden"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-red-500/15 border border-red-500/40 group-hover:bg-red-500/25 group-hover:border-red-500 flex items-center justify-center transition-colors">
+                        <YouTubeIcon className="w-4 h-4 text-red-500 group-hover:scale-110 transition-transform" />
+                      </div>
+                      <span className="text-xs font-bold text-bone group-hover:text-red-300">
+                        YouTube Subscribe
+                      </span>
+                      <span className="text-[9.5px] text-smoke">Avatar · Bell Ring</span>
+                    </button>
+
+                    {/* Social Media Handle */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleAddMogrtText(
+                          'mogrt-social-handle',
+                          '@username',
+                          'FOLLOW US',
+                          'instagram',
+                        )
+                      }
+                      className="group p-3 rounded-xl bg-[#181817] border border-pink-500/30 hover:border-pink-500 hover:bg-[#22161c] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center relative overflow-hidden"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-pink-500/15 border border-pink-500/40 group-hover:bg-pink-500/25 group-hover:border-pink-500 flex items-center justify-center transition-colors">
+                        <Share2 className="w-4 h-4 text-pink-400 group-hover:scale-110 transition-transform" />
+                      </div>
+                      <span className="text-xs font-bold text-bone group-hover:text-pink-300">
+                        Social Handle
+                      </span>
+                      <span className="text-[9.5px] text-smoke">IG · YT · X · TikTok</span>
+                    </button>
+                  </div>
+                </div>
+
                 {/* ── Group 1: Authentic MOGRT Text Animations (Locked Style) ── */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -811,6 +1003,44 @@ function LibraryPanel({
                         Mirror Splash
                       </span>
                       <span className="text-[9.5px] text-smoke">MOGRT 28 · Watercolor</span>
+                    </button>
+
+                    {/* 3. RGB Glitch Title */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleAddMogrtText('mogrt-rgb-glitch', 'FUTURE VISION', 'TRENDY RGB TITLE')
+                      }
+                      className="group p-3 rounded-xl bg-[#181817] border border-cyan-400/30 hover:border-cyan-400 hover:bg-[#152023] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center relative overflow-hidden"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-cyan-400/15 border border-cyan-400/40 group-hover:bg-cyan-400/25 group-hover:border-cyan-400 flex items-center justify-center transition-colors">
+                        <Zap className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
+                      </div>
+                      <span className="text-xs font-bold text-bone group-hover:text-cyan-300">
+                        RGB Glitch Title
+                      </span>
+                      <span className="text-[9.5px] text-smoke">Trendy Titles · Chromatic</span>
+                    </button>
+
+                    {/* 4. Bold Pointer Callout */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleAddMogrtText(
+                          'mogrt-bold-callout',
+                          'FEATURE CALLOUT',
+                          'Key detail highlighted here',
+                        )
+                      }
+                      className="group p-3 rounded-xl bg-[#181817] border border-emerald-400/30 hover:border-emerald-400 hover:bg-[#15211a] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center relative overflow-hidden"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-emerald-400/15 border border-emerald-400/40 group-hover:bg-emerald-400/25 group-hover:border-emerald-400 flex items-center justify-center transition-colors">
+                        <Crosshair className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+                      </div>
+                      <span className="text-xs font-bold text-bone group-hover:text-emerald-300">
+                        Bold Callout
+                      </span>
+                      <span className="text-[9.5px] text-smoke">Target Dot · Leader Line</span>
                     </button>
                   </div>
                 </div>
