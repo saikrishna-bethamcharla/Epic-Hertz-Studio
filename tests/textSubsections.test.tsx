@@ -84,6 +84,8 @@ describe('Text Section Sub-Sections Navigation & Quick Text Layout', () => {
 
     // Verify sub-section navigation buttons exist (Animations removed from left panel)
     expect(screen.getByRole('tab', { name: /add text/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /youtube & social/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /mogrt animations/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /templates/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /movie styles/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /lower thirds/i })).toBeDefined();
@@ -127,6 +129,14 @@ describe('Text Section Sub-Sections Navigation & Quick Text Layout', () => {
     // Click on 'Add text'
     fireEvent.click(screen.getByRole('tab', { name: /add text/i }));
     expect(handleTabChange).toHaveBeenCalledWith('addText');
+
+    // Click on 'YouTube & Social'
+    fireEvent.click(screen.getByRole('tab', { name: /youtube & social/i }));
+    expect(handleTabChange).toHaveBeenCalledWith('youtubeGraphics');
+
+    // Click on 'MOGRT animations'
+    fireEvent.click(screen.getByRole('tab', { name: /mogrt animations/i }));
+    expect(handleTabChange).toHaveBeenCalledWith('mogrtAnimations');
 
     // Click on 'Movie styles'
     fireEvent.click(screen.getByRole('tab', { name: /movie styles/i }));
