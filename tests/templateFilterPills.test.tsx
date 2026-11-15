@@ -240,3 +240,110 @@ describe('Single Text Overlays Feature in LibraryPanel', () => {
     expect(addedSpec.position.y).toBe(0.5);
   });
 });
+
+describe('Top Section Templates Category & Sub-sections Navigation', () => {
+  it('renders top category button for Templates next to Captions', () => {
+    render(
+      <LibraryPanel
+        leftTab="captions"
+        onTabChange={vi.fn()}
+        segments={[mockSegment]}
+        activeId="seg-1"
+        onSelectSegment={vi.fn()}
+        onSegmentsChange={vi.fn()}
+        onSeek={vi.fn()}
+        style={DEFAULT_STYLE}
+        onStyleChange={vi.fn()}
+        spokenLanguage="en"
+        scriptOutput="native"
+        scope="all"
+      />,
+    );
+
+    // Verify top-level navigation has Captions, Templates, Text, and Animations
+    expect(screen.getByRole('tab', { name: /^captions$/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /^templates$/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /^text$/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /^animations$/i })).toBeDefined();
+  });
+
+  it('clicking top Templates category switches to templates and opens sub-menu with movie styles, title cards, lower thirds', () => {
+    const handleTabChange = vi.fn();
+    render(
+      <LibraryPanel
+        leftTab="templates"
+        onTabChange={handleTabChange}
+        segments={[mockSegment]}
+        activeId="seg-1"
+        onSelectSegment={vi.fn()}
+        onSegmentsChange={vi.fn()}
+        onSeek={vi.fn()}
+        style={DEFAULT_STYLE}
+        onStyleChange={vi.fn()}
+        spokenLanguage="en"
+        scriptOutput="native"
+        scope="all"
+      />,
+    );
+
+    // Top button is present and active
+    const topTemplatesBtn = screen.getByRole('button', { name: /^templates$/i });
+    expect(topTemplatesBtn).toBeDefined();
+
+    // Side menu sub-sections exist for templates: Movie styles, Title cards, Lower thirds, Templates
+    const movieStylesTab = screen.getByRole('tab', { name: /movie styles/i });
+    expect(movieStylesTab).toBeDefined();
+    expect(movieStylesTab.textContent).toContain('20');
+
+    const titleCardsTab = screen.getByRole('tab', { name: /title cards/i });
+    expect(titleCardsTab).toBeDefined();
+    expect(titleCardsTab.textContent).toContain('14');
+
+    const lowerThirdsTab = screen.getByRole('tab', { name: /lower thirds/i });
+    expect(lowerThirdsTab).toBeDefined();
+    expect(lowerThirdsTab.textContent).toContain('60');
+
+    // Clicking Movie styles invokes onTabChange
+    fireEvent.click(movieStylesTab);
+    expect(handleTabChange).toHaveBeenCalledWith('movieStyles');
+
+    // Clicking Title cards invokes onTabChange
+    fireEvent.click(titleCardsTab);
+    expect(handleTabChange).toHaveBeenCalledWith('titleCards');
+
+    // Clicking Lower thirds invokes onTabChange
+    fireEvent.click(lowerThirdsTab);
+    expect(handleTabChange).toHaveBeenCalledWith('lowerThirds');
+  });
+
+  it('clicking top Text category opens sub-menu with add text, text effects, and yours', () => {
+    const handleTabChange = vi.fn();
+    render(
+      <LibraryPanel
+        leftTab="addText"
+        onTabChange={handleTabChange}
+        segments={[mockSegment]}
+        activeId="seg-1"
+        onSelectSegment={vi.fn()}
+        onSegmentsChange={vi.fn()}
+        onSeek={vi.fn()}
+        style={DEFAULT_STYLE}
+        onStyleChange={vi.fn()}
+        spokenLanguage="en"
+        scriptOutput="native"
+        scope="all"
+      />,
+    );
+
+    // Sub-sections in Text: Add text, Text effects, Yours
+    expect(screen.getByRole('tab', { name: /add text/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /text effects/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /yours/i })).toBeDefined();
+
+    fireEvent.click(screen.getByRole('tab', { name: /text effects/i }));
+    expect(handleTabChange).toHaveBeenCalledWith('effects');
+
+    fireEvent.click(screen.getByRole('tab', { name: /yours/i }));
+    expect(handleTabChange).toHaveBeenCalledWith('brand');
+  });
+});

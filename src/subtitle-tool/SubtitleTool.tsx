@@ -1061,7 +1061,12 @@ export default function SubtitleTool({
                                 ? 'captions'
                                 : leftTab === 'animations'
                                   ? 'animations'
-                                  : 'text'
+                                  : leftTab === 'templates' ||
+                                      leftTab === 'movieStyles' ||
+                                      leftTab === 'titleCards' ||
+                                      leftTab === 'lowerThirds'
+                                    ? 'templates'
+                                    : 'text'
                             }
                             segments={segments}
                             activeId={activeId}

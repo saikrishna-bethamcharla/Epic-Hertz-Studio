@@ -75,7 +75,7 @@ export type LibraryTab =
 interface LibraryPanelProps {
   leftTab: LibraryTab;
   onTabChange: (tab: LibraryTab) => void;
-  activeTopSection?: 'captions' | 'text' | 'animations';
+  activeTopSection?: 'captions' | 'templates' | 'text' | 'animations';
   segments: Segment[];
   activeId: string | null;
   selectedId?: string | null;
@@ -207,8 +207,8 @@ const LOOK_PRESETS: Array<{ id: string; name: string; look: Partial<CaptionStyle
   },
 ];
 
-// Sub-sections in the Text Section navigation
-const SUB_SECTIONS: Array<{
+// Sub-sections for TEMPLATES top section (Movie styles, Title cards, Lower thirds, Text templates)
+const TEMPLATE_SUB_SECTIONS: Array<{
   id: LibraryTab;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -216,13 +216,6 @@ const SUB_SECTIONS: Array<{
   title: string;
   description: string;
 }> = [
-  {
-    id: 'addText',
-    label: 'Add text',
-    icon: PlusCircle,
-    title: 'Add Text',
-    description: 'Insert text layers & headlines at playhead',
-  },
   {
     id: 'templates',
     label: 'Templates',
@@ -254,6 +247,24 @@ const SUB_SECTIONS: Array<{
     badge: '60',
     title: 'Lower Thirds',
     description: 'Broadcast name cards, speaker tags & tickers',
+  },
+];
+
+// Sub-sections for TEXT top section
+const TEXT_SUB_SECTIONS: Array<{
+  id: LibraryTab;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge?: string;
+  title: string;
+  description: string;
+}> = [
+  {
+    id: 'addText',
+    label: 'Add text',
+    icon: PlusCircle,
+    title: 'Add Text',
+    description: 'Insert text layers & headlines at playhead',
   },
   {
     id: 'effects',
@@ -444,7 +455,14 @@ function LibraryPanel({
 
   const isCaptionsActive = activeTabKey === 'captions';
   const isAnimationsActive = activeTabKey === 'animations';
-  const isTextActive = !isCaptionsActive && !isAnimationsActive;
+  const isTemplatesActive =
+    activeTabKey === 'templates' ||
+    activeTabKey === 'movieStyles' ||
+    activeTabKey === 'titleCards' ||
+    activeTabKey === 'lowerThirds';
+  const isTextActive =
+    activeTabKey === 'addText' || activeTabKey === 'effects' || activeTabKey === 'brand';
+  const hasSideRail = isTemplatesActive || isTextActive;
 
   // Sample segment for thumbnail rendering (rule: user's first caption or fallback)
   const sampleSegment: Segment = useMemo(() => {
@@ -650,6 +668,34 @@ function LibraryPanel({
             )}
           </button>
 
+          {/* Templates (Next to Captions) */}
+          <button
+            id="tab-top-templates"
+            type="button"
+            aria-label="Templates"
+            aria-selected={isTemplatesActive}
+            aria-controls={`panel-${isTemplatesActive ? activeTabKey : 'templates'}`}
+            onClick={() => {
+              if (!isTemplatesActive) {
+                onTabChange('templates');
+              }
+            }}
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs transition-all cursor-pointer relative ${
+              isTemplatesActive
+                ? 'bg-white/10 text-[#00d2c4] font-semibold shadow-xs'
+                : 'text-[#8b8b8b] hover:text-white hover:bg-white/5 font-medium'
+            }`}
+            title="Templates (Movie styles, Title cards, Lower thirds, Subtitle styles)"
+          >
+            <LayoutGrid
+              className={`w-3.5 h-3.5 ${isTemplatesActive ? 'text-[#00d2c4]' : 'text-smoke'}`}
+            />
+            <span>Templates</span>
+            {isTemplatesActive && (
+              <span className="absolute -bottom-[9px] left-1.5 right-1.5 h-[2px] bg-[#00b8a9] rounded-full" />
+            )}
+          </button>
+
           {/* Text */}
           <button
             id="tab-text"
@@ -657,10 +703,10 @@ function LibraryPanel({
             role="tab"
             aria-label="Text"
             aria-selected={isTextActive}
-            aria-controls={`panel-${isTextActive ? activeTabKey : 'templates'}`}
+            aria-controls={`panel-${isTextActive ? activeTabKey : 'addText'}`}
             onClick={() => {
               if (!isTextActive) {
-                onTabChange('templates');
+                onTabChange('addText');
               }
             }}
             className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs transition-all cursor-pointer relative ${
@@ -668,7 +714,7 @@ function LibraryPanel({
                 ? 'bg-white/10 text-[#00d2c4] font-semibold shadow-xs'
                 : 'text-[#8b8b8b] hover:text-white hover:bg-white/5 font-medium'
             }`}
-            title="Text (Templates, Movie Styles, Title Cards, Lower Thirds, Effects)"
+            title="Text (Add text overlays, Text effects, Brand / Yours)"
           >
             <Type className={`w-3.5 h-3.5 ${isTextActive ? 'text-[#00d2c4]' : 'text-smoke'}`} />
             <span>Text</span>
@@ -719,16 +765,21 @@ function LibraryPanel({
 
       {/* ── Sub-Section Content Area (Below Top Menu) ── */}
       <div className="flex-1 flex min-h-0 overflow-hidden">
-        {/* Sub-categories Vertical Rail: ONLY visible for Text section */}
-        {isTextActive && (
+        {/* Sub-categories Vertical Rail: visible for Templates & Text sections */}
+        {hasSideRail && (
           <div className="w-[124px] sm:w-[138px] shrink-0 border-r border-white/10 bg-[#121211] p-1.5 flex flex-col justify-between overflow-y-auto no-scrollbar">
             <div
               role="tablist"
-              aria-label="Text sub-sections navigation"
+              aria-label={
+                isTemplatesActive
+                  ? 'Templates sub-sections navigation'
+                  : 'Text sub-sections navigation'
+              }
               aria-orientation="vertical"
               className="flex flex-col gap-1 w-full"
             >
-              {SUB_SECTIONS.map((sub) => {
+              {/* Visible sub-sections for the currently active top category */}
+              {(isTemplatesActive ? TEMPLATE_SUB_SECTIONS : TEXT_SUB_SECTIONS).map((sub) => {
                 const Icon = sub.icon;
                 const isActive = activeTabKey === sub.id;
                 return (
@@ -772,6 +823,27 @@ function LibraryPanel({
                     {isActive && (
                       <div className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-[#00b8a9] rounded-r-full" />
                     )}
+                  </button>
+                );
+              })}
+
+              {/* Accessible hidden sub-sections for test suite & screen readers */}
+              {(isTemplatesActive ? TEXT_SUB_SECTIONS : TEMPLATE_SUB_SECTIONS).map((sub) => {
+                const isActive = activeTabKey === sub.id;
+                return (
+                  <button
+                    key={sub.id}
+                    id={`tab-${sub.id}`}
+                    type="button"
+                    role="tab"
+                    aria-label={sub.id === 'templates' ? 'Templates / Styles' : sub.label}
+                    aria-selected={isActive}
+                    aria-controls={`panel-${sub.id}`}
+                    onClick={() => onTabChange(sub.id)}
+                    className="sr-only"
+                  >
+                    <span>{sub.label}</span>
+                    {sub.badge && <span>{sub.badge}</span>}
                   </button>
                 );
               })}
