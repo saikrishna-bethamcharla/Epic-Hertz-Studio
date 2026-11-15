@@ -417,6 +417,54 @@ function LibraryPanel({
     }
   };
 
+  // Helper to add locked MOGRT text animations (Spin & Twist / Mirror Splash)
+  const handleAddMogrtText = (
+    templateId: 'mogrt-spin-twist' | 'mogrt-mirror-splash',
+    defaultName: string,
+    defaultRole: string,
+  ) => {
+    if (onAddLowerThird) {
+      const curTime = currentTime || 0;
+      const isSpin = templateId === 'mogrt-spin-twist';
+      const newLt: LowerThirdSpec = {
+        ...DEFAULT_LOWER_THIRD,
+        id: 'mogrt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        templateId,
+        name: defaultName,
+        role: defaultRole,
+        position: {
+          x: 0.5,
+          y: 0.5,
+          align: 'center',
+        },
+        font: {
+          family: isSpin ? 'asap' : 'sniglet',
+          weight: 800,
+          size: 0.045,
+        },
+        scale: 1,
+        colors: {
+          primary: isSpin ? '#FFFFFF' : '#A7F7FF',
+          secondary: isSpin ? '#FFFFFF' : '#FFFA6F',
+          textPrimary: isSpin ? '#FFFFFF' : '#A7F7FF',
+          textSecondary: isSpin ? '#FFFFFF' : '#FFFA6F',
+        },
+        variant: isSpin ? 6 : 2,
+        start: curTime,
+        end: curTime + (isSpin ? 5.5 : 4.5),
+        introDuration: isSpin ? 1.4 : 0.8,
+        outroDuration: isSpin ? 1.0 : 0.7,
+      };
+      (newLt as any).isLockedMogrt = true;
+      onAddLowerThird(newLt);
+      if (onNotification) {
+        onNotification(
+          `Added ${isSpin ? 'Spin & Twist' : 'Mirror Splash'} MOGRT animation at ${formatTimecode(curTime)}`,
+        );
+      }
+    }
+  };
+
   // Apply style to scope helper
   const applyPresetToScope = (targetStyle: CaptionStyle, presetName: string) => {
     addRecentPresetId(targetStyle.id);
@@ -714,6 +762,57 @@ function LibraryPanel({
                     </span>
                     .
                   </p>
+                </div>
+
+                {/* ── Group 1: Authentic MOGRT Text Animations (Locked Style) ── */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10.5px] font-bold uppercase tracking-wider text-amber-400">
+                        MOGRT Animations
+                      </span>
+                      <span className="px-1.5 py-0.2 rounded bg-amber-400/15 border border-amber-400/30 text-amber-300 font-mono text-[8px] font-bold">
+                        NON-CUSTOMIZABLE
+                      </span>
+                    </div>
+                    <span className="text-[9.5px] text-smoke">Exact After Effects MOGRT</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {/* 1. Spin & Twist (Mixkit 222) */}
+                    <button
+                      type="button"
+                      onClick={() => handleAddMogrtText('mogrt-spin-twist', 'MOTION', 'DESIGN')}
+                      className="group p-3 rounded-xl bg-[#181817] border border-amber-400/30 hover:border-amber-400 hover:bg-[#201d16] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center relative overflow-hidden"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-amber-400/15 border border-amber-400/40 group-hover:bg-amber-400/25 group-hover:border-amber-400 flex items-center justify-center transition-colors">
+                        <span className="text-xs font-mono font-bold text-amber-400 tracking-tighter">
+                          [ ]
+                        </span>
+                      </div>
+                      <span className="text-xs font-bold text-bone group-hover:text-amber-300">
+                        Spin &amp; Twist
+                      </span>
+                      <span className="text-[9.5px] text-smoke">MOGRT 222 · Brackets</span>
+                    </button>
+
+                    {/* 2. Mirror Splash (Mixkit 28) */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleAddMogrtText('mogrt-mirror-splash', 'TYPE YOUR', 'TEXT HERE')
+                      }
+                      className="group p-3 rounded-xl bg-[#181817] border border-sky-400/30 hover:border-sky-400 hover:bg-[#161d22] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center relative overflow-hidden"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-sky-400/15 border border-sky-400/40 group-hover:bg-sky-400/25 group-hover:border-sky-400 flex items-center justify-center transition-colors">
+                        <Sparkles className="w-4 h-4 text-sky-400 group-hover:scale-110 transition-transform" />
+                      </div>
+                      <span className="text-xs font-bold text-bone group-hover:text-sky-300">
+                        Mirror Splash
+                      </span>
+                      <span className="text-[9.5px] text-smoke">MOGRT 28 · Watercolor</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* ── Group A: Standalone Single Text Overlays ── */}

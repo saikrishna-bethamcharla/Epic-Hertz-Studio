@@ -455,7 +455,14 @@ export function renderTemplateLowerThird(
   }
 
   // 4b. Dedicated High-Fidelity MOGRT Template Renderers
-  if (template.id === 'title-spin-twist') {
+  const isSpinTwist =
+    template.id === 'title-spin-twist' ||
+    spec.templateId === 'title-spin-twist' ||
+    spec.templateId === 'mixkit-222' ||
+    spec.templateId === 'mogrt-mixkit-222' ||
+    spec.templateId === 'mogrt-spin-twist';
+
+  if (isSpinTwist) {
     const cx = spec.position?.x !== undefined ? spec.position.x * w : w / 2;
     const cy = spec.position?.y !== undefined ? spec.position.y * h : h / 2;
     drawSpinTwistTitle(
@@ -476,7 +483,14 @@ export function renderTemplateLowerThird(
     return;
   }
 
-  if (template.id === 'title-mirror-splash') {
+  const isMirrorSplash =
+    template.id === 'title-mirror-splash' ||
+    spec.templateId === 'title-mirror-splash' ||
+    spec.templateId === 'mixkit-28' ||
+    spec.templateId === 'mogrt-mixkit-28' ||
+    spec.templateId === 'mogrt-mirror-splash';
+
+  if (isMirrorSplash) {
     const cx = spec.position?.x !== undefined ? spec.position.x * w : w / 2;
     const cy = spec.position?.y !== undefined ? spec.position.y * h : h / 2;
     drawMirrorSplashTitle(ctx, spec, phase, phaseProgress, cx, cy, scale);
@@ -863,23 +877,24 @@ function drawSpinTwistTitle(
   ctx.globalAlpha *= globalAlpha;
 
   const titleFontSize = Math.max(28 * scale, nameFit.fontSize || 54 * scale);
-  const subtitleFontSize = Math.max(12 * scale, titleFontSize * 0.34);
-  const fontFamily = spec.font.family || 'Inter';
+  const subtitleFontSize = Math.max(12 * scale, titleFontSize * 0.32);
+  const fontFamily = spec.font.family && spec.font.family !== 'Inter' ? spec.font.family : 'Asap';
 
-  ctx.font = `800 ${titleFontSize.toFixed(1)}px "${fontFamily}", system-ui, sans-serif`;
+  ctx.font = `800 ${titleFontSize.toFixed(1)}px "${fontFamily}", "Asap", system-ui, sans-serif`;
   const titleWidth = ctx.measureText(titleText).width;
 
-  ctx.font = `600 ${subtitleFontSize.toFixed(1)}px "${fontFamily}", system-ui, sans-serif`;
-  const subtitleWidth = ctx.measureText(subtitleText).width;
+  ctx.font = `600 ${subtitleFontSize.toFixed(1)}px "${fontFamily}", "Asap", system-ui, sans-serif`;
+  const spacedSubtitle = subtitleText.split('').join(' ');
+  const subtitleWidth = ctx.measureText(spacedSubtitle).width;
 
   const targetBoxWidth = Math.max(
-    titleWidth + 80 * scale,
-    subtitleWidth + 100 * scale,
-    240 * scale,
+    titleWidth + 90 * scale,
+    subtitleWidth + 110 * scale,
+    260 * scale,
   );
   const boxHeight = titleFontSize * 1.55;
-  const bracketArm = Math.min(36 * scale, targetBoxWidth * 0.18);
-  const lineWidth = Math.max(2, 3.5 * scale);
+  const bracketArm = targetBoxWidth * 0.34;
+  const lineWidth = Math.max(2.5, 3.8 * scale);
 
   const easedExpand = easeOutExpo(expandProgress);
   const currentBoxWidth = 50 * scale + (targetBoxWidth - 50 * scale) * easedExpand;
@@ -917,20 +932,23 @@ function drawSpinTwistTitle(
     ctx.lineCap = 'square';
     ctx.lineJoin = 'miter';
 
+    const topArm = Math.min(bracketArm, halfW * 0.7);
+    const bottomArmGap = subtitleText ? subtitleWidth / 2 + 12 * scale : topArm;
+
     // Left Bracket [
     ctx.beginPath();
-    ctx.moveTo(cx - halfW + bracketArm, cy - halfH);
+    ctx.moveTo(cx - halfW + topArm, cy - halfH);
     ctx.lineTo(cx - halfW, cy - halfH);
     ctx.lineTo(cx - halfW, cy + halfH);
-    ctx.lineTo(cx - halfW + bracketArm, cy + halfH);
+    ctx.lineTo(Math.max(cx - halfW, cx - bottomArmGap), cy + halfH);
     ctx.stroke();
 
     // Right Bracket ]
     ctx.beginPath();
-    ctx.moveTo(cx + halfW - bracketArm, cy - halfH);
+    ctx.moveTo(cx + halfW - topArm, cy - halfH);
     ctx.lineTo(cx + halfW, cy - halfH);
     ctx.lineTo(cx + halfW, cy + halfH);
-    ctx.lineTo(cx + halfW - bracketArm, cy + halfH);
+    ctx.lineTo(Math.min(cx + halfW, cx + bottomArmGap), cy + halfH);
     ctx.stroke();
   }
 
@@ -945,7 +963,7 @@ function drawSpinTwistTitle(
     ctx.scale(textScale, textScale);
 
     ctx.fillStyle = textPrimaryColor || '#FFFFFF';
-    ctx.font = `800 ${titleFontSize.toFixed(1)}px "${fontFamily}", system-ui, sans-serif`;
+    ctx.font = `800 ${titleFontSize.toFixed(1)}px "${fontFamily}", "Asap", system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(titleText, 0, -2 * scale);
@@ -961,13 +979,12 @@ function drawSpinTwistTitle(
     ctx.globalAlpha *= subAlpha;
     ctx.translate(cx, cy + halfH + subSlideY);
 
-    ctx.fillStyle = textSecondaryColor || '#CBD5E1';
-    ctx.font = `600 ${subtitleFontSize.toFixed(1)}px "${fontFamily}", system-ui, sans-serif`;
+    ctx.fillStyle = textSecondaryColor || '#FFFFFF';
+    ctx.font = `600 ${subtitleFontSize.toFixed(1)}px "${fontFamily}", "Asap", system-ui, sans-serif`;
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
+    ctx.textBaseline = 'middle';
 
-    const spaced = subtitleText.split('').join(' ');
-    ctx.fillText(spaced, 0, 6 * scale);
+    ctx.fillText(spacedSubtitle, 0, 0);
     ctx.restore();
   }
 
@@ -997,17 +1014,22 @@ function drawMirrorSplashTitle(
   let line2 = 'TEXT HERE';
 
   if (spec.name) {
-    const words = spec.name.trim().split(/\s+/);
-    if (words.length === 1) {
-      line1 = words[0];
-      line2 = spec.role ? spec.role.toUpperCase() : '';
+    if (spec.role) {
+      line1 = spec.name.toUpperCase();
+      line2 = spec.role.toUpperCase();
     } else {
-      const mid = Math.ceil(words.length / 2);
-      line1 = words.slice(0, mid).join(' ').toUpperCase();
-      line2 = (words.slice(mid).join(' ') + (spec.role ? ' ' + spec.role : ''))
-        .trim()
-        .toUpperCase();
+      const words = spec.name.trim().split(/\s+/);
+      if (words.length === 1) {
+        line1 = words[0].toUpperCase();
+        line2 = '';
+      } else {
+        const mid = Math.ceil(words.length / 2);
+        line1 = words.slice(0, mid).join(' ').toUpperCase();
+        line2 = words.slice(mid).join(' ').toUpperCase();
+      }
     }
+  } else if (spec.role) {
+    line2 = spec.role.toUpperCase();
   }
 
   ctx.save();
@@ -1104,13 +1126,14 @@ function drawMirrorSplashTitle(
     const fontSize = Math.max(26 * scale, 58 * scale);
     const strokeWidth = Math.max(4, 9 * scale);
     const shadowOffset = 5 * scale;
-    const fontFamily = spec.font.family || 'Bangers';
+    const fontFamily =
+      spec.font.family && spec.font.family !== 'Inter' ? spec.font.family : 'Sniglet';
 
     ctx.save();
     ctx.translate(cx, cy);
     ctx.scale(textScale, textScale);
 
-    ctx.font = `900 ${fontSize.toFixed(1)}px "${fontFamily}", "Arial Black", Impact, sans-serif`;
+    ctx.font = `900 ${fontSize.toFixed(1)}px "${fontFamily}", "Sniglet", "Modak", "Bangers", "Arial Black", Impact, sans-serif`;
     ctx.textAlign = 'center';
     ctx.lineJoin = 'round';
     ctx.miterLimit = 2;

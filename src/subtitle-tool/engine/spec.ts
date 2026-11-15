@@ -261,6 +261,23 @@ export const FONT_FAMILIES: FontFamilyDef[] = [
     group: 'Comic',
     files: [{ weight: 400, style: 'normal', file: 'bangers-latin-400-normal.woff2' }],
   },
+  {
+    id: 'asap',
+    label: 'Asap',
+    css: 'Asap',
+    group: 'Sans',
+    files: [
+      { weight: 400, style: 'normal', file: 'asap-latin-400-normal.ttf' },
+      { weight: 800, style: 'normal', file: 'asap-latin-800-normal.ttf' },
+    ],
+  },
+  {
+    id: 'sniglet',
+    label: 'Sniglet (Black Bubble)',
+    css: 'Sniglet',
+    group: 'Comic',
+    files: [{ weight: 800, style: 'normal', file: 'sniglet-latin-800-normal.ttf' }],
+  },
 ];
 
 export const fontById = (id: string): FontFamilyDef =>

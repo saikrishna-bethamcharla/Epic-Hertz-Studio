@@ -33,7 +33,8 @@ function loadFile(css: string, f: FontFile): Promise<void> {
   if (!p) {
     p = (async () => {
       if (typeof FontFace === 'undefined' || typeof document === 'undefined') return;
-      const face = new FontFace(css, `url(${getAssetUrl(`fonts/${f.file}`)}) format('woff2')`, {
+      const format = f.file.endsWith('.ttf') ? 'truetype' : 'woff2';
+      const face = new FontFace(css, `url(${getAssetUrl(`fonts/${f.file}`)}) format('${format}')`, {
         weight: String(f.weight),
         style: f.style,
         display: 'swap',
@@ -101,6 +102,21 @@ export function ensureLowerThirdFonts(lowerThirds: LowerThirdSpec[] = []): Promi
     const fam = fontById(lt.font.family);
     const file = nearestFile(fam.files, lt.font.weight, false);
     if (file) tasks.push(loadFile(fam.css, file));
+
+    if (
+      lt.templateId === 'title-spin-twist' ||
+      lt.templateId === 'mogrt-spin-twist' ||
+      lt.templateId === 'mixkit-222'
+    ) {
+      tasks.push(ensureFamily('asap'));
+    }
+    if (
+      lt.templateId === 'title-mirror-splash' ||
+      lt.templateId === 'mogrt-mirror-splash' ||
+      lt.templateId === 'mixkit-28'
+    ) {
+      tasks.push(ensureFamily('sniglet'));
+    }
 
     const combinedText = `${lt.name} ${lt.role} ${lt.handle || ''}`;
     for (const s of SCRIPT_FONTS) {

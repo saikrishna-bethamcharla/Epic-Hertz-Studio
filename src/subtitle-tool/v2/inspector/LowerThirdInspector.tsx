@@ -23,6 +23,7 @@ import {
   AlertTriangle,
   SlidersHorizontal,
   ChevronDown,
+  Sparkles,
 } from 'lucide-react';
 import type { LowerThirdSpec, LowerThirdVariant } from '../../types';
 import { FONT_FAMILIES } from '../../engine/spec';
@@ -199,6 +200,212 @@ export default function LowerThirdInspector({
     setPresetSavedToast(true);
     setTimeout(() => setPresetSavedToast(false), 2500);
   };
+
+  const isMogrt =
+    spec.templateId === 'mogrt-spin-twist' ||
+    spec.templateId === 'title-spin-twist' ||
+    spec.templateId === 'mixkit-222' ||
+    spec.templateId === 'mogrt-mirror-splash' ||
+    spec.templateId === 'title-mirror-splash' ||
+    spec.templateId === 'mixkit-28' ||
+    Boolean((spec as any).isLockedMogrt);
+
+  const isSpinTwist =
+    spec.templateId === 'mogrt-spin-twist' ||
+    spec.templateId === 'title-spin-twist' ||
+    spec.templateId === 'mixkit-222';
+
+  if (isMogrt) {
+    return (
+      <div className="flex flex-col h-full overflow-y-auto bg-[#141413] text-bone text-xs select-none p-4 space-y-5">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-white/10 pb-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-sm text-bone">
+                {isSpinTwist ? 'Spin & Twist' : 'Mirror Splash'}
+              </span>
+              <span className="px-1.5 py-0.5 rounded font-mono text-[9px] font-bold border bg-amber-400/15 border-amber-400/30 text-amber-300">
+                MOGRT LOCKED
+              </span>
+            </div>
+            <span className="text-[11px] text-smoke">
+              {isSpinTwist
+                ? 'Mixkit 222 · Framing Brackets'
+                : 'Mixkit 28 · Watercolor Liquid Splash'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => onDelete(spec.id)}
+              className="px-2 py-1.5 rounded-lg border border-red-500/30 hover:border-red-500/60 bg-red-500/10 hover:bg-red-500/20 text-red-300 hover:text-red-200 transition-colors flex items-center gap-1.5 cursor-pointer"
+              title="Delete this text animation"
+              aria-label="Delete this text animation"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span className="text-[11px] font-medium">Delete</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Locked Notice Banner */}
+        <div className="p-2.5 rounded-xl bg-amber-400/10 border border-amber-400/20 text-amber-300 flex items-start gap-2">
+          <Sparkles className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
+          <div className="text-[11px] leading-relaxed text-amber-200/90">
+            <span className="font-semibold text-amber-300">Authentic MOGRT Animation:</span>{' '}
+            Animation timing, liquid particles, colors, and typography are locked to replicate the
+            After Effects MOGRT file exactly. Customize your text lines, position, and timing below.
+          </div>
+        </div>
+
+        {/* Text Lines Customization */}
+        <div className="space-y-3">
+          <label className="text-[11px] font-semibold text-smoke uppercase tracking-wider flex items-center gap-1.5">
+            <Type className="w-3.5 h-3.5 text-amber-400" />
+            <span>{isSpinTwist ? 'Title & Subtitle' : 'Top & Bottom Lines'}</span>
+          </label>
+
+          <div className="space-y-2">
+            <div>
+              <span className="text-[10px] text-smoke">
+                {isSpinTwist ? 'Title Text (Center Bracket)' : 'Top Line (Cyan #A7F7FF)'}
+              </span>
+              <input
+                type="text"
+                value={spec.name}
+                onChange={(e) => updateSpec({ name: e.target.value })}
+                placeholder={isSpinTwist ? 'MOTION' : 'TYPE YOUR'}
+                className="mt-1 w-full px-2.5 py-1.5 rounded-lg bg-[#1a1a18] border border-white/10 focus:border-amber-400 focus:outline-none text-bone font-medium"
+              />
+            </div>
+
+            <div>
+              <span className="text-[10px] text-smoke">
+                {isSpinTwist ? 'Subtitle Text (Bottom Opening)' : 'Bottom Line (Yellow #FFFA6F)'}
+              </span>
+              <input
+                type="text"
+                value={spec.role}
+                onChange={(e) => updateSpec({ role: e.target.value })}
+                placeholder={isSpinTwist ? 'DESIGN' : 'TEXT HERE'}
+                className="mt-1 w-full px-2.5 py-1.5 rounded-lg bg-[#1a1a18] border border-white/10 focus:border-amber-400 focus:outline-none text-bone font-medium"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Position & Scale */}
+        <div className="space-y-3 pt-2 border-t border-white/5">
+          <label className="text-[11px] font-semibold text-smoke uppercase tracking-wider flex items-center gap-1.5">
+            <Layout className="w-3.5 h-3.5 text-amber-400" />
+            <span>Position &amp; Scale</span>
+          </label>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-smoke">Alignment</span>
+              <div className="flex items-center gap-1 bg-[#1a1a18] p-0.5 rounded-lg border border-white/10">
+                {(['left', 'center', 'right'] as const).map((align) => (
+                  <button
+                    key={align}
+                    type="button"
+                    onClick={() => updatePosition({ align })}
+                    className={`px-2 py-1 rounded text-[10px] capitalize transition-colors cursor-pointer ${
+                      (spec.position?.align || 'center') === align
+                        ? 'bg-amber-400 text-black font-semibold'
+                        : 'text-smoke hover:text-bone'
+                    }`}
+                  >
+                    {align}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between text-[10px] text-smoke">
+                <span>Vertical Position (Y)</span>
+                <span className="font-mono">{Math.round((spec.position?.y ?? 0.5) * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min={0.1}
+                max={0.9}
+                step={0.01}
+                value={spec.position?.y ?? 0.5}
+                onChange={(e) => updatePosition({ y: parseFloat(e.target.value) })}
+                className="mt-1 w-full accent-amber-400 cursor-pointer"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between text-[10px] text-smoke">
+                <span>Scale</span>
+                <span className="font-mono">{(spec.scale ?? 1.0).toFixed(1)}x</span>
+              </div>
+              <input
+                type="range"
+                min={0.5}
+                max={2.0}
+                step={0.05}
+                value={spec.scale ?? 1.0}
+                onChange={(e) => updateSpec({ scale: parseFloat(e.target.value) })}
+                className="mt-1 w-full accent-amber-400 cursor-pointer"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Timeline Timing */}
+        <div className="space-y-2 pt-2 border-t border-white/5">
+          <label className="text-[11px] font-semibold text-smoke uppercase tracking-wider flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-amber-400" />
+              <span>Timeline Timing</span>
+            </span>
+            <span className="font-mono text-[10px] text-smoke">
+              {(spec.end - spec.start).toFixed(1)}s duration
+            </span>
+          </label>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <span className="text-[10px] text-smoke">Start Time (s)</span>
+              <input
+                type="number"
+                step={0.1}
+                min={0}
+                value={spec.start}
+                onChange={(e) =>
+                  updateSpec({ start: Math.max(0, parseFloat(e.target.value) || 0) })
+                }
+                className="mt-1 w-full px-2 py-1.5 rounded-lg bg-[#1a1a18] border border-white/10 text-bone font-mono text-xs focus:border-amber-400 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <span className="text-[10px] text-smoke">End Time (s)</span>
+              <input
+                type="number"
+                step={0.1}
+                min={(spec.start ?? 0) + 0.5}
+                value={spec.end ?? 4.0}
+                onChange={(e) => {
+                  const s = spec.start ?? 0;
+                  updateSpec({
+                    end: Math.max(s + 0.5, parseFloat(e.target.value) || s + 1),
+                  });
+                }}
+                className="mt-1 w-full px-2 py-1.5 rounded-lg bg-[#1a1a18] border border-white/10 text-bone font-mono text-xs focus:border-amber-400 focus:outline-none"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full overflow-y-auto bg-[#141413] text-bone text-xs select-none p-4 space-y-5">
