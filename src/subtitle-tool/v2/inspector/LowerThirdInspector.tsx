@@ -21,8 +21,6 @@ import {
   Type,
   RotateCcw,
   AlertTriangle,
-  Layers,
-  Sparkles,
   SlidersHorizontal,
   ChevronDown,
 } from 'lucide-react';
@@ -209,11 +207,12 @@ export default function LowerThirdInspector({
         <div>
           <div className="flex items-center gap-2">
             <span className="font-semibold text-sm text-bone">
-              {spec.position.y <= 0.25
-                ? 'Topic Header'
-                : spec.position.y <= 0.65
-                  ? 'Callout / Quote'
-                  : 'Lower Third'}
+              {matchedTemplate?.name ||
+                (spec.position.y <= 0.25
+                  ? 'Topic Header'
+                  : spec.position.y <= 0.65
+                    ? 'Callout / Quote'
+                    : 'Lower Third')}
             </span>
             <span
               className={`px-1.5 py-0.5 rounded font-mono text-[10px] border ${
@@ -233,10 +232,22 @@ export default function LowerThirdInspector({
         </div>
 
         <div className="flex items-center gap-1.5">
+          {matchedTemplate && (
+            <button
+              type="button"
+              onClick={handleResetToTemplateDefaults}
+              className="p-1.5 rounded-lg border border-white/10 hover:border-amber-400/50 bg-[#1c1c1a] hover:bg-amber-400/10 text-smoke hover:text-amber-300 transition-colors cursor-pointer"
+              title="Reset to template defaults"
+              aria-label="Reset to template defaults"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span className="sr-only">Reset to template defaults</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={handleSavePreset}
-            className="p-1.5 rounded-lg border border-white/10 hover:border-amber-400/50 bg-[#1c1c1a] hover:bg-amber-400/10 text-smoke hover:text-amber-300 transition-colors"
+            className="p-1.5 rounded-lg border border-white/10 hover:border-amber-400/50 bg-[#1c1c1a] hover:bg-amber-400/10 text-smoke hover:text-amber-300 transition-colors cursor-pointer"
             title="Save this Lower Third style as preset"
           >
             <Bookmark className="w-3.5 h-3.5" />
@@ -244,7 +255,7 @@ export default function LowerThirdInspector({
           <button
             type="button"
             onClick={() => onDelete(spec.id)}
-            className="px-2 py-1.5 rounded-lg border border-red-500/30 hover:border-red-500/60 bg-red-500/10 hover:bg-red-500/20 text-red-300 hover:text-red-200 transition-colors flex items-center gap-1.5"
+            className="px-2 py-1.5 rounded-lg border border-red-500/30 hover:border-red-500/60 bg-red-500/10 hover:bg-red-500/20 text-red-300 hover:text-red-200 transition-colors flex items-center gap-1.5 cursor-pointer"
             title="Delete this Lower Third"
             aria-label="Delete this Lower Third"
           >
@@ -259,45 +270,6 @@ export default function LowerThirdInspector({
           Preset saved to your library
         </div>
       )}
-
-      {matchedTemplate && (
-        <div className="p-3 rounded-xl bg-amber-400/5 border border-amber-400/20 space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-amber-400" />
-              <span className="font-semibold text-bone text-xs">{matchedTemplate.name}</span>
-            </div>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-400/10 border border-amber-400/20 text-amber-300 font-mono tracking-wider uppercase">
-              {matchedTemplate.packId}
-            </span>
-          </div>
-          <p className="text-[10px] text-smoke line-clamp-1">
-            {matchedTemplate.category} • {matchedTemplate.tags.join(', ')}
-          </p>
-          <button
-            type="button"
-            onClick={handleResetToTemplateDefaults}
-            className="w-full py-1.5 px-2 rounded-lg bg-[#1c1c1a] hover:bg-amber-400/10 text-smoke hover:text-amber-300 text-[11px] font-medium flex items-center justify-center gap-1.5 transition-colors border border-white/10 hover:border-amber-400/30 cursor-pointer"
-          >
-            <RotateCcw className="w-3 h-3" />
-            <span>Reset to template defaults</span>
-          </button>
-        </div>
-      )}
-
-      {/* ── Template Default Guarantee Notice ───────────────────────────── */}
-      <div className="p-3 rounded-xl bg-amber-400/5 border border-amber-400/20 flex items-start gap-2.5">
-        <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-        <div className="space-y-0.5">
-          <span className="font-semibold text-bone block text-[11.5px]">
-            Default Template Style &amp; Animations
-          </span>
-          <p className="text-[10.5px] text-smoke leading-relaxed">
-            Placement, typography, colors, and motion animations are preset by the template. Simply
-            customize names, details, and image below.
-          </p>
-        </div>
-      </div>
 
       {/* ── 1. Content Section (Name, Role, Handle) ───────────────────────── */}
       <div className="space-y-3">
