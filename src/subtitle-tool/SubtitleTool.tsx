@@ -1250,7 +1250,7 @@ export default function SubtitleTool({
                     direction="vertical"
                     onResize={(delta) => {
                       setLayout((p) => {
-                        const newH = Math.max(180, Math.min(360, p.timelineHeight - delta));
+                        const newH = Math.max(200, Math.min(520, p.timelineHeight - delta));
                         const next = { ...p, timelineHeight: newH };
                         saveStoredLayout(next);
                         return next;

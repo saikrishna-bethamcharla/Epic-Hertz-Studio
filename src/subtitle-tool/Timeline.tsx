@@ -638,11 +638,11 @@ function Timeline({
       <div
         ref={containerRef}
         onMouseDown={handleTimelineMouseDown}
-        className="flex-1 min-h-0 relative overflow-x-auto overflow-y-hidden cursor-crosshair bg-[#0c0c0b]"
+        className="flex-1 min-h-0 relative overflow-x-auto overflow-y-auto cursor-crosshair bg-[#0a0a09] px-2 py-1.5"
         style={{ scrollBehavior: 'auto' }}
       >
         <div
-          className="relative h-full flex flex-col justify-between"
+          className="relative min-h-full flex flex-col gap-2 pb-2"
           style={{ width: `${totalWidth}px` }}
         >
           {/* 1. Time Ruler Top */}
@@ -665,7 +665,11 @@ function Timeline({
           </div>
 
           {/* 2. Caption Track (Segment blocks with resize/drag handles & gap bridges) */}
-          <div className="h-12 shrink-0 relative px-1 my-1">
+          <div className="h-14 shrink-0 relative px-1 rounded-lg border border-white/5 bg-[#121211]/85 shadow-inner">
+            <div className="absolute left-2 top-0.5 z-10 text-[8px] font-mono font-bold tracking-wider text-smoke/50 uppercase pointer-events-none flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-400/70 inline-block" />
+              <span>Captions (Subtitles)</span>
+            </div>
             {segments.map((seg, sIdx) => {
               const left = seg.start * zoom;
               const width = Math.max(30, (seg.end - seg.start) * zoom);
@@ -681,7 +685,7 @@ function Timeline({
                   {/* Segment block */}
                   <div
                     onMouseDown={(e) => startSegmentDrag(e, seg, 'move')}
-                    className={`timeline-segment absolute top-0.5 h-11 rounded-lg px-2 py-1 text-xs font-medium cursor-grab active:cursor-grabbing transition-colors border flex flex-col justify-center overflow-hidden group shadow-md select-none ${
+                    className={`timeline-segment absolute top-3 h-10 rounded-lg px-2 py-0.5 text-xs font-medium cursor-grab active:cursor-grabbing transition-colors border flex flex-col justify-center overflow-hidden group shadow-md select-none ${
                       isSelected
                         ? 'bg-[#2b2a26] border-amber-400 text-amber-200 ring-1 ring-amber-400/50'
                         : isActive
@@ -731,7 +735,7 @@ function Timeline({
                   {/* Overlap Warning Indicator */}
                   {hasOverlap && (
                     <div
-                      className="absolute top-0 h-12 bg-crimson/30 border-l border-r border-crimson/60 pointer-events-none z-10"
+                      className="absolute top-2.5 h-11 bg-crimson/30 border-l border-r border-crimson/60 pointer-events-none z-10"
                       style={{
                         left: `${nextSeg.start * zoom}px`,
                         width: `${Math.max(4, (seg.end - nextSeg.start) * zoom)}px`,
@@ -743,7 +747,7 @@ function Timeline({
                   {/* Gap indicator with snap/close gap button */}
                   {hasGap && (
                     <div
-                      className="absolute top-2.5 h-7 flex items-center justify-center z-10"
+                      className="absolute top-4 h-7 flex items-center justify-center z-10"
                       style={{
                         left: `${seg.end * zoom}px`,
                         width: `${(nextSeg.start - seg.end) * zoom}px`,
@@ -755,7 +759,7 @@ function Timeline({
                           e.stopPropagation();
                           handleCloseGap(seg, nextSeg);
                         }}
-                        className="px-1 py-0.5 rounded bg-white/5 hover:bg-amber-400/20 text-smoke hover:text-amber-300 text-[9px] border border-dashed border-white/20 font-mono transition-colors"
+                        className="px-1 py-0.5 rounded bg-white/5 hover:bg-amber-400/20 text-smoke hover:text-amber-300 text-[9px] border border-dashed border-white/20 font-mono transition-colors cursor-pointer"
                         title="Click to snap / close gap"
                       >
                         Snap
@@ -767,10 +771,11 @@ function Timeline({
             })}
           </div>
 
-          {/* 3. Lower Thirds Track */}
-          <div className="h-10 shrink-0 relative px-1 my-0.5 border-t border-b border-white/5 bg-[#0d0d0c]/70">
-            <div className="absolute left-1 top-0.5 z-10 text-[8px] font-mono font-bold tracking-wider text-smoke/60 uppercase pointer-events-none">
-              Lower Thirds
+          {/* 3. Lower Thirds & Text Overlays Track */}
+          <div className="h-14 shrink-0 relative px-1 rounded-lg border border-white/5 bg-[#0f0f0e]/85 shadow-inner">
+            <div className="absolute left-2 top-0.5 z-10 text-[8px] font-mono font-bold tracking-wider text-smoke/50 uppercase pointer-events-none flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400/70 inline-block" />
+              <span>Lower Thirds &amp; Custom Text Overlays</span>
             </div>
             {lowerThirds && lowerThirds.length > 0 ? (
               lowerThirds.map((lt) => {
@@ -782,7 +787,7 @@ function Timeline({
                   <div
                     key={lt.id}
                     onMouseDown={(e) => startLowerThirdDrag(e, lt, 'lt-move')}
-                    className={`timeline-segment absolute top-1 h-8 rounded-lg px-2 text-xs font-medium cursor-grab active:cursor-grabbing transition-colors border flex items-center justify-between overflow-hidden group shadow-md select-none ${
+                    className={`timeline-segment absolute top-3 h-9 rounded-lg px-2 text-xs font-medium cursor-grab active:cursor-grabbing transition-colors border flex items-center justify-between overflow-hidden group shadow-md select-none ${
                       isActive
                         ? 'bg-[#272621] border-amber-400 text-amber-200 ring-1 ring-amber-400/50 z-20'
                         : 'bg-[#181816] border-white/15 text-bone hover:border-white/35 hover:bg-[#1f1f1d] z-10'
@@ -808,7 +813,7 @@ function Timeline({
                         V{lt.variant}
                       </span>
                       <span className="truncate font-semibold text-[10px] tracking-tight">
-                        {lt.name || 'Lower Third'}
+                        {lt.name || 'Text Overlay'}
                       </span>
                     </div>
                     <div className="flex items-center gap-1 shrink-0 pl-1">
@@ -855,13 +860,18 @@ function Timeline({
               })
             ) : (
               <div className="absolute inset-0 flex items-center justify-center text-[10px] text-smoke/40 font-medium pointer-events-none">
-                No lower thirds · Click "+ Lower Third" in toolbar to add
+                No lower thirds or custom text overlays · Click "+ Lower Third" or "Add text" in
+                library
               </div>
             )}
           </div>
 
           {/* 4. Audio Waveform Track */}
-          <div className="flex-1 min-h-[44px] relative">
+          <div className="h-14 shrink-0 relative px-1 rounded-lg border border-white/5 bg-[#0d0d0c]/90 overflow-hidden shadow-inner">
+            <div className="absolute left-2 top-0.5 z-10 text-[8px] font-mono font-bold tracking-wider text-smoke/50 uppercase pointer-events-none flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/70 inline-block" />
+              <span>Speech Audio Waveform</span>
+            </div>
             <canvas
               ref={waveformCanvasRef}
               className="absolute inset-0 w-full h-full pointer-events-none"
@@ -876,7 +886,7 @@ function Timeline({
             />
           )}
 
-          {/* 4. Playhead Cursor (Amber vertical line with pointer top) */}
+          {/* 5. Playhead Cursor (Amber vertical line with pointer top) */}
           <TimelinePlayhead zoom={zoom} fallbackTime={currentTime} />
         </div>
       </div>

@@ -94,9 +94,9 @@ export const EXPORT_RECOMMENDATIONS = {
 // Default layout values
 // ---------------------------------------------------------------------------
 export const DEFAULT_LAYOUT = {
-  leftWidth: 280,
-  rightWidth: 300,
-  timelineHeight: 200,
+  leftWidth: 320,
+  rightWidth: 320,
+  timelineHeight: 280,
   isLeftCollapsed: false,
   isRightCollapsed: false,
 };

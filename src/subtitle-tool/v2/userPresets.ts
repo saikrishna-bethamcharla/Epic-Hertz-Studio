@@ -68,9 +68,9 @@ export interface WorkspaceLayout {
 }
 
 export const DEFAULT_LAYOUT: WorkspaceLayout = {
-  leftWidth: 380,
-  rightWidth: 340,
-  timelineHeight: 220,
+  leftWidth: 320,
+  rightWidth: 320,
+  timelineHeight: 280,
   isLeftCollapsed: false,
   isRightCollapsed: false,
 };
@@ -78,7 +78,14 @@ export const DEFAULT_LAYOUT: WorkspaceLayout = {
 export function getStoredLayout(): WorkspaceLayout {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_LAYOUT);
-    if (raw) return { ...DEFAULT_LAYOUT, ...JSON.parse(raw) };
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const timelineHeight =
+        typeof parsed.timelineHeight === 'number' && parsed.timelineHeight >= 260
+          ? parsed.timelineHeight
+          : DEFAULT_LAYOUT.timelineHeight;
+      return { ...DEFAULT_LAYOUT, ...parsed, timelineHeight };
+    }
   } catch (e) {
     console.warn('Failed to load layout from storage:', e);
   }
