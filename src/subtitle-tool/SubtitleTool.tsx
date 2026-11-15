@@ -1059,14 +1059,12 @@ export default function SubtitleTool({
                             activeTopSection={
                               leftTab === 'captions'
                                 ? 'captions'
-                                : leftTab === 'animations'
-                                  ? 'animations'
-                                  : leftTab === 'templates' ||
-                                      leftTab === 'movieStyles' ||
-                                      leftTab === 'titleCards' ||
-                                      leftTab === 'lowerThirds'
-                                    ? 'templates'
-                                    : 'text'
+                                : leftTab === 'templates' ||
+                                    leftTab === 'movieStyles' ||
+                                    leftTab === 'titleCards' ||
+                                    leftTab === 'lowerThirds'
+                                  ? 'templates'
+                                  : 'text'
                             }
                             segments={segments}
                             activeId={activeId}

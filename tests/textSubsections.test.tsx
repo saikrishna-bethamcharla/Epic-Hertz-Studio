@@ -82,13 +82,13 @@ describe('Text Section Sub-Sections Navigation & Quick Text Layout', () => {
       />,
     );
 
-    // Verify all 8 sub-section navigation buttons exist
+    // Verify sub-section navigation buttons exist (Animations removed from left panel)
     expect(screen.getByRole('tab', { name: /add text/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /templates/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /movie styles/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /lower thirds/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /text effects/i })).toBeDefined();
-    expect(screen.getByRole('tab', { name: /animations/i })).toBeDefined();
+    expect(screen.queryByRole('tab', { name: /^animations$/i })).toBeNull();
     expect(screen.getByRole('tab', { name: /yours/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /captions/i })).toBeDefined();
 
@@ -139,10 +139,6 @@ describe('Text Section Sub-Sections Navigation & Quick Text Layout', () => {
     // Click on 'Text effects'
     fireEvent.click(screen.getByRole('tab', { name: /text effects/i }));
     expect(handleTabChange).toHaveBeenCalledWith('effects');
-
-    // Click on 'Animations'
-    fireEvent.click(screen.getByRole('tab', { name: /animations/i }));
-    expect(handleTabChange).toHaveBeenCalledWith('animations');
 
     // Click on 'Yours'
     fireEvent.click(screen.getByRole('tab', { name: /yours/i }));

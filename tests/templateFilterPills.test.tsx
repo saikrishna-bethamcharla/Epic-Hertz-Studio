@@ -260,11 +260,11 @@ describe('Top Section Templates Category & Sub-sections Navigation', () => {
       />,
     );
 
-    // Verify top-level navigation has Captions, Templates, Text, and Animations
+    // Verify top-level navigation has Captions, Templates, and Text (Animations removed from left panel)
     expect(screen.getByRole('tab', { name: /^captions$/i })).toBeDefined();
     expect(screen.getByRole('button', { name: /^templates$/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /^text$/i })).toBeDefined();
-    expect(screen.getByRole('tab', { name: /^animations$/i })).toBeDefined();
+    expect(screen.queryByRole('tab', { name: /^animations$/i })).toBeNull();
   });
 
   it('clicking top Templates category switches to templates and opens sub-menu with movie styles, title cards, lower thirds', () => {

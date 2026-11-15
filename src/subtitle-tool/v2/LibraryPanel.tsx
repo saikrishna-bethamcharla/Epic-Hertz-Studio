@@ -1,5 +1,5 @@
 // ─── Library Panel — Epic Hertz Studio v2 ──────────────────────────────────
-import { useState, useMemo, useEffect, useRef, memo } from 'react';
+import { useState, useMemo, useEffect, memo } from 'react';
 import {
   Captions,
   SlidersHorizontal,
@@ -15,9 +15,6 @@ import {
   Bookmark,
   Quote,
   Clapperboard,
-  Upload,
-  Download,
-  X,
   Type,
   User,
   Sparkles,
@@ -47,18 +44,6 @@ import LibraryMovieStylesTab from './library/LibraryMovieStylesTab';
 import LibraryTitleCardsTab from './library/LibraryTitleCardsTab';
 import LibraryBrandTab from './library/LibraryBrandTab';
 import LibraryLowerThirdsTab from './library/LibraryLowerThirdsTab';
-import { ENTRANCE_PRESETS, EXIT_PRESETS, HIGHLIGHT_PRESETS } from '../engine/animation/presets';
-import {
-  parseMotionPresetPack,
-  serializeMotionPresetPack,
-  buildPackFromBuiltins,
-} from '../engine/animation/presetPack';
-import {
-  getInstalledMotionPacks,
-  installMotionPack,
-  removeMotionPack,
-  type InstalledMotionPack,
-} from './motionPacks';
 
 export type LibraryTab =
   | 'addText'
@@ -75,7 +60,7 @@ export type LibraryTab =
 interface LibraryPanelProps {
   leftTab: LibraryTab;
   onTabChange: (tab: LibraryTab) => void;
-  activeTopSection?: 'captions' | 'templates' | 'text' | 'animations';
+  activeTopSection?: 'captions' | 'templates' | 'text';
   segments: Segment[];
   activeId: string | null;
   selectedId?: string | null;
@@ -309,152 +294,20 @@ function LibraryPanel({
   onUpdateLowerThird,
   onAddMultipleLowerThirds,
 }: LibraryPanelProps) {
-  const [animSubTab, setAnimSubTab] = useState<'entrance' | 'exit' | 'highlight'>('entrance');
-  const [motionPacks, setMotionPacks] = useState<InstalledMotionPack[]>(() =>
-    getInstalledMotionPacks(),
-  );
-  const motionPackInputRef = useRef<HTMLInputElement>(null);
   const [favorites, setFavorites] = useState<string[]>(() => getFavoritePresetIds());
   const [userPresetsList, setUserPresetsList] = useState<UserPreset[]>(() => getUserPresets());
   const [customFonts, setCustomFonts] = useState<CustomFontRecord[]>([]);
   const [brandColors, setBrandColors] = useState<string[]>(() => getBrandColors());
 
-  type UiMotionPreset = {
-    key: string;
-    name: string;
-    hint: string;
-    packName?: string;
-    motion: Partial<CaptionStyle['motion']>;
-  };
-  type UiHighlightPreset = {
-    key: string;
-    name: string;
-    hint: string;
-    packName?: string;
-    highlight: Partial<CaptionStyle['highlight']>;
-  };
-
-  const entrancePresets = useMemo<UiMotionPreset[]>(
-    () => [
-      ...ENTRANCE_PRESETS.map((p) => ({
-        key: p.id,
-        name: p.name,
-        hint: p.hint,
-        motion: p.motion,
-      })),
-      ...motionPacks.flatMap((pack) =>
-        pack.presets
-          .filter((p) => p.group === 'entrance')
-          .map((p) => ({
-            key: `${pack.id}:${p.id}`,
-            name: p.name,
-            hint: p.hint,
-            packName: pack.name,
-            motion: (p.motion ?? {}) as Partial<CaptionStyle['motion']>,
-          })),
-      ),
-    ],
-    [motionPacks],
-  );
-
-  const exitPresets = useMemo<UiMotionPreset[]>(
-    () => [
-      ...EXIT_PRESETS.map((p) => ({
-        key: p.id,
-        name: p.name,
-        hint: p.hint,
-        motion: p.motion,
-      })),
-      ...motionPacks.flatMap((pack) =>
-        pack.presets
-          .filter((p) => p.group === 'exit')
-          .map((p) => ({
-            key: `${pack.id}:${p.id}`,
-            name: p.name,
-            hint: p.hint,
-            packName: pack.name,
-            motion: (p.motion ?? {}) as Partial<CaptionStyle['motion']>,
-          })),
-      ),
-    ],
-    [motionPacks],
-  );
-
-  const highlightPresets = useMemo<UiHighlightPreset[]>(
-    () => [
-      ...HIGHLIGHT_PRESETS.map((p) => ({
-        key: p.id,
-        name: p.name,
-        hint: p.hint,
-        highlight: p.highlight,
-      })),
-      ...motionPacks.flatMap((pack) =>
-        pack.presets
-          .filter((p) => p.group === 'highlight')
-          .map((p) => ({
-            key: `${pack.id}:${p.id}`,
-            name: p.name,
-            hint: p.hint,
-            packName: pack.name,
-            highlight: (p.highlight ?? {}) as Partial<CaptionStyle['highlight']>,
-          })),
-      ),
-    ],
-    [motionPacks],
-  );
-
-  const handleImportMotionPack = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = String(event.target?.result ?? '');
-      const result = parseMotionPresetPack(text);
-      if (!result.ok) {
-        if (onNotification) onNotification(`Motion pack import failed: ${result.errors[0]}`);
-        return;
-      }
-      const updated = installMotionPack(result.pack);
-      setMotionPacks(updated);
-      if (onNotification)
-        onNotification(
-          `Installed "${result.pack.name}" — ${result.pack.presets.length} presets added`,
-        );
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-  };
-
-  const handleExportMotionPack = () => {
-    const json = serializeMotionPresetPack({
-      name: 'Epic Hertz Motion Library',
-      author: 'Epic Hertz Studio',
-      presets: buildPackFromBuiltins(ENTRANCE_PRESETS, EXIT_PRESETS, HIGHLIGHT_PRESETS),
-    });
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `epic-hertz-motion-pack-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    if (onNotification) onNotification('Motion pack exported as JSON');
-  };
-
-  const handleRemoveMotionPack = (id: string, name: string) => {
-    setMotionPacks(removeMotionPack(id));
-    if (onNotification) onNotification(`Removed motion pack "${name}"`);
-  };
-
   useEffect(() => {
     void listCustomFonts().then(setCustomFonts);
   }, []);
 
-  // Map 'styles' to 'templates' for backwards compatibility
-  const activeTabKey: LibraryTab = leftTab === 'styles' ? 'templates' : leftTab;
+  // Map 'styles' to 'templates', and legacy 'animations' to 'captions'
+  const activeTabKey: LibraryTab =
+    leftTab === 'styles' ? 'templates' : leftTab === 'animations' ? 'captions' : leftTab;
 
   const isCaptionsActive = activeTabKey === 'captions';
-  const isAnimationsActive = activeTabKey === 'animations';
   const isTemplatesActive =
     activeTabKey === 'templates' ||
     activeTabKey === 'movieStyles' ||
@@ -719,31 +572,6 @@ function LibraryPanel({
             <Type className={`w-3.5 h-3.5 ${isTextActive ? 'text-[#00d2c4]' : 'text-smoke'}`} />
             <span>Text</span>
             {isTextActive && (
-              <span className="absolute -bottom-[9px] left-1.5 right-1.5 h-[2px] bg-[#00b8a9] rounded-full" />
-            )}
-          </button>
-
-          {/* Animations */}
-          <button
-            id="tab-animations"
-            type="button"
-            role="tab"
-            aria-label="Animations"
-            aria-selected={isAnimationsActive}
-            aria-controls="panel-animations"
-            onClick={() => onTabChange('animations')}
-            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs transition-all cursor-pointer relative ${
-              isAnimationsActive
-                ? 'bg-white/10 text-[#00d2c4] font-semibold shadow-xs'
-                : 'text-[#8b8b8b] hover:text-white hover:bg-white/5 font-medium'
-            }`}
-            title="Animations (Entrances, Exits, Karaoke & Motion Packs)"
-          >
-            <Film
-              className={`w-3.5 h-3.5 ${isAnimationsActive ? 'text-[#00d2c4]' : 'text-smoke'}`}
-            />
-            <span>Animations</span>
-            {isAnimationsActive && (
               <span className="absolute -bottom-[9px] left-1.5 right-1.5 h-[2px] bg-[#00b8a9] rounded-full" />
             )}
           </button>
@@ -1194,186 +1022,6 @@ function LibraryPanel({
                     </button>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* ─────────────────────────────────────────────────────────────
-              SUB-SECTION 5: ANIMATIONS (MOTION-ONLY PRESETS)
-          ────────────────────────────────────────────────────────────── */}
-            {activeTabKey === 'animations' && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between gap-2 pb-1 border-b border-white/5">
-                  <span className="text-[10px] font-medium text-smoke uppercase tracking-wider">
-                    Motion Presets
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      type="file"
-                      ref={motionPackInputRef}
-                      accept=".json"
-                      onChange={handleImportMotionPack}
-                      className="hidden"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => motionPackInputRef.current?.click()}
-                      title="Install a motion preset pack (.json)"
-                      className="flex items-center gap-1 px-2 py-1 rounded bg-[#181817] border border-white/10 hover:border-amber-400 text-bone text-[10px] font-semibold transition-colors cursor-pointer"
-                    >
-                      <Upload className="w-3 h-3" /> Import pack
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleExportMotionPack}
-                      title="Download every preset as a shareable pack"
-                      className="flex items-center gap-1 px-2 py-1 rounded bg-[#181817] border border-white/10 hover:border-amber-400 text-bone text-[10px] font-semibold transition-colors cursor-pointer"
-                    >
-                      <Download className="w-3 h-3" /> Export
-                    </button>
-                  </div>
-                </div>
-
-                {motionPacks.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {motionPacks.map((pack) => (
-                      <span
-                        key={pack.id}
-                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-400/10 border border-amber-400/25 text-[9px] text-amber-200"
-                      >
-                        {pack.name}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveMotionPack(pack.id, pack.name)}
-                          aria-label={`Remove ${pack.name}`}
-                          className="hover:text-white cursor-pointer"
-                        >
-                          <X className="w-2.5 h-2.5" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                <div className="flex items-center gap-1 bg-[#121211] p-0.5 rounded-lg border border-white/10">
-                  {(['entrance', 'exit', 'highlight'] as const).map((sub) => (
-                    <button
-                      key={sub}
-                      type="button"
-                      onClick={() => setAnimSubTab(sub)}
-                      className={`flex-1 py-1 rounded text-[11px] font-semibold capitalize transition-colors cursor-pointer ${
-                        animSubTab === sub
-                          ? 'bg-amber-400 text-black'
-                          : 'text-smoke hover:text-bone'
-                      }`}
-                    >
-                      {sub}
-                    </button>
-                  ))}
-                </div>
-
-                {animSubTab === 'entrance' && (
-                  <div className="grid grid-cols-2 gap-2">
-                    {entrancePresets.map((item) => {
-                      const active = style.motion.entranceType
-                        ? style.motion.entranceType === item.motion.entranceType
-                        : style.motion.in === item.motion.in;
-                      return (
-                        <button
-                          key={item.key}
-                          type="button"
-                          title={item.packName ? `From ${item.packName}` : undefined}
-                          onClick={() => {
-                            onStyleChange({
-                              ...style,
-                              motion: { ...style.motion, ...item.motion },
-                            });
-                            if (onNotification) onNotification(`Entrance: ${item.name}`);
-                          }}
-                          className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                            active
-                              ? 'bg-amber-400/15 border-amber-400 text-amber-300 font-bold'
-                              : 'bg-[#181817] border-white/10 hover:border-white/20 text-bone'
-                          }`}
-                        >
-                          <span className="text-xs">{item.name}</span>
-                          <span className="block text-[9px] leading-tight text-smoke mt-0.5">
-                            {item.hint}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {animSubTab === 'exit' && (
-                  <div className="grid grid-cols-2 gap-2">
-                    {exitPresets.map((item) => {
-                      const active = style.motion.exitType
-                        ? style.motion.exitType === item.motion.exitType
-                        : style.motion.out === item.motion.out;
-                      return (
-                        <button
-                          key={item.key}
-                          type="button"
-                          title={item.packName ? `From ${item.packName}` : undefined}
-                          onClick={() => {
-                            onStyleChange({
-                              ...style,
-                              motion: { ...style.motion, ...item.motion },
-                            });
-                            if (onNotification) onNotification(`Exit: ${item.name}`);
-                          }}
-                          className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                            active
-                              ? 'bg-amber-400/15 border-amber-400 text-amber-300 font-bold'
-                              : 'bg-[#181817] border-white/10 hover:border-white/20 text-bone'
-                          }`}
-                        >
-                          <span className="text-xs">{item.name}</span>
-                          <span className="block text-[9px] leading-tight text-smoke mt-0.5">
-                            {item.hint}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {animSubTab === 'highlight' && (
-                  <div className="grid grid-cols-2 gap-2">
-                    {highlightPresets.map((item) => {
-                      const active =
-                        style.highlight.mode === item.highlight.mode &&
-                        (item.highlight.emphasisType
-                          ? style.highlight.emphasisType === item.highlight.emphasisType
-                          : true);
-                      return (
-                        <button
-                          key={item.key}
-                          type="button"
-                          title={item.packName ? `From ${item.packName}` : undefined}
-                          onClick={() => {
-                            onStyleChange({
-                              ...style,
-                              highlight: { ...style.highlight, ...item.highlight },
-                            });
-                            if (onNotification) onNotification(`Highlight: ${item.name}`);
-                          }}
-                          className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                            active
-                              ? 'bg-amber-400/15 border-amber-400 text-amber-300 font-bold'
-                              : 'bg-[#181817] border-white/10 hover:border-white/20 text-bone'
-                          }`}
-                        >
-                          <span className="text-xs">{item.name}</span>
-                          <span className="block text-[9px] leading-tight text-smoke mt-0.5">
-                            {item.hint}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
               </div>
             )}
 
