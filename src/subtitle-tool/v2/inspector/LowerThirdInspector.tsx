@@ -205,8 +205,22 @@ export default function LowerThirdInspector({
       <div className="flex items-center justify-between border-b border-white/10 pb-3">
         <div>
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-sm text-bone">Lower Third</span>
-            <span className="px-1.5 py-0.5 rounded bg-amber-400/15 border border-amber-400/30 text-amber-300 font-mono text-[10px]">
+            <span className="font-semibold text-sm text-bone">
+              {spec.position.y <= 0.25
+                ? 'Topic Header'
+                : spec.position.y <= 0.65
+                  ? 'Callout / Quote'
+                  : 'Lower Third'}
+            </span>
+            <span
+              className={`px-1.5 py-0.5 rounded font-mono text-[10px] border ${
+                spec.position.y <= 0.25
+                  ? 'bg-sky-400/15 border-sky-400/30 text-sky-300'
+                  : spec.position.y <= 0.65
+                    ? 'bg-purple-400/15 border-purple-400/30 text-purple-300'
+                    : 'bg-amber-400/15 border-amber-400/30 text-amber-300'
+              }`}
+            >
               V{spec.variant}
             </span>
           </div>
@@ -633,6 +647,61 @@ export default function LowerThirdInspector({
         </label>
 
         <div className="space-y-2">
+          {/* Quick Position Presets: Top / Center / Bottom */}
+          <div className="grid grid-cols-3 gap-1.5">
+            <button
+              type="button"
+              onClick={() =>
+                updatePosition({
+                  y: 0.12,
+                  align: 'center',
+                  x: 0.5,
+                })
+              }
+              className={`py-1 px-2 rounded-lg border text-center text-[10px] font-semibold transition-all ${
+                spec.position.y <= 0.25
+                  ? 'bg-sky-400/20 border-sky-400/50 text-sky-300'
+                  : 'bg-[#1a1a18] border-white/10 text-smoke hover:text-bone hover:border-white/20'
+              }`}
+            >
+              Top (12%)
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                updatePosition({
+                  y: 0.5,
+                  align: 'center',
+                  x: 0.5,
+                })
+              }
+              className={`py-1 px-2 rounded-lg border text-center text-[10px] font-semibold transition-all ${
+                spec.position.y > 0.25 && spec.position.y <= 0.65
+                  ? 'bg-purple-400/20 border-purple-400/50 text-purple-300'
+                  : 'bg-[#1a1a18] border-white/10 text-smoke hover:text-bone hover:border-white/20'
+              }`}
+            >
+              Center (50%)
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                updatePosition({
+                  y: 0.82,
+                  align: spec.position.align || 'left',
+                  x: spec.position.align === 'center' ? 0.5 : 0.08,
+                })
+              }
+              className={`py-1 px-2 rounded-lg border text-center text-[10px] font-semibold transition-all ${
+                spec.position.y > 0.65
+                  ? 'bg-amber-400/20 border-amber-400/50 text-amber-300'
+                  : 'bg-[#1a1a18] border-white/10 text-smoke hover:text-bone hover:border-white/20'
+              }`}
+            >
+              Bottom (82%)
+            </button>
+          </div>
+
           {/* Alignment */}
           <div className="flex items-center gap-1 bg-[#1a1a18] p-1 rounded-lg border border-white/10">
             {(['left', 'center', 'right'] as const).map((align) => {

@@ -19,15 +19,18 @@ import {
   Download,
   X,
   Type,
+  User,
+  Sparkles,
 } from 'lucide-react';
 
-import type {
-  Segment,
-  CaptionStyle,
-  SpokenLanguage,
-  ScriptOutput,
-  SegmentStyleOverride,
-  LowerThirdSpec,
+import {
+  type Segment,
+  type CaptionStyle,
+  type SpokenLanguage,
+  type ScriptOutput,
+  type SegmentStyleOverride,
+  type LowerThirdSpec,
+  DEFAULT_LOWER_THIRD,
 } from '../types';
 import {
   getUserPresets,
@@ -511,6 +514,38 @@ function LibraryPanel({
     if (onNotification) onNotification(`Added "${text}" at ${formatTimecode(start)}`);
   };
 
+  // Helper to add standalone single text overlays (Person tag, Topic header, Callout)
+  const handleAddSingleTextOverlay = (
+    name: string,
+    role: string,
+    layout: 'left' | 'center' | 'right',
+    y: number,
+    x: number = 0.5,
+    variant: LowerThirdSpec['variant'] = 2,
+  ) => {
+    if (onAddLowerThird) {
+      const curTime = currentTime || 0;
+      const newLt: LowerThirdSpec = {
+        ...DEFAULT_LOWER_THIRD,
+        id: 'lt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        name,
+        role,
+        position: {
+          x: layout === 'left' ? 0.08 : x,
+          y,
+          align: layout,
+        },
+        variant,
+        start: curTime,
+        end: curTime + 3.5,
+      };
+      onAddLowerThird(newLt);
+      if (onNotification) {
+        onNotification(`Added text overlay "${name}" at ${formatTimecode(curTime)}`);
+      }
+    }
+  };
+
   // Apply style to scope helper
   const applyPresetToScope = (targetStyle: CaptionStyle, presetName: string) => {
     addRecentPresetId(targetStyle.id);
@@ -773,7 +808,7 @@ function LibraryPanel({
               <div className="space-y-4">
                 <div>
                   <p className="text-[11px] text-smoke leading-relaxed">
-                    Insert text overlays and titles at playhead{' '}
+                    Insert standalone text overlays &amp; caption lines at playhead{' '}
                     <span className="font-mono text-amber-400 font-semibold">
                       ({formatTimecode(currentTime)})
                     </span>
@@ -781,99 +816,204 @@ function LibraryPanel({
                   </p>
                 </div>
 
-                {/* Quick Text Starter Tiles */}
-                <div className="grid grid-cols-2 gap-2.5">
-                  {/* Default Text Card (CapCut style) */}
-                  <button
-                    type="button"
-                    onClick={() => handleAddTextSegment('Default text')}
-                    className="group p-3.5 rounded-xl bg-[#181817] border border-white/10 hover:border-[#00b8a9] hover:bg-[#1e1e1e] flex flex-col items-center justify-center gap-2 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-[#00b8a9]/10 border border-[#00b8a9]/30 group-hover:bg-[#00b8a9]/20 group-hover:border-[#00b8a9] flex items-center justify-center transition-colors">
-                      <Plus className="w-5 h-5 text-[#00b8a9] group-hover:scale-110 transition-transform" />
-                    </div>
-                    <span className="text-xs font-bold text-bone group-hover:text-[#00d2c4]">
-                      Default text
+                {/* ── Group A: Standalone Single Text Overlays ── */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10.5px] font-bold uppercase tracking-wider text-[#A0A09F]">
+                      Single Text Overlays
                     </span>
-                    <span className="text-[10px] text-smoke">Add at playhead</span>
-                  </button>
+                    <span className="text-[10px] text-smoke">Standalone Layer</span>
+                  </div>
 
-                  {/* Bold Headline Card */}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleAddTextSegment('HEADLINE TITLE', {
-                        fontSize: 0.12,
-                        fontWeight: 900,
-                        textCase: 'upper',
-                        fillColor: '#FFFFFF',
-                        strokeColor: '#000000',
-                      })
-                    }
-                    className="group p-3.5 rounded-xl bg-[#181817] border border-white/10 hover:border-amber-400/80 hover:bg-[#1f1f1d] flex flex-col items-center justify-center gap-2 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 group-hover:border-amber-400 flex items-center justify-center font-black text-sm text-bone group-hover:text-amber-300">
-                      H1
-                    </div>
-                    <span className="text-xs font-bold text-bone group-hover:text-amber-300">
-                      Headline
-                    </span>
-                    <span className="text-[10px] text-smoke">Bold title</span>
-                  </button>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {/* Person / Speaker Name Tag */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleAddSingleTextOverlay(
+                          'Speaker Name',
+                          'Role / Title',
+                          'left',
+                          0.82,
+                          0.08,
+                          1,
+                        )
+                      }
+                      className="group p-3 rounded-xl bg-[#181817] border border-white/10 hover:border-amber-400 hover:bg-[#1f1e1a] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-amber-400/10 border border-amber-400/30 group-hover:bg-amber-400/20 group-hover:border-amber-400 flex items-center justify-center transition-colors">
+                        <User className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
+                      </div>
+                      <span className="text-xs font-bold text-bone group-hover:text-amber-300">
+                        Person / Speaker
+                      </span>
+                      <span className="text-[9.5px] text-smoke">Name card &amp; title</span>
+                    </button>
 
-                  {/* Subheading Card */}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleAddTextSegment('Subtitle context', {
-                        fontSize: 0.07,
-                        fontWeight: 600,
-                        textCase: 'none',
-                        fillColor: '#E4E4E7',
-                        strokeColor: '#000000',
-                      })
-                    }
-                    className="group p-3.5 rounded-xl bg-[#181817] border border-white/10 hover:border-amber-400/80 hover:bg-[#1f1f1d] flex flex-col items-center justify-center gap-2 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 group-hover:border-amber-400 flex items-center justify-center font-medium text-xs text-bone group-hover:text-amber-300">
-                      H2
-                    </div>
-                    <span className="text-xs font-bold text-bone group-hover:text-amber-300">
-                      Subheading
-                    </span>
-                    <span className="text-[10px] text-smoke">Supporting line</span>
-                  </button>
+                    {/* Topic / Chapter Header */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleAddSingleTextOverlay(
+                          'TOPIC NAME',
+                          'Chapter Overview',
+                          'center',
+                          0.12,
+                          0.5,
+                          2,
+                        )
+                      }
+                      className="group p-3 rounded-xl bg-[#181817] border border-white/10 hover:border-sky-400 hover:bg-[#1a1e22] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-sky-400/10 border border-sky-400/30 group-hover:bg-sky-400/20 group-hover:border-sky-400 flex items-center justify-center transition-colors">
+                        <Bookmark className="w-4 h-4 text-sky-400 group-hover:scale-110 transition-transform" />
+                      </div>
+                      <span className="text-xs font-bold text-bone group-hover:text-sky-300">
+                        Topic / Header
+                      </span>
+                      <span className="text-[9.5px] text-smoke">Top chapter title</span>
+                    </button>
 
-                  {/* Callout Quote Card */}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleAddTextSegment('Highlight Quote', {
-                        fontSize: 0.08,
-                        fontWeight: 700,
-                        fillColor: '#FFFFFF',
-                        customStyle: {
-                          plate: {
-                            mode: 'line',
-                            color: 'rgba(20,20,25,0.85)',
-                            padX: 0.35,
-                            padY: 0.15,
-                            radius: 0.25,
-                          },
-                        },
-                      })
-                    }
-                    className="group p-3.5 rounded-xl bg-[#181817] border border-white/10 hover:border-amber-400/80 hover:bg-[#1f1f1d] flex flex-col items-center justify-center gap-2 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 group-hover:border-amber-400 flex items-center justify-center text-smoke group-hover:text-amber-300">
-                      <Quote className="w-4 h-4" />
-                    </div>
-                    <span className="text-xs font-bold text-bone group-hover:text-amber-300">
-                      Callout Plate
-                    </span>
-                    <span className="text-[10px] text-smoke">Framed box</span>
-                  </button>
+                    {/* Callout / Punchline */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleAddSingleTextOverlay('KEY TAKEAWAY', '', 'center', 0.5, 0.5, 2)
+                      }
+                      className="group p-3 rounded-xl bg-[#181817] border border-white/10 hover:border-purple-400 hover:bg-[#201a24] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-purple-400/10 border border-purple-400/30 group-hover:bg-purple-400/20 group-hover:border-purple-400 flex items-center justify-center transition-colors">
+                        <Sparkles className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
+                      </div>
+                      <span className="text-xs font-bold text-bone group-hover:text-purple-300">
+                        Callout / Quote
+                      </span>
+                      <span className="text-[9.5px] text-smoke">Center impact text</span>
+                    </button>
+
+                    {/* Plain Single Text */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleAddSingleTextOverlay('Your text here', '', 'center', 0.78, 0.5, 2)
+                      }
+                      className="group p-3 rounded-xl bg-[#181817] border border-white/10 hover:border-emerald-400 hover:bg-[#1a221e] flex flex-col items-center justify-center gap-1.5 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-emerald-400/10 border border-emerald-400/30 group-hover:bg-emerald-400/20 group-hover:border-emerald-400 flex items-center justify-center transition-colors">
+                        <Type className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+                      </div>
+                      <span className="text-xs font-bold text-bone group-hover:text-emerald-300">
+                        Plain Single Text
+                      </span>
+                      <span className="text-[9.5px] text-smoke">Clean floating text</span>
+                    </button>
+                  </div>
                 </div>
+
+                {/* ── Group B: Speech Captions (Timed to transcript) ── */}
+                <div className="space-y-2 pt-2 border-t border-white/10">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10.5px] font-bold uppercase tracking-wider text-[#A0A09F]">
+                      Speech Captions
+                    </span>
+                    <span className="text-[10px] text-smoke">Captions Track</span>
+                  </div>
+
+                  {/* Quick Text Starter Tiles */}
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {/* Default Text Card (CapCut style) */}
+                    <button
+                      type="button"
+                      onClick={() => handleAddTextSegment('Default text')}
+                      className="group p-3.5 rounded-xl bg-[#181817] border border-white/10 hover:border-[#00b8a9] hover:bg-[#1e1e1e] flex flex-col items-center justify-center gap-2 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-[#00b8a9]/10 border border-[#00b8a9]/30 group-hover:bg-[#00b8a9]/20 group-hover:border-[#00b8a9] flex items-center justify-center transition-colors">
+                        <Plus className="w-5 h-5 text-[#00b8a9] group-hover:scale-110 transition-transform" />
+                      </div>
+                      <span className="text-xs font-bold text-bone group-hover:text-[#00d2c4]">
+                        Default text
+                      </span>
+                      <span className="text-[10px] text-smoke">Add at playhead</span>
+                    </button>
+
+                    {/* Bold Headline Card */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleAddTextSegment('HEADLINE TITLE', {
+                          fontSize: 0.12,
+                          fontWeight: 900,
+                          textCase: 'upper',
+                          fillColor: '#FFFFFF',
+                          strokeColor: '#000000',
+                        })
+                      }
+                      className="group p-3.5 rounded-xl bg-[#181817] border border-white/10 hover:border-amber-400/80 hover:bg-[#1f1f1d] flex flex-col items-center justify-center gap-2 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 group-hover:border-amber-400 flex items-center justify-center font-black text-sm text-bone group-hover:text-amber-300">
+                        H1
+                      </div>
+                      <span className="text-xs font-bold text-bone group-hover:text-amber-300">
+                        Headline
+                      </span>
+                      <span className="text-[10px] text-smoke">Bold title</span>
+                    </button>
+
+                    {/* Subheading Card */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleAddTextSegment('Subtitle context', {
+                          fontSize: 0.07,
+                          fontWeight: 600,
+                          textCase: 'none',
+                          fillColor: '#E4E4E7',
+                          strokeColor: '#000000',
+                        })
+                      }
+                      className="group p-3.5 rounded-xl bg-[#181817] border border-white/10 hover:border-amber-400/80 hover:bg-[#1f1f1d] flex flex-col items-center justify-center gap-2 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 group-hover:border-amber-400 flex items-center justify-center font-medium text-xs text-bone group-hover:text-amber-300">
+                        H2
+                      </div>
+                      <span className="text-xs font-bold text-bone group-hover:text-amber-300">
+                        Subheading
+                      </span>
+                      <span className="text-[10px] text-smoke">Supporting line</span>
+                    </button>
+
+                    {/* Callout Quote Card */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleAddTextSegment('Highlight Quote', {
+                          fontSize: 0.08,
+                          fontWeight: 700,
+                          fillColor: '#FFFFFF',
+                          customStyle: {
+                            plate: {
+                              mode: 'line',
+                              color: 'rgba(20,20,25,0.85)',
+                              padX: 0.35,
+                              padY: 0.15,
+                              radius: 0.25,
+                            },
+                          },
+                        })
+                      }
+                      className="group p-3.5 rounded-xl bg-[#181817] border border-white/10 hover:border-amber-400/80 hover:bg-[#1f1f1d] flex flex-col items-center justify-center gap-2 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 group-hover:border-amber-400 flex items-center justify-center text-smoke group-hover:text-amber-300">
+                        <Quote className="w-4 h-4" />
+                      </div>
+                      <span className="text-xs font-bold text-bone group-hover:text-amber-300">
+                        Callout Plate
+                      </span>
+                      <span className="text-[10px] text-smoke">Framed box</span>
+                    </button>
+                  </div>
+                </div>
+
                 <button
                   type="button"
                   onClick={() => onTabChange('lowerThirds')}

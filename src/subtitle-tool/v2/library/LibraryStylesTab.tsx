@@ -26,6 +26,16 @@ export interface LibraryStylesTabProps {
   onNotification?: (msg: string) => void;
 }
 
+export type TemplateFilterCategory = 'All' | 'Cinematic' | 'Premium' | 'Yours' | 'Favourites';
+
+export const TEMPLATE_FILTER_CATEGORIES: TemplateFilterCategory[] = [
+  'All',
+  'Cinematic',
+  'Premium',
+  'Yours',
+  'Favourites',
+];
+
 export const LibraryStylesTab: React.FC<LibraryStylesTabProps> = ({
   style,
   sampleSegment,
@@ -37,6 +47,7 @@ export const LibraryStylesTab: React.FC<LibraryStylesTabProps> = ({
   onNotification,
 }) => {
   const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<TemplateFilterCategory>('All');
   const [hoveredPresetId, setHoveredPresetId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -123,8 +134,63 @@ export const LibraryStylesTab: React.FC<LibraryStylesTabProps> = ({
     if (onNotification) onNotification(`Deleted preset "${name}"`);
   };
 
+  const displayedUserPresets = useMemo(() => {
+    if (selectedCategory === 'Cinematic' || selectedCategory === 'Premium') {
+      return filteredUserPresets.filter((up) => up.category === selectedCategory);
+    }
+    if (selectedCategory === 'Favourites') {
+      return filteredUserPresets.filter((up) => favorites.includes(up.id));
+    }
+    // 'All' or 'Yours' shows all user presets
+    return filteredUserPresets;
+  }, [filteredUserPresets, selectedCategory, favorites]);
+
+  const displayedTemplates = useMemo(() => {
+    if (selectedCategory === 'Yours') {
+      return [];
+    }
+    if (selectedCategory === 'Cinematic') {
+      return filteredTemplates.filter(
+        ({ template }) =>
+          template.category === 'Cinematic' ||
+          template.tags.includes('cinematic') ||
+          template.tags.includes('movie'),
+      );
+    }
+    if (selectedCategory === 'Premium') {
+      return filteredTemplates.filter(
+        ({ template }) => template.category === 'Premium' || template.tags.includes('premium'),
+      );
+    }
+    if (selectedCategory === 'Favourites') {
+      return filteredTemplates.filter(({ template }) => favorites.includes(template.id));
+    }
+    return filteredTemplates;
+  }, [filteredTemplates, selectedCategory, favorites]);
+
+  const displayedLegacyPresets = useMemo(() => {
+    if (selectedCategory === 'Yours') {
+      return [];
+    }
+    if (selectedCategory === 'Cinematic') {
+      return filteredLegacyPresets.filter(
+        (p) =>
+          p.group === 'Film & clean' ||
+          p.style.name.toLowerCase().includes('cine') ||
+          p.style.name.toLowerCase().includes('noir'),
+      );
+    }
+    if (selectedCategory === 'Premium') {
+      return [];
+    }
+    if (selectedCategory === 'Favourites') {
+      return filteredLegacyPresets.filter((p) => favorites.includes(p.style.id || p.style.name));
+    }
+    return filteredLegacyPresets;
+  }, [filteredLegacyPresets, selectedCategory, favorites]);
+
   const totalResultsCount =
-    filteredUserPresets.length + filteredTemplates.length + filteredLegacyPresets.length;
+    displayedUserPresets.length + displayedTemplates.length + displayedLegacyPresets.length;
 
   return (
     <div className="space-y-3">
@@ -167,15 +233,53 @@ export const LibraryStylesTab: React.FC<LibraryStylesTabProps> = ({
         </div>
       </div>
 
+      {/* Category Filter Pills (All, Cinematic, Premium, Yours, Favourites) */}
+      <div
+        role="group"
+        aria-label="Template category filter"
+        className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5"
+      >
+        {TEMPLATE_FILTER_CATEGORIES.map((cat) => {
+          const isActive = selectedCategory === cat;
+          return (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                isActive
+                  ? 'bg-[#FFB800] text-black shadow-xs font-bold'
+                  : 'bg-[#222221] text-[#A0A09F] hover:text-white hover:bg-[#2c2c2b]'
+              }`}
+            >
+              {cat}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Style Cards Grid (3-columns: clean cards with animated thumbnail preview) */}
       {totalResultsCount === 0 ? (
-        <div className="py-8 text-center text-xs text-smoke">
-          No templates match your search or filter.
+        <div className="py-8 text-center text-xs text-smoke space-y-1.5">
+          <p className="font-medium text-bone">
+            {selectedCategory === 'Yours'
+              ? 'No presets saved in "Yours" yet.'
+              : selectedCategory === 'Favourites'
+                ? 'No templates in "Favourites" yet.'
+                : 'No templates match your search or filter.'}
+          </p>
+          <p className="text-[11px] text-smoke/70">
+            {selectedCategory === 'Yours'
+              ? 'Customize any caption style and save it to "Yours / Brand" to see it here.'
+              : selectedCategory === 'Favourites'
+                ? 'Click the heart icon on any template card to pin it to Favourites.'
+                : 'Try clearing your search term or selecting another category.'}
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-3 gap-2">
           {/* User presets */}
-          {filteredUserPresets.map((up) => (
+          {displayedUserPresets.map((up) => (
             <div
               key={up.id}
               onClick={() => onApplyPreset(up.style, up.name)}
@@ -208,8 +312,8 @@ export const LibraryStylesTab: React.FC<LibraryStylesTabProps> = ({
             </div>
           ))}
 
-          {/* 40 Animated Caption Templates */}
-          {filteredTemplates.map(({ template, style: tStyle }) => {
+          {/* Animated Caption Templates */}
+          {displayedTemplates.map(({ template, style: tStyle }) => {
             const isFav = favorites.includes(template.id);
             const isSelected = style.id === tStyle.id || style.name === template.name;
 
@@ -257,7 +361,7 @@ export const LibraryStylesTab: React.FC<LibraryStylesTabProps> = ({
           })}
 
           {/* Legacy Presets */}
-          {filteredLegacyPresets.map((p) => {
+          {displayedLegacyPresets.map((p) => {
             const isFav = favorites.includes(p.style.id);
             const isSelected = style.id === p.style.id;
 

@@ -252,17 +252,21 @@ export default function SubtitleTool({
     [lowerThirds, activeLowerThirdId],
   );
 
-  const handleAddLowerThird = useCallback(() => {
-    const curTime = timeStore.getTime();
-    const newLt: LowerThirdSpec = {
-      ...DEFAULT_LOWER_THIRD,
-      id: 'lt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-      start: Math.max(0, curTime),
-      end: Math.min(duration || curTime + 3.5, curTime + 3.5),
-    };
-    setLowerThirds((prev) => [...prev, newLt]);
-    setActiveLowerThirdId(newLt.id);
-  }, [duration]);
+  const handleAddLowerThird = useCallback(
+    (customSpec?: Partial<LowerThirdSpec> | LowerThirdSpec) => {
+      const curTime = timeStore.getTime();
+      const newLt: LowerThirdSpec = {
+        ...DEFAULT_LOWER_THIRD,
+        id: 'lt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        start: Math.max(0, curTime),
+        end: Math.min(duration || curTime + 3.5, curTime + 3.5),
+        ...customSpec,
+      };
+      setLowerThirds((prev) => [...prev, newLt]);
+      setActiveLowerThirdId(newLt.id);
+    },
+    [duration],
+  );
 
   const handleUpdateLowerThird = useCallback((updated: LowerThirdSpec) => {
     setLowerThirds((prev) => prev.map((lt) => (lt.id === updated.id ? updated : lt)));

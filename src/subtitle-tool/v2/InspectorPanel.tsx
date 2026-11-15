@@ -213,13 +213,15 @@ function InspectorPanel({
         <button
           type="button"
           onClick={() => setPanelSection('lowerThirds')}
+          aria-label="Text Overlays / Lower Thirds"
+          title="Text overlays, speaker tags, topic headers & lower thirds"
           className={`pb-2 px-1 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 ${
             panelSection === 'lowerThirds'
               ? 'border-amber-400 text-amber-200'
               : 'border-transparent text-smoke hover:text-bone'
           }`}
         >
-          <span>Lower Thirds</span>
+          <span>Text Overlays</span>
           <span className="px-1.5 py-0.2 rounded-full bg-white/10 text-[10px] font-mono">
             {lowerThirds.length}
           </span>
