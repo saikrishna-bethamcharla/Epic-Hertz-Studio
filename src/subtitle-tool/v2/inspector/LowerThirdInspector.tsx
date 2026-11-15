@@ -22,6 +22,9 @@ import {
   RotateCcw,
   AlertTriangle,
   Layers,
+  Sparkles,
+  SlidersHorizontal,
+  ChevronDown,
 } from 'lucide-react';
 import type { LowerThirdSpec, LowerThirdVariant } from '../../types';
 import { FONT_FAMILIES } from '../../engine/spec';
@@ -282,47 +285,30 @@ export default function LowerThirdInspector({
         </div>
       )}
 
-      {/* ── 1. Variant Picker (Thumbnail Grid) ────────────────────────────── */}
-      <div className="space-y-2">
-        <label className="text-[11px] font-semibold text-smoke uppercase tracking-wider flex items-center gap-1.5">
-          <Layout className="w-3.5 h-3.5 text-amber-400" />
-          <span>Design Variant</span>
-        </label>
-        <div className="grid grid-cols-2 gap-2">
-          {VARIANTS.map((v) => {
-            const isSelected = spec.variant === v.id;
-            return (
-              <button
-                key={v.id}
-                type="button"
-                onClick={() => updateSpec({ variant: v.id })}
-                className={`p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between h-[68px] ${
-                  isSelected
-                    ? 'bg-[#272621] border-amber-400 text-amber-200 shadow-md ring-1 ring-amber-400/40'
-                    : 'bg-[#1a1a18] border-white/10 text-smoke hover:border-white/30 hover:bg-[#22221f] hover:text-bone'
-                }`}
-              >
-                <div className="flex items-center justify-between w-full">
-                  <span className="font-semibold text-[11px] truncate">{v.name}</span>
-                  <span className="text-[9px] font-mono opacity-60">#{v.id}</span>
-                </div>
-                <div className="text-[10px] line-clamp-1 opacity-70">{v.desc}</div>
-              </button>
-            );
-          })}
+      {/* ── Template Default Guarantee Notice ───────────────────────────── */}
+      <div className="p-3 rounded-xl bg-amber-400/5 border border-amber-400/20 flex items-start gap-2.5">
+        <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+        <div className="space-y-0.5">
+          <span className="font-semibold text-bone block text-[11.5px]">
+            Default Template Style &amp; Animations
+          </span>
+          <p className="text-[10.5px] text-smoke leading-relaxed">
+            Placement, typography, colors, and motion animations are preset by the template. Simply
+            customize names, details, and image below.
+          </p>
         </div>
       </div>
 
-      {/* ── 2. Content Section (Name, Role, Handle) ───────────────────────── */}
-      <div className="space-y-3 pt-1 border-t border-white/5">
+      {/* ── 1. Content Section (Name, Role, Handle) ───────────────────────── */}
+      <div className="space-y-3">
         <label className="text-[11px] font-semibold text-smoke uppercase tracking-wider flex items-center gap-1.5">
           <Type className="w-3.5 h-3.5 text-amber-400" />
-          <span>Content</span>
+          <span>Names &amp; Details</span>
         </label>
 
         <div className="space-y-2">
           <div>
-            <span className="text-[10px] text-smoke">Name</span>
+            <span className="text-[10px] text-smoke">Name / Speaker</span>
             <input
               type="text"
               value={spec.name}
@@ -333,7 +319,7 @@ export default function LowerThirdInspector({
           </div>
 
           <div>
-            <span className="text-[10px] text-smoke">Role / Subtitle</span>
+            <span className="text-[10px] text-smoke">Role / Title / Subtitle</span>
             <input
               type="text"
               value={spec.role}
@@ -344,7 +330,7 @@ export default function LowerThirdInspector({
           </div>
 
           <div>
-            <span className="text-[10px] text-smoke">Extra Line (Optional)</span>
+            <span className="text-[10px] text-smoke">Extra Line / Affiliation (Optional)</span>
             <input
               type="text"
               value={spec.extra || ''}
@@ -355,7 +341,7 @@ export default function LowerThirdInspector({
           </div>
 
           <div>
-            <span className="text-[10px] text-smoke">Handle (Optional)</span>
+            <span className="text-[10px] text-smoke">Handle / Social / Link (Optional)</span>
             <input
               type="text"
               value={spec.handle || ''}
@@ -367,12 +353,12 @@ export default function LowerThirdInspector({
         </div>
       </div>
 
-      {/* ── 3. Photo Avatar (For Variant 3 or Any) ────────────────────────── */}
+      {/* ── 2. Photo Avatar / Image ───────────────────────────────────────── */}
       <div className="space-y-2 pt-1 border-t border-white/5">
         <label className="text-[11px] font-semibold text-smoke uppercase tracking-wider flex items-center justify-between">
           <span className="flex items-center gap-1.5">
             <User className="w-3.5 h-3.5 text-amber-400" />
-            <span>Photo Avatar</span>
+            <span>Image / Photo Avatar</span>
           </span>
           {spec.variant === 3 && (
             <span className="text-[10px] text-amber-400/80 font-normal">Active in V3</span>
@@ -404,7 +390,7 @@ export default function LowerThirdInspector({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="px-3 py-1.5 rounded-lg bg-[#272621] hover:bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[11px] font-semibold transition-colors flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded-lg bg-[#272621] hover:bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[11px] font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <Upload className="w-3 h-3" />
               <span>{spec.photoBlobId ? 'Change' : 'Upload'}</span>
@@ -414,7 +400,7 @@ export default function LowerThirdInspector({
               <button
                 type="button"
                 onClick={handleRemovePhoto}
-                className="px-2.5 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-[11px] transition-colors"
+                className="px-2.5 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-[11px] transition-colors cursor-pointer"
               >
                 Remove
               </button>
@@ -423,347 +409,21 @@ export default function LowerThirdInspector({
         </div>
       </div>
 
-      {/* ── 4. Colors ─────────────────────────────────────────────────────── */}
-      <div className="space-y-2 pt-1 border-t border-white/5">
-        <div className="flex items-center justify-between">
-          <label className="text-[11px] font-semibold text-smoke uppercase tracking-wider flex items-center gap-1.5">
-            <Palette className="w-3.5 h-3.5 text-amber-400" />
-            <span>Colors</span>
-          </label>
-          {primaryTextContrast < 4.5 && (
-            <span className="text-[10px] text-amber-300 flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3 text-amber-400" />
-              <span>Low contrast ({primaryTextContrast.toFixed(1)}:1)</span>
-            </span>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          {/* Primary Accent */}
-          <div className="relative">
-            <span className="text-[10px] text-smoke block mb-1">Primary Accent</span>
-            <button
-              type="button"
-              onClick={() =>
-                setActiveColorTarget(activeColorTarget === 'primary' ? null : 'primary')
-              }
-              className="w-full h-8 px-2 rounded-lg border border-white/10 bg-[#1a1a18] flex items-center gap-2 hover:border-white/30 transition-colors"
-            >
-              <span
-                className="w-4 h-4 rounded-full border border-white/30 shrink-0"
-                style={{ backgroundColor: spec.colors.primary }}
-              />
-              <span className="font-mono text-[10px] truncate">{spec.colors.primary}</span>
-            </button>
-            {activeColorTarget === 'primary' && (
-              <div className="absolute top-12 left-0 z-50">
-                <ColorPopover
-                  value={spec.colors.primary}
-                  onChange={(c) =>
-                    updateColors({ primary: typeof c === 'string' ? c : c.stops[0][1] })
-                  }
-                  onClose={() => setActiveColorTarget(null)}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Secondary Plate */}
-          <div className="relative">
-            <span className="text-[10px] text-smoke block mb-1">Plate / Secondary</span>
-            <button
-              type="button"
-              onClick={() =>
-                setActiveColorTarget(activeColorTarget === 'secondary' ? null : 'secondary')
-              }
-              className="w-full h-8 px-2 rounded-lg border border-white/10 bg-[#1a1a18] flex items-center gap-2 hover:border-white/30 transition-colors"
-            >
-              <span
-                className="w-4 h-4 rounded-full border border-white/30 shrink-0"
-                style={{ backgroundColor: spec.colors.secondary || '#18181b' }}
-              />
-              <span className="font-mono text-[10px] truncate">
-                {spec.colors.secondary || '#18181b'}
-              </span>
-            </button>
-            {activeColorTarget === 'secondary' && (
-              <div className="absolute top-12 left-0 z-50">
-                <ColorPopover
-                  value={spec.colors.secondary || '#18181b'}
-                  onChange={(c) =>
-                    updateColors({ secondary: typeof c === 'string' ? c : c.stops[0][1] })
-                  }
-                  onClose={() => setActiveColorTarget(null)}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Name Text */}
-          <div className="relative">
-            <span className="text-[10px] text-smoke block mb-1">Name Text</span>
-            <button
-              type="button"
-              onClick={() =>
-                setActiveColorTarget(activeColorTarget === 'textPrimary' ? null : 'textPrimary')
-              }
-              className="w-full h-8 px-2 rounded-lg border border-white/10 bg-[#1a1a18] flex items-center gap-2 hover:border-white/30 transition-colors"
-            >
-              <span
-                className="w-4 h-4 rounded-full border border-white/30 shrink-0"
-                style={{ backgroundColor: spec.colors.textPrimary }}
-              />
-              <span className="font-mono text-[10px] truncate">{spec.colors.textPrimary}</span>
-            </button>
-            {activeColorTarget === 'textPrimary' && (
-              <div className="absolute top-12 left-0 z-50">
-                <ColorPopover
-                  value={spec.colors.textPrimary}
-                  onChange={(c) =>
-                    updateColors({ textPrimary: typeof c === 'string' ? c : c.stops[0][1] })
-                  }
-                  onClose={() => setActiveColorTarget(null)}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Role Text */}
-          <div className="relative">
-            <span className="text-[10px] text-smoke block mb-1">Role Text</span>
-            <button
-              type="button"
-              onClick={() =>
-                setActiveColorTarget(activeColorTarget === 'textSecondary' ? null : 'textSecondary')
-              }
-              className="w-full h-8 px-2 rounded-lg border border-white/10 bg-[#1a1a18] flex items-center gap-2 hover:border-white/30 transition-colors"
-            >
-              <span
-                className="w-4 h-4 rounded-full border border-white/30 shrink-0"
-                style={{ backgroundColor: spec.colors.textSecondary }}
-              />
-              <span className="font-mono text-[10px] truncate">{spec.colors.textSecondary}</span>
-            </button>
-            {activeColorTarget === 'textSecondary' && (
-              <div className="absolute top-12 left-0 z-50">
-                <ColorPopover
-                  value={spec.colors.textSecondary}
-                  onChange={(c) =>
-                    updateColors({ textSecondary: typeof c === 'string' ? c : c.stops[0][1] })
-                  }
-                  onClose={() => setActiveColorTarget(null)}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Quick Brand Colors */}
-        <div className="flex items-center gap-1.5 pt-1">
-          <span className="text-[10px] text-smoke mr-1">Brand:</span>
-          {brandColors.slice(0, 6).map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => updateColors({ primary: c })}
-              className="w-4 h-4 rounded-full border border-white/20 hover:scale-110 transition-transform"
-              style={{ backgroundColor: c }}
-              title={`Apply ${c}`}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* ── 5. Typography & Scale ─────────────────────────────────────────── */}
-      <div className="space-y-2 pt-1 border-t border-white/5">
-        <label className="text-[11px] font-semibold text-smoke uppercase tracking-wider flex items-center gap-1.5">
-          <Type className="w-3.5 h-3.5 text-amber-400" />
-          <span>Typography &amp; Scale</span>
-        </label>
-
-        <div className="space-y-2">
-          <div>
-            <span className="text-[10px] text-smoke">Font Family</span>
-            <select
-              value={spec.font.family}
-              onChange={(e) => updateFont({ family: e.target.value })}
-              className="mt-1 w-full px-2.5 py-1.5 rounded-lg bg-[#1a1a18] border border-white/10 focus:border-amber-400 focus:outline-none text-bone font-medium text-xs"
-            >
-              {FONT_FAMILIES.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.label} ({f.group})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <span className="text-[10px] text-smoke">Weight</span>
-              <select
-                value={spec.font.weight}
-                onChange={(e) => updateFont({ weight: Number(e.target.value) })}
-                className="mt-1 w-full px-2 py-1.5 rounded-lg bg-[#1a1a18] border border-white/10 focus:border-amber-400 focus:outline-none text-bone font-mono text-xs"
-              >
-                <option value={600}>SemiBold (600)</option>
-                <option value={700}>Bold (700)</option>
-                <option value={800}>ExtraBold (800)</option>
-                <option value={900}>Black (900)</option>
-              </select>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] text-smoke">Scale</span>
-                <span className="font-mono text-[10px] text-amber-300">
-                  {spec.scale.toFixed(2)}x
-                </span>
-              </div>
-              <input
-                type="range"
-                aria-label="Lower third scale"
-                min={0.6}
-                max={1.6}
-                step={0.05}
-                value={spec.scale}
-                onChange={(e) => updateSpec({ scale: parseFloat(e.target.value) })}
-                className="mt-2 w-full accent-amber-400 cursor-pointer"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── 6. Position ───────────────────────────────────────────────────── */}
-      <div className="space-y-2 pt-1 border-t border-white/5">
-        <label className="text-[11px] font-semibold text-smoke uppercase tracking-wider flex items-center justify-between">
-          <span className="flex items-center gap-1.5">
-            <Layout className="w-3.5 h-3.5 text-amber-400" />
-            <span>Position</span>
-          </span>
-          <span className="font-mono text-[10px] text-smoke">
-            {Math.round(spec.position.x * 100)}%, {Math.round(spec.position.y * 100)}%
-          </span>
-        </label>
-
-        <div className="space-y-2">
-          {/* Quick Position Presets: Top / Center / Bottom */}
-          <div className="grid grid-cols-3 gap-1.5">
-            <button
-              type="button"
-              onClick={() =>
-                updatePosition({
-                  y: 0.12,
-                  align: 'center',
-                  x: 0.5,
-                })
-              }
-              className={`py-1 px-2 rounded-lg border text-center text-[10px] font-semibold transition-all ${
-                spec.position.y <= 0.25
-                  ? 'bg-sky-400/20 border-sky-400/50 text-sky-300'
-                  : 'bg-[#1a1a18] border-white/10 text-smoke hover:text-bone hover:border-white/20'
-              }`}
-            >
-              Top (12%)
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                updatePosition({
-                  y: 0.5,
-                  align: 'center',
-                  x: 0.5,
-                })
-              }
-              className={`py-1 px-2 rounded-lg border text-center text-[10px] font-semibold transition-all ${
-                spec.position.y > 0.25 && spec.position.y <= 0.65
-                  ? 'bg-purple-400/20 border-purple-400/50 text-purple-300'
-                  : 'bg-[#1a1a18] border-white/10 text-smoke hover:text-bone hover:border-white/20'
-              }`}
-            >
-              Center (50%)
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                updatePosition({
-                  y: 0.82,
-                  align: spec.position.align || 'left',
-                  x: spec.position.align === 'center' ? 0.5 : 0.08,
-                })
-              }
-              className={`py-1 px-2 rounded-lg border text-center text-[10px] font-semibold transition-all ${
-                spec.position.y > 0.65
-                  ? 'bg-amber-400/20 border-amber-400/50 text-amber-300'
-                  : 'bg-[#1a1a18] border-white/10 text-smoke hover:text-bone hover:border-white/20'
-              }`}
-            >
-              Bottom (82%)
-            </button>
-          </div>
-
-          {/* Alignment */}
-          <div className="flex items-center gap-1 bg-[#1a1a18] p-1 rounded-lg border border-white/10">
-            {(['left', 'center', 'right'] as const).map((align) => {
-              const isSel = spec.position.align === align;
-              return (
-                <button
-                  key={align}
-                  type="button"
-                  onClick={() =>
-                    updatePosition({
-                      align,
-                      x: align === 'center' ? 0.5 : align === 'right' ? 0.85 : 0.08,
-                    })
-                  }
-                  className={`flex-1 py-1 rounded text-center text-[10px] font-medium transition-colors ${
-                    isSel
-                      ? 'bg-amber-400/20 text-amber-300 font-semibold'
-                      : 'text-smoke hover:text-bone'
-                  }`}
-                >
-                  {align === 'left' && 'Left'}
-                  {align === 'center' && 'Center'}
-                  {align === 'right' && 'Right'}
-                </button>
-              );
-            })}
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between text-[10px] text-smoke">
-              <span>Vertical Position (Y)</span>
-              <span className="font-mono text-amber-300">{Math.round(spec.position.y * 100)}%</span>
-            </div>
-            <input
-              type="range"
-              aria-label="Lower third vertical position"
-              min={0.1}
-              max={0.92}
-              step={0.01}
-              value={spec.position.y}
-              onChange={(e) => updatePosition({ y: parseFloat(e.target.value) })}
-              className="mt-1 w-full accent-amber-400 cursor-pointer"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* ── 7. Timing & Easing ────────────────────────────────────────────── */}
+      {/* ── 3. Timeline Timing (Start & End) ──────────────────────────────── */}
       <div className="space-y-2 pt-1 border-t border-white/5">
         <label className="text-[11px] font-semibold text-smoke uppercase tracking-wider flex items-center justify-between">
           <span className="flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5 text-amber-400" />
-            <span>Timing &amp; Animation</span>
+            <span>Timeline Timing</span>
           </span>
           <span className="font-mono text-[10px] text-smoke">
-            {(spec.end - spec.start).toFixed(1)}s total
+            {(spec.end - spec.start).toFixed(1)}s duration
           </span>
         </label>
 
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <span className="text-[10px] text-smoke">Start Time</span>
+            <span className="text-[10px] text-smoke">Start Time (s)</span>
             <input
               type="number"
               step={0.1}
@@ -775,7 +435,7 @@ export default function LowerThirdInspector({
           </div>
 
           <div>
-            <span className="text-[10px] text-smoke">End Time</span>
+            <span className="text-[10px] text-smoke">End Time (s)</span>
             <input
               type="number"
               step={0.1}
@@ -790,46 +450,430 @@ export default function LowerThirdInspector({
               className="mt-1 w-full px-2 py-1.5 rounded-lg bg-[#1a1a18] border border-white/10 text-bone font-mono text-xs focus:border-amber-400 focus:outline-none"
             />
           </div>
-
-          <div>
-            <div className="flex items-center justify-between text-[10px] text-smoke">
-              <span>Intro Wipe</span>
-              <span className="font-mono text-amber-300">
-                {(spec.introDuration ?? 0.7).toFixed(1)}s
-              </span>
-            </div>
-            <input
-              type="range"
-              aria-label="Lower third intro wipe duration"
-              min={0.2}
-              max={1.8}
-              step={0.05}
-              value={spec.introDuration ?? 0.7}
-              onChange={(e) => updateSpec({ introDuration: parseFloat(e.target.value) })}
-              className="mt-1 w-full accent-amber-400 cursor-pointer"
-            />
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between text-[10px] text-smoke">
-              <span>Outro Wipe</span>
-              <span className="font-mono text-amber-300">
-                {(spec.outroDuration ?? 0.6).toFixed(1)}s
-              </span>
-            </div>
-            <input
-              type="range"
-              aria-label="Lower third outro wipe duration"
-              min={0.2}
-              max={1.8}
-              step={0.05}
-              value={spec.outroDuration ?? 0.6}
-              onChange={(e) => updateSpec({ outroDuration: parseFloat(e.target.value) })}
-              className="mt-1 w-full accent-amber-400 cursor-pointer"
-            />
-          </div>
         </div>
       </div>
+
+      {/* ── 4. Optional Advanced Styling & Overrides (Collapsible) ─────────── */}
+      <details className="group pt-2 border-t border-white/10 space-y-4">
+        <summary className="text-[11px] font-semibold text-smoke uppercase tracking-wider flex items-center justify-between cursor-pointer list-none py-1 hover:text-bone select-none">
+          <span className="flex items-center gap-1.5">
+            <SlidersHorizontal className="w-3.5 h-3.5 text-amber-400" />
+            <span>Advanced Overrides (Colors, Fonts, Layout)</span>
+          </span>
+          <ChevronDown className="w-3.5 h-3.5 text-smoke group-open:rotate-180 transition-transform" />
+        </summary>
+
+        {/* Variant Picker (Thumbnail Grid) */}
+        <div className="space-y-2 pt-2">
+          <label className="text-[11px] font-semibold text-smoke uppercase tracking-wider flex items-center gap-1.5">
+            <Layout className="w-3.5 h-3.5 text-amber-400" />
+            <span>Design Variant</span>
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {VARIANTS.map((v) => {
+              const isSelected = spec.variant === v.id;
+              return (
+                <button
+                  key={v.id}
+                  type="button"
+                  onClick={() => updateSpec({ variant: v.id })}
+                  className={`p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between h-[68px] cursor-pointer ${
+                    isSelected
+                      ? 'bg-[#272621] border-amber-400 text-amber-200 shadow-md ring-1 ring-amber-400/40'
+                      : 'bg-[#1a1a18] border-white/10 text-smoke hover:border-white/30 hover:bg-[#22221f] hover:text-bone'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="font-semibold text-[11px] truncate">{v.name}</span>
+                    <span className="text-[9px] font-mono opacity-60">#{v.id}</span>
+                  </div>
+                  <div className="text-[10px] line-clamp-1 opacity-70">{v.desc}</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Colors */}
+        <div className="space-y-2 pt-2 border-t border-white/5">
+          <div className="flex items-center justify-between">
+            <label className="text-[11px] font-semibold text-smoke uppercase tracking-wider flex items-center gap-1.5">
+              <Palette className="w-3.5 h-3.5 text-amber-400" />
+              <span>Colors</span>
+            </label>
+            {primaryTextContrast < 4.5 && (
+              <span className="text-[10px] text-amber-300 flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3 text-amber-400" />
+                <span>Low contrast ({primaryTextContrast.toFixed(1)}:1)</span>
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            {/* Primary Accent */}
+            <div className="relative">
+              <span className="text-[10px] text-smoke block mb-1">Primary Accent</span>
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveColorTarget(activeColorTarget === 'primary' ? null : 'primary')
+                }
+                className="w-full h-8 px-2 rounded-lg border border-white/10 bg-[#1a1a18] flex items-center gap-2 hover:border-white/30 transition-colors"
+              >
+                <span
+                  className="w-4 h-4 rounded-full border border-white/30 shrink-0"
+                  style={{ backgroundColor: spec.colors.primary }}
+                />
+                <span className="font-mono text-[10px] truncate">{spec.colors.primary}</span>
+              </button>
+              {activeColorTarget === 'primary' && (
+                <div className="absolute top-12 left-0 z-50">
+                  <ColorPopover
+                    value={spec.colors.primary}
+                    onChange={(c) =>
+                      updateColors({ primary: typeof c === 'string' ? c : c.stops[0][1] })
+                    }
+                    onClose={() => setActiveColorTarget(null)}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Secondary Plate */}
+            <div className="relative">
+              <span className="text-[10px] text-smoke block mb-1">Plate / Secondary</span>
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveColorTarget(activeColorTarget === 'secondary' ? null : 'secondary')
+                }
+                className="w-full h-8 px-2 rounded-lg border border-white/10 bg-[#1a1a18] flex items-center gap-2 hover:border-white/30 transition-colors"
+              >
+                <span
+                  className="w-4 h-4 rounded-full border border-white/30 shrink-0"
+                  style={{ backgroundColor: spec.colors.secondary || '#18181b' }}
+                />
+                <span className="font-mono text-[10px] truncate">
+                  {spec.colors.secondary || '#18181b'}
+                </span>
+              </button>
+              {activeColorTarget === 'secondary' && (
+                <div className="absolute top-12 left-0 z-50">
+                  <ColorPopover
+                    value={spec.colors.secondary || '#18181b'}
+                    onChange={(c) =>
+                      updateColors({ secondary: typeof c === 'string' ? c : c.stops[0][1] })
+                    }
+                    onClose={() => setActiveColorTarget(null)}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Name Text */}
+            <div className="relative">
+              <span className="text-[10px] text-smoke block mb-1">Name Text</span>
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveColorTarget(activeColorTarget === 'textPrimary' ? null : 'textPrimary')
+                }
+                className="w-full h-8 px-2 rounded-lg border border-white/10 bg-[#1a1a18] flex items-center gap-2 hover:border-white/30 transition-colors"
+              >
+                <span
+                  className="w-4 h-4 rounded-full border border-white/30 shrink-0"
+                  style={{ backgroundColor: spec.colors.textPrimary }}
+                />
+                <span className="font-mono text-[10px] truncate">{spec.colors.textPrimary}</span>
+              </button>
+              {activeColorTarget === 'textPrimary' && (
+                <div className="absolute top-12 left-0 z-50">
+                  <ColorPopover
+                    value={spec.colors.textPrimary}
+                    onChange={(c) =>
+                      updateColors({ textPrimary: typeof c === 'string' ? c : c.stops[0][1] })
+                    }
+                    onClose={() => setActiveColorTarget(null)}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Role Text */}
+            <div className="relative">
+              <span className="text-[10px] text-smoke block mb-1">Role Text</span>
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveColorTarget(
+                    activeColorTarget === 'textSecondary' ? null : 'textSecondary',
+                  )
+                }
+                className="w-full h-8 px-2 rounded-lg border border-white/10 bg-[#1a1a18] flex items-center gap-2 hover:border-white/30 transition-colors"
+              >
+                <span
+                  className="w-4 h-4 rounded-full border border-white/30 shrink-0"
+                  style={{ backgroundColor: spec.colors.textSecondary }}
+                />
+                <span className="font-mono text-[10px] truncate">{spec.colors.textSecondary}</span>
+              </button>
+              {activeColorTarget === 'textSecondary' && (
+                <div className="absolute top-12 left-0 z-50">
+                  <ColorPopover
+                    value={spec.colors.textSecondary}
+                    onChange={(c) =>
+                      updateColors({ textSecondary: typeof c === 'string' ? c : c.stops[0][1] })
+                    }
+                    onClose={() => setActiveColorTarget(null)}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Quick Brand Colors */}
+          <div className="flex items-center gap-1.5 pt-1">
+            <span className="text-[10px] text-smoke mr-1">Brand:</span>
+            {brandColors.slice(0, 6).map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => updateColors({ primary: c })}
+                className="w-4 h-4 rounded-full border border-white/20 hover:scale-110 transition-transform cursor-pointer"
+                style={{ backgroundColor: c }}
+                title={`Apply ${c}`}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Typography & Scale */}
+        <div className="space-y-2 pt-2 border-t border-white/5">
+          <label className="text-[11px] font-semibold text-smoke uppercase tracking-wider flex items-center gap-1.5">
+            <Type className="w-3.5 h-3.5 text-amber-400" />
+            <span>Typography &amp; Scale</span>
+          </label>
+
+          <div className="space-y-2">
+            <div>
+              <span className="text-[10px] text-smoke">Font Family</span>
+              <select
+                value={spec.font.family}
+                onChange={(e) => updateFont({ family: e.target.value })}
+                className="mt-1 w-full px-2.5 py-1.5 rounded-lg bg-[#1a1a18] border border-white/10 focus:border-amber-400 focus:outline-none text-bone font-medium text-xs"
+              >
+                {FONT_FAMILIES.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.label} ({f.group})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <span className="text-[10px] text-smoke">Weight</span>
+                <select
+                  value={spec.font.weight}
+                  onChange={(e) => updateFont({ weight: Number(e.target.value) })}
+                  className="mt-1 w-full px-2 py-1.5 rounded-lg bg-[#1a1a18] border border-white/10 focus:border-amber-400 focus:outline-none text-bone font-mono text-xs"
+                >
+                  <option value={600}>SemiBold (600)</option>
+                  <option value={700}>Bold (700)</option>
+                  <option value={800}>ExtraBold (800)</option>
+                  <option value={900}>Black (900)</option>
+                </select>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-smoke">Scale</span>
+                  <span className="font-mono text-[10px] text-amber-300">
+                    {spec.scale.toFixed(2)}x
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  aria-label="Lower third scale"
+                  min={0.6}
+                  max={1.6}
+                  step={0.05}
+                  value={spec.scale}
+                  onChange={(e) => updateSpec({ scale: parseFloat(e.target.value) })}
+                  className="mt-2 w-full accent-amber-400 cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Position */}
+        <div className="space-y-2 pt-2 border-t border-white/5">
+          <label className="text-[11px] font-semibold text-smoke uppercase tracking-wider flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <Layout className="w-3.5 h-3.5 text-amber-400" />
+              <span>Position &amp; Alignment</span>
+            </span>
+            <span className="font-mono text-[10px] text-smoke">
+              {Math.round(spec.position.x * 100)}%, {Math.round(spec.position.y * 100)}%
+            </span>
+          </label>
+
+          <div className="space-y-2">
+            {/* Quick Position Presets: Top / Center / Bottom */}
+            <div className="grid grid-cols-3 gap-1.5">
+              <button
+                type="button"
+                onClick={() =>
+                  updatePosition({
+                    y: 0.12,
+                    align: 'center',
+                    x: 0.5,
+                  })
+                }
+                className={`py-1 px-2 rounded-lg border text-center text-[10px] font-semibold transition-all cursor-pointer ${
+                  spec.position.y <= 0.25
+                    ? 'bg-sky-400/20 border-sky-400/50 text-sky-300'
+                    : 'bg-[#1a1a18] border-white/10 text-smoke hover:text-bone hover:border-white/20'
+                }`}
+              >
+                Top (12%)
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  updatePosition({
+                    y: 0.5,
+                    align: 'center',
+                    x: 0.5,
+                  })
+                }
+                className={`py-1 px-2 rounded-lg border text-center text-[10px] font-semibold transition-all cursor-pointer ${
+                  spec.position.y > 0.25 && spec.position.y <= 0.65
+                    ? 'bg-purple-400/20 border-purple-400/50 text-purple-300'
+                    : 'bg-[#1a1a18] border-white/10 text-smoke hover:text-bone hover:border-white/20'
+                }`}
+              >
+                Center (50%)
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  updatePosition({
+                    y: 0.82,
+                    align: spec.position.align || 'left',
+                    x: spec.position.align === 'center' ? 0.5 : 0.08,
+                  })
+                }
+                className={`py-1 px-2 rounded-lg border text-center text-[10px] font-semibold transition-all cursor-pointer ${
+                  spec.position.y > 0.65
+                    ? 'bg-amber-400/20 border-amber-400/50 text-amber-300'
+                    : 'bg-[#1a1a18] border-white/10 text-smoke hover:text-bone hover:border-white/20'
+                }`}
+              >
+                Bottom (82%)
+              </button>
+            </div>
+
+            {/* Alignment */}
+            <div className="flex items-center gap-1 bg-[#1a1a18] p-1 rounded-lg border border-white/10">
+              {(['left', 'center', 'right'] as const).map((align) => {
+                const isSel = spec.position.align === align;
+                return (
+                  <button
+                    key={align}
+                    type="button"
+                    onClick={() =>
+                      updatePosition({
+                        align,
+                        x: align === 'center' ? 0.5 : align === 'right' ? 0.85 : 0.08,
+                      })
+                    }
+                    className={`flex-1 py-1 rounded text-center text-[10px] font-medium transition-colors cursor-pointer ${
+                      isSel
+                        ? 'bg-amber-400/20 text-amber-300 font-semibold'
+                        : 'text-smoke hover:text-bone'
+                    }`}
+                  >
+                    {align === 'left' && 'Left'}
+                    {align === 'center' && 'Center'}
+                    {align === 'right' && 'Right'}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between text-[10px] text-smoke">
+                <span>Vertical Position (Y)</span>
+                <span className="font-mono text-amber-300">
+                  {Math.round(spec.position.y * 100)}%
+                </span>
+              </div>
+              <input
+                type="range"
+                aria-label="Lower third vertical position"
+                min={0.1}
+                max={0.92}
+                step={0.01}
+                value={spec.position.y}
+                onChange={(e) => updatePosition({ y: parseFloat(e.target.value) })}
+                className="mt-1 w-full accent-amber-400 cursor-pointer"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Wipe Animation Durations */}
+        <div className="space-y-2 pt-2 border-t border-white/5">
+          <label className="text-[11px] font-semibold text-smoke uppercase tracking-wider flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-amber-400" />
+              <span>Animation Wipe Speeds</span>
+            </span>
+          </label>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <div className="flex items-center justify-between text-[10px] text-smoke">
+                <span>Intro Wipe</span>
+                <span className="font-mono text-amber-300">
+                  {(spec.introDuration ?? 0.7).toFixed(1)}s
+                </span>
+              </div>
+              <input
+                type="range"
+                aria-label="Lower third intro wipe duration"
+                min={0.2}
+                max={1.8}
+                step={0.05}
+                value={spec.introDuration ?? 0.7}
+                onChange={(e) => updateSpec({ introDuration: parseFloat(e.target.value) })}
+                className="mt-1 w-full accent-amber-400 cursor-pointer"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between text-[10px] text-smoke">
+                <span>Outro Wipe</span>
+                <span className="font-mono text-amber-300">
+                  {(spec.outroDuration ?? 0.6).toFixed(1)}s
+                </span>
+              </div>
+              <input
+                type="range"
+                aria-label="Lower third outro wipe duration"
+                min={0.2}
+                max={1.8}
+                step={0.05}
+                value={spec.outroDuration ?? 0.6}
+                onChange={(e) => updateSpec({ outroDuration: parseFloat(e.target.value) })}
+                className="mt-1 w-full accent-amber-400 cursor-pointer"
+              />
+            </div>
+          </div>
+        </div>
+      </details>
 
       {/* ── Danger / Delete Action ───────────────────────────────────────── */}
       <div className="pt-2 border-t border-white/10">
