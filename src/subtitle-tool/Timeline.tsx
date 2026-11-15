@@ -13,7 +13,7 @@ import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import { formatTimecode, formatRulerTick } from './utils/formatTime';
 import { getSpeakerStyle, getSpeakerShortCode } from './utils/speakers';
 import type { Segment, LowerThirdSpec } from './types';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Captions, Layers, Volume2 } from 'lucide-react';
 import TimelineToolbar from './editor/TimelineToolbar';
 import { timeStore, usePlayheadTime } from './store/timeStore';
 
@@ -104,9 +104,16 @@ function Timeline({
   const [localRedo, setLocalRedo] = useState<Segment[][]>([]);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const leftSidebarRef = useRef<HTMLDivElement>(null);
   const waveformCanvasRef = useRef<HTMLCanvasElement>(null);
   const isDraggingPlayhead = useRef(false);
   const dragStateRef = useRef<DragState | null>(null);
+
+  const handleTracksScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (leftSidebarRef.current) {
+      leftSidebarRef.current.scrollTop = e.currentTarget.scrollTop;
+    }
+  };
 
   // Push state to undo history
   const pushState = useCallback(
@@ -634,260 +641,327 @@ function Timeline({
         onZoomChange={setZoom}
       />
 
-      {/* ── Multi-Track Tracks Canvas Area ─────────────────────────────────── */}
-      <div
-        ref={containerRef}
-        onMouseDown={handleTimelineMouseDown}
-        className="flex-1 min-h-0 relative overflow-x-auto overflow-y-auto cursor-crosshair bg-[#0a0a09] px-2 py-1.5"
-        style={{ scrollBehavior: 'auto' }}
-      >
+      {/* ── Multi-Track Timeline: Left Track Headers Sidebar + Scrollable Tracks Canvas ── */}
+      <div className="flex-1 min-h-0 flex relative overflow-hidden bg-[#0a0a09]">
+        {/* Pinned Left Track Headers Sidebar (TCP - Track Control Panel) */}
         <div
-          className="relative min-h-full flex flex-col gap-2 pb-2"
-          style={{ width: `${totalWidth}px` }}
+          ref={leftSidebarRef}
+          className="w-28 sm:w-32 shrink-0 border-r border-white/10 bg-[#121211] p-1.5 flex flex-col gap-2 z-20 select-none overflow-y-hidden"
         >
-          {/* 1. Time Ruler Top */}
-          <div className="h-6 shrink-0 border-b border-white/10 relative text-[10px] font-mono text-smoke">
-            {Array.from({ length: numRulerTicks + 1 }).map((_, i) => {
-              const sec = i * rulerInterval;
-              const left = sec * zoom;
-              if (left > totalWidth) return null;
-              return (
-                <div
-                  key={sec}
-                  className="absolute top-0 flex flex-col items-center"
-                  style={{ left: `${left}px` }}
-                >
-                  <span className="px-1 text-[9px] -translate-x-1/2">{formatRulerTick(sec)}</span>
-                  <div className="w-px h-2 bg-white/20" />
-                </div>
-              );
-            })}
+          {/* Ruler Header */}
+          <div className="h-6 shrink-0 flex items-center justify-between border-b border-white/10 px-1 text-[9.5px] font-mono font-semibold text-smoke uppercase tracking-wider">
+            <span>Tracks</span>
+            <span className="text-[8px] px-1 py-0.2 rounded bg-white/5 text-smoke/70">3L</span>
           </div>
 
-          {/* 2. Caption Track (Segment blocks with resize/drag handles & gap bridges) */}
-          <div className="h-14 shrink-0 relative px-1 rounded-lg border border-white/5 bg-[#121211]/85 shadow-inner">
-            <div className="absolute left-2 top-0.5 z-10 text-[8px] font-mono font-bold tracking-wider text-smoke/50 uppercase pointer-events-none flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-sky-400/70 inline-block" />
-              <span>Captions (Subtitles)</span>
+          {/* 1. Captions Category */}
+          <div className="h-14 shrink-0 rounded-lg border border-sky-500/20 bg-[#13171f] px-2 py-1.5 flex flex-col justify-between shadow-xs">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Captions className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                <span className="font-semibold text-[11px] text-bone truncate">Captions</span>
+              </div>
+              <span className="px-1 py-0.2 rounded bg-sky-400/15 border border-sky-400/30 text-sky-300 font-mono text-[8px] font-bold shrink-0">
+                CC
+              </span>
             </div>
-            {segments.map((seg, sIdx) => {
-              const left = seg.start * zoom;
-              const width = Math.max(30, (seg.end - seg.start) * zoom);
-              const isSelected = seg.id === (selectedId ?? activeId);
-              const isActive = seg.id === activeId;
-              const speakerStyle = getSpeakerStyle(seg.speaker);
-              const nextSeg = sIdx < segments.length - 1 ? segments[sIdx + 1] : undefined;
-              const hasOverlap = nextSeg && nextSeg.start < seg.end - 0.03;
-              const hasGap = nextSeg && nextSeg.start > seg.end + 0.6;
-
-              return (
-                <div key={seg.id}>
-                  {/* Segment block */}
-                  <div
-                    onMouseDown={(e) => startSegmentDrag(e, seg, 'move')}
-                    className={`timeline-segment absolute top-3 h-10 rounded-lg px-2 py-0.5 text-xs font-medium cursor-grab active:cursor-grabbing transition-colors border flex flex-col justify-center overflow-hidden group shadow-md select-none ${
-                      isSelected
-                        ? 'bg-[#2b2a26] border-amber-400 text-amber-200 ring-1 ring-amber-400/50'
-                        : isActive
-                          ? 'bg-[#232321] border-amber-400/40 text-bone ring-1 ring-amber-400/20'
-                          : 'bg-[#1c1c1a] border-white/15 text-bone hover:border-white/35 hover:bg-[#222220]'
-                    }`}
-                    style={{
-                      left: `${left}px`,
-                      width: `${width}px`,
-                      borderTopColor: speakerStyle ? speakerStyle.darkBorder : undefined,
-                      borderTopWidth: speakerStyle ? 3 : 1,
-                    }}
-                    title={`${speakerStyle ? `[${speakerStyle.name}] ` : ''}${seg.text} (${formatTimecode(seg.start)} - ${formatTimecode(seg.end)})`}
-                  >
-                    {/* Left Trim Handle */}
-                    <div
-                      onMouseDown={(e) => startSegmentDrag(e, seg, 'trim-start')}
-                      className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-amber-400/60 transition-colors z-20 group-hover:bg-white/20"
-                      title="Drag to trim start"
-                    />
-
-                    {/* Content */}
-                    <div className="flex items-center gap-1 pl-1 min-w-0">
-                      {speakerStyle && (
-                        <span
-                          className={`px-1 py-0.2 rounded text-[8px] font-mono font-bold uppercase shrink-0 border ${speakerStyle.bg} ${speakerStyle.text} ${speakerStyle.border}`}
-                        >
-                          {getSpeakerShortCode(seg.speaker)}
-                        </span>
-                      )}
-                      <span className="truncate font-semibold text-[11px] tracking-tight">
-                        {seg.text || '...'}
-                      </span>
-                    </div>
-                    <div className="text-[9px] text-smoke font-mono pl-1">
-                      {formatTimecode(seg.start)} - {formatTimecode(seg.end)}
-                    </div>
-
-                    {/* Right Trim Handle */}
-                    <div
-                      onMouseDown={(e) => startSegmentDrag(e, seg, 'trim-end')}
-                      className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-amber-400/60 transition-colors z-20 group-hover:bg-white/20"
-                      title="Drag to trim end"
-                    />
-                  </div>
-
-                  {/* Overlap Warning Indicator */}
-                  {hasOverlap && (
-                    <div
-                      className="absolute top-2.5 h-11 bg-crimson/30 border-l border-r border-crimson/60 pointer-events-none z-10"
-                      style={{
-                        left: `${nextSeg.start * zoom}px`,
-                        width: `${Math.max(4, (seg.end - nextSeg.start) * zoom)}px`,
-                      }}
-                      title="Warning: Overlapping captions"
-                    />
-                  )}
-
-                  {/* Gap indicator with snap/close gap button */}
-                  {hasGap && (
-                    <div
-                      className="absolute top-4 h-7 flex items-center justify-center z-10"
-                      style={{
-                        left: `${seg.end * zoom}px`,
-                        width: `${(nextSeg.start - seg.end) * zoom}px`,
-                      }}
-                    >
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleCloseGap(seg, nextSeg);
-                        }}
-                        className="px-1 py-0.5 rounded bg-white/5 hover:bg-amber-400/20 text-smoke hover:text-amber-300 text-[9px] border border-dashed border-white/20 font-mono transition-colors cursor-pointer"
-                        title="Click to snap / close gap"
-                      >
-                        Snap
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            <div className="flex items-center justify-between text-[9px] text-smoke font-mono">
+              <span className="truncate">Subtitles</span>
+              <span className="text-sky-300/80 font-bold">{segments.length}</span>
+            </div>
           </div>
 
-          {/* 3. Lower Thirds & Text Overlays Track */}
-          <div className="h-14 shrink-0 relative px-1 rounded-lg border border-white/5 bg-[#0f0f0e]/85 shadow-inner">
-            <div className="absolute left-2 top-0.5 z-10 text-[8px] font-mono font-bold tracking-wider text-smoke/50 uppercase pointer-events-none flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400/70 inline-block" />
-              <span>Lower Thirds &amp; Custom Text Overlays</span>
+          {/* 2. Overlays / Lower Thirds Category */}
+          <div className="h-14 shrink-0 rounded-lg border border-amber-500/20 bg-[#1c1913] px-2 py-1.5 flex flex-col justify-between shadow-xs">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Layers className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span className="font-semibold text-[11px] text-bone truncate">Overlays</span>
+              </div>
+              <span className="px-1 py-0.2 rounded bg-amber-400/15 border border-amber-400/30 text-amber-300 font-mono text-[8px] font-bold shrink-0">
+                V1
+              </span>
             </div>
-            {lowerThirds && lowerThirds.length > 0 ? (
-              lowerThirds.map((lt) => {
-                const left = lt.start * zoom;
-                const width = Math.max(36, (lt.end - lt.start) * zoom);
-                const isActive = lt.id === activeLowerThirdId;
+            <div className="flex items-center justify-between text-[9px] text-smoke font-mono">
+              <span className="truncate">Lower Thirds</span>
+              <span className="text-amber-300/80 font-bold">{lowerThirds?.length ?? 0}</span>
+            </div>
+          </div>
 
+          {/* 3. Audio Waveform Category */}
+          <div className="h-14 shrink-0 rounded-lg border border-emerald-500/20 bg-[#111c15] px-2 py-1.5 flex flex-col justify-between shadow-xs">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Volume2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span className="font-semibold text-[11px] text-bone truncate">Audio</span>
+              </div>
+              <span className="px-1 py-0.2 rounded bg-emerald-400/15 border border-emerald-400/30 text-emerald-300 font-mono text-[8px] font-bold shrink-0">
+                A1
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-[9px] text-smoke font-mono">
+              <span className="truncate">Voice Wave</span>
+              <span className="text-emerald-300/80 font-bold">100%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Scrollable Tracks Canvas */}
+        <div
+          ref={containerRef}
+          onMouseDown={handleTimelineMouseDown}
+          onScroll={handleTracksScroll}
+          className="flex-1 min-h-0 relative overflow-x-auto overflow-y-auto cursor-crosshair bg-[#0a0a09] px-2 py-1.5"
+          style={{ scrollBehavior: 'auto' }}
+        >
+          <div
+            className="relative min-h-full flex flex-col gap-2 pb-2"
+            style={{ width: `${totalWidth}px` }}
+          >
+            {/* 1. Time Ruler Top */}
+            <div className="h-6 shrink-0 border-b border-white/10 relative text-[10px] font-mono text-smoke">
+              {Array.from({ length: numRulerTicks + 1 }).map((_, i) => {
+                const sec = i * rulerInterval;
+                const left = sec * zoom;
+                if (left > totalWidth) return null;
                 return (
                   <div
-                    key={lt.id}
-                    onMouseDown={(e) => startLowerThirdDrag(e, lt, 'lt-move')}
-                    className={`timeline-segment absolute top-3 h-9 rounded-lg px-2 text-xs font-medium cursor-grab active:cursor-grabbing transition-colors border flex items-center justify-between overflow-hidden group shadow-md select-none ${
-                      isActive
-                        ? 'bg-[#272621] border-amber-400 text-amber-200 ring-1 ring-amber-400/50 z-20'
-                        : 'bg-[#181816] border-white/15 text-bone hover:border-white/35 hover:bg-[#1f1f1d] z-10'
-                    }`}
-                    style={{
-                      left: `${left}px`,
-                      width: `${width}px`,
-                      borderLeftColor: lt.colors.primary,
-                      borderLeftWidth: 3,
-                    }}
-                    title={`[V${lt.variant}] ${lt.name} - ${lt.role} (${formatTimecode(lt.start)} - ${formatTimecode(lt.end)})`}
+                    key={sec}
+                    className="absolute top-0 flex flex-col items-center"
+                    style={{ left: `${left}px` }}
                   >
-                    {/* Left Trim Handle */}
-                    <div
-                      onMouseDown={(e) => startLowerThirdDrag(e, lt, 'lt-trim-start')}
-                      className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-amber-400/60 transition-colors z-20 group-hover:bg-white/20"
-                      title="Drag to trim start"
-                    />
-
-                    {/* Content */}
-                    <div className="flex items-center gap-1.5 min-w-0 pl-1">
-                      <span className="px-1 py-0.2 rounded bg-amber-400/20 text-amber-300 font-mono text-[8px] font-bold shrink-0">
-                        V{lt.variant}
-                      </span>
-                      <span className="truncate font-semibold text-[10px] tracking-tight">
-                        {lt.name || 'Text Overlay'}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0 pl-1">
-                      <span className="text-[8px] text-smoke font-mono">
-                        {(lt.end - lt.start).toFixed(1)}s
-                      </span>
-                      {isActive && (
-                        <button
-                          type="button"
-                          aria-label={`Delete lower third ${lt.name}`}
-                          onMouseDown={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            if (onDeleteLowerThird) {
-                              onDeleteLowerThird(lt.id);
-                            } else {
-                              const nextLt = (lowerThirds || []).filter(
-                                (item) => item.id !== lt.id,
-                              );
-                              onLowerThirdsChange?.(nextLt);
-                              onSelectLowerThird?.(null);
-                            }
-                          }}
-                          className="p-0.5 rounded text-red-400 hover:text-red-200 hover:bg-red-500/20 z-30 transition-colors cursor-pointer"
-                          title="Delete lower third"
-                        >
-                          <Trash2 className="w-2.5 h-2.5" />
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Right Trim Handle */}
-                    <div
-                      onMouseDown={(e) => startLowerThirdDrag(e, lt, 'lt-trim-end')}
-                      className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-amber-400/60 transition-colors z-20 group-hover:bg-white/20"
-                      title="Drag to trim end"
-                    />
+                    <span className="px-1 text-[9px] -translate-x-1/2">{formatRulerTick(sec)}</span>
+                    <div className="w-px h-2 bg-white/20" />
                   </div>
                 );
-              })
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center text-[10px] text-smoke/40 font-medium pointer-events-none">
-                No lower thirds or custom text overlays · Click "+ Lower Third" or "Add text" in
-                library
-              </div>
-            )}
-          </div>
-
-          {/* 4. Audio Waveform Track */}
-          <div className="h-14 shrink-0 relative px-1 rounded-lg border border-white/5 bg-[#0d0d0c]/90 overflow-hidden shadow-inner">
-            <div className="absolute left-2 top-0.5 z-10 text-[8px] font-mono font-bold tracking-wider text-smoke/50 uppercase pointer-events-none flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/70 inline-block" />
-              <span>Speech Audio Waveform</span>
+              })}
             </div>
-            <canvas
-              ref={waveformCanvasRef}
-              className="absolute inset-0 w-full h-full pointer-events-none"
-            />
+
+            {/* 2. Caption Track (Segment blocks with resize/drag handles & gap bridges) */}
+            <div className="h-14 shrink-0 relative px-1 rounded-lg border border-white/5 bg-[#121211]/85 shadow-inner">
+              <div className="absolute left-2 top-0.5 z-10 text-[8px] font-mono font-bold tracking-wider text-smoke/50 uppercase pointer-events-none flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-400/70 inline-block" />
+                <span>Captions (Subtitles)</span>
+              </div>
+              {segments.map((seg, sIdx) => {
+                const left = seg.start * zoom;
+                const width = Math.max(30, (seg.end - seg.start) * zoom);
+                const isSelected = seg.id === (selectedId ?? activeId);
+                const isActive = seg.id === activeId;
+                const speakerStyle = getSpeakerStyle(seg.speaker);
+                const nextSeg = sIdx < segments.length - 1 ? segments[sIdx + 1] : undefined;
+                const hasOverlap = nextSeg && nextSeg.start < seg.end - 0.03;
+                const hasGap = nextSeg && nextSeg.start > seg.end + 0.6;
+
+                return (
+                  <div key={seg.id}>
+                    {/* Segment block */}
+                    <div
+                      onMouseDown={(e) => startSegmentDrag(e, seg, 'move')}
+                      className={`timeline-segment absolute top-3 h-10 rounded-lg px-2 py-0.5 text-xs font-medium cursor-grab active:cursor-grabbing transition-colors border flex flex-col justify-center overflow-hidden group shadow-md select-none ${
+                        isSelected
+                          ? 'bg-[#2b2a26] border-amber-400 text-amber-200 ring-1 ring-amber-400/50'
+                          : isActive
+                            ? 'bg-[#232321] border-amber-400/40 text-bone ring-1 ring-amber-400/20'
+                            : 'bg-[#1c1c1a] border-white/15 text-bone hover:border-white/35 hover:bg-[#222220]'
+                      }`}
+                      style={{
+                        left: `${left}px`,
+                        width: `${width}px`,
+                        borderTopColor: speakerStyle ? speakerStyle.darkBorder : undefined,
+                        borderTopWidth: speakerStyle ? 3 : 1,
+                      }}
+                      title={`${speakerStyle ? `[${speakerStyle.name}] ` : ''}${seg.text} (${formatTimecode(seg.start)} - ${formatTimecode(seg.end)})`}
+                    >
+                      {/* Left Trim Handle */}
+                      <div
+                        onMouseDown={(e) => startSegmentDrag(e, seg, 'trim-start')}
+                        className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-amber-400/60 transition-colors z-20 group-hover:bg-white/20"
+                        title="Drag to trim start"
+                      />
+
+                      {/* Content */}
+                      <div className="flex items-center gap-1 pl-1 min-w-0">
+                        {speakerStyle && (
+                          <span
+                            className={`px-1 py-0.2 rounded text-[8px] font-mono font-bold uppercase shrink-0 border ${speakerStyle.bg} ${speakerStyle.text} ${speakerStyle.border}`}
+                          >
+                            {getSpeakerShortCode(seg.speaker)}
+                          </span>
+                        )}
+                        <span className="truncate font-semibold text-[11px] tracking-tight">
+                          {seg.text || '...'}
+                        </span>
+                      </div>
+                      <div className="text-[9px] text-smoke font-mono pl-1">
+                        {formatTimecode(seg.start)} - {formatTimecode(seg.end)}
+                      </div>
+
+                      {/* Right Trim Handle */}
+                      <div
+                        onMouseDown={(e) => startSegmentDrag(e, seg, 'trim-end')}
+                        className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-amber-400/60 transition-colors z-20 group-hover:bg-white/20"
+                        title="Drag to trim end"
+                      />
+                    </div>
+
+                    {/* Overlap Warning Indicator */}
+                    {hasOverlap && (
+                      <div
+                        className="absolute top-2.5 h-11 bg-crimson/30 border-l border-r border-crimson/60 pointer-events-none z-10"
+                        style={{
+                          left: `${nextSeg.start * zoom}px`,
+                          width: `${Math.max(4, (seg.end - nextSeg.start) * zoom)}px`,
+                        }}
+                        title="Warning: Overlapping captions"
+                      />
+                    )}
+
+                    {/* Gap indicator with snap/close gap button */}
+                    {hasGap && (
+                      <div
+                        className="absolute top-4 h-7 flex items-center justify-center z-10"
+                        style={{
+                          left: `${seg.end * zoom}px`,
+                          width: `${(nextSeg.start - seg.end) * zoom}px`,
+                        }}
+                      >
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCloseGap(seg, nextSeg);
+                          }}
+                          className="px-1 py-0.5 rounded bg-white/5 hover:bg-amber-400/20 text-smoke hover:text-amber-300 text-[9px] border border-dashed border-white/20 font-mono transition-colors cursor-pointer"
+                          title="Click to snap / close gap"
+                        >
+                          Snap
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 3. Lower Thirds & Text Overlays Track */}
+            <div className="h-14 shrink-0 relative px-1 rounded-lg border border-white/5 bg-[#0f0f0e]/85 shadow-inner">
+              <div className="absolute left-2 top-0.5 z-10 text-[8px] font-mono font-bold tracking-wider text-smoke/50 uppercase pointer-events-none flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400/70 inline-block" />
+                <span>Lower Thirds &amp; Custom Text Overlays</span>
+              </div>
+              {lowerThirds && lowerThirds.length > 0 ? (
+                lowerThirds.map((lt) => {
+                  const left = lt.start * zoom;
+                  const width = Math.max(36, (lt.end - lt.start) * zoom);
+                  const isActive = lt.id === activeLowerThirdId;
+
+                  return (
+                    <div
+                      key={lt.id}
+                      onMouseDown={(e) => startLowerThirdDrag(e, lt, 'lt-move')}
+                      className={`timeline-segment absolute top-3 h-9 rounded-lg px-2 text-xs font-medium cursor-grab active:cursor-grabbing transition-colors border flex items-center justify-between overflow-hidden group shadow-md select-none ${
+                        isActive
+                          ? 'bg-[#272621] border-amber-400 text-amber-200 ring-1 ring-amber-400/50 z-20'
+                          : 'bg-[#181816] border-white/15 text-bone hover:border-white/35 hover:bg-[#1f1f1d] z-10'
+                      }`}
+                      style={{
+                        left: `${left}px`,
+                        width: `${width}px`,
+                        borderLeftColor: lt.colors.primary,
+                        borderLeftWidth: 3,
+                      }}
+                      title={`[V${lt.variant}] ${lt.name} - ${lt.role} (${formatTimecode(lt.start)} - ${formatTimecode(lt.end)})`}
+                    >
+                      {/* Left Trim Handle */}
+                      <div
+                        onMouseDown={(e) => startLowerThirdDrag(e, lt, 'lt-trim-start')}
+                        className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-amber-400/60 transition-colors z-20 group-hover:bg-white/20"
+                        title="Drag to trim start"
+                      />
+
+                      {/* Content */}
+                      <div className="flex items-center gap-1.5 min-w-0 pl-1">
+                        <span className="px-1 py-0.2 rounded bg-amber-400/20 text-amber-300 font-mono text-[8px] font-bold shrink-0">
+                          V{lt.variant}
+                        </span>
+                        <span className="truncate font-semibold text-[10px] tracking-tight">
+                          {lt.name || 'Text Overlay'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0 pl-1">
+                        <span className="text-[8px] text-smoke font-mono">
+                          {(lt.end - lt.start).toFixed(1)}s
+                        </span>
+                        {isActive && (
+                          <button
+                            type="button"
+                            aria-label={`Delete lower third ${lt.name}`}
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              if (onDeleteLowerThird) {
+                                onDeleteLowerThird(lt.id);
+                              } else {
+                                const nextLt = (lowerThirds || []).filter(
+                                  (item) => item.id !== lt.id,
+                                );
+                                onLowerThirdsChange?.(nextLt);
+                                onSelectLowerThird?.(null);
+                              }
+                            }}
+                            className="p-0.5 rounded text-red-400 hover:text-red-200 hover:bg-red-500/20 z-30 transition-colors cursor-pointer"
+                            title="Delete lower third"
+                          >
+                            <Trash2 className="w-2.5 h-2.5" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Right Trim Handle */}
+                      <div
+                        onMouseDown={(e) => startLowerThirdDrag(e, lt, 'lt-trim-end')}
+                        className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-amber-400/60 transition-colors z-20 group-hover:bg-white/20"
+                        title="Drag to trim end"
+                      />
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center text-[10px] text-smoke/40 font-medium pointer-events-none">
+                  No lower thirds or custom text overlays · Click "+ Lower Third" or "Add text" in
+                  library
+                </div>
+              )}
+            </div>
+
+            {/* 4. Audio Waveform Track */}
+            <div className="h-14 shrink-0 relative px-1 rounded-lg border border-white/5 bg-[#0d0d0c]/90 overflow-hidden shadow-inner">
+              <div className="absolute left-2 top-0.5 z-10 text-[8px] font-mono font-bold tracking-wider text-smoke/50 uppercase pointer-events-none flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/70 inline-block" />
+                <span>Speech Audio Waveform</span>
+              </div>
+              <canvas
+                ref={waveformCanvasRef}
+                className="absolute inset-0 w-full h-full pointer-events-none"
+              />
+            </div>
+
+            {/* Magnetic Snap Guideline (Amber vertical line) */}
+            {snapGuide !== null && (
+              <div
+                className="absolute top-0 bottom-0 pointer-events-none z-40 border-l-2 border-amber-300/90 shadow-[0_0_10px_rgba(251,191,36,0.9)]"
+                style={{ left: `${snapGuide * zoom}px` }}
+              />
+            )}
+
+            {/* 5. Playhead Cursor (Amber vertical line with pointer top) */}
+            <TimelinePlayhead zoom={zoom} fallbackTime={currentTime} />
           </div>
-
-          {/* Magnetic Snap Guideline (Amber vertical line) */}
-          {snapGuide !== null && (
-            <div
-              className="absolute top-0 bottom-0 pointer-events-none z-40 border-l-2 border-amber-300/90 shadow-[0_0_10px_rgba(251,191,36,0.9)]"
-              style={{ left: `${snapGuide * zoom}px` }}
-            />
-          )}
-
-          {/* 5. Playhead Cursor (Amber vertical line with pointer top) */}
-          <TimelinePlayhead zoom={zoom} fallbackTime={currentTime} />
         </div>
       </div>
     </div>
