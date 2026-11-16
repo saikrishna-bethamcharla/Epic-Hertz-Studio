@@ -143,6 +143,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
     const videoRef = useRef<HTMLVideoElement>(null);
     const [duration, setDuration] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
+    const [isBuffering, setIsBuffering] = useState(false);
     const [volume, setVolume] = useState(1);
     const [isMuted, setIsMuted] = useState(false);
     const [playbackRate, setPlaybackRate] = useState(1);
@@ -761,34 +762,63 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
               isSeekingRef.current = true;
             }}
             onSeeked={handleVideoSeeked}
+            onWaiting={() => {
+              setIsBuffering(true);
+            }}
+            onStalled={() => {
+              setIsBuffering(true);
+            }}
+            onPlaying={() => {
+              setIsBuffering(false);
+              setIsPlaying(true);
+              onPlayStateChange?.(true);
+            }}
+            onCanPlay={() => {
+              setIsBuffering(false);
+            }}
             onPlay={() => {
               setIsPlaying(true);
               onPlayStateChange?.(true);
             }}
             onPause={() => {
               setIsPlaying(false);
+              setIsBuffering(false);
               onPlayStateChange?.(false);
             }}
             onEnded={() => {
               setIsPlaying(false);
+              setIsBuffering(false);
               onPlayStateChange?.(false);
             }}
             onError={(e) => {
               console.warn('Video element error:', e);
+              setIsBuffering(false);
             }}
           />
 
-          {/* Big Play Button Overlay when paused */}
-          {!isPlaying && (
+          {/* Big Play Button Overlay when paused (hidden during editing to prevent click swallowing) */}
+          {!isPlaying && !isBuffering && !selectedLowerThirdId && !selectedSegmentId && (
             <button
               onClick={togglePlay}
-              className="absolute z-20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-md border border-white/20 transition-all hover:scale-105 shadow-2xl"
+              className="absolute z-20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-md border border-white/20 transition-all hover:scale-105 shadow-2xl cursor-pointer"
               aria-label="Play video"
             >
               <svg className="w-7 h-7 translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z" />
               </svg>
             </button>
+          )}
+
+          {/* Buffering Indicator during decoder stalls or seeks */}
+          {isBuffering && isPlaying && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/25 backdrop-blur-xs pointer-events-none animate-in fade-in duration-150">
+              <div className="flex flex-col items-center gap-2 px-3.5 py-2 rounded-xl bg-[#141413]/90 border border-amber-400/30 shadow-2xl">
+                <div className="w-5 h-5 rounded-full border-2 border-amber-400/30 border-t-amber-400 animate-spin" />
+                <span className="text-[10px] font-mono text-amber-300 font-medium tracking-wide">
+                  Buffering...
+                </span>
+              </div>
+            </div>
           )}
 
           {/* Captions & Graphic Overlays: drawn by the same engine that renders the export */}

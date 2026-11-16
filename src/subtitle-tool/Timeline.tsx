@@ -11,11 +11,241 @@
 
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { formatTimecode, formatRulerTick } from './utils/formatTime';
-import { getSpeakerStyle, getSpeakerShortCode } from './utils/speakers';
+import { getSpeakerStyle, getSpeakerShortCode, type SpeakerPalette } from './utils/speakers';
 import type { Segment, LowerThirdSpec } from './types';
-import { Trash2, Captions, Layers, Volume2 } from 'lucide-react';
+import { Trash2, Captions, Layers, Volume2, Minimize2 } from 'lucide-react';
 import TimelineToolbar from './editor/TimelineToolbar';
-import { timeStore } from './store/timeStore';
+import { timeStore, useIsSegmentActive } from './store/timeStore';
+
+const TILE_WIDTH = 2048;
+
+interface WaveformTileProps {
+  tileLeft: number;
+  tileWidth: number;
+  totalWidth: number;
+  totalDuration: number;
+  segments: Segment[];
+  height: number;
+}
+
+const WaveformTile = React.memo(function WaveformTile({
+  tileLeft,
+  tileWidth,
+  totalWidth,
+  totalDuration,
+  segments,
+  height,
+}: WaveformTileProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = tileWidth;
+    canvas.height = height;
+
+    const barWidth = 3;
+    const gap = 2;
+    const step = barWidth + gap;
+    const numBars = Math.floor(tileWidth / step);
+    const midY = height / 2;
+
+    ctx.clearRect(0, 0, tileWidth, height);
+    ctx.fillStyle = '#D9A74A'; // Warm gold/amber waveform color
+
+    for (let i = 0; i < numBars; i++) {
+      const localX = i * step;
+      const globalX = tileLeft + localX;
+      const timeAtBar = (globalX / totalWidth) * totalDuration;
+
+      // Check if time is within any segment
+      const inSpeech = segments.some((s) => timeAtBar >= s.start && timeAtBar <= s.end);
+
+      // Pseudo-random speech amplitude modulation
+      const globalBarIdx = Math.floor(globalX / step);
+      const noise =
+        Math.sin(globalBarIdx * 0.28) *
+        Math.cos(globalBarIdx * 0.12) *
+        Math.sin(globalBarIdx * 0.05);
+      const baseAmp = inSpeech
+        ? 0.35 + Math.abs(noise) * 0.55
+        : 0.08 + Math.abs(Math.sin(globalBarIdx * 0.5)) * 0.08;
+      const barH = Math.max(3, baseAmp * (height - 8));
+
+      ctx.globalAlpha = inSpeech ? 0.85 : 0.3;
+      ctx.fillRect(localX, midY - barH / 2, barWidth, barH);
+    }
+  }, [tileLeft, tileWidth, totalWidth, totalDuration, segments, height]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute top-0 pointer-events-none"
+      style={{ left: `${tileLeft}px`, width: `${tileWidth}px`, height: `${height}px` }}
+    />
+  );
+});
+
+interface AudioWaveformTrackProps {
+  totalWidth: number;
+  totalDuration: number;
+  segments: Segment[];
+  height?: number;
+}
+
+const AudioWaveformTrack = React.memo(function AudioWaveformTrack({
+  totalWidth,
+  totalDuration,
+  segments,
+  height = 48,
+}: AudioWaveformTrackProps) {
+  const numTiles = Math.max(1, Math.ceil(totalWidth / TILE_WIDTH));
+  const tiles = useMemo(() => {
+    return Array.from({ length: numTiles }, (_, i) => {
+      const tileLeft = i * TILE_WIDTH;
+      const tileWidth = Math.min(TILE_WIDTH, totalWidth - tileLeft);
+      return { tileLeft, tileWidth, index: i };
+    });
+  }, [numTiles, totalWidth]);
+
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {tiles.map((t) => (
+        <WaveformTile
+          key={t.index}
+          tileLeft={t.tileLeft}
+          tileWidth={t.tileWidth}
+          totalWidth={totalWidth}
+          totalDuration={totalDuration}
+          segments={segments}
+          height={height}
+        />
+      ))}
+    </div>
+  );
+});
+
+interface TimelineSegmentBlockProps {
+  seg: Segment;
+  zoom: number;
+  isSelected: boolean;
+  speakerStyle?: SpeakerPalette | null;
+  nextSeg?: Segment;
+  startSegmentDrag: (
+    e: React.MouseEvent,
+    seg: Segment,
+    type: 'move' | 'trim-start' | 'trim-end',
+  ) => void;
+  handleCloseGap: (seg: Segment, nextSeg: Segment) => void;
+}
+
+const TimelineSegmentBlock = React.memo(function TimelineSegmentBlock({
+  seg,
+  zoom,
+  isSelected,
+  speakerStyle,
+  nextSeg,
+  startSegmentDrag,
+  handleCloseGap,
+}: TimelineSegmentBlockProps) {
+  const isStoreActive = useIsSegmentActive(seg.id);
+  const left = seg.start * zoom;
+  const width = Math.max(30, (seg.end - seg.start) * zoom);
+  const hasOverlap = nextSeg && nextSeg.start < seg.end - 0.03;
+  const hasGap = nextSeg && nextSeg.start > seg.end + 0.6;
+
+  return (
+    <div>
+      {/* Segment block */}
+      <div
+        onMouseDown={(e) => startSegmentDrag(e, seg, 'move')}
+        className={`timeline-segment absolute top-3 h-10 rounded-lg px-2 py-0.5 text-xs font-medium cursor-grab active:cursor-grabbing transition-colors border flex flex-col justify-center overflow-hidden group shadow-md select-none ${
+          isSelected
+            ? 'bg-[#2b2a26] border-amber-400 text-amber-200 ring-1 ring-amber-400/50'
+            : isStoreActive
+              ? 'bg-[#232321] border-amber-400/40 text-bone ring-1 ring-amber-400/20'
+              : 'bg-[#1c1c1a] border-white/15 text-bone hover:border-white/35 hover:bg-[#222220]'
+        }`}
+        style={{
+          left: `${left}px`,
+          width: `${width}px`,
+          borderTopColor: speakerStyle ? speakerStyle.darkBorder : undefined,
+          borderTopWidth: speakerStyle ? 3 : 1,
+        }}
+        title={`${speakerStyle ? `[${speakerStyle.name}] ` : ''}${seg.text} (${formatTimecode(seg.start)} - ${formatTimecode(seg.end)})`}
+      >
+        {/* Left Trim Handle */}
+        <div
+          onMouseDown={(e) => startSegmentDrag(e, seg, 'trim-start')}
+          className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-amber-400/60 transition-colors z-20 group-hover:bg-white/20"
+          title="Drag to trim start"
+        />
+
+        {/* Content */}
+        <div className="flex items-center gap-1 pl-1 min-w-0">
+          {speakerStyle && (
+            <span
+              className={`px-1 py-0.2 rounded text-[8px] font-mono font-bold uppercase shrink-0 border ${speakerStyle.bg} ${speakerStyle.text} ${speakerStyle.border}`}
+            >
+              {getSpeakerShortCode(seg.speaker)}
+            </span>
+          )}
+          <span className="truncate font-semibold text-[11px] tracking-tight">
+            {seg.text || '...'}
+          </span>
+        </div>
+        <div className="text-[9px] text-smoke font-mono pl-1">
+          {formatTimecode(seg.start)} - {formatTimecode(seg.end)}
+        </div>
+
+        {/* Right Trim Handle */}
+        <div
+          onMouseDown={(e) => startSegmentDrag(e, seg, 'trim-end')}
+          className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-amber-400/60 transition-colors z-20 group-hover:bg-white/20"
+          title="Drag to trim end"
+        />
+      </div>
+
+      {/* Overlap Warning Indicator */}
+      {hasOverlap && (
+        <div
+          className="absolute top-2.5 h-11 bg-crimson/30 border-l border-r border-crimson/60 pointer-events-none z-10"
+          style={{
+            left: `${nextSeg.start * zoom}px`,
+            width: `${Math.max(4, (seg.end - nextSeg.start) * zoom)}px`,
+          }}
+          title="Warning: Overlapping captions"
+        />
+      )}
+
+      {/* Gap indicator with snap/close gap button */}
+      {hasGap && (
+        <div
+          className="absolute top-4 h-7 flex items-center justify-center z-10"
+          style={{
+            left: `${seg.end * zoom}px`,
+            width: `${(nextSeg.start - seg.end) * zoom}px`,
+          }}
+        >
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCloseGap(seg, nextSeg);
+            }}
+            className="px-1 py-0.5 rounded bg-white/5 hover:bg-amber-400/20 text-smoke hover:text-amber-300 text-[9px] border border-dashed border-white/20 font-mono transition-colors cursor-pointer"
+            title="Click to snap / close gap"
+          >
+            <Minimize2 className="w-2.5 h-2.5" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+});
 
 export const TimelinePlayhead = React.memo(function TimelinePlayhead({
   zoom,
@@ -127,7 +357,6 @@ function Timeline({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const leftSidebarRef = useRef<HTMLDivElement>(null);
-  const waveformCanvasRef = useRef<HTMLCanvasElement>(null);
   const isDraggingPlayhead = useRef(false);
   const dragStateRef = useRef<DragState | null>(null);
 
@@ -193,47 +422,6 @@ function Timeline({
     const t = currentTime !== undefined ? currentTime : timeStore.getTime();
     return segments.find((s) => t >= s.start && t <= s.end);
   }, [segments, selectedId, activeId, currentTime]);
-
-  // ── Render Waveform Canvas ────────────────────────────────────────────────
-  useEffect(() => {
-    const canvas = waveformCanvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const ch = canvas.clientHeight || 48;
-    canvas.width = totalWidth;
-    canvas.height = ch;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Generate visually appealing speech-like waveform peaks
-    const barWidth = 3;
-    const gap = 2;
-    const step = barWidth + gap;
-    const numBars = Math.floor(totalWidth / step);
-    const midY = canvas.height / 2;
-
-    ctx.fillStyle = '#D9A74A'; // Warm gold/amber waveform color
-
-    for (let i = 0; i < numBars; i++) {
-      const x = i * step;
-      const timeAtBar = (x / totalWidth) * totalDuration;
-
-      // Check if time is within any segment
-      const inSpeech = segments.some((s) => timeAtBar >= s.start && timeAtBar <= s.end);
-
-      // Pseudo-random speech amplitude modulation
-      const noise = Math.sin(i * 0.28) * Math.cos(i * 0.12) * Math.sin(i * 0.05);
-      const baseAmp = inSpeech
-        ? 0.35 + Math.abs(noise) * 0.55
-        : 0.08 + Math.abs(Math.sin(i * 0.5)) * 0.08;
-      const barH = Math.max(3, baseAmp * (canvas.height - 8));
-
-      ctx.globalAlpha = inSpeech ? 0.85 : 0.3;
-      ctx.fillRect(x, midY - barH / 2, barWidth, barH);
-    }
-  }, [totalWidth, totalDuration, segments]);
 
   // ── Scrubbing / Seeking via Click & Drag on Timeline ──────────────────────
   const handleTimelineMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -777,102 +965,20 @@ function Timeline({
                 <span>Captions (Subtitles)</span>
               </div>
               {segments.map((seg, sIdx) => {
-                const left = seg.start * zoom;
-                const width = Math.max(30, (seg.end - seg.start) * zoom);
                 const isSelected = seg.id === (selectedId ?? activeId);
-                const isActive = seg.id === activeId;
                 const speakerStyle = getSpeakerStyle(seg.speaker);
                 const nextSeg = sIdx < segments.length - 1 ? segments[sIdx + 1] : undefined;
-                const hasOverlap = nextSeg && nextSeg.start < seg.end - 0.03;
-                const hasGap = nextSeg && nextSeg.start > seg.end + 0.6;
-
                 return (
-                  <div key={seg.id}>
-                    {/* Segment block */}
-                    <div
-                      onMouseDown={(e) => startSegmentDrag(e, seg, 'move')}
-                      className={`timeline-segment absolute top-3 h-10 rounded-lg px-2 py-0.5 text-xs font-medium cursor-grab active:cursor-grabbing transition-colors border flex flex-col justify-center overflow-hidden group shadow-md select-none ${
-                        isSelected
-                          ? 'bg-[#2b2a26] border-amber-400 text-amber-200 ring-1 ring-amber-400/50'
-                          : isActive
-                            ? 'bg-[#232321] border-amber-400/40 text-bone ring-1 ring-amber-400/20'
-                            : 'bg-[#1c1c1a] border-white/15 text-bone hover:border-white/35 hover:bg-[#222220]'
-                      }`}
-                      style={{
-                        left: `${left}px`,
-                        width: `${width}px`,
-                        borderTopColor: speakerStyle ? speakerStyle.darkBorder : undefined,
-                        borderTopWidth: speakerStyle ? 3 : 1,
-                      }}
-                      title={`${speakerStyle ? `[${speakerStyle.name}] ` : ''}${seg.text} (${formatTimecode(seg.start)} - ${formatTimecode(seg.end)})`}
-                    >
-                      {/* Left Trim Handle */}
-                      <div
-                        onMouseDown={(e) => startSegmentDrag(e, seg, 'trim-start')}
-                        className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-amber-400/60 transition-colors z-20 group-hover:bg-white/20"
-                        title="Drag to trim start"
-                      />
-
-                      {/* Content */}
-                      <div className="flex items-center gap-1 pl-1 min-w-0">
-                        {speakerStyle && (
-                          <span
-                            className={`px-1 py-0.2 rounded text-[8px] font-mono font-bold uppercase shrink-0 border ${speakerStyle.bg} ${speakerStyle.text} ${speakerStyle.border}`}
-                          >
-                            {getSpeakerShortCode(seg.speaker)}
-                          </span>
-                        )}
-                        <span className="truncate font-semibold text-[11px] tracking-tight">
-                          {seg.text || '...'}
-                        </span>
-                      </div>
-                      <div className="text-[9px] text-smoke font-mono pl-1">
-                        {formatTimecode(seg.start)} - {formatTimecode(seg.end)}
-                      </div>
-
-                      {/* Right Trim Handle */}
-                      <div
-                        onMouseDown={(e) => startSegmentDrag(e, seg, 'trim-end')}
-                        className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-amber-400/60 transition-colors z-20 group-hover:bg-white/20"
-                        title="Drag to trim end"
-                      />
-                    </div>
-
-                    {/* Overlap Warning Indicator */}
-                    {hasOverlap && (
-                      <div
-                        className="absolute top-2.5 h-11 bg-crimson/30 border-l border-r border-crimson/60 pointer-events-none z-10"
-                        style={{
-                          left: `${nextSeg.start * zoom}px`,
-                          width: `${Math.max(4, (seg.end - nextSeg.start) * zoom)}px`,
-                        }}
-                        title="Warning: Overlapping captions"
-                      />
-                    )}
-
-                    {/* Gap indicator with snap/close gap button */}
-                    {hasGap && (
-                      <div
-                        className="absolute top-4 h-7 flex items-center justify-center z-10"
-                        style={{
-                          left: `${seg.end * zoom}px`,
-                          width: `${(nextSeg.start - seg.end) * zoom}px`,
-                        }}
-                      >
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCloseGap(seg, nextSeg);
-                          }}
-                          className="px-1 py-0.5 rounded bg-white/5 hover:bg-amber-400/20 text-smoke hover:text-amber-300 text-[9px] border border-dashed border-white/20 font-mono transition-colors cursor-pointer"
-                          title="Click to snap / close gap"
-                        >
-                          Snap
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                  <TimelineSegmentBlock
+                    key={seg.id}
+                    seg={seg}
+                    zoom={zoom}
+                    isSelected={isSelected}
+                    speakerStyle={speakerStyle}
+                    nextSeg={nextSeg}
+                    startSegmentDrag={startSegmentDrag}
+                    handleCloseGap={handleCloseGap}
+                  />
                 );
               })}
             </div>
@@ -978,9 +1084,10 @@ function Timeline({
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/70 inline-block" />
                 <span>Speech Audio Waveform</span>
               </div>
-              <canvas
-                ref={waveformCanvasRef}
-                className="absolute inset-0 w-full h-full pointer-events-none"
+              <AudioWaveformTrack
+                totalWidth={totalWidth}
+                totalDuration={totalDuration}
+                segments={segments}
               />
             </div>
 

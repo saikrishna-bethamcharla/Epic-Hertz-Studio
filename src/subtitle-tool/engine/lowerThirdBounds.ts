@@ -60,11 +60,53 @@ export function getLowerThirdBounds(
   if (tId.startsWith('mogrt-callout') || tId === 'bold-callout') {
     const cx = nx * canvasW;
     const cy = ny * canvasH;
-    const bw = Math.max(120, 380 * scale);
-    const bh = Math.max(70, 150 * scale);
+    let minX = cx - 140 * scale;
+    let maxX = cx + 260 * scale;
+    let minY = cy - 40 * scale;
+    let maxY = cy + 110 * scale;
+
+    if (tId === 'mogrt-callout-left-box') {
+      minX = cx - 240 * scale;
+      maxX = cx + 140 * scale;
+      minY = cy - 40 * scale;
+      maxY = cy + 110 * scale;
+    } else if (tId === 'mogrt-callout-top-pointer') {
+      minX = cx - 130 * scale;
+      maxX = cx + 130 * scale;
+      minY = cy - 55 * scale;
+      maxY = cy + 95 * scale;
+    } else if (tId === 'mogrt-callout-bottom-pointer') {
+      minX = cx - 130 * scale;
+      maxX = cx + 130 * scale;
+      minY = cy - 95 * scale;
+      maxY = cy + 55 * scale;
+    } else if (tId === 'mogrt-callout-reticle-hud') {
+      minX = cx - 135 * scale;
+      maxX = cx + 270 * scale;
+      minY = cy - 40 * scale;
+      maxY = cy + 95 * scale;
+    } else if (tId === 'mogrt-callout-bracket-card') {
+      minX = cx - 130 * scale;
+      maxX = cx + 250 * scale;
+      minY = cy - 40 * scale;
+      maxY = cy + 90 * scale;
+    } else if (tId === 'mogrt-callout-minimal-target') {
+      minX = cx - 140 * scale;
+      maxX = cx + 240 * scale;
+      minY = cy - 40 * scale;
+      maxY = cy + 70 * scale;
+    } else if (tId === 'mogrt-callout-solid-badge') {
+      minX = cx - 120 * scale;
+      maxX = cx + 120 * scale;
+      minY = cy - 35 * scale;
+      maxY = cy + 65 * scale;
+    }
+
+    const bw = Math.max(120, maxX - minX);
+    const bh = Math.max(50, maxY - minY);
     return {
-      x: cx - bw / 2,
-      y: cy - bh / 2,
+      x: minX,
+      y: minY,
       w: bw,
       h: bh,
       cx,

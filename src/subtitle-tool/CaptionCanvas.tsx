@@ -223,6 +223,7 @@ export default function CaptionCanvas({
   const hover = useRef(false);
   const hoveredTarget = useRef<{ kind: 'lowerThird' | 'caption'; id: string } | null>(null);
   const drag = useRef<DragState | null>(null);
+  const measureRef = useRef<() => void>(() => {});
 
   // ── Fonts: make sure the chosen family is loaded
   const allText = useMemo(() => segments.map((s) => s.text).join(' '), [segments]);
@@ -263,6 +264,7 @@ export default function CaptionCanvas({
       markDirtyRef.current();
     };
 
+    measureRef.current = measure;
     measure();
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
     ro?.observe(host);
@@ -595,6 +597,7 @@ export default function CaptionCanvas({
 
   // Mark dirty on any prop change while paused
   useEffect(() => {
+    measureRef.current();
     markDirtyRef.current();
   }, [segments, style, lowerThirds, selectedLowerThirdId, selectedSegmentId, visible, photoCache]);
 
@@ -895,7 +898,6 @@ export default function CaptionCanvas({
       ref={canvasRef}
       aria-hidden="true"
       className="pointer-events-none absolute z-30"
-      style={{ left: 0, top: 0, width: '100%', height: '100%' }}
     />
   );
 }

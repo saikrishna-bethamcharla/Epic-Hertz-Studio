@@ -117,7 +117,6 @@ export default function SubtitleTool({
     setIsPlaying,
     activeId,
     setActiveId,
-    handleTimeUpdate,
     handleSeek,
     resetPlayback,
   } = usePlayback(segments, { reactiveActiveId: false });
@@ -190,9 +189,8 @@ export default function SubtitleTool({
   const onTimeUpdate = useCallback(
     (time: number) => {
       currentTimeRef.current = time;
-      handleTimeUpdate(time);
     },
-    [handleTimeUpdate],
+    [],
   );
 
   const onDurationUpdate = useCallback(
