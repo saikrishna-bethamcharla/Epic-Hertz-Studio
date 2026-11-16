@@ -1,5 +1,5 @@
 // ─── TimelineToolbar — Epic Hertz Studio ─────────────────────────────────────
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Scissors,
   Trash2,
@@ -14,17 +14,28 @@ import {
 } from 'lucide-react';
 import type { Segment } from '../types';
 import { formatTimecode } from '../utils/formatTime';
-import { usePlayheadTime } from '../store/timeStore';
+import { timeStore } from '../store/timeStore';
 
 export const TimelineTimeDisplay = React.memo(function TimelineTimeDisplay({
   totalDuration,
 }: {
   totalDuration: number;
 }) {
-  const currentTime = usePlayheadTime();
+  const currentSpanRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    return timeStore.subscribeTime(() => {
+      if (currentSpanRef.current) {
+        currentSpanRef.current.textContent = formatTimecode(timeStore.getTime());
+      }
+    });
+  }, []);
+
   return (
     <span className="font-mono text-mist text-[11px]">
-      <span className="text-bone font-medium">{formatTimecode(currentTime)}</span>
+      <span ref={currentSpanRef} className="text-bone font-medium">
+        {formatTimecode(timeStore.getTime())}
+      </span>
       <span className="text-smoke mx-1">/</span>
       <span>{formatTimecode(totalDuration)}</span>
     </span>

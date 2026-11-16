@@ -15,7 +15,7 @@ import { getSpeakerStyle, getSpeakerShortCode } from './utils/speakers';
 import type { Segment, LowerThirdSpec } from './types';
 import { Trash2, Captions, Layers, Volume2 } from 'lucide-react';
 import TimelineToolbar from './editor/TimelineToolbar';
-import { timeStore, usePlayheadTime } from './store/timeStore';
+import { timeStore } from './store/timeStore';
 
 export const TimelinePlayhead = React.memo(function TimelinePlayhead({
   zoom,
@@ -24,14 +24,34 @@ export const TimelinePlayhead = React.memo(function TimelinePlayhead({
   zoom: number;
   fallbackTime?: number;
 }) {
-  const storeTime = usePlayheadTime();
-  const time = fallbackTime !== undefined ? fallbackTime : storeTime;
+  const playheadRef = useRef<HTMLDivElement>(null);
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
+
+  useEffect(() => {
+    if (fallbackTime !== undefined && playheadRef.current) {
+      playheadRef.current.style.transform = `translate3d(${fallbackTime * zoom}px, 0, 0) translateX(-50%)`;
+    }
+  }, [fallbackTime, zoom]);
+
+  useEffect(() => {
+    return timeStore.subscribeTime(() => {
+      if (playheadRef.current) {
+        const time = timeStore.getTime();
+        playheadRef.current.style.transform = `translate3d(${time * zoomRef.current}px, 0, 0) translateX(-50%)`;
+      }
+    });
+  }, []);
+
+  const initialTime = fallbackTime !== undefined ? fallbackTime : timeStore.getTime();
+
   return (
     <div
+      ref={playheadRef}
       className="absolute top-0 bottom-0 pointer-events-none z-30 will-change-transform"
       style={{
         left: 0,
-        transform: `translate3d(${time * zoom}px, 0, 0) translateX(-50%)`,
+        transform: `translate3d(${initialTime * zoom}px, 0, 0) translateX(-50%)`,
       }}
     >
       {/* Playhead marker pin */}

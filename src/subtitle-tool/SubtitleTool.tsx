@@ -120,7 +120,7 @@ export default function SubtitleTool({
     handleTimeUpdate,
     handleSeek,
     resetPlayback,
-  } = usePlayback(segments);
+  } = usePlayback(segments, { reactiveActiveId: false });
 
   const { processVideo } = useTranscription({
     setStage,
@@ -386,7 +386,7 @@ export default function SubtitleTool({
       handleDeleteLowerThird(activeLowerThirdId);
       return;
     }
-    const targetId = selectedId ?? activeId;
+    const targetId = selectedId ?? activeId ?? timeStore.getPlayheadId();
     if (!targetId) return;
     const next = segments.filter((s) => s.id !== targetId).map((s, i) => ({ ...s, index: i + 1 }));
     updateSegments(next);

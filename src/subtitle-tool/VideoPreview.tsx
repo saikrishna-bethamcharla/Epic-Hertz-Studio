@@ -41,18 +41,27 @@ import type {
 import CaptionCanvas from './CaptionCanvas';
 import { formatTimecode } from './utils/formatTime';
 import React from 'react';
-import { timeStore, usePlayheadTime, usePlayheadId } from './store/timeStore';
+import { timeStore } from './store/timeStore';
 
 const PreviewTimeDisplay = React.memo(function PreviewTimeDisplay({
   duration,
 }: {
   duration: number;
 }) {
-  const currentTime = usePlayheadTime();
+  const currentSpanRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    return timeStore.subscribeTime(() => {
+      if (currentSpanRef.current) {
+        currentSpanRef.current.textContent = formatTimecode(timeStore.getTime(), { decimals: true });
+      }
+    });
+  }, []);
+
   return (
     <div className="font-mono text-mist text-[11px] px-1">
-      <span className="text-bone font-semibold">
-        {formatTimecode(currentTime, { decimals: true })}
+      <span ref={currentSpanRef} className="text-bone font-semibold">
+        {formatTimecode(timeStore.getTime(), { decimals: true })}
       </span>
       <span className="text-smoke mx-1">/</span>
       <span>{formatTimecode(duration, { decimals: true })}</span>
@@ -151,12 +160,11 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       timeStore.setSyncOffset(style.syncOffset || 0);
     }, [style.syncOffset]);
 
-    // Active segment only recomputes when activeSegId changes!
-    const activeSegId = usePlayheadId();
+    // Active segment for custom position pill follows selectedSegmentId (zero renders during playback)
     const activeSeg = useMemo(() => {
-      if (!activeSegId) return null;
-      return segments.find((s) => s.id === activeSegId) ?? null;
-    }, [segments, activeSegId]);
+      if (!selectedSegmentId) return null;
+      return segments.find((s) => s.id === selectedSegmentId) ?? null;
+    }, [segments, selectedSegmentId]);
 
     const hasCustomPos =
       activeSeg?.styleOverride?.positionX !== undefined ||

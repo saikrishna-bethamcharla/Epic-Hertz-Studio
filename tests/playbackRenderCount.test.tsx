@@ -171,11 +171,66 @@ describe('Playback Render Count Regression & Profiling', () => {
     console.log(`[REAL SUBTITLE TOOL MOUNT PROFILER]`);
     console.log(`  - SubtitleTool baseline mount renders: ${baselineRenders}`);
     console.log(
-      `  - SubtitleTool ticks renders across 90 frames: ${additionalRenders} (Target: < 5)`,
+      `  - SubtitleTool ticks renders across 90 frames: ${additionalRenders} (Target: 0)`,
     );
 
-    // Only segment transition (seg-1 -> seg-2) triggers a state update, not 90 frames!
-    expect(additionalRenders).toBeLessThan(5);
+    // SubtitleTool and its child containers never re-render during playback!
+    expect(additionalRenders).toBe(0);
+    unmount();
+  });
+
+  it('verifies that the parent CaptionEditor list never re-renders during playback while individual CaptionCards subscribe via useSyncExternalStore', () => {
+    let captionEditorRenders = 0;
+
+    function DecoupledCaptionEditorHarness() {
+      return (
+        <Profiler
+          id="caption-editor-decoupled-profiler"
+          onRender={() => {
+            captionEditorRenders++;
+          }}
+        >
+          <CaptionEditor
+            segments={sampleSegments}
+            selectedId={null}
+            onSelectSegment={() => {}}
+            onSegmentsChange={() => {}}
+            onSeek={() => {}}
+          />
+        </Profiler>
+      );
+    }
+
+    const { unmount } = render(<DecoupledCaptionEditorHarness />);
+    const baseline = captionEditorRenders;
+
+    // 1. Initial playhead at 0.5s (seg-1)
+    act(() => {
+      timeStore.setTime(0.5, true);
+    });
+    const cardA = document.getElementById('caption-seg-1');
+    const cardB = document.getElementById('caption-seg-2');
+    expect(cardA?.className).toContain('border-amber-400/80');
+    expect(cardB?.className).not.toContain('border-amber-400/80');
+
+    // 2. Play 90 ticks across 3 seconds (crossing into seg-2)
+    for (let i = 1; i <= 90; i++) {
+      const t = (i * 3.0) / 90;
+      act(() => {
+        timeStore.setTime(t, false);
+      });
+    }
+
+    // 3. Exactly 2 commits occurred across 90 frames:
+    // 1 commit for Card A turning off (true -> false) and 1 commit for Card B turning on (false -> true).
+    // The parent list container and any other segments never re-rendered!
+    const additional = captionEditorRenders - baseline;
+    expect(additional).toBe(2);
+
+    // 4. Individual cards updated their DOM via useSyncExternalStore (seg-2 is now active)
+    expect(cardA?.className).not.toContain('border-amber-400/80');
+    expect(cardB?.className).toContain('border-amber-400/80');
+
     unmount();
   });
 

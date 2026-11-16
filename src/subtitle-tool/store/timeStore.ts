@@ -206,6 +206,26 @@ export function usePlayheadId(): string | null {
 }
 
 /**
+ * Subscribes to whether a specific segment is currently active under the playhead.
+ * Evaluates a boolean snapshot so React skips re-rendering any card whose active status didn't flip!
+ */
+export function useIsSegmentActive(segmentId: string): boolean {
+  return useSyncExternalStore(
+    timeStore.subscribePlayheadId,
+    () => timeStore.getPlayheadId() === segmentId,
+    () => timeStore.getPlayheadId() === segmentId,
+  );
+}
+
+/**
+ * Subscribes to the active playhead segment ID.
+ * Alias for usePlayheadId.
+ */
+export function useActivePlayheadId(): string | null {
+  return usePlayheadId();
+}
+
+/**
  * Subscribes ONLY to isPlaying and duration changes.
  * Does NOT re-render on time ticks.
  */

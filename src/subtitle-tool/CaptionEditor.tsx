@@ -9,23 +9,8 @@
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  ChevronDown,
-  ChevronRight,
-  CheckSquare,
-  Square,
-  Trash2,
-  Combine,
-  AlertTriangle,
-  Wand2,
-  Sliders,
-  Mic,
-  MapPin,
-} from 'lucide-react';
-import { formatTimecode } from './utils/formatTime';
-import { checkReadability, getCPS } from './utils/readability';
-import { checkWordTimings, fixTimings } from './utils/alignWords';
-import { getSpeakerStyle, getSpeakerShortCode } from './utils/speakers';
+import { CheckSquare, Trash2, Combine } from 'lucide-react';
+import { fixTimings } from './utils/alignWords';
 import type {
   Segment,
   ScriptOutput,
@@ -33,13 +18,14 @@ import type {
   WordTimestamp,
   SegmentStyleOverride,
 } from './types';
-import { SegmentStyleDrawer } from './editor/SegmentStyleDrawer';
-import { SegmentWordEditor } from './editor/SegmentWordEditor';
+import { CaptionCard } from './editor/CaptionCard';
+import { timeStore } from './store/timeStore';
 
-interface CaptionEditorProps {
+export interface CaptionEditorProps {
   segments: Segment[];
-  activeId: string | null;
+  activeId?: string | null;
   selectedId?: string | null;
+  isPlaying?: boolean;
   scriptOutput?: ScriptOutput;
   spokenLanguage?: SpokenLanguage;
   onSegmentsChange: (segments: Segment[]) => void;
@@ -67,7 +53,20 @@ function CaptionEditor({
   const isUserScrollingRef = useRef(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Auto-scroll to active caption row when playing (unless user is actively scrolling)
+  // Auto-scroll to active caption row via direct store subscription
+  // Completely decoupled from React re-renders so CaptionEditor never re-renders during playback!
+  useEffect(() => {
+    return timeStore.subscribePlayheadId(() => {
+      const curActiveId = timeStore.getPlayheadId();
+      if (!curActiveId || isUserScrollingRef.current) return;
+      const el = document.getElementById(`caption-${curActiveId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    });
+  }, []);
+
+  // Also support manual activeId prop updates if supplied
   useEffect(() => {
     if (!activeId || isUserScrollingRef.current) return;
     const el = document.getElementById(`caption-${activeId}`);
@@ -130,27 +129,27 @@ function CaptionEditor({
   );
 
   // Toggle words expanded view for a caption
-  const toggleWordsExpanded = (id: string) => {
+  const toggleWordsExpanded = useCallback((id: string) => {
     setExpandedWordIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  };
+  }, []);
 
   // Toggle style override view for a caption
-  const toggleStyleOverride = (id: string) => {
+  const toggleStyleOverride = useCallback((id: string) => {
     setStyleOverrideSegIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  };
+  }, []);
 
   // Helper to ensure word array exists
-  const getOrInitWords = (seg: Segment): WordTimestamp[] => {
+  const getOrInitWords = useCallback((seg: Segment): WordTimestamp[] => {
     if (seg.words && seg.words.length > 0) return [...seg.words];
     const rawWords = seg.text.trim().split(/\s+/).filter(Boolean);
     const duration = Math.max(0.2, seg.end - seg.start);
@@ -160,24 +159,24 @@ function CaptionEditor({
       start: +(seg.start + i * perWord).toFixed(2),
       end: +(seg.start + (i + 1) * perWord).toFixed(2),
     }));
-  };
+  }, []);
 
   // Auto-distribute word timings proportionally based on character count
-  const handleAutoDistributeWords = (seg: Segment) => {
+  const handleAutoDistributeWords = useCallback((seg: Segment) => {
     const fixed = fixTimings(seg);
     updateSegment(seg.id, { words: fixed.words, start: fixed.start, end: fixed.end });
-  };
+  }, [updateSegment]);
 
   // Update a single word's timing, color, or emphasis inside a segment
-  const updateWord = (seg: Segment, wordIdx: number, patch: Partial<WordTimestamp>) => {
+  const updateWord = useCallback((seg: Segment, wordIdx: number, patch: Partial<WordTimestamp>) => {
     const currentWords = getOrInitWords(seg);
     if (!currentWords[wordIdx]) return;
     currentWords[wordIdx] = { ...currentWords[wordIdx], ...patch };
     updateSegment(seg.id, { words: currentWords });
-  };
+  }, [getOrInitWords, updateSegment]);
 
   // Nudge word boundaries
-  const nudgeWord = (seg: Segment, wordIdx: number, deltaStart: number, deltaEnd: number) => {
+  const nudgeWord = useCallback((seg: Segment, wordIdx: number, deltaStart: number, deltaEnd: number) => {
     const currentWords = getOrInitWords(seg);
     const w = currentWords[wordIdx];
     if (!w) return;
@@ -185,9 +184,9 @@ function CaptionEditor({
     const newEnd = Math.min(seg.end, Math.max(newStart + 0.05, +(w.end + deltaEnd).toFixed(2)));
     currentWords[wordIdx] = { ...w, start: newStart, end: newEnd };
     updateSegment(seg.id, { words: currentWords });
-  };
+  }, [getOrInitWords, updateSegment]);
 
-  const cycleWordEmphasis = (seg: Segment, wordIdx: number) => {
+  const cycleWordEmphasis = useCallback((seg: Segment, wordIdx: number) => {
     const currentWords = getOrInitWords(seg);
     const curr = currentWords[wordIdx]?.emphasis || 'none';
     const modes: ('none' | 'pop' | 'shake' | 'glow' | 'underline')[] = [
@@ -199,17 +198,17 @@ function CaptionEditor({
     ];
     const next = modes[(modes.indexOf(curr) + 1) % modes.length];
     updateWord(seg, wordIdx, { emphasis: next });
-  };
+  }, [getOrInitWords, updateWord]);
 
-  const cycleWordColor = (seg: Segment, wordIdx: number) => {
+  const cycleWordColor = useCallback((seg: Segment, wordIdx: number) => {
     const currentWords = getOrInitWords(seg);
     const colors = ['', '#FACC15', '#EC4899', '#06B6D4', '#84CC16', '#EF4444', '#FB923C'];
     const curr = currentWords[wordIdx]?.highlightColor || '';
     const next = colors[(colors.indexOf(curr) + 1) % colors.length];
     updateWord(seg, wordIdx, { highlightColor: next || undefined });
-  };
+  }, [getOrInitWords, updateWord]);
 
-  const updateSegmentStyleOverride = (
+  const updateSegmentStyleOverride = useCallback((
     segId: string,
     override: Partial<SegmentStyleOverride> | null,
   ) => {
@@ -225,16 +224,27 @@ function CaptionEditor({
         },
       });
     }
-  };
+  }, [segments, updateSegment]);
 
-  const cycleSpeaker = (segId: string) => {
+  const cycleSpeaker = useCallback((segId: string) => {
     const seg = segments.find((s) => s.id === segId);
     if (!seg) return;
     const speakers = [undefined, 'Speaker 1', 'Speaker 2', 'Speaker 3', 'Speaker 4'];
     const currIdx = speakers.indexOf(seg.speaker);
     const nextSpeaker = speakers[(currIdx + 1) % speakers.length];
     updateSegment(segId, { speaker: nextSpeaker });
-  };
+  }, [segments, updateSegment]);
+
+  const handleToggleSelectCheckbox = useCallback((id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    lastClickedIdRef.current = id;
+  }, []);
 
   const handleBulkSetSpeaker = (speaker?: string) => {
     if (selectedIds.size === 0) return;
@@ -347,35 +357,36 @@ function CaptionEditor({
   );
 
   // Selection logic (click, shift-click range, cmd/ctrl-click toggle)
-  const handleSelectRow = (id: string, e: React.MouseEvent) => {
-    if (e.shiftKey && lastClickedIdRef.current) {
-      const idx1 = segments.findIndex((s) => s.id === lastClickedIdRef.current);
-      const idx2 = segments.findIndex((s) => s.id === id);
-      if (idx1 !== -1 && idx2 !== -1) {
-        const [startIdx, endIdx] = idx1 < idx2 ? [idx1, idx2] : [idx2, idx1];
-        const range = new Set(segments.slice(startIdx, endIdx + 1).map((s) => s.id));
-        setSelectedIds(range);
+  const handleSelectRow = useCallback(
+    (id: string, e: React.MouseEvent) => {
+      if (e.shiftKey && lastClickedIdRef.current) {
+        const idx1 = segments.findIndex((s) => s.id === lastClickedIdRef.current);
+        const idx2 = segments.findIndex((s) => s.id === id);
+        if (idx1 !== -1 && idx2 !== -1) {
+          const [startIdx, endIdx] = idx1 < idx2 ? [idx1, idx2] : [idx2, idx1];
+          const range = new Set(segments.slice(startIdx, endIdx + 1).map((s) => s.id));
+          setSelectedIds(range);
+          return;
+        }
+      }
+
+      if (e.metaKey || e.ctrlKey) {
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          if (next.has(id)) next.delete(id);
+          else next.add(id);
+          return next;
+        });
+        lastClickedIdRef.current = id;
         return;
       }
-    }
 
-    if (e.metaKey || e.ctrlKey) {
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        if (next.has(id)) next.delete(id);
-        else next.add(id);
-        return next;
-      });
+      // Normal click: select single if multiple were active, else maintain
       lastClickedIdRef.current = id;
-      return;
-    }
-
-    // Normal click: select single if multiple were active, else maintain
-    lastClickedIdRef.current = id;
-    if (selectedIds.size > 1) {
-      setSelectedIds(new Set([id]));
-    }
-  };
+      setSelectedIds((prev) => (prev.size > 1 ? new Set([id]) : prev));
+    },
+    [segments],
+  );
 
   // Bulk actions
   const handleBulkDelete = () => {
@@ -581,325 +592,42 @@ function CaptionEditor({
       >
         <AnimatePresence initial={false}>
           {filteredSegments.map((seg, idx) => {
-            const isActive = seg.id === activeId;
             const isSelected = selectedId === seg.id || selectedIds.has(seg.id);
             const isWordsExpanded = expandedWordIds.has(seg.id);
+            const isStyleOverrideOpen = styleOverrideSegIds.has(seg.id);
             const prevSeg = idx > 0 ? filteredSegments[idx - 1] : undefined;
             const nextSeg =
               idx < filteredSegments.length - 1 ? filteredSegments[idx + 1] : undefined;
-            const issues = checkReadability(seg, prevSeg, nextSeg);
-            const wordCheck = checkWordTimings(seg.words);
-            const speakerStyle = getSpeakerStyle(seg.speaker);
-            const wordsList: WordTimestamp[] =
-              seg.words && seg.words.length > 0
-                ? seg.words
-                : seg.text
-                    .trim()
-                    .split(/\s+/)
-                    .filter(Boolean)
-                    .map((w, i, arr) => {
-                      const per = Math.max(0.1, seg.end - seg.start) / Math.max(1, arr.length);
-                      return {
-                        word: w,
-                        start: +(seg.start + i * per).toFixed(2),
-                        end: +(seg.start + (i + 1) * per).toFixed(2),
-                      };
-                    });
 
             return (
-              <motion.div
+              <CaptionCard
                 key={seg.id}
-                id={`caption-${seg.id}`}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.15 }}
-                onClick={(e) => {
-                  handleSelectRow(seg.id, e);
-                  onSelectSegment?.(seg.id);
-                  onSeek(seg.start);
-                }}
-                style={
-                  speakerStyle
-                    ? { borderLeftColor: speakerStyle.darkBorder, borderLeftWidth: 3 }
-                    : undefined
-                }
-                className={`group relative rounded-xl p-3 border transition-colors duration-150 cursor-pointer ${
-                  isActive
-                    ? 'border-amber-400/80 bg-[#252420] shadow-md ring-1 ring-amber-400/40'
-                    : isSelected
-                      ? 'border-amber-400/40 bg-[#1e1e1b] ring-1 ring-amber-400/20'
-                      : 'border-white/[0.08] bg-[#1a1a18] hover:border-white/20 hover:bg-[#20201d]'
-                }`}
-              >
-                <div className="flex items-start gap-2.5">
-                  {/* Select Checkbox (on hover or selected) */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedIds((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(seg.id)) next.delete(seg.id);
-                        else next.add(seg.id);
-                        return next;
-                      });
-                      lastClickedIdRef.current = seg.id;
-                    }}
-                    aria-label={`Select caption ${seg.index}`}
-                    className={`mt-0.5 p-0.5 text-smoke hover:text-amber-400 transition-colors ${
-                      isSelected
-                        ? 'text-amber-400 opacity-100'
-                        : 'opacity-30 group-hover:opacity-80'
-                    }`}
-                  >
-                    {isSelected ? (
-                      <CheckSquare className="w-3.5 h-3.5" />
-                    ) : (
-                      <Square className="w-3.5 h-3.5" />
-                    )}
-                  </button>
-
-                  {/* Timestamp pill with sub-second precision */}
-                  <span
-                    className={`font-mono text-[11px] px-2 py-0.5 rounded-md shrink-0 transition-colors ${
-                      isActive
-                        ? 'bg-amber-400 text-black font-semibold'
-                        : 'bg-white/10 text-mist group-hover:text-bone'
-                    }`}
-                    title={`Start: ${formatTimecode(seg.start)} · End: ${formatTimecode(seg.end)} · Duration: ${(seg.end - seg.start).toFixed(2)}s`}
-                  >
-                    {formatTimecode(seg.start)}
-                  </span>
-
-                  {/* Speaker Badge & Quick Cycle Selector */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      cycleSpeaker(seg.id);
-                    }}
-                    aria-label={`Speaker: ${seg.speaker || 'Unassigned'} (Click to cycle)`}
-                    title={`Speaker: ${seg.speaker || 'Unassigned'} (Click to cycle S1, S2, S3, S4)`}
-                    className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold font-mono tracking-wide border flex items-center gap-1 transition-all shrink-0 ${
-                      speakerStyle
-                        ? `${speakerStyle.bg} ${speakerStyle.text} ${speakerStyle.border} shadow-xs`
-                        : 'bg-white/5 text-smoke/70 border-white/10 hover:text-bone hover:bg-white/10'
-                    }`}
-                  >
-                    <Mic className="w-2.5 h-2.5" />
-                    <span>{speakerStyle ? getSpeakerShortCode(seg.speaker) : '+S'}</span>
-                  </button>
-
-                  {/* Custom Position Indicator */}
-                  {(seg.styleOverride?.positionX !== undefined ||
-                    seg.styleOverride?.positionY !== undefined) && (
-                    <span
-                      className="text-[10px] text-amber-400 font-mono flex items-center shrink-0 cursor-help"
-                      title={`Custom Position: (${Math.round((seg.styleOverride.positionX ?? 0.5) * 100)}%, ${Math.round((seg.styleOverride.positionY ?? 0.82) * 100)}%)`}
-                    >
-                      <MapPin className="w-2.5 h-2.5" />
-                    </span>
-                  )}
-
-                  {/* Caption text display or edit with Enter/Backspace shortcuts */}
-                  <div className="flex-1 min-w-0">
-                    <textarea
-                      value={seg.text}
-                      onChange={(e) => updateSegment(seg.id, { text: e.target.value })}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          splitAtCursor(seg.id, e.currentTarget.selectionStart);
-                        } else if (
-                          e.key === 'Backspace' &&
-                          e.currentTarget.selectionStart === 0 &&
-                          e.currentTarget.selectionEnd === 0
-                        ) {
-                          if (mergeWithPrevious(seg.id)) {
-                            e.preventDefault();
-                          }
-                        }
-                      }}
-                      rows={2}
-                      aria-label={`Caption ${seg.index} text (${formatTimecode(seg.start)})`}
-                      className="w-full resize-none bg-transparent text-bone text-sm leading-relaxed outline-none focus:outline-none rounded hover:bg-white/5 focus:bg-white/5 focus:ring-1 focus:ring-amber-400/30 p-1 transition-colors cursor-text"
-                      placeholder="Caption text…"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectSegment?.(seg.id);
-                        onSeek(seg.start);
-                      }}
-                      onFocus={() => {
-                        onSelectSegment?.(seg.id);
-                        onSeek(seg.start);
-                      }}
-                    />
-                  </div>
-
-                  {/* Actions & Toggles: Style Override, Words, Add, Delete */}
-                  <div className="flex items-center gap-1 shrink-0 text-smoke opacity-70 group-hover:opacity-100 transition-opacity">
-                    {/* Style Override Drawer Trigger */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleStyleOverride(seg.id);
-                      }}
-                      aria-label={`Customize style for caption ${seg.index}`}
-                      className={`p-1 rounded hover:bg-white/10 transition-colors relative ${
-                        styleOverrideSegIds.has(seg.id)
-                          ? 'text-amber-400 bg-white/10'
-                          : 'text-smoke hover:text-bone'
-                      }`}
-                      title="Custom caption style override (Position, scale, accent color)"
-                    >
-                      <Sliders className="w-3.5 h-3.5" />
-                      {seg.styleOverride && (
-                        <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                      )}
-                    </button>
-
-                    {/* Word Timing Trigger */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleWordsExpanded(seg.id);
-                      }}
-                      aria-label={`Expand word timings for caption ${seg.index}`}
-                      className={`p-1 rounded hover:bg-white/10 transition-colors ${
-                        isWordsExpanded ? 'text-amber-400' : 'text-smoke hover:text-bone'
-                      }`}
-                      title="Word-level timing & emphasis editor"
-                    >
-                      {isWordsExpanded ? (
-                        <ChevronDown className="w-3.5 h-3.5" />
-                      ) : (
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      )}
-                    </button>
-
-                    {/* Add Segment After */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        addAfter(seg.id);
-                      }}
-                      aria-label={`Add caption after segment ${seg.index}`}
-                      className="p-1 hover:text-amber-300 rounded hover:bg-white/10 transition-colors"
-                      title="Add segment after (+)"
-                    >
-                      <svg
-                        className="w-3.5 h-3.5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 4v16m8-8H4"
-                        />
-                      </svg>
-                    </button>
-
-                    {/* Delete Segment */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteSegment(seg.id);
-                      }}
-                      aria-label={`Delete caption ${seg.index}`}
-                      className="p-1 hover:text-crimson-2 rounded hover:bg-crimson/10 transition-colors"
-                      title="Delete segment"
-                    >
-                      <svg
-                        className="w-3.5 h-3.5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                {/* ── Per-Caption Style Overrides Drawer ────────────────── */}
-                <SegmentStyleDrawer
-                  segment={seg}
-                  isOpen={styleOverrideSegIds.has(seg.id)}
-                  onUpdateOverride={updateSegmentStyleOverride}
-                  onUpdateSpeaker={(segId, speaker) => updateSegment(segId, { speaker })}
-                />
-
-                {/* Readability & Timing Warnings Pill */}
-                {(issues.length > 0 || wordCheck.hasIssues) && (
-                  <div className="mt-1.5 pt-1.5 border-t border-white/5 flex flex-wrap items-center gap-1.5 text-[10px]">
-                    {issues.map((iss, iIdx) => (
-                      <span
-                        key={iIdx}
-                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded ${
-                          iss.severity === 'error'
-                            ? 'bg-crimson/15 text-crimson-2 border border-crimson/30'
-                            : 'bg-amber-400/15 text-amber-300 border border-amber-400/25'
-                        }`}
-                        title={iss.message}
-                      >
-                        <AlertTriangle className="w-2.5 h-2.5" />
-                        <span>{iss.message}</span>
-                      </span>
-                    ))}
-                    {wordCheck.hasIssues && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const fixed = fixTimings(seg);
-                          updateSegment(seg.id, {
-                            words: fixed.words,
-                            start: fixed.start,
-                            end: fixed.end,
-                          });
-                        }}
-                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/25 transition-colors cursor-pointer"
-                        title="Word timings have collapsed or overlap. Click to auto-distribute by character count."
-                      >
-                        <Wand2 className="w-2.5 h-2.5" />
-                        <span>
-                          Fix timings ({wordCheck.collapsedCount + wordCheck.overlapCount} alerts)
-                        </span>
-                      </button>
-                    )}
-                    <span className="text-smoke/60 ml-auto font-mono">{getCPS(seg)} CPS</span>
-                  </div>
-                )}
-
-                {/* ── Word-Level Timing Chip Editor ───────────────────────────── */}
-                <AnimatePresence>
-                  {isWordsExpanded && (
-                    <SegmentWordEditor
-                      segment={seg}
-                      wordsList={wordsList}
-                      onSeek={onSeek}
-                      onAutoDistribute={handleAutoDistributeWords}
-                      onUpdateWord={updateWord}
-                      onCycleWordColor={cycleWordColor}
-                      onCycleWordEmphasis={cycleWordEmphasis}
-                      onNudgeWord={nudgeWord}
-                    />
-                  )}
-                </AnimatePresence>
-              </motion.div>
+                seg={seg}
+                prevSeg={prevSeg}
+                nextSeg={nextSeg}
+                isSelected={isSelected}
+                isWordsExpanded={isWordsExpanded}
+                isStyleOverrideOpen={isStyleOverrideOpen}
+                activeIdProp={activeId}
+                onSelectRow={handleSelectRow}
+                onSelectSegment={onSelectSegment}
+                onSeek={onSeek}
+                onToggleSelectCheckbox={handleToggleSelectCheckbox}
+                onCycleSpeaker={cycleSpeaker}
+                onUpdateSegment={updateSegment}
+                onSplitAtCursor={splitAtCursor}
+                onMergeWithPrevious={mergeWithPrevious}
+                onToggleStyleOverride={toggleStyleOverride}
+                onToggleWordsExpanded={toggleWordsExpanded}
+                onAddAfter={addAfter}
+                onDeleteSegment={deleteSegment}
+                onUpdateSegmentStyleOverride={updateSegmentStyleOverride}
+                onAutoDistributeWords={handleAutoDistributeWords}
+                onUpdateWord={updateWord}
+                onCycleWordColor={cycleWordColor}
+                onCycleWordEmphasis={cycleWordEmphasis}
+                onNudgeWord={nudgeWord}
+              />
             );
           })}
         </AnimatePresence>
