@@ -163,6 +163,138 @@ interface PageLayout {
 const layoutCache = new Map<string, PageLayout>();
 const layoutKeyCache = new WeakMap<CaptionStyle, string>();
 
+// Measured text width and line metrics caches: eliminates repeated ctx.measureText
+// calls during iterative line fitting loops and multi-frame rendering.
+const textMeasureCache = new Map<string, number>();
+const MAX_MEASURE_CACHE = 1500;
+const fontMetricsCache = new Map<string, { asc: number; desc: number }>();
+
+export function measureTextCached(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  font: string,
+  tracking = 0,
+): number {
+  if (!text) return 0;
+  const cacheKey = `${font}__${tracking.toFixed(2)}__${text}`;
+  const hit = textMeasureCache.get(cacheKey);
+  if (hit !== undefined) return hit;
+
+  ctx.font = font;
+  setSpacing(ctx, tracking);
+  const w = ctx.measureText(text).width;
+  if (textMeasureCache.size >= MAX_MEASURE_CACHE) {
+    const first = textMeasureCache.keys().next().value;
+    if (first) textMeasureCache.delete(first);
+  }
+  textMeasureCache.set(cacheKey, w);
+  return w;
+}
+
+export function getFontMetricsCached(
+  ctx: CanvasRenderingContext2D,
+  font: string,
+  fallbackPx: number,
+): { asc: number; desc: number } {
+  const hit = fontMetricsCache.get(font);
+  if (hit !== undefined) return hit;
+
+  ctx.font = font;
+  const m = ctx.measureText('Hg');
+  const asc = m.fontBoundingBoxAscent ?? fallbackPx * 0.8;
+  const desc = m.fontBoundingBoxDescent ?? fallbackPx * 0.2;
+  const res = { asc, desc };
+  if (fontMetricsCache.size >= 500) {
+    const first = fontMetricsCache.keys().next().value;
+    if (first) fontMetricsCache.delete(first);
+  }
+  fontMetricsCache.set(font, res);
+  return res;
+}
+
+/**
+ * Fast hardware-accelerated text drop shadow using pre-rendered offset text layers
+ * instead of expensive software Gaussian shadowBlur. Avoids CPU/GPU software blur bottlenecks.
+ */
+export function drawOffsetTextShadow(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  shadowColor: string,
+  offsetX: number,
+  offsetY: number,
+  blurRadius: number,
+  isStroke = false,
+  strokeWidth = 0,
+): void {
+  if (!shadowColor || shadowColor === 'transparent') return;
+  ctx.save();
+  if (isStroke && strokeWidth > 0) {
+    ctx.strokeStyle = shadowColor;
+    ctx.lineWidth = strokeWidth;
+    ctx.lineJoin = 'round';
+    ctx.miterLimit = 2;
+  } else {
+    ctx.fillStyle = shadowColor;
+  }
+
+  if (blurRadius <= 1) {
+    // Single crisp offset layer
+    if (isStroke && strokeWidth > 0) {
+      ctx.strokeText(text, x + offsetX, y + offsetY);
+    } else {
+      ctx.fillText(text, x + offsetX, y + offsetY);
+    }
+  } else {
+    // Multi-offset approximation: 3 GPU-rasterized passes with alpha falloff
+    const origAlpha = ctx.globalAlpha;
+    const passes = [
+      { dx: offsetX, dy: offsetY, a: 0.5 },
+      { dx: offsetX + blurRadius * 0.45, dy: offsetY + blurRadius * 0.45, a: 0.25 },
+      { dx: offsetX - blurRadius * 0.25, dy: offsetY + blurRadius * 0.35, a: 0.25 },
+    ];
+    for (const p of passes) {
+      ctx.globalAlpha = origAlpha * p.a;
+      if (isStroke && strokeWidth > 0) {
+        ctx.strokeText(text, x + p.dx, y + p.dy);
+      } else {
+        ctx.fillText(text, x + p.dx, y + p.dy);
+      }
+    }
+  }
+  ctx.restore();
+}
+
+/**
+ * Lightweight multi-stroke outlines for high-contrast legibility and glow accents
+ * without triggering software shadowBlur.
+ */
+export function drawMultiStrokeText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  glowColor: string,
+  baseRadius: number,
+  passes = 3,
+): void {
+  if (!glowColor || glowColor === 'transparent' || baseRadius <= 0) return;
+  ctx.save();
+  ctx.lineJoin = 'round';
+  ctx.miterLimit = 2;
+  const origAlpha = ctx.globalAlpha;
+  for (let k = passes; k >= 1; k--) {
+    const width = (baseRadius * 2 * k) / passes;
+    const alpha = 0.28 / k;
+    ctx.globalAlpha = origAlpha * alpha;
+    ctx.strokeStyle = glowColor;
+    ctx.lineWidth = width;
+    ctx.strokeText(text, x, y);
+  }
+  ctx.restore();
+}
+
 function styleLayoutKey(style: CaptionStyle): string {
   let k = layoutKeyCache.get(style);
   if (!k) {
@@ -267,9 +399,9 @@ function layoutPage(
       widths = texts.map((t, i) => {
         const rs = roleStyles[roleIdx[i]];
         const rpx = rolePx(i);
-        ctx.font = canvasFont(rs, rpx);
-        setSpacing(ctx, (rs.font.tracking ?? 0) * rpx);
-        return ctx.measureText(t).width + (rs.stroke.width ?? 0) * rpx * 1.3;
+        const f = canvasFont(rs, rpx);
+        const track = (rs.font.tracking ?? 0) * rpx;
+        return measureTextCached(ctx, t, f, track) + (rs.stroke.width ?? 0) * rpx * 1.3;
       });
       // Each role group is its own line: intro line, keyword line, kicker line…
       lines = [];
@@ -283,17 +415,17 @@ function layoutPage(
         return rpx * 0.3 + (roleStyles[roleIdx[idx[0]]].stroke.width ?? 0) * rpx * 1.3;
       });
     } else {
-      ctx.font = canvasFont(style, px);
-      setSpacing(ctx, baseTracking * px);
+      const f = canvasFont(style, px);
+      const track = baseTracking * px;
       let spaceW =
-        (ctx.measureText(' ').width || px * 0.3) +
+        (measureTextCached(ctx, ' ', f, track) || px * 0.3) +
         Math.max(0, style.highlight.scale - 1) * px * 0.25;
       // The outline is drawn centred on the glyph edge, so it eats into the space from both sides.
       spaceW += style.stroke.width * px * 1.3;
       // A highlight box pads out past the word on both sides — keep it clear of the neighbours.
       if (style.highlight.mode === 'box')
         spaceW = Math.max(spaceW, style.highlight.boxPadX * px * 1.9);
-      widths = texts.map((t) => ctx.measureText(t).width);
+      widths = texts.map((t) => measureTextCached(ctx, t, f, track));
 
       lines = [];
       let cur: number[] = [];
@@ -335,14 +467,12 @@ function layoutPage(
   const ascArr: number[] = [];
   const descArr: number[] = [];
   lines.forEach((idx, li) => {
-    if (roles) {
-      ctx.font = canvasFont(roleStyles[roleIdx[idx[0]]], linePx[li]);
-    } else {
-      ctx.font = canvasFont(style, px);
-    }
-    const m = ctx.measureText('Hg');
-    ascArr.push(m.fontBoundingBoxAscent ?? linePx[li] * 0.8);
-    descArr.push(m.fontBoundingBoxDescent ?? linePx[li] * 0.2);
+    const f = roles
+      ? canvasFont(roleStyles[roleIdx[idx[0]]], linePx[li])
+      : canvasFont(style, px);
+    const m = getFontMetricsCached(ctx, f, linePx[li]);
+    ascArr.push(m.asc);
+    descArr.push(m.desc);
   });
 
   const lineBoxes = lines.map(
@@ -391,14 +521,14 @@ function layoutPage(
         role: roles ? roleIdx[i] : undefined,
       };
       if (charMode) {
-        if (roles) ctx.font = canvasFont(roleStyles[roleIdx[i]], wpx);
-        setSpacing(ctx, (roles ? 0 : baseTracking) * wpx);
+        const f = roles ? canvasFont(roleStyles[roleIdx[i]], wpx) : canvasFont(style, wpx);
+        const track = (roles ? 0 : baseTracking) * wpx;
         const gs = graphemes(texts[i]);
         let prefix = '';
         wl.chars = gs.map((g) => {
-          const before = ctx.measureText(prefix).width;
+          const before = measureTextCached(ctx, prefix, f, track);
           prefix += g;
-          const after = ctx.measureText(prefix).width;
+          const after = measureTextCached(ctx, prefix, f, track);
           return { t: g, x: before, w: after - before };
         });
       }
@@ -589,10 +719,7 @@ function drawText(
 
     const shadowDist = Math.max(2, px * 0.035);
     const shadowBlur = Math.max(3, px * 0.05);
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
-    ctx.shadowBlur = shadowBlur;
-    ctx.shadowOffsetX = shadowDist;
-    ctx.shadowOffsetY = shadowDist;
+    drawOffsetTextShadow(ctx, text, x, y, 'rgba(0, 0, 0, 0.45)', shadowDist, shadowDist, shadowBlur);
 
     ctx.fillStyle = o.fill;
     if (typeof ctx.fillText === 'function') {
@@ -630,34 +757,27 @@ function drawText(
     ctx.restore();
   }
 
-  // 2 · Soft drop shadow (cast by the stroke silhouette when there is one)
+  // 2 · Pre-rendered offset text shadow (replaces software shadowBlur for 60fps throughput)
   if (shadow.blur > 0 || shadow.x !== 0 || shadow.y !== 0) {
-    ctx.save();
-    ctx.shadowColor = shadow.color;
-    ctx.shadowBlur = shadow.blur * px;
-    ctx.shadowOffsetX = shadow.x * px;
-    ctx.shadowOffsetY = shadow.y * px;
-    if (strokeW > 0.01) {
-      outline();
-      ctx.strokeStyle = stroke.color;
-      ctx.strokeText(text, x, y);
-    } else {
-      ctx.fillStyle = o.fill;
-      ctx.fillText(text, x, y);
-    }
-    ctx.restore();
+    const sColor = shadow.color || 'rgba(0, 0, 0, 0.5)';
+    const sx = shadow.x * px;
+    const sy = shadow.y * px;
+    const sBlur = shadow.blur * px;
+    const isStroke = strokeW > 0.01;
+    drawOffsetTextShadow(ctx, text, x, y, sColor, sx, sy, sBlur, isStroke, strokeW);
   }
 
-  // 3 · Glow (stacked blurred passes)
+  // 3 · Glow (lightweight multi-stroke outline layers, 0 software blur penalty)
   if (glow.strength > 0 && glow.blur > 0) {
-    ctx.save();
-    ctx.shadowColor = glow.color;
-    ctx.fillStyle = o.fill;
-    for (let k = 0; k < glow.strength; k++) {
-      ctx.shadowBlur = glow.blur * px * (1 + k * 0.7);
-      ctx.fillText(text, x, y);
-    }
-    ctx.restore();
+    drawMultiStrokeText(
+      ctx,
+      text,
+      x,
+      y,
+      glow.color,
+      glow.blur * px,
+      Math.min(4, Math.max(2, glow.strength)),
+    );
   }
 
   // 4 · RGB split (glitch entrance)
@@ -1279,20 +1399,17 @@ export function renderCaptions(
           try {
             ctx.filter = `blur(${tx.blur.toFixed(2)}px)`;
           } catch {
-            ctx.shadowBlur = Math.min(20, tx.blur * 2);
-            ctx.shadowColor = 'rgba(0,0,0,0.4)';
+            ctx.globalAlpha *= Math.max(0.3, 1 - tx.blur * 0.08);
           }
         } else {
-          ctx.shadowBlur = Math.min(20, tx.blur * 2);
-          ctx.shadowColor = 'rgba(0,0,0,0.4)';
+          ctx.globalAlpha *= Math.max(0.3, 1 - tx.blur * 0.08);
         }
       }
 
-      // Per-word glow accent
+      // Per-word glow accent via lightweight multi-stroke outline (0 software blur penalty)
       if (w.emphasis === 'glow' && (isActive || (t >= w.start && t <= w.end))) {
+        drawMultiStrokeText(ctx, u.t, ux, y0, wordHlColor, wpx * 0.25, 3);
         ctx.save();
-        ctx.shadowColor = wordHlColor;
-        ctx.shadowBlur = wpx * 0.55;
         ctx.fillStyle = wordHlColor;
         ctx.fillText(u.t, ux, y0);
         ctx.restore();
@@ -1773,7 +1890,9 @@ function drawCaptionMirrorSplashForeground(
   ctx.restore();
 }
 
-/** Drop cached layouts (e.g. when the loaded segment list is replaced). */
+/** Drop cached layouts and text measurements (e.g. when fonts load or segments change). */
 export function clearCaptionCaches() {
   layoutCache.clear();
+  textMeasureCache.clear();
+  fontMetricsCache.clear();
 }

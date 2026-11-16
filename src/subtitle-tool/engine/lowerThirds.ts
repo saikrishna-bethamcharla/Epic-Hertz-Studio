@@ -7,6 +7,34 @@
 import type { LowerThirdSpec } from './spec';
 import { fontById } from './spec';
 
+// ─── Text Width Measurement Cache ───────────────────────────────────────────
+const MAX_CACHE_ENTRIES = 1000;
+const textWidthCache = new Map<string, number>();
+
+export function getCachedTextWidth(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  font: string,
+): number {
+  if (!text) return 0;
+  const cacheKey = `${font}__${text}`;
+  const cached = textWidthCache.get(cacheKey);
+  if (cached !== undefined) return cached;
+
+  ctx.font = font;
+  const measured = ctx.measureText(text).width;
+  if (textWidthCache.size >= MAX_CACHE_ENTRIES) {
+    const firstKey = textWidthCache.keys().next().value;
+    if (firstKey) textWidthCache.delete(firstKey);
+  }
+  textWidthCache.set(cacheKey, measured);
+  return measured;
+}
+
+export function clearTextWidthCache(): void {
+  textWidthCache.clear();
+}
+
 // ─── Easing Functions ────────────────────────────────────────────────────────
 
 export function clamp01(v: number): number {
@@ -129,10 +157,8 @@ export function fitFontSize(
   minScale = 0.55,
 ): number {
   if (!text || maxWidth <= 10) return baseSize;
-  ctx.save();
-  ctx.font = lowerThirdFont(family, weight, baseSize);
-  const measured = ctx.measureText(text).width;
-  ctx.restore();
+  const f = lowerThirdFont(family, weight, baseSize);
+  const measured = getCachedTextWidth(ctx, text, f);
 
   if (measured <= maxWidth) return baseSize;
   const scale = Math.max(minScale, maxWidth / measured);
@@ -267,12 +293,12 @@ export function drawVariant1(
     600,
   );
 
-  ctx.font = lowerThirdFont(spec.font.family, spec.font.weight, effNameSize);
-  const nameWidth = ctx.measureText(spec.name).width;
+  const nameFont = lowerThirdFont(spec.font.family, spec.font.weight, effNameSize);
+  const nameWidth = getCachedTextWidth(ctx, spec.name, nameFont);
 
   const roleText = spec.handle ? `${spec.role}  ·  ${spec.handle}` : spec.role;
-  ctx.font = lowerThirdFont(spec.font.family, 600, effRoleSize);
-  const roleWidth = roleText ? ctx.measureText(roleText).width : 0;
+  const roleFont = lowerThirdFont(spec.font.family, 600, effRoleSize);
+  const roleWidth = roleText ? getCachedTextWidth(ctx, roleText, roleFont) : 0;
 
   const padX = effNameSize * 0.6;
   const box1W = nameWidth + padX * 2;
@@ -358,10 +384,10 @@ export function drawVariant2(
   const roleText = spec.handle ? `${spec.role}   ${spec.handle}` : spec.role;
   const effRoleSize = fitFontSize(ctx, roleText, maxW, roleSize, spec.font.family, 600);
 
-  ctx.font = lowerThirdFont(spec.font.family, spec.font.weight, effNameSize);
-  const nameWidth = ctx.measureText(spec.name).width;
-  ctx.font = lowerThirdFont(spec.font.family, 600, effRoleSize);
-  const roleWidth = roleText ? ctx.measureText(roleText).width : 0;
+  const nameFont = lowerThirdFont(spec.font.family, spec.font.weight, effNameSize);
+  const nameWidth = getCachedTextWidth(ctx, spec.name, nameFont);
+  const roleFont = lowerThirdFont(spec.font.family, 600, effRoleSize);
+  const roleWidth = roleText ? getCachedTextWidth(ctx, roleText, roleFont) : 0;
 
   const lineWidth = Math.max(nameWidth, roleWidth) + 20;
   const lineHeight = Math.max(3, baseDim * 0.005);
@@ -374,12 +400,13 @@ export function drawVariant2(
   if (anim.textProgress > 0) {
     const textSlideY = (1 - anim.textProgress) * 12;
     ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,0.6)';
-    ctx.shadowBlur = 8;
-    ctx.fillStyle = spec.colors.textPrimary || '#ffffff';
-    ctx.font = lowerThirdFont(spec.font.family, spec.font.weight, effNameSize);
+    ctx.font = nameFont;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
+    // Offset shadow layer (0 software blur penalty)
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillText(spec.name, startX + 1.5, startY - 6.5 + textSlideY);
+    ctx.fillStyle = spec.colors.textPrimary || '#ffffff';
     ctx.fillText(spec.name, startX, startY - 8 + textSlideY);
     ctx.restore();
   }
@@ -396,12 +423,13 @@ export function drawVariant2(
     const roleP = clamp01((anim.textProgress - 0.15) / 0.85);
     const roleSlideY = (1 - roleP) * -8;
     ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,0.6)';
-    ctx.shadowBlur = 6;
-    ctx.fillStyle = spec.colors.textSecondary || '#cbd5e1';
-    ctx.font = lowerThirdFont(spec.font.family, 600, effRoleSize);
+    ctx.font = roleFont;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
+    // Offset shadow layer (0 software blur penalty)
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillText(roleText, startX + 1.5, startY + lineHeight + 7.5 + roleSlideY);
+    ctx.fillStyle = spec.colors.textSecondary || '#cbd5e1';
     ctx.fillText(roleText, startX, startY + lineHeight + 6 + roleSlideY);
     ctx.restore();
   }
@@ -437,10 +465,10 @@ export function drawVariant3(
   );
   const effRoleSize = fitFontSize(ctx, spec.role, maxTextW, roleSize, spec.font.family, 600);
 
-  ctx.font = lowerThirdFont(spec.font.family, spec.font.weight, effNameSize);
-  const nameW = ctx.measureText(spec.name).width;
-  ctx.font = lowerThirdFont(spec.font.family, 600, effRoleSize);
-  const roleW = ctx.measureText(spec.role).width;
+  const nameF = lowerThirdFont(spec.font.family, spec.font.weight, effNameSize);
+  const nameW = getCachedTextWidth(ctx, spec.name, nameF);
+  const roleF = lowerThirdFont(spec.font.family, 600, effRoleSize);
+  const roleW = getCachedTextWidth(ctx, spec.role, roleF);
 
   const cardW = photoSize + Math.max(nameW, roleW) + 40;
   const cardH = photoSize + 12;
@@ -563,20 +591,23 @@ export function drawVariant4(
     ctx.rect(startX + dividerW, startY - 10, w - startX, totalH + 20);
     ctx.clip();
 
-    ctx.shadowColor = 'rgba(0,0,0,0.7)';
-    ctx.shadowBlur = 8;
-
-    // Name
-    ctx.fillStyle = spec.colors.textPrimary || '#ffffff';
-    ctx.font = lowerThirdFont(spec.font.family, spec.font.weight, effNameSize);
+    // Name with offset text shadow layer (0 software blur penalty)
+    const nameF = lowerThirdFont(spec.font.family, spec.font.weight, effNameSize);
+    ctx.font = nameF;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillText(spec.name, textX + 1.5, startY + 1.5);
+    ctx.fillStyle = spec.colors.textPrimary || '#ffffff';
     ctx.fillText(spec.name, textX, startY);
 
-    // Role
+    // Role with offset text shadow layer
     if (roleText) {
+      const roleF = lowerThirdFont(spec.font.family, 600, effRoleSize);
+      ctx.font = roleF;
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.fillText(roleText, textX + 1.5, startY + effNameSize + 7.5);
       ctx.fillStyle = spec.colors.textSecondary || '#cbd5e1';
-      ctx.font = lowerThirdFont(spec.font.family, 600, effRoleSize);
       ctx.fillText(roleText, textX, startY + effNameSize + 6);
     }
     ctx.restore();
@@ -611,10 +642,10 @@ export function drawVariant5(
   );
   const effRoleSize = fitFontSize(ctx, spec.role, maxW, roleSize, spec.font.family, 700);
 
-  ctx.font = lowerThirdFont(spec.font.family, spec.font.weight, effNameSize);
-  const nameW = ctx.measureText(spec.name).width;
-  ctx.font = lowerThirdFont(spec.font.family, 700, effRoleSize);
-  const roleW = spec.role ? ctx.measureText(spec.role).width : 0;
+  const nameF = lowerThirdFont(spec.font.family, spec.font.weight, effNameSize);
+  const nameW = getCachedTextWidth(ctx, spec.name, nameF);
+  const roleF = lowerThirdFont(spec.font.family, 700, effRoleSize);
+  const roleW = spec.role ? getCachedTextWidth(ctx, spec.role, roleF) : 0;
 
   const skew = -14 * (Math.PI / 180); // Slanted angle in radians
   const padX = effNameSize * 0.9;
@@ -708,10 +739,10 @@ export function drawVariant6(
   const roleText = spec.handle ? `${spec.role}  //  ${spec.handle}` : spec.role;
   const effRoleSize = fitFontSize(ctx, roleText, maxW, roleSize, spec.font.family, 600);
 
-  ctx.font = lowerThirdFont(spec.font.family, spec.font.weight, effNameSize);
-  const nameW = ctx.measureText(spec.name).width;
-  ctx.font = lowerThirdFont(spec.font.family, 600, effRoleSize);
-  const roleW = roleText ? ctx.measureText(roleText).width : 0;
+  const nameF = lowerThirdFont(spec.font.family, spec.font.weight, effNameSize);
+  const nameW = getCachedTextWidth(ctx, spec.name, nameF);
+  const roleF = lowerThirdFont(spec.font.family, 600, effRoleSize);
+  const roleW = roleText ? getCachedTextWidth(ctx, roleText, roleF) : 0;
 
   const padX = 18;
   const padY = 12;
@@ -801,10 +832,10 @@ export function drawVariant7(
   );
   const effRoleSize = fitFontSize(ctx, spec.role, maxW * 0.4, roleSize, spec.font.family, 600);
 
-  ctx.font = lowerThirdFont(spec.font.family, spec.font.weight, effNameSize);
-  const nameW = ctx.measureText(spec.name).width;
-  ctx.font = lowerThirdFont(spec.font.family, 600, effRoleSize);
-  const roleW = spec.role ? ctx.measureText(spec.role).width : 0;
+  const nameF = lowerThirdFont(spec.font.family, spec.font.weight, effNameSize);
+  const nameW = getCachedTextWidth(ctx, spec.name, nameF);
+  const roleF = lowerThirdFont(spec.font.family, 600, effRoleSize);
+  const roleW = spec.role ? getCachedTextWidth(ctx, spec.role, roleF) : 0;
 
   const badgeSize = effNameSize * 1.3;
   const pillH = badgeSize + 14;
@@ -909,10 +940,10 @@ export function drawVariant8(
   const roleText = spec.handle ? `${spec.role}  ·  ${spec.handle}` : spec.role;
   const effRoleSize = fitFontSize(ctx, roleText, maxW, roleSize, spec.font.family, 600);
 
-  ctx.font = lowerThirdFont(spec.font.family, spec.font.weight, effNameSize);
-  const nameW = ctx.measureText(spec.name).width;
-  ctx.font = lowerThirdFont(spec.font.family, 600, effRoleSize);
-  const roleW = roleText ? ctx.measureText(roleText).width : 0;
+  const nameF = lowerThirdFont(spec.font.family, spec.font.weight, effNameSize);
+  const nameW = getCachedTextWidth(ctx, spec.name, nameF);
+  const roleF = lowerThirdFont(spec.font.family, 600, effRoleSize);
+  const roleW = roleText ? getCachedTextWidth(ctx, roleText, roleF) : 0;
 
   const cardW = Math.max(nameW, roleW) + 36;
   const cardH = effNameSize + effRoleSize + 24;

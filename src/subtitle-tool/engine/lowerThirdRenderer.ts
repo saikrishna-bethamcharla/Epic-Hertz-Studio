@@ -4,7 +4,13 @@
 // Shared across Preview and MP4 Export paths.
 
 import type { LowerThirdSpec } from './spec';
-import { easeOutExpo, easeOutCubic, easeInOutCubic } from './lowerThirds';
+import {
+  easeOutExpo,
+  easeOutCubic,
+  easeInOutCubic,
+  getCachedTextWidth,
+  clearTextWidthCache,
+} from './lowerThirds';
 import {
   type LowerThirdTemplate,
   type LowerThirdElement,
@@ -62,31 +68,7 @@ export function getLowerThirdTemplate(id?: string): LowerThirdTemplate | undefin
 // 2. High-Performance Text Measurement Cache (< 2ms per frame target)
 // ─────────────────────────────────────────────────────────────────────────────
 
-const MAX_CACHE_ENTRIES = 500;
-const textWidthCache = new Map<string, number>();
-
-export function getCachedTextWidth(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  font: string,
-): number {
-  const cacheKey = `${font}__${text}`;
-  const cached = textWidthCache.get(cacheKey);
-  if (cached !== undefined) return cached;
-
-  ctx.font = font;
-  const measured = ctx.measureText(text).width;
-  if (textWidthCache.size >= MAX_CACHE_ENTRIES) {
-    const firstKey = textWidthCache.keys().next().value;
-    if (firstKey) textWidthCache.delete(firstKey);
-  }
-  textWidthCache.set(cacheKey, measured);
-  return measured;
-}
-
-export function clearTextWidthCache(): void {
-  textWidthCache.clear();
-}
+export { getCachedTextWidth, clearTextWidthCache };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 3. Lucide Vector Icon Renderers (Canvas native, zero DOM/SVG allocations)
@@ -934,12 +916,12 @@ function drawSpinTwistTitle(
   const subtitleFontSize = Math.max(12 * scale, titleFontSize * 0.32);
   const fontFamily = spec.font.family && spec.font.family !== 'Inter' ? spec.font.family : 'Asap';
 
-  ctx.font = `800 ${titleFontSize.toFixed(1)}px "${fontFamily}", "Asap", system-ui, sans-serif`;
-  const titleWidth = ctx.measureText(titleText).width;
+  const titleFont = `800 ${titleFontSize.toFixed(1)}px "${fontFamily}", "Asap", system-ui, sans-serif`;
+  const titleWidth = getCachedTextWidth(ctx, titleText, titleFont);
 
-  ctx.font = `600 ${subtitleFontSize.toFixed(1)}px "${fontFamily}", "Asap", system-ui, sans-serif`;
+  const subtitleFont = `600 ${subtitleFontSize.toFixed(1)}px "${fontFamily}", "Asap", system-ui, sans-serif`;
   const spacedSubtitle = subtitleText.split('').join(' ');
-  const subtitleWidth = ctx.measureText(spacedSubtitle).width;
+  const subtitleWidth = getCachedTextWidth(ctx, spacedSubtitle, subtitleFont);
 
   const targetBoxWidth = Math.max(
     titleWidth + 90 * scale,
@@ -1285,16 +1267,17 @@ function drawYouTubeSubscribe(
     ctx.scale(clickScale, clickScale);
     ctx.translate(-cx, -(cy + slideY));
 
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-    ctx.shadowBlur = 14 * scale;
-    ctx.shadowOffsetY = 6 * scale;
+    // Pre-rendered offset drop shadow layer (0 software blur penalty)
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    ctx.beginPath();
+    ctx.roundRect(btnX, btnY + 4 * scale, btnW, btnH, btnH / 2);
+    ctx.fill();
 
     ctx.fillStyle = isSubscribed ? '#272727' : '#FF0000';
     ctx.beginPath();
     ctx.roundRect(btnX, btnY, btnW, btnH, btnH / 2);
     ctx.fill();
 
-    ctx.shadowColor = 'transparent';
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
     ctx.lineWidth = Math.max(1, 1.5 * scale);
     ctx.stroke();
@@ -1324,17 +1307,17 @@ function drawYouTubeSubscribe(
       isSubscribed && phase === 'hold' && phaseProgress >= 0.45 && phaseProgress <= 0.8;
     const bellAngle = isBellRinging ? Math.sin((phaseProgress - 0.45) * 45) * 0.35 : 0;
 
-    // Outer capsule background
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-    ctx.shadowBlur = 16 * scale;
-    ctx.shadowOffsetY = 6 * scale;
+    // Outer capsule background with offset drop shadow (0 software blur penalty)
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+    ctx.beginPath();
+    ctx.roundRect(barX, barY + 5 * scale, barW, barH, barH / 2);
+    ctx.fill();
 
     ctx.fillStyle = '#0f0f0f';
     ctx.beginPath();
     ctx.roundRect(barX, barY, barW, barH, barH / 2);
     ctx.fill();
 
-    ctx.shadowColor = 'transparent';
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
     ctx.lineWidth = Math.max(1, 1.5 * scale);
     ctx.stroke();
@@ -1437,16 +1420,16 @@ function drawYouTubeSubscribe(
     const cardY = cy - cardH / 2 + slideY;
     const radius = 16 * scale;
 
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
-    ctx.shadowBlur = 20 * scale;
-    ctx.shadowOffsetY = 8 * scale;
+    // Offset drop shadow (0 software blur penalty)
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+    ctx.beginPath();
+    ctx.roundRect(cardX, cardY + 6 * scale, cardW, cardH, radius);
+    ctx.fill();
 
     ctx.fillStyle = '#121212';
     ctx.beginPath();
     ctx.roundRect(cardX, cardY, cardW, cardH, radius);
     ctx.fill();
-
-    ctx.shadowColor = 'transparent';
 
     // Top banner stripe
     const bannerH = 34 * scale;
@@ -1499,7 +1482,8 @@ function drawYouTubeSubscribe(
     ctx.fillText(channelName, textLeft, cardY + bannerH + 16 * scale);
 
     // Verified badge
-    const nameW = ctx.measureText(channelName).width;
+    const channelFont = `700 ${(15 * scale).toFixed(1)}px system-ui, -apple-system, sans-serif`;
+    const nameW = getCachedTextWidth(ctx, channelName, channelFont);
     ctx.fillStyle = '#9CA3AF';
     ctx.font = `700 ${(11 * scale).toFixed(1)}px system-ui, sans-serif`;
     ctx.fillText(' ✓', textLeft + nameW, cardY + bannerH + 16 * scale);
@@ -1546,16 +1530,16 @@ function drawYouTubeSubscribe(
     const cardY = cy - cardH / 2 + slideY;
     const radius = cardH / 2;
 
-    ctx.shadowColor = 'rgba(245, 158, 11, 0.35)';
-    ctx.shadowBlur = 18 * scale;
-    ctx.shadowOffsetY = 6 * scale;
+    // Offset drop shadow (0 software blur penalty)
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+    ctx.beginPath();
+    ctx.roundRect(cardX, cardY + 5 * scale, cardW, cardH, radius);
+    ctx.fill();
 
     ctx.fillStyle = '#0b0b0a';
     ctx.beginPath();
     ctx.roundRect(cardX, cardY, cardW, cardH, radius);
     ctx.fill();
-
-    ctx.shadowColor = 'transparent';
 
     // Golden gradient border
     const goldGrad = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
@@ -1630,20 +1614,20 @@ function drawYouTubeSubscribe(
     const cardX = cx - cardW / 2;
     const cardY = cy - cardH / 2 + slideY;
 
-    // Glowing cyberpunk neon plate
-    ctx.shadowColor = '#FF0055';
-    ctx.shadowBlur = 16 * scale;
-
+    // Glowing cyberpunk neon plate with multi-stroke outline (0 software blur penalty)
     ctx.fillStyle = 'rgba(10, 10, 14, 0.94)';
     ctx.beginPath();
     ctx.rect(cardX, cardY, cardW, cardH);
     ctx.fill();
 
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 0, 85, 0.25)';
+    ctx.lineWidth = Math.max(3, 5 * scale);
+    ctx.strokeRect(cardX, cardY, cardW, cardH);
     ctx.strokeStyle = '#FF0055';
     ctx.lineWidth = Math.max(1.5, 2 * scale);
-    ctx.stroke();
-
-    ctx.shadowBlur = 0;
+    ctx.strokeRect(cardX, cardY, cardW, cardH);
+    ctx.restore();
 
     // Cyber corner cuts
     const corner = 10 * scale;
@@ -1712,10 +1696,13 @@ function drawYouTubeSubscribe(
       ctx.restore();
     }
 
-    // Avatar Circle
+    // Avatar Circle with offset drop shadow (0 software blur penalty)
     ctx.save();
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-    ctx.shadowBlur = 18 * scale;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+    ctx.beginPath();
+    ctx.arc(cx, cy - 14 * scale + 4 * scale, avatarR, 0, Math.PI * 2);
+    ctx.fill();
+
     ctx.beginPath();
     ctx.arc(cx, cy - 14 * scale, avatarR, 0, Math.PI * 2);
     ctx.clip();
@@ -1769,16 +1756,17 @@ function drawYouTubeSubscribe(
     const cardY = cy - cardH / 2 + slideY;
     const radius = 16 * scale;
 
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-    ctx.shadowBlur = 16 * scale;
-    ctx.shadowOffsetY = 6 * scale;
+    // Offset drop shadow (0 software blur penalty)
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+    ctx.beginPath();
+    ctx.roundRect(cardX, cardY + 5 * scale, cardW, cardH, radius);
+    ctx.fill();
 
     ctx.fillStyle = '#141413';
     ctx.beginPath();
     ctx.roundRect(cardX, cardY, cardW, cardH, radius);
     ctx.fill();
 
-    ctx.shadowColor = 'transparent';
     ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
     ctx.lineWidth = Math.max(1, 1.5 * scale);
     ctx.stroke();
@@ -1857,17 +1845,17 @@ function drawYouTubeSubscribe(
   const cardY = cy - cardH / 2 + slideY;
   const radius = cardH / 2;
 
-  // Outer shadow & background
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.55)';
-  ctx.shadowBlur = 18 * scale;
-  ctx.shadowOffsetY = 8 * scale;
+  // Outer shadow & background (offset drop shadow, 0 software blur penalty)
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+  ctx.beginPath();
+  ctx.roundRect(cardX, cardY + 6 * scale, cardW, cardH, radius);
+  ctx.fill();
 
   ctx.fillStyle = '#0f0f0f';
   ctx.beginPath();
   ctx.roundRect(cardX, cardY, cardW, cardH, radius);
   ctx.fill();
 
-  ctx.shadowColor = 'transparent';
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
   ctx.lineWidth = Math.max(1, 1.5 * scale);
   ctx.stroke();
@@ -2030,8 +2018,8 @@ function drawSocialMediaHandle(
   const actionText = spec.role || 'Follow us';
   const platform = (spec.extra || 'instagram').toLowerCase();
 
-  ctx.font = `700 ${(17 * scale).toFixed(1)}px system-ui, -apple-system, sans-serif`;
-  const nameW = ctx.measureText(handleText).width;
+  const handleFont = `700 ${(17 * scale).toFixed(1)}px system-ui, -apple-system, sans-serif`;
+  const nameW = getCachedTextWidth(ctx, handleText, handleFont);
 
   const cardW = Math.max(260 * scale, nameW + 110 * scale);
   const cardH = 58 * scale;
@@ -2039,17 +2027,17 @@ function drawSocialMediaHandle(
   const cardY = cy - cardH / 2;
   const radius = 16 * scale;
 
-  // Background plate
-  ctx.fillStyle = '#141413';
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
-  ctx.shadowBlur = 14 * scale;
-  ctx.shadowOffsetY = 6 * scale;
+  // Background plate with offset drop shadow (0 software blur penalty)
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+  ctx.beginPath();
+  ctx.roundRect(cardX, cardY + 4 * scale, cardW, cardH, radius);
+  ctx.fill();
 
+  ctx.fillStyle = '#141413';
   ctx.beginPath();
   ctx.roundRect(cardX, cardY, cardW, cardH, radius);
   ctx.fill();
 
-  ctx.shadowColor = 'transparent';
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
   ctx.lineWidth = Math.max(1, 1.5 * scale);
   ctx.stroke();
@@ -2342,8 +2330,8 @@ function drawBoldCallout(
       ctx.save();
       ctx.globalAlpha *= textAlpha;
 
-      ctx.font = `800 ${(16 * scale).toFixed(1)}px system-ui, sans-serif`;
-      const titleW = ctx.measureText(titleText).width;
+      const titleFont = `800 ${(16 * scale).toFixed(1)}px system-ui, sans-serif`;
+      const titleW = getCachedTextWidth(ctx, titleText, titleFont);
       const bW = Math.max(200 * scale, titleW + 36 * scale);
       const bH = 54 * scale;
       const bx = cardX;
@@ -2550,8 +2538,8 @@ function drawBoldCallout(
     ctx.save();
     ctx.globalAlpha *= textAlpha;
 
-    ctx.font = `800 ${(17 * scale).toFixed(1)}px system-ui, -apple-system, sans-serif`;
-    const titleW = ctx.measureText(titleText).width;
+    const titleFont = `800 ${(17 * scale).toFixed(1)}px system-ui, -apple-system, sans-serif`;
+    const titleW = getCachedTextWidth(ctx, titleText, titleFont);
     const boxW = Math.max(220 * scale, titleW + 36 * scale);
     const boxH = 64 * scale;
 
