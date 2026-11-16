@@ -36,6 +36,7 @@ import type {
   VideoAspectRatio,
   SegmentStyleOverride,
   LowerThirdSpec,
+  VideoFrameRequestCallback,
 } from './types';
 import CaptionCanvas from './CaptionCanvas';
 import { formatTimecode } from './utils/formatTime';
@@ -257,8 +258,18 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
         seekRafIdRef.current = requestAnimationFrame(() => {
           executeVideoSeek(nextTime, false);
         });
+      } else {
+        // When seek completes, hook into rvfc so when the frame is painted on screen,
+        // we capture the exact presentation timestamp with sub-millisecond accuracy
+        const video = videoRef.current;
+        if (video && typeof video.requestVideoFrameCallback === 'function') {
+          video.requestVideoFrameCallback((now, metadata) => {
+            timeStore.setTime(metadata.mediaTime, true, now);
+            onTimeUpdate?.(metadata.mediaTime);
+          });
+        }
       }
-    }, [executeVideoSeek]);
+    }, [executeVideoSeek, onTimeUpdate]);
 
     const seekTo = useCallback(
       (time: number, isFinal: boolean = true) => {
@@ -324,7 +335,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           togglePlay();
         },
         getCurrentTime() {
-          return videoRef.current?.currentTime || 0;
+          return timeStore.getTime() || videoRef.current?.currentTime || 0;
         },
         toggleFullscreen() {
           toggleFullscreen();
@@ -341,24 +352,56 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       }
     }, [onTimeUpdate]);
 
-    // Synchronize playhead time store on requestAnimationFrame loop.
-    // timeStore throttles time tick listeners to <= 30Hz internally.
+    // Synchronize playhead time store using modern standard requestVideoFrameCallback (rvfc).
+    // It fires at the exact microsecond a new video frame is rendered to the screen,
+    // providing metadata.mediaTime with sub-millisecond presentation accuracy.
+    // Falls back gracefully to requestAnimationFrame for environments/browsers without rvfc.
     useEffect(() => {
-      let rafId: number;
-      const tick = (now: number) => {
-        if (videoRef.current && !videoRef.current.paused) {
-          timeStore.setTime(videoRef.current.currentTime, false, now);
-        }
-        rafId = requestAnimationFrame(tick);
-      };
+      const video = videoRef.current;
+      if (!video || !isPlaying) return;
 
-      if (isPlaying) {
+      let rvfcId: number | null = null;
+      let rafId: number | null = null;
+      let isActive = true;
+
+      if (typeof video.requestVideoFrameCallback === 'function') {
+        const onFrame: VideoFrameRequestCallback = (now, metadata) => {
+          if (!isActive) return;
+          // metadata.mediaTime provides sub-millisecond presentation accuracy
+          timeStore.setTime(metadata.mediaTime, false, now);
+          onTimeUpdate?.(metadata.mediaTime);
+
+          const v = videoRef.current;
+          if (v && !v.paused && typeof v.requestVideoFrameCallback === 'function') {
+            rvfcId = v.requestVideoFrameCallback(onFrame);
+          }
+        };
+
+        rvfcId = video.requestVideoFrameCallback(onFrame);
+      } else {
+        const tick = (now: number) => {
+          if (!isActive) return;
+          if (videoRef.current && !videoRef.current.paused) {
+            const t = videoRef.current.currentTime;
+            timeStore.setTime(t, false, now);
+            onTimeUpdate?.(t);
+          }
+          rafId = requestAnimationFrame(tick);
+        };
+
         rafId = requestAnimationFrame(tick);
       }
+
       return () => {
-        if (rafId) cancelAnimationFrame(rafId);
+        isActive = false;
+        if (rvfcId !== null && typeof video.cancelVideoFrameCallback === 'function') {
+          video.cancelVideoFrameCallback(rvfcId);
+        }
+        if (rafId !== null) {
+          cancelAnimationFrame(rafId);
+        }
       };
-    }, [isPlaying]);
+    }, [isPlaying, onTimeUpdate]);
 
     const handleLoadedMetadata = useCallback(() => {
       if (videoRef.current) {
@@ -820,7 +863,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           <button
             type="button"
             onClick={() => {
-              const cur = videoRef.current?.currentTime ?? timeStore.getTime();
+              const cur = timeStore.getTime();
               seekTo(Math.max(0, cur - 1.0));
             }}
             className="p-1 rounded text-smoke hover:text-amber-300 hover:bg-white/10 transition-colors"
@@ -833,7 +876,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           <button
             type="button"
             onClick={() => {
-              const cur = videoRef.current?.currentTime ?? timeStore.getTime();
+              const cur = timeStore.getTime();
               seekTo(Math.max(0, cur - 1 / 30));
             }}
             className="p-1 rounded text-smoke hover:text-amber-300 hover:bg-white/10 transition-colors"
@@ -864,7 +907,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           <button
             type="button"
             onClick={() => {
-              const cur = videoRef.current?.currentTime ?? timeStore.getTime();
+              const cur = timeStore.getTime();
               seekTo(Math.min(duration, cur + 1 / 30));
             }}
             className="p-1 rounded text-smoke hover:text-amber-300 hover:bg-white/10 transition-colors"
@@ -877,7 +920,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           <button
             type="button"
             onClick={() => {
-              const cur = videoRef.current?.currentTime ?? timeStore.getTime();
+              const cur = timeStore.getTime();
               seekTo(Math.min(duration, cur + 1.0));
             }}
             className="p-1 rounded text-smoke hover:text-amber-300 hover:bg-white/10 transition-colors"

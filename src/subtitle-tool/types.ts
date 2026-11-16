@@ -70,3 +70,22 @@ export type AppStage =
   | 'editing' // 3-column Replix editor layout
   | 'burning' // burning subtitles into MP4
   | 'done'; // export finished
+
+export interface VideoFrameCallbackMetadata {
+  presentationTime: DOMHighResTimeStamp;
+  expectedDisplayTime: DOMHighResTimeStamp;
+  width: number;
+  height: number;
+  mediaTime: number;
+  presentedFrames: number;
+  processingDuration?: number;
+  captureTime?: DOMHighResTimeStamp;
+  receiveTime?: DOMHighResTimeStamp;
+  rtpTimestamp?: number;
+}
+
+export type VideoFrameRequestCallback = (
+  now: DOMHighResTimeStamp,
+  metadata: VideoFrameCallbackMetadata
+) => void;
+

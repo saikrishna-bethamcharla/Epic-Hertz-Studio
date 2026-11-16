@@ -5,7 +5,7 @@
 // corner handles, coordinate badges, and center-snap guidelines.
 
 import { useEffect, useMemo, useRef, type RefObject } from 'react';
-import type { CaptionStyle, Segment, SegmentStyleOverride, LowerThirdSpec } from './types';
+import type { CaptionStyle, Segment, SegmentStyleOverride, LowerThirdSpec, VideoFrameRequestCallback } from './types';
 import { renderLowerThirds } from './engine/lowerThirds';
 import { renderCaptions, findSegment } from './engine/render';
 import { ensureFonts, ensureLowerThirdFonts, fontsVersion, onFontsChange } from './engine/fonts';
@@ -272,6 +272,48 @@ export default function CaptionCanvas({
     };
   }, [hostRef, videoRef]);
 
+  const latestMediaTimeRef = useRef<number | null>(null);
+
+  // Hook into HTMLVideoElement.requestVideoFrameCallback (rvfc) when available:
+  // fires at the exact microsecond a new video frame is rendered to the screen,
+  // providing metadata.mediaTime with sub-millisecond presentation accuracy.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || typeof video.requestVideoFrameCallback !== 'function') return;
+
+    let rvfcId: number | null = null;
+    let isActive = true;
+
+    const onFrame: VideoFrameRequestCallback = (_now, metadata) => {
+      if (!isActive) return;
+      latestMediaTimeRef.current = metadata.mediaTime;
+
+      const v = videoRef.current;
+      if (v && !v.paused && typeof v.requestVideoFrameCallback === 'function') {
+        rvfcId = v.requestVideoFrameCallback(onFrame);
+      }
+    };
+
+    const handlePlay = () => {
+      if (typeof video.requestVideoFrameCallback === 'function') {
+        rvfcId = video.requestVideoFrameCallback(onFrame);
+      }
+    };
+
+    video.addEventListener('play', handlePlay);
+    if (!video.paused) {
+      rvfcId = video.requestVideoFrameCallback(onFrame);
+    }
+
+    return () => {
+      isActive = false;
+      video.removeEventListener('play', handlePlay);
+      if (rvfcId !== null && typeof video.cancelVideoFrameCallback === 'function') {
+        video.cancelVideoFrameCallback(rvfcId);
+      }
+    };
+  }, [videoRef]);
+
   // ── Render loop: draws preview, active overlays, selection bounding box & snap guides
   useEffect(() => {
     let raf = 0;
@@ -306,7 +348,9 @@ export default function CaptionCanvas({
 
       const dragging = drag.current;
       const isPaused = videoRef.current ? videoRef.current.paused : true;
-      const t = isPaused ? timeStore.getTime() : (videoRef.current?.currentTime ?? timeStore.getTime());
+      const t = isPaused
+        ? timeStore.getTime()
+        : (latestMediaTimeRef.current ?? timeStore.getTime());
 
       let effSegs = segs;
       let effStyle = st;
@@ -494,7 +538,8 @@ export default function CaptionCanvas({
     const hitLowerThird = (e: PointerEvent): LowerThirdSpec | null => {
       const { lowerThirds: lts, visible } = live.current;
       if (!visible || !lts || lts.length === 0) return null;
-      const t = videoRef.current?.currentTime ?? 0;
+      const isPaused = videoRef.current ? videoRef.current.paused : true;
+      const t = isPaused ? timeStore.getTime() : (latestMediaTimeRef.current ?? timeStore.getTime());
       const pt = toCanvas(e);
 
       // Hit test in reverse order (top-most rendered item gets clicked first)
@@ -514,7 +559,9 @@ export default function CaptionCanvas({
       const pt = toCanvas(e);
       const pad = canvas.width * 0.03;
       if (isPointInBounds(pt, captionBounds.current, pad)) {
-        const t = (videoRef.current?.currentTime ?? 0) - st.syncOffset;
+        const isPaused = videoRef.current ? videoRef.current.paused : true;
+        const curTime = isPaused ? timeStore.getTime() : (latestMediaTimeRef.current ?? timeStore.getTime());
+        const t = curTime - st.syncOffset;
         return findSegment(segs, t) || segs[0] || null;
       }
       return null;

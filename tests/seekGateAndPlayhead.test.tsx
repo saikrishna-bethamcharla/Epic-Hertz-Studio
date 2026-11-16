@@ -228,4 +228,112 @@ describe('Decoupled UI & Throttled Video Seek Gate', () => {
     const finalCall = onSeek.mock.calls[2];
     expect(finalCall[1]).toBe(true); // isFinal is true on release
   });
+
+  it('synchronizes playback using requestVideoFrameCallback metadata.mediaTime with sub-millisecond precision', () => {
+    const previewRef = createRef<VideoPreviewHandle>();
+    const onTimeUpdate = vi.fn();
+
+    const { container } = render(
+      <VideoPreview
+        ref={previewRef}
+        videoFile={dummyFile}
+        segments={dummySegments}
+        style={DEFAULT_STYLE}
+        onTimeUpdate={onTimeUpdate}
+      />,
+    );
+
+    const videoEl = container.querySelector('video') as HTMLVideoElement;
+    expect(videoEl).toBeTruthy();
+
+    let registeredCallback: any = null;
+    const rvfcSpy = vi.fn((cb: any) => {
+      registeredCallback = cb;
+      return 101;
+    });
+    const cancelRvfcSpy = vi.fn();
+
+    videoEl.requestVideoFrameCallback = rvfcSpy;
+    videoEl.cancelVideoFrameCallback = cancelRvfcSpy;
+
+    // Trigger video playback
+    act(() => {
+      fireEvent.play(videoEl);
+    });
+
+    expect(rvfcSpy).toHaveBeenCalled();
+    expect(registeredCallback).toBeTypeOf('function');
+
+    // Simulate video frame presentation with sub-millisecond mediaTime
+    act(() => {
+      registeredCallback(16.67, {
+        presentationTime: 16.67,
+        expectedDisplayTime: 33.33,
+        width: 1080,
+        height: 1920,
+        mediaTime: 1.234567, // sub-millisecond accuracy
+        presentedFrames: 1,
+      });
+    });
+
+    // timeStore and onTimeUpdate should receive the exact sub-millisecond mediaTime
+    expect(timeStore.getTime()).toBe(1.234567);
+    expect(onTimeUpdate).toHaveBeenCalledWith(1.234567);
+
+    // Pause video
+    act(() => {
+      fireEvent.pause(videoEl);
+    });
+
+    expect(cancelRvfcSpy).toHaveBeenCalledWith(101);
+  });
+
+  it('hooks into requestVideoFrameCallback on seeked to capture exact seek frame presentation time', () => {
+    const previewRef = createRef<VideoPreviewHandle>();
+    const onTimeUpdate = vi.fn();
+
+    const { container } = render(
+      <VideoPreview
+        ref={previewRef}
+        videoFile={dummyFile}
+        segments={dummySegments}
+        style={DEFAULT_STYLE}
+        onTimeUpdate={onTimeUpdate}
+      />,
+    );
+
+    const videoEl = container.querySelector('video') as HTMLVideoElement;
+    expect(videoEl).toBeTruthy();
+
+    let registeredCallback: any = null;
+    const rvfcSpy = vi.fn((cb: any) => {
+      registeredCallback = cb;
+      return 202;
+    });
+
+    videoEl.requestVideoFrameCallback = rvfcSpy;
+
+    // Simulate seeked event
+    act(() => {
+      fireEvent(videoEl, new Event('seeked'));
+    });
+
+    expect(rvfcSpy).toHaveBeenCalled();
+    expect(registeredCallback).toBeTypeOf('function');
+
+    // Deliver presented seek frame callback
+    act(() => {
+      registeredCallback(50.0, {
+        presentationTime: 50.0,
+        expectedDisplayTime: 66.67,
+        width: 1080,
+        height: 1920,
+        mediaTime: 3.876543,
+        presentedFrames: 10,
+      });
+    });
+
+    expect(timeStore.getTime()).toBe(3.876543);
+    expect(onTimeUpdate).toHaveBeenCalledWith(3.876543);
+  });
 });
