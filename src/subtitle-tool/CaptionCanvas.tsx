@@ -531,6 +531,7 @@ export default function CaptionCanvas({
       });
     };
 
+    // eslint-disable-next-line react-hooks/immutability
     markDirtyRef.current = markDirty;
     startLoopRef.current = startLoop;
     stopLoopRef.current = stopLoop;

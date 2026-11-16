@@ -1,5 +1,5 @@
 // ─── Contextual Inspector Panel — Epic Hertz Studio v2 ────────────────────────
-import { useState, useMemo, useEffect, useCallback, memo } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef, memo } from 'react';
 import {
   Type,
   Zap,
@@ -191,6 +191,16 @@ function InspectorPanel({
       setPanelSection('lowerThirds');
     }
   }, [activeLowerThirdId]);
+
+  const prevSegmentIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (activeSegment && activeSegment.id !== prevSegmentIdRef.current) {
+      prevSegmentIdRef.current = activeSegment.id;
+      if (!activeLowerThirdId) {
+        setPanelSection('captions');
+      }
+    }
+  }, [activeSegment, activeLowerThirdId]);
 
   return (
     <aside className="h-full flex flex-col bg-[#141413] border-l border-white/10 select-none overflow-hidden">

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
-import React, { createRef } from 'react';
+import React from 'react';
 import { render, fireEvent } from '@testing-library/react';
 import CaptionCanvas from '../src/subtitle-tool/CaptionCanvas';
 import {
