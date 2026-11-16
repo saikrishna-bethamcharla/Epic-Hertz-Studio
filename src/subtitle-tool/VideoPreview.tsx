@@ -235,6 +235,10 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       const video = videoRef.current;
       if (!video || !Number.isFinite(targetTime)) return;
 
+      if (Math.abs(video.currentTime - targetTime) < 0.001) {
+        return;
+      }
+
       // Gate: if video decoder is already in a seek operation, queue the latest timestamp
       if (video.seeking || isSeekingRef.current) {
         pendingSeekTimeRef.current = targetTime;
@@ -276,6 +280,9 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             timeStore.setTime(metadata.mediaTime, true, now);
             onTimeUpdate?.(metadata.mediaTime);
           });
+        } else if (video) {
+          timeStore.setTime(video.currentTime, true, performance.now());
+          onTimeUpdate?.(video.currentTime);
         }
       }
     }, [executeVideoSeek, onTimeUpdate]);
@@ -304,12 +311,15 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           if (video && (video.seeking || isSeekingRef.current)) {
             pendingSeekTimeRef.current = target;
           } else if (video) {
+            if (Math.abs(video.currentTime - target) < 0.001) {
+              return;
+            }
             isSeekingRef.current = true;
             pendingSeekTimeRef.current = null;
             try {
               video.currentTime = target;
             } catch {
-              // ignore
+              isSeekingRef.current = false;
             }
           }
         } else {

@@ -137,7 +137,11 @@ function drawInteractiveBox(
 
   ctx.fillStyle = 'rgba(20, 20, 19, 0.92)';
   ctx.beginPath();
-  ctx.roundRect(lx - 6, ly - th + 3, tw + 14, th + 2, 4);
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(lx - 6, ly - th + 3, tw + 14, th + 2, 4);
+  } else {
+    ctx.rect(lx - 6, ly - th + 3, tw + 14, th + 2);
+  }
   ctx.fill();
 
   ctx.strokeStyle = accentColor;
