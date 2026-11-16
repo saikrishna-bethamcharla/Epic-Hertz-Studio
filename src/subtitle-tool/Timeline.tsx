@@ -19,12 +19,17 @@ import { timeStore, useIsSegmentActive } from './store/timeStore';
 
 const TILE_WIDTH = 2048;
 
+export interface SpeechInterval {
+  start: number;
+  end: number;
+}
+
 interface WaveformTileProps {
   tileLeft: number;
   tileWidth: number;
   totalWidth: number;
   totalDuration: number;
-  segments: Segment[];
+  speechIntervals: SpeechInterval[];
   height: number;
 }
 
@@ -33,7 +38,7 @@ const WaveformTile = React.memo(function WaveformTile({
   tileWidth,
   totalWidth,
   totalDuration,
-  segments,
+  speechIntervals,
   height,
 }: WaveformTileProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -62,7 +67,7 @@ const WaveformTile = React.memo(function WaveformTile({
       const timeAtBar = (globalX / totalWidth) * totalDuration;
 
       // Check if time is within any segment
-      const inSpeech = segments.some((s) => timeAtBar >= s.start && timeAtBar <= s.end);
+      const inSpeech = speechIntervals.some((s) => timeAtBar >= s.start && timeAtBar <= s.end);
 
       // Pseudo-random speech amplitude modulation
       const globalBarIdx = Math.floor(globalX / step);
@@ -78,7 +83,7 @@ const WaveformTile = React.memo(function WaveformTile({
       ctx.globalAlpha = inSpeech ? 0.85 : 0.3;
       ctx.fillRect(localX, midY - barH / 2, barWidth, barH);
     }
-  }, [tileLeft, tileWidth, totalWidth, totalDuration, segments, height]);
+  }, [tileLeft, tileWidth, totalWidth, totalDuration, speechIntervals, height]);
 
   return (
     <canvas
@@ -92,14 +97,14 @@ const WaveformTile = React.memo(function WaveformTile({
 interface AudioWaveformTrackProps {
   totalWidth: number;
   totalDuration: number;
-  segments: Segment[];
+  speechIntervals: SpeechInterval[];
   height?: number;
 }
 
 const AudioWaveformTrack = React.memo(function AudioWaveformTrack({
   totalWidth,
   totalDuration,
-  segments,
+  speechIntervals,
   height = 48,
 }: AudioWaveformTrackProps) {
   const numTiles = Math.max(1, Math.ceil(totalWidth / TILE_WIDTH));
@@ -120,7 +125,7 @@ const AudioWaveformTrack = React.memo(function AudioWaveformTrack({
           tileWidth={t.tileWidth}
           totalWidth={totalWidth}
           totalDuration={totalDuration}
-          segments={segments}
+          speechIntervals={speechIntervals}
           height={height}
         />
       ))}
@@ -411,6 +416,13 @@ function Timeline({
   const maxSegEnd = segments.length > 0 ? Math.max(...segments.map((s) => s.end)) : 0;
   const totalDuration = Math.max(duration || 0, maxSegEnd, 5);
   const totalWidth = Math.max(totalDuration * zoom, 600);
+
+  // Memoized speech intervals for waveform generation (prevents redraws during text typing)
+  const intervalsKey = segments.map((s) => `${s.start.toFixed(2)}-${s.end.toFixed(2)}`).join('|');
+  const speechIntervals = useMemo(() => {
+    return segments.map((s) => ({ start: s.start, end: s.end }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [intervalsKey]);
 
   // Active / selected segment
   const currentSeg = useMemo(() => {
@@ -1087,7 +1099,7 @@ function Timeline({
               <AudioWaveformTrack
                 totalWidth={totalWidth}
                 totalDuration={totalDuration}
-                segments={segments}
+                speechIntervals={speechIntervals}
               />
             </div>
 

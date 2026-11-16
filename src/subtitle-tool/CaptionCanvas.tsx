@@ -611,9 +611,11 @@ export default function CaptionCanvas({
 
     const toCanvas = (e: PointerEvent) => {
       const r = canvas.getBoundingClientRect();
+      const rw = r.width || 1;
+      const rh = r.height || 1;
       return {
-        x: ((e.clientX - r.left) / r.width) * canvas.width,
-        y: ((e.clientY - r.top) / r.height) * canvas.height,
+        x: ((e.clientX - r.left) / rw) * canvas.width,
+        y: ((e.clientY - r.top) / rh) * canvas.height,
         r,
       };
     };

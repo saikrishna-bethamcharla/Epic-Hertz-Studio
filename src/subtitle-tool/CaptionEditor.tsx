@@ -60,8 +60,14 @@ function CaptionEditor({
       const curActiveId = timeStore.getPlayheadId();
       if (!curActiveId || isUserScrollingRef.current) return;
       const el = document.getElementById(`caption-${curActiveId}`);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      const container = scrollContainerRef.current;
+      if (el && container) {
+        const cRect = container.getBoundingClientRect();
+        const eRect = el.getBoundingClientRect();
+        // Only scroll if outside visible bounds to eliminate layout thrashing
+        if (eRect.top < cRect.top + 20 || eRect.bottom > cRect.bottom - 20) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
       }
     });
   }, []);
@@ -70,8 +76,13 @@ function CaptionEditor({
   useEffect(() => {
     if (!activeId || isUserScrollingRef.current) return;
     const el = document.getElementById(`caption-${activeId}`);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const container = scrollContainerRef.current;
+    if (el && container) {
+      const cRect = container.getBoundingClientRect();
+      const eRect = el.getBoundingClientRect();
+      if (eRect.top < cRect.top + 20 || eRect.bottom > cRect.bottom - 20) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     }
   }, [activeId]);
 
