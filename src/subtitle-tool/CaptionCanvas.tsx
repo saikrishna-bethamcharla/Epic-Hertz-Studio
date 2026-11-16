@@ -8,7 +8,7 @@ import { useEffect, useMemo, useRef, type RefObject } from 'react';
 import type { CaptionStyle, Segment, SegmentStyleOverride, LowerThirdSpec, VideoFrameRequestCallback } from './types';
 import { renderLowerThirds } from './engine/lowerThirds';
 import { renderCaptions, findSegment } from './engine/render';
-import { ensureFonts, ensureLowerThirdFonts, fontsVersion, onFontsChange } from './engine/fonts';
+import { ensureFonts, ensureLowerThirdFonts, onFontsChange } from './engine/fonts';
 import {
   getLowerThirdBounds,
   getDefaultLowerThirdPosition,
@@ -260,6 +260,7 @@ export default function CaptionCanvas({
       canvas.width = Math.max(2, Math.round(w * dpr));
       canvas.height = Math.max(2, Math.round(h * dpr));
       geomVersion.current++;
+      markDirtyRef.current();
     };
 
     measure();
@@ -273,6 +274,9 @@ export default function CaptionCanvas({
   }, [hostRef, videoRef]);
 
   const latestMediaTimeRef = useRef<number | null>(null);
+  const markDirtyRef = useRef<() => void>(() => {});
+  const startLoopRef = useRef<() => void>(() => {});
+  const stopLoopRef = useRef<() => void>(() => {});
 
   // Hook into HTMLVideoElement.requestVideoFrameCallback (rvfc) when available:
   // fires at the exact microsecond a new video frame is rendered to the screen,
@@ -287,6 +291,7 @@ export default function CaptionCanvas({
     const onFrame: VideoFrameRequestCallback = (_now, metadata) => {
       if (!isActive) return;
       latestMediaTimeRef.current = metadata.mediaTime;
+      markDirtyRef.current();
 
       const v = videoRef.current;
       if (v && !v.paused && typeof v.requestVideoFrameCallback === 'function') {
@@ -314,24 +319,18 @@ export default function CaptionCanvas({
     };
   }, [videoRef]);
 
-  // ── Render loop: draws preview, active overlays, selection bounding box & snap guides
+  // ── Render engine with dirty-tracking ─────────────────────────────────────
+  // Only draws when:
+  // 1. Video is actively playing (!video.paused), OR
+  // 2. An overlay is being dragged/edited (drag.current !== null), OR
+  // 3. A state/prop/time change occurred while paused (draws 1 frame and sleeps).
+  // When paused and stationary, NO animation loop runs: CPU & GPU drop to 0.00%.
   useEffect(() => {
-    let raf = 0;
-    let last = {
-      t: -1,
-      style: null as CaptionStyle | null,
-      segs: null as Segment[] | null,
-      lowerThirds: null as LowerThirdSpec[] | null | undefined,
-      selectedLtId: null as string | null | undefined,
-      selectedSegId: null as string | null | undefined,
-      g: -1,
-      f: -1,
-      drag: false,
-      hover: false,
-    };
+    let loopRafId: number | null = null;
+    let dirtyRafId: number | null = null;
+    let isLoopRunning = false;
 
-    const tick = () => {
-      raf = requestAnimationFrame(tick);
+    const renderFrame = () => {
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext('2d');
       if (!canvas || !ctx) return;
@@ -347,7 +346,8 @@ export default function CaptionCanvas({
       } = live.current;
 
       const dragging = drag.current;
-      const isPaused = videoRef.current ? videoRef.current.paused : true;
+      const video = videoRef.current;
+      const isPaused = video ? video.paused : !timeStore.getIsPlaying();
       const t = isPaused
         ? timeStore.getTime()
         : (latestMediaTimeRef.current ?? timeStore.getTime());
@@ -401,35 +401,8 @@ export default function CaptionCanvas({
       if (!visible) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         captionBounds.current = null;
-        last.t = t;
         return;
       }
-
-      const changed =
-        t !== last.t ||
-        effStyle !== last.style ||
-        effSegs !== last.segs ||
-        effLowerThirds !== last.lowerThirds ||
-        selLtId !== last.selectedLtId ||
-        selSegId !== last.selectedSegId ||
-        geomVersion.current !== last.g ||
-        fontsVersion() !== last.f ||
-        !!dragging !== last.drag ||
-        hover.current !== last.hover;
-
-      if (!changed && !dragging) return;
-      last = {
-        t,
-        style: effStyle,
-        segs: effSegs,
-        lowerThirds: effLowerThirds,
-        selectedLtId: selLtId,
-        selectedSegId: selSegId,
-        g: geomVersion.current,
-        f: fontsVersion(),
-        drag: !!dragging,
-        hover: hover.current,
-      };
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -509,15 +482,121 @@ export default function CaptionCanvas({
       }
     };
 
-    raf = requestAnimationFrame(tick);
-    const off = onFontsChange(() => {
-      last.f = -1;
+    const shouldLoop = () => {
+      const video = videoRef.current;
+      const isPlaying = video ? !video.paused : timeStore.getIsPlaying();
+      const isDragging = drag.current !== null;
+      return isPlaying || isDragging;
+    };
+
+    const loopTick = () => {
+      if (!shouldLoop()) {
+        isLoopRunning = false;
+        loopRafId = null;
+        return;
+      }
+      renderFrame();
+      loopRafId = requestAnimationFrame(loopTick);
+    };
+
+    const startLoop = () => {
+      if (isLoopRunning) return;
+      isLoopRunning = true;
+      if (dirtyRafId !== null) {
+        cancelAnimationFrame(dirtyRafId);
+        dirtyRafId = null;
+      }
+      loopRafId = requestAnimationFrame(loopTick);
+    };
+
+    const stopLoop = () => {
+      isLoopRunning = false;
+      if (loopRafId !== null) {
+        cancelAnimationFrame(loopRafId);
+        loopRafId = null;
+      }
+    };
+
+    const markDirty = () => {
+      if (isLoopRunning || shouldLoop()) {
+        startLoop();
+        return;
+      }
+      if (dirtyRafId !== null) return;
+      dirtyRafId = requestAnimationFrame(() => {
+        dirtyRafId = null;
+        renderFrame();
+      });
+    };
+
+    markDirtyRef.current = markDirty;
+    startLoopRef.current = startLoop;
+    stopLoopRef.current = stopLoop;
+
+    // Draw initial settled frame
+    markDirty();
+
+    // Wire listeners
+    const video = videoRef.current;
+    const onPlay = () => startLoop();
+    const onPause = () => {
+      stopLoop();
+      markDirty();
+    };
+    const onSeeked = () => markDirty();
+    const onLoadedData = () => markDirty();
+
+    video?.addEventListener('play', onPlay);
+    video?.addEventListener('pause', onPause);
+    video?.addEventListener('seeked', onSeeked);
+    video?.addEventListener('loadeddata', onLoadedData);
+
+    const unsubSeek = timeStore.subscribeSeek(() => {
+      markDirty();
     });
+
+    const unsubStatus = timeStore.subscribePlaybackStatus(() => {
+      if (timeStore.getIsPlaying()) {
+        startLoop();
+      } else {
+        stopLoop();
+        markDirty();
+      }
+    });
+
+    const unsubTime = timeStore.subscribeTime(() => {
+      const v = videoRef.current;
+      const isPaused = v ? v.paused : !timeStore.getIsPlaying();
+      if (isPaused) {
+        markDirty();
+      }
+    });
+
+    const offFonts = onFontsChange(() => {
+      markDirty();
+    });
+
     return () => {
-      cancelAnimationFrame(raf);
-      off();
+      stopLoop();
+      if (dirtyRafId !== null) {
+        cancelAnimationFrame(dirtyRafId);
+        dirtyRafId = null;
+      }
+      video?.removeEventListener('play', onPlay);
+      video?.removeEventListener('pause', onPause);
+      video?.removeEventListener('seeked', onSeeked);
+      video?.removeEventListener('loadeddata', onLoadedData);
+      unsubSeek();
+      unsubStatus();
+      unsubTime();
+      offFonts();
     };
   }, [videoRef]);
+
+  // Mark dirty on any prop change while paused
+  useEffect(() => {
+    markDirtyRef.current();
+  }, [segments, style, lowerThirds, selectedLowerThirdId, selectedSegmentId, visible, photoCache]);
 
   // ── Direct manipulation: Click to Select, Drag to Move on Canvas
   useEffect(() => {
@@ -589,6 +668,7 @@ export default function CaptionCanvas({
         d.snapX = snapX;
         d.snapY = snapY;
         if (video) video.style.cursor = 'grabbing';
+        markDirtyRef.current();
         return;
       }
 
@@ -596,14 +676,22 @@ export default function CaptionCanvas({
       const hitLt = hitLowerThird(e);
       const hitSeg = !hitLt && hitCaption(e);
       const isOver = !!(hitLt || hitSeg);
-      if (hover.current !== isOver) {
-        hover.current = isOver;
-      }
-      hoveredTarget.current = hitLt
-        ? { kind: 'lowerThird', id: hitLt.id }
+      const nextTarget = hitLt
+        ? { kind: 'lowerThird' as const, id: hitLt.id }
         : hitSeg
-          ? { kind: 'caption', id: hitSeg.id }
+          ? { kind: 'caption' as const, id: hitSeg.id }
           : null;
+
+      const hoverChanged =
+        hover.current !== isOver ||
+        hoveredTarget.current?.id !== nextTarget?.id ||
+        hoveredTarget.current?.kind !== nextTarget?.kind;
+
+      if (hoverChanged) {
+        hover.current = isOver;
+        hoveredTarget.current = nextTarget;
+        markDirtyRef.current();
+      }
 
       if (video) {
         video.style.cursor = isOver ? 'grab' : '';
@@ -646,6 +734,10 @@ export default function CaptionCanvas({
         // Select the lower third in inspector
         live.current.onSelectLowerThird?.(hitLt.id);
         live.current.onSelectSegment?.(null);
+
+        // Start active drag rendering loop
+        startLoopRef.current();
+        markDirtyRef.current();
 
         try {
           host.setPointerCapture(e.pointerId);
@@ -694,6 +786,10 @@ export default function CaptionCanvas({
         // Select caption in inspector
         live.current.onSelectSegment?.(hitSeg.id);
         live.current.onSelectLowerThird?.(null);
+
+        // Start active drag rendering loop
+        startLoopRef.current();
+        markDirtyRef.current();
 
         try {
           host.setPointerCapture(e.pointerId);
@@ -747,6 +843,9 @@ export default function CaptionCanvas({
       }
 
       drag.current = null;
+      stopLoopRef.current();
+      markDirtyRef.current();
+
       if (video) {
         video.style.cursor = hover.current ? 'grab' : '';
       }
@@ -761,8 +860,13 @@ export default function CaptionCanvas({
     };
 
     const onLeave = () => {
-      hover.current = false;
-      hoveredTarget.current = null;
+      if (!drag.current) {
+        if (hover.current || hoveredTarget.current) {
+          hover.current = false;
+          hoveredTarget.current = null;
+          markDirtyRef.current();
+        }
+      }
       if (video) video.style.cursor = '';
     };
 
