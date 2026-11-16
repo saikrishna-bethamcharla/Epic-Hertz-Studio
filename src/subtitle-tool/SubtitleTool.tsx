@@ -1303,6 +1303,7 @@ export default function SubtitleTool({
                       canRedo={redoStack.length > 0}
                       onUndo={handleUndo}
                       onRedo={handleRedo}
+                      onAutoAlignTimings={videoFile ? handleAutoAlignTimings : undefined}
                     />
                   </div>
                 </div>
@@ -1490,6 +1491,7 @@ export default function SubtitleTool({
                         canRedo={redoStack.length > 0}
                         onUndo={handleUndo}
                         onRedo={handleRedo}
+                        onAutoAlignTimings={videoFile ? handleAutoAlignTimings : undefined}
                       />
                     )}
                   </div>

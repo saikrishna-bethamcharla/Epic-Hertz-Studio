@@ -10,6 +10,7 @@ import {
   BookOpen,
   Magnet,
   Link2,
+  Wand2,
 } from 'lucide-react';
 import type { Segment } from '../types';
 import { formatTimecode } from '../utils/formatTime';
@@ -51,6 +52,7 @@ export interface TimelineToolbarProps {
   isUndoDisabled: boolean;
   isRedoDisabled: boolean;
   onBulkReplace: (find: string, replace: string) => void;
+  onAutoAlignTimings?: () => void;
   zoom: number;
   onZoomChange: (updater: (prev: number) => number) => void;
 }
@@ -76,6 +78,7 @@ export const TimelineToolbar: React.FC<TimelineToolbarProps> = ({
   isUndoDisabled,
   isRedoDisabled,
   onBulkReplace,
+  onAutoAlignTimings,
   zoom,
   onZoomChange,
 }) => {
@@ -365,6 +368,25 @@ export const TimelineToolbar: React.FC<TimelineToolbarProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Auto Align Audio Onsets */}
+          {onAutoAlignTimings && (
+            <div className="relative group/tip flex items-center">
+              <button
+                onClick={onAutoAlignTimings}
+                aria-label="Auto-align word timings with voice onsets"
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-amber-300 hover:bg-amber-400/20 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-400"
+              >
+                <Wand2 className="w-3.5 h-3.5 text-amber-400" />
+              </button>
+              <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
+                <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap">
+                  <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
+                  <span>Auto-Align Audio</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right: Zoom controls */}

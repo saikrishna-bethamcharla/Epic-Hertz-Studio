@@ -251,7 +251,7 @@ export function refineTimingsWithMetrics(
   // Measure per-video sync offset based on real median lag.
   // If median lag is positive (model timestamps lagged voice), apply a lead offset matching the lag.
   const measuredSyncOffset =
-    sampleCount > 0 ? -+Math.max(0.0, Math.min(0.35, medianLagSec)).toFixed(2) : -0.1;
+    sampleCount > 0 ? -+Math.max(0.0, Math.min(0.35, medianLagSec)).toFixed(2) : -0.08;
 
   const metrics: AlignmentMetrics = {
     medianLagSec,
@@ -287,7 +287,7 @@ export async function refineSegmentsFromAudioWithMetrics(
   const emptyMetrics: AlignmentMetrics = {
     medianLagSec: 0,
     meanLagSec: 0,
-    measuredSyncOffset: -0.1,
+    measuredSyncOffset: -0.08,
     sampleCount: 0,
     details: [],
   };

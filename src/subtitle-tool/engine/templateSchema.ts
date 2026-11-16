@@ -381,7 +381,7 @@ export function templateToStyle(t: CaptionTemplate): CaptionStyle {
   return {
     id: t.id,
     name: t.name,
-    syncOffset: t.syncOffset ?? -0.1,
+    syncOffset: t.syncOffset ?? -0.08,
     font: {
       family: t.font.family,
       weight: t.font.weight,

@@ -64,7 +64,14 @@ describe('Requirement 2: Visibly Distinct Animations Suite', () => {
         ops.push(`alpha(${v.toFixed(2)})`);
       },
       globalCompositeOperation: 'source-over',
-      filter: 'none',
+      _filter: 'none',
+      get filter() {
+        return this._filter;
+      },
+      set filter(v: string) {
+        this._filter = v;
+        ops.push(`filter(${v})`);
+      },
     } as unknown as CanvasRenderingContext2D & { ops: string[]; filter: string };
   }
 
@@ -112,6 +119,7 @@ describe('Requirement 2: Visibly Distinct Animations Suite', () => {
     for (const ent of entranceTypes) {
       const style: CaptionStyle = {
         ...structuredClone(DEFAULT_STYLE),
+        syncOffset: 0,
         motion: {
           ...DEFAULT_STYLE.motion,
           in: ent,
@@ -163,6 +171,7 @@ describe('Requirement 2: Visibly Distinct Animations Suite', () => {
     for (const emph of emphasisTypes) {
       const style: CaptionStyle = {
         ...structuredClone(DEFAULT_STYLE),
+        syncOffset: 0,
         highlight: {
           ...DEFAULT_STYLE.highlight,
           emphasisType: emph,
@@ -215,10 +224,11 @@ describe('Requirement 2: Visibly Distinct Animations Suite', () => {
 
     const signatures = new Map<ExitType, string>();
 
-    // Test during page outro: visEnd = 3.0s, outMs = 300ms, mid outro is at t = 2.85s
+    // Test during page outro: visEnd = 3.15s (seg.end 3.0 + 0.15s hold), outMs = 300ms, mid outro is at t = 3.0s
     for (const ext of exitTypes) {
       const style: CaptionStyle = {
         ...structuredClone(DEFAULT_STYLE),
+        syncOffset: 0,
         motion: {
           ...DEFAULT_STYLE.motion,
           in: 'none',
@@ -229,7 +239,7 @@ describe('Requirement 2: Visibly Distinct Animations Suite', () => {
       };
 
       const ctx = createRecorderCanvasContext();
-      renderCaptions(ctx, W, H, 2.85, sampleSegments, style);
+      renderCaptions(ctx, W, H, 3.0, sampleSegments, style);
 
       const sig = ctx.ops.join(';');
       signatures.set(ext, sig);

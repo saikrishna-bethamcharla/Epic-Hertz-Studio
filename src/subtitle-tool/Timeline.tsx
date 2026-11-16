@@ -62,6 +62,7 @@ export interface TimelineProps {
   canRedo?: boolean;
   onUndo?: () => void;
   onRedo?: () => void;
+  onAutoAlignTimings?: () => void;
 }
 
 interface DragState {
@@ -93,6 +94,7 @@ function Timeline({
   canRedo,
   onUndo,
   onRedo,
+  onAutoAlignTimings,
 }: TimelineProps) {
   // Pixels per second zoom factor (default ~90px per second)
   const [zoom, setZoom] = useState(90);
@@ -639,6 +641,7 @@ function Timeline({
         onRedo={handleRedo}
         isUndoDisabled={isUndoDisabled}
         isRedoDisabled={isRedoDisabled}
+        onAutoAlignTimings={onAutoAlignTimings}
         onBulkReplace={(find, replace) => {
           const regex = new RegExp(find, 'gi');
           const updated = segments.map((s) => ({

@@ -602,7 +602,7 @@ function InspectorPanel({
                   <div className="flex items-center gap-1.5 pt-1">
                     {[
                       { label: 'Tight (-0.15s)', val: -0.15 },
-                      { label: 'Snappy (-0.08s)', val: -0.08 },
+                      { label: 'Standard (-0.08s)', val: -0.08 },
                       { label: 'Zero (0.00s)', val: 0.0 },
                     ].map((preset) => (
                       <button

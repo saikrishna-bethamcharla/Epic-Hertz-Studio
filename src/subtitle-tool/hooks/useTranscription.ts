@@ -74,9 +74,14 @@ export function useTranscription({
             if (onMeasuredSyncOffset) {
               onMeasuredSyncOffset(res.metrics.measuredSyncOffset);
             }
+          } else {
+            // Apply standard default speech calibration offset (-80ms)
+            onMeasuredSyncOffset?.(-0.08);
           }
         } catch (alignErr) {
           console.warn('[useTranscription] Acoustic alignment fallback:', alignErr);
+          // Fallback to standard default speech calibration offset (-80ms)
+          onMeasuredSyncOffset?.(-0.08);
         }
 
         setSegments(finalSegs);
