@@ -54,7 +54,7 @@ export interface TimelineProps {
   onSelectLowerThird?: (id: string | null) => void;
   onDeleteLowerThird?: (id: string) => void;
   onAddLowerThird?: () => void;
-  onSeek: (time: number) => void;
+  onSeek: (time: number, isFinal?: boolean) => void;
   onTogglePlay: () => void;
   onSegmentsChange: (segments: Segment[]) => void;
   onSelectSegment?: (id: string) => void;
@@ -235,7 +235,10 @@ function Timeline({
       if (nearestEdge !== undefined) seekTime = nearestEdge;
     }
 
-    onSeek(seekTime);
+    let lastSeekTime = seekTime;
+    // Decouple UI: Instant 60 FPS playhead movement via timeStore translate3d
+    timeStore.seek(seekTime);
+    onSeek(seekTime, false);
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       if (!isDraggingPlayhead.current || !rect) return;
@@ -251,13 +254,20 @@ function Timeline({
         if (nearestEdge !== undefined) t = nearestEdge;
       }
 
-      onSeek(t);
+      lastSeekTime = t;
+      // Decouple UI: Move playhead immediately with zero decoder lag
+      timeStore.seek(t);
+      // Throttled video seek request
+      onSeek(t, false);
     };
 
     const handleMouseUp = () => {
       isDraggingPlayhead.current = false;
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
+      // Final frame-accurate commit on release
+      timeStore.seek(lastSeekTime);
+      onSeek(lastSeekTime, true);
     };
 
     window.addEventListener('mousemove', handleMouseMove);

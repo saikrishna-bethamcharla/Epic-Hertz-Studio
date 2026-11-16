@@ -73,7 +73,7 @@ interface VideoPreviewProps {
   aspectRatio?: VideoAspectRatio;
   onAspectRatioChange?: (ratio: VideoAspectRatio) => void;
   onTimeUpdate: (time: number) => void;
-  onSeek?: (time: number) => void;
+  onSeek?: (time: number, isFinal?: boolean) => void;
   onDurationChange?: (duration: number) => void;
   onPlayStateChange?: (isPlaying: boolean) => void;
   lowerThirds?: LowerThirdSpec[];
@@ -92,7 +92,7 @@ interface VideoPreviewProps {
 }
 
 export interface VideoPreviewHandle {
-  seekTo: (time: number) => void;
+  seekTo: (time: number, isFinal?: boolean) => void;
   play: () => void;
   pause: () => void;
   togglePlay: () => void;
@@ -215,8 +215,53 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       }
     }, []);
 
+    // ── Throttled Video Seek Gate & Decoupled Playhead Seeking ───────────────
+    const pendingSeekTimeRef = useRef<number | null>(null);
+    const isSeekingRef = useRef<boolean>(false);
+    const seekRafIdRef = useRef<number | null>(null);
+
+    // Hardware-safe seek execution on the video element
+    const executeVideoSeek = useCallback((targetTime: number, isFinal: boolean = false) => {
+      const video = videoRef.current;
+      if (!video || !Number.isFinite(targetTime)) return;
+
+      // Gate: if video decoder is already in a seek operation, queue the latest timestamp
+      if (video.seeking || isSeekingRef.current) {
+        pendingSeekTimeRef.current = targetTime;
+        return;
+      }
+
+      isSeekingRef.current = true;
+      pendingSeekTimeRef.current = null;
+
+      try {
+        // Use fastSeek for high-speed keyframe scrubbing if available
+        if (!isFinal && typeof (video as any).fastSeek === 'function') {
+          (video as any).fastSeek(targetTime);
+        } else {
+          video.currentTime = targetTime;
+        }
+      } catch {
+        video.currentTime = targetTime;
+      }
+    }, []);
+
+    // Handles the browser 'seeked' event when the video decoder finishes rendering a frame
+    const handleVideoSeeked = useCallback(() => {
+      isSeekingRef.current = false;
+      // If user scrubbed to a newer position while decoder was busy, execute it now!
+      if (pendingSeekTimeRef.current !== null) {
+        const nextTime = pendingSeekTimeRef.current;
+        pendingSeekTimeRef.current = null;
+        if (seekRafIdRef.current) cancelAnimationFrame(seekRafIdRef.current);
+        seekRafIdRef.current = requestAnimationFrame(() => {
+          executeVideoSeek(nextTime, false);
+        });
+      }
+    }, [executeVideoSeek]);
+
     const seekTo = useCallback(
-      (time: number) => {
+      (time: number, isFinal: boolean = true) => {
         const vDur = videoRef.current?.duration;
         const validVideoDur =
           typeof vDur === 'number' && Number.isFinite(vDur) && vDur > 0 ? vDur : null;
@@ -226,14 +271,43 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             : null;
         const maxDur = validVideoDur ?? validStateDur ?? time;
         const target = Math.max(0, Math.min(maxDur, time));
-        if (videoRef.current && Number.isFinite(target)) {
-          videoRef.current.currentTime = target;
-        }
+
+        // 1. Decouple UI: update external timeStore immediately for instant 60 FPS playhead & UI
         timeStore.seek(target);
-        onSeek?.(target);
+        onSeek?.(target, isFinal);
+
+        // 2. Throttled Video Seek Gate:
+        if (isFinal) {
+          // Final seek (e.g. mouseup / button / hotkey): exact frame precision
+          if (seekRafIdRef.current) cancelAnimationFrame(seekRafIdRef.current);
+          const video = videoRef.current;
+          if (video && (video.seeking || isSeekingRef.current)) {
+            pendingSeekTimeRef.current = target;
+          } else if (video) {
+            isSeekingRef.current = true;
+            pendingSeekTimeRef.current = null;
+            try {
+              video.currentTime = target;
+            } catch {
+              // ignore
+            }
+          }
+        } else {
+          // Scrubbing seek: queue on rAF and use fastSeek when available
+          if (seekRafIdRef.current) cancelAnimationFrame(seekRafIdRef.current);
+          seekRafIdRef.current = requestAnimationFrame(() => {
+            executeVideoSeek(target, false);
+          });
+        }
       },
-      [duration, onSeek],
+      [duration, onSeek, executeVideoSeek],
     );
+
+    useEffect(() => {
+      return () => {
+        if (seekRafIdRef.current) cancelAnimationFrame(seekRafIdRef.current);
+      };
+    }, []);
 
     // Expose methods to parent (Timeline & Caption editor clicks)
     useImperativeHandle(
@@ -632,6 +706,10 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             onClick={togglePlay}
             onTimeUpdate={handleTimeUpdate}
             onLoadedMetadata={handleLoadedMetadata}
+            onSeeking={() => {
+              isSeekingRef.current = true;
+            }}
+            onSeeked={handleVideoSeeked}
             onPlay={() => {
               setIsPlaying(true);
               onPlayStateChange?.(true);

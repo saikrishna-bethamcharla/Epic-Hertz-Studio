@@ -1291,7 +1291,7 @@ export default function SubtitleTool({
                       onSelectLowerThird={setActiveLowerThirdId}
                       onDeleteLowerThird={handleDeleteLowerThird}
                       onAddLowerThird={handleAddLowerThird}
-                      onSeek={(t) => videoRef.current?.seekTo(t)}
+                      onSeek={(t, isFinal) => videoRef.current?.seekTo(t, isFinal)}
                       onTogglePlay={() => videoRef.current?.togglePlay()}
                       onSegmentsChange={updateSegments}
                       onSelectSegment={(id) => {

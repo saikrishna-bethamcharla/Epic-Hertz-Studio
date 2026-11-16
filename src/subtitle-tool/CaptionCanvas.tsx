@@ -14,6 +14,7 @@ import {
   getDefaultLowerThirdPosition,
   isPointInBounds,
 } from './engine/lowerThirdBounds';
+import { timeStore } from './store/timeStore';
 
 interface CaptionCanvasProps {
   segments: Segment[];
@@ -304,7 +305,8 @@ export default function CaptionCanvas({
       } = live.current;
 
       const dragging = drag.current;
-      const t = videoRef.current?.currentTime ?? 0;
+      const isPaused = videoRef.current ? videoRef.current.paused : true;
+      const t = isPaused ? timeStore.getTime() : (videoRef.current?.currentTime ?? timeStore.getTime());
 
       let effSegs = segs;
       let effStyle = st;
