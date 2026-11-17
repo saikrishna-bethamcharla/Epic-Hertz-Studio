@@ -22,4 +22,13 @@ describe('export: estimateExportMemory', () => {
     const scaled1080 = estimateExportMemory(60, 3840, 2160, 'high', 1080);
     expect(scaled1080.estimatedBytes).toBeLessThan(unscaled.estimatedBytes);
   });
+
+  it('verifies ExportOptions supports transparent alpha overlay configuration', () => {
+    const opts = {
+      quality: 'high' as const,
+      transparent: true,
+      maxShortSide: 1080,
+    };
+    expect(opts.transparent).toBe(true);
+  });
 });

@@ -16,6 +16,11 @@ import {
 } from 'lucide-react';
 import { useModalA11y } from './hooks/useModalA11y';
 import { toSRT, toVTT, downloadText, downloadBlob } from './utils/srt';
+import {
+  downloadFcp7Xml,
+  downloadFcpxml,
+  downloadEdl,
+} from './utils/exportNle';
 import { burnCaptionsCanvas } from './utils/burnCaptionsCanvas';
 import {
   exportCaptionedVideo,
@@ -60,6 +65,7 @@ export default function ExportModal({
   const baseName = videoFile ? videoFile.name.replace(/\.[^.]+$/, '') : 'video';
 
   // Export settings state
+  const [exportMode, setExportMode] = useState<'composite' | 'transparent'>('composite');
   const [fileName, setFileName] = useState(`${baseName}`);
   const [exportTo, setExportTo] = useState(`C:/Users/Downloads/${baseName}.mp4`);
   const [resolution, setResolution] = useState<'original' | '4k' | '1440' | '1080' | '720'>('1080');
@@ -135,7 +141,21 @@ export default function ExportModal({
       const vh = v.videoHeight || 1920;
       canvas.width = vw;
       canvas.height = vh;
-      ctx.drawImage(v, 0, 0, vw, vh);
+
+      if (exportMode === 'transparent') {
+        // Render subtle transparency checkerboard pattern for NLE overlay preview
+        const size = Math.max(16, Math.round(vw * 0.03));
+        for (let y = 0; y < vh; y += size) {
+          for (let x = 0; x < vw; x += size) {
+            ctx.fillStyle =
+              (Math.floor(x / size) + Math.floor(y / size)) % 2 === 0 ? '#181817' : '#272726';
+            ctx.fillRect(x, y, size, size);
+          }
+        }
+      } else {
+        ctx.drawImage(v, 0, 0, vw, vh);
+      }
+
       renderCaptions(ctx, vw, vh, v.currentTime, segments, style);
       if (lowerThirds && photoCache) {
         renderLowerThirds(ctx, vw, vh, v.currentTime, lowerThirds, photoCache);
@@ -143,7 +163,7 @@ export default function ExportModal({
       URL.revokeObjectURL(v.src);
     };
     v.onerror = () => URL.revokeObjectURL(v.src);
-  }, [videoFile, isOpen, coverTime, videoMeta, segments, style, lowerThirds, photoCache]);
+  }, [videoFile, isOpen, coverTime, videoMeta, segments, style, lowerThirds, photoCache, exportMode]);
 
   const handleNextCoverFrame = () => {
     const maxDur = videoMeta?.duration || 10;
@@ -228,10 +248,30 @@ export default function ExportModal({
   const sizeMb = memoryEstimate ? Math.round(memoryEstimate.estimatedBytes / (1024 * 1024)) : 0;
   const sizeStr = sizeMb > 1024 ? `${(sizeMb / 1024).toFixed(1)} GB` : `${sizeMb || 209} MB`;
 
-  const handleDownloadSubtitle = (fmt: 'srt' | 'vtt' | 'txt') => {
+  const handleDownloadSubtitle = (
+    fmt: 'srt' | 'vtt' | 'txt' | 'xml' | 'fcpxml' | 'edl',
+  ) => {
     try {
       const outName = fileName || baseName;
-      if (fmt === 'srt') {
+      const nleOptions = {
+        projectName: outName,
+        sequenceName: `${outName} Captions`,
+        fps: frameRate === '60' ? 60 : frameRate === '24' ? 24 : 30,
+        width: videoMeta?.width || 1080,
+        height: videoMeta?.height || 1920,
+        style,
+      };
+
+      if (fmt === 'xml') {
+        downloadFcp7Xml(segments, nleOptions, `${outName}_premiere_davinci.xml`);
+        onBurnStatus?.('Downloaded FCP 7 XML for Premiere Pro & DaVinci Resolve.');
+      } else if (fmt === 'fcpxml') {
+        downloadFcpxml(segments, nleOptions, `${outName}_finalcut.fcpxml`);
+        onBurnStatus?.('Downloaded FCPXML for Final Cut Pro & DaVinci Resolve.');
+      } else if (fmt === 'edl') {
+        downloadEdl(segments, nleOptions, `${outName}_timeline.edl`);
+        onBurnStatus?.('Downloaded CMX 3600 EDL for NLE timelines.');
+      } else if (fmt === 'srt') {
         downloadText(toSRT(segments), `${outName}.srt`, 'text/plain');
         onBurnStatus?.('Downloaded .SRT subtitle file.');
       } else if (fmt === 'vtt') {
@@ -251,11 +291,14 @@ export default function ExportModal({
   const handleExport = async () => {
     setError(null);
     setProcessing(true);
+    const isTransparent = exportMode === 'transparent';
 
     try {
       let fileStream: WritableStream | undefined;
       let streamedDirectly = false;
       const canStreamToDisk = typeof window !== 'undefined' && 'showSaveFilePicker' in window;
+      const exportSuffix = isTransparent ? '_alpha_overlay' : '_captioned';
+      const defaultFormat = isTransparent ? 'webm' : format;
 
       if (canStreamToDisk) {
         try {
@@ -267,11 +310,13 @@ export default function ExportModal({
               }) => Promise<{ createWritable: () => Promise<WritableStream> }>;
             }
           ).showSaveFilePicker({
-            suggestedName: `${fileName || baseName}_captioned.${format}`,
+            suggestedName: `${fileName || baseName}${exportSuffix}.${defaultFormat}`,
             types: [
               {
-                description: 'Exported Captioned Video',
-                accept: { [`video/${format}`]: [`.${format}`] },
+                description: isTransparent
+                  ? 'Transparent Alpha Video (Track V2)'
+                  : 'Exported Captioned Video',
+                accept: { [`video/${defaultFormat}`]: [`.${defaultFormat}`] },
               },
             ],
           });
@@ -299,6 +344,7 @@ export default function ExportModal({
             fileStream,
             lowerThirds,
             photoCache,
+            transparent: isTransparent,
           },
           ({ pct, etaSec }) => {
             onBurnProgress(pct);
@@ -310,7 +356,10 @@ export default function ExportModal({
                       ? `${Math.max(1, Math.round(etaSec))} s`
                       : `${Math.round(etaSec / 60)} min`
                   } left`;
-            onBurnStatus?.(`Exporting your captioned video… ${Math.round(pct)}%${eta}`);
+            const statusLabel = isTransparent
+              ? 'Exporting transparent alpha overlay…'
+              : 'Exporting your captioned video…';
+            onBurnStatus?.(`${statusLabel} ${Math.round(pct)}%${eta}`);
           },
           signal,
         );
@@ -320,7 +369,9 @@ export default function ExportModal({
         }
         console.warn('Fast WebCodecs export unavailable, using real-time canvas export:', fastErr);
         onBurnStatus?.(
-          'Fast hardware encoder unavailable in this browser. Exporting in real time…',
+          isTransparent
+            ? 'Encoding transparent alpha overlay in real time…'
+            : 'Fast hardware encoder unavailable in this browser. Exporting in real time…',
         );
 
         // Tier 2: Real-time Canvas + Web Audio MediaRecorder fallback
@@ -334,12 +385,13 @@ export default function ExportModal({
           signal,
           lowerThirds,
           photoCache,
+          isTransparent,
         );
       }
 
       if (!streamedDirectly && blob) {
-        const ext = blob.type.includes('webm') ? 'webm' : format;
-        downloadBlob(blob, `${fileName || baseName}_captioned.${ext}`);
+        const ext = blob.type.includes('webm') ? 'webm' : defaultFormat;
+        downloadBlob(blob, `${fileName || baseName}${exportSuffix}.${ext}`);
       }
 
       onBurnDone();
@@ -500,6 +552,54 @@ export default function ExportModal({
 
               {videoSectionOpen && (
                 <div className="space-y-2.5 pl-5">
+                  {/* Export Mode: Composite Video vs Transparent Alpha Overlay */}
+                  <div className="grid grid-cols-[115px_1fr] items-center">
+                    <span className="text-smoke">Export mode</span>
+                    <div className="flex items-center gap-1.5 p-0.5 rounded-lg bg-[#242424] border border-white/5 w-fit">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setExportMode('composite');
+                          if (format === 'webm') setFormat('mp4');
+                        }}
+                        className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all cursor-pointer ${
+                          exportMode === 'composite'
+                            ? 'bg-[#00b8a9] text-black font-semibold shadow'
+                            : 'text-smoke hover:text-bone'
+                        }`}
+                      >
+                        Composite Video
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setExportMode('transparent');
+                          setFormat('webm');
+                        }}
+                        className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all cursor-pointer flex items-center gap-1 ${
+                          exportMode === 'transparent'
+                            ? 'bg-[#00b8a9] text-black font-semibold shadow'
+                            : 'text-smoke hover:text-bone'
+                        }`}
+                      >
+                        <span>Transparent Alpha</span>
+                        <span className="text-[9px] px-1 py-0.2 rounded bg-black/40 font-mono">
+                          V2
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {exportMode === 'transparent' && (
+                    <div className="p-2 rounded-lg bg-[#00b8a9]/10 border border-[#00b8a9]/30 text-[11px] text-[#00e5d4] flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#00e5d4] shrink-0" />
+                      <span>
+                        Exports 100% transparent video with alpha channel (WebM VP9). Drop onto Track V2
+                        in Premiere Pro or DaVinci Resolve over your footage.
+                      </span>
+                    </div>
+                  )}
+
                   {/* Remove Watermark Toggle */}
                   <div className="grid grid-cols-[115px_1fr] items-center">
                     <span className="text-smoke">Remove watermark</span>
@@ -593,9 +693,18 @@ export default function ExportModal({
                       onChange={(e) => setFormat(e.target.value as 'mp4' | 'mov' | 'webm')}
                       className="bg-[#2a2a2a] border border-white/10 rounded-md px-3 py-1.5 text-xs text-bone focus:outline-none focus:border-[#00b8a9] cursor-pointer"
                     >
-                      <option value="mp4">mp4</option>
-                      <option value="mov">mov</option>
-                      <option value="webm">webm</option>
+                      {exportMode === 'transparent' ? (
+                        <>
+                          <option value="webm">webm (VP9 with Alpha Channel)</option>
+                          <option value="mov">mov (QuickTime Alpha)</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="mp4">mp4</option>
+                          <option value="mov">mov</option>
+                          <option value="webm">webm</option>
+                        </>
+                      )}
                     </select>
                   </div>
 
@@ -666,30 +775,42 @@ export default function ExportModal({
               )}
             </div>
 
-            {/* Subtitle & Transcript Downloads */}
+            {/* NLE Timelines, Subtitles & Transcripts */}
             <div className="pt-2 border-t border-[#2e2e2e]">
-              <span className="text-xs font-semibold text-bone block mb-2">
-                Subtitles & Transcripts
-              </span>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-bone block">
+                  NLE Timelines, Subtitles & Transcripts
+                </span>
+                <span className="text-[10px] text-smoke">Premiere · DaVinci · Final Cut</span>
+              </div>
               <div className="grid grid-cols-3 gap-2">
                 {(
                   [
-                    ['srt', 'SRT', 'Timestamps'],
-                    ['vtt', 'VTT', 'Timestamps'],
-                    ['txt', 'TXT', 'Plain Script'],
+                    ['xml', 'XML', 'Premiere & DaVinci', true],
+                    ['fcpxml', 'FCPXML', 'Final Cut Pro', false],
+                    ['edl', 'EDL', 'CMX 3600 Timeline', false],
+                    ['srt', 'SRT', 'SubRip Timestamps', false],
+                    ['vtt', 'VTT', 'WebVTT Timestamps', false],
+                    ['txt', 'TXT', 'Plain Script', false],
                   ] as const
-                ).map(([fmt, label, desc]) => (
+                ).map(([fmt, label, desc, isFeatured]) => (
                   <button
                     key={fmt}
                     type="button"
                     onClick={() => handleDownloadSubtitle(fmt)}
-                    className="p-2.5 rounded-lg border border-white/10 bg-[#242424] hover:border-[#00b8a9] hover:bg-[#2a2a2a] text-center cursor-pointer transition-all group flex flex-col items-center justify-center"
+                    className={`p-2 rounded-lg border text-center cursor-pointer transition-all group flex flex-col items-center justify-center relative ${
+                      isFeatured
+                        ? 'border-[#00b8a9]/50 bg-[#00b8a9]/10 hover:border-[#00b8a9] hover:bg-[#00b8a9]/20'
+                        : 'border-white/10 bg-[#242424] hover:border-[#00b8a9] hover:bg-[#2a2a2a]'
+                    }`}
                   >
                     <div className="flex items-center gap-1 font-mono font-bold text-xs uppercase text-bone group-hover:text-[#00d2c4]">
                       <span>.{label}</span>
                       <Download className="w-3 h-3 text-smoke group-hover:text-[#00d2c4] transition-colors" />
                     </div>
-                    <span className="text-[10px] text-smoke block mt-0.5">{desc}</span>
+                    <span className="text-[9px] text-smoke block mt-0.5 truncate max-w-full">
+                      {desc}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -713,7 +834,13 @@ export default function ExportModal({
               onClick={handleExport}
               className="px-6 py-2 rounded-md bg-[#00b8a9] hover:bg-[#00d2c4] disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 text-black font-semibold text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
             >
-              <span>{processing ? 'Exporting…' : 'Export'}</span>
+              <span>
+                {processing
+                  ? 'Exporting…'
+                  : exportMode === 'transparent'
+                    ? 'Export Transparent Video (Alpha)'
+                    : 'Export'}
+              </span>
             </button>
             <button
               type="button"

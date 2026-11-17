@@ -23,6 +23,7 @@ export async function burnCaptionsCanvas(
   signal?: AbortSignal,
   lowerThirds?: LowerThirdSpec[],
   photoCache?: Map<string, HTMLImageElement>,
+  transparent: boolean = false,
 ): Promise<Blob> {
   if (signal?.aborted) {
     throw new DOMException('Export cancelled', 'AbortError');
@@ -43,7 +44,7 @@ export async function burnCaptionsCanvas(
 
     // Use off-screen canvas with true video dimensions
     const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d', { alpha: false });
+    const ctx = canvas.getContext('2d', { alpha: transparent });
 
     if (!ctx) {
       reject(new Error('Canvas 2D context not available.'));
@@ -139,14 +140,22 @@ export async function burnCaptionsCanvas(
 
       const combinedStream = new MediaStream([...canvasStream.getVideoTracks(), ...audioTracks]);
 
-      // Determine best supported MIME type (prefer MP4, fallback to WebM)
-      const mimeTypes = [
-        'video/mp4;codecs=avc1,mp4a.40.2',
-        'video/mp4',
-        'video/webm;codecs=vp9,opus',
-        'video/webm;codecs=vp8,opus',
-        'video/webm',
-      ];
+      // Determine best supported MIME type (prefer VP9 WebM for transparent alpha, or MP4 for normal)
+      const mimeTypes = transparent
+        ? [
+            'video/webm;codecs=vp9,opus',
+            'video/webm;codecs=vp9',
+            'video/webm;codecs=vp8,opus',
+            'video/webm;codecs=vp8',
+            'video/webm',
+          ]
+        : [
+            'video/mp4;codecs=avc1,mp4a.40.2',
+            'video/mp4',
+            'video/webm;codecs=vp9,opus',
+            'video/webm;codecs=vp8,opus',
+            'video/webm',
+          ];
       let selectedMime = '';
       for (const mime of mimeTypes) {
         if (MediaRecorder.isTypeSupported(mime)) {
@@ -173,7 +182,8 @@ export async function burnCaptionsCanvas(
       mediaRecorder.onstop = () => {
         cleanup();
         if (signal?.aborted) return;
-        const finalBlob = new Blob(chunks, { type: selectedMime || 'video/mp4' });
+        const defaultExt = transparent ? 'video/webm' : 'video/mp4';
+        const finalBlob = new Blob(chunks, { type: selectedMime || defaultExt });
         resolve(finalBlob);
       };
 
@@ -199,8 +209,14 @@ export async function burnCaptionsCanvas(
         const progress = Math.min(100, Math.round((video.currentTime / duration) * 100));
         onProgress?.(progress);
 
-        // 1. Draw video frame
-        ctx.drawImage(video, 0, 0, width, height);
+        // 1. Frame background
+        if (transparent) {
+          // Clear to 100% transparent alpha channel (no video background)
+          ctx.clearRect(0, 0, width, height);
+        } else {
+          // Normal composite with source video
+          ctx.drawImage(video, 0, 0, width, height);
+        }
 
         // 2. Captions: the exact renderer the live preview uses
         renderCaptions(ctx, width, height, video.currentTime, segments, style);

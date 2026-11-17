@@ -23,6 +23,8 @@ export interface ExportOptions {
   fileStream?: WritableStream;
   lowerThirds?: LowerThirdSpec[];
   photoCache?: Map<string, HTMLImageElement>;
+  /** When true, renders transparent overlay video (WebM VP9 alpha) for NLE track V2 */
+  transparent?: boolean;
 }
 
 export interface ExportProgress {
@@ -129,23 +131,33 @@ export async function exportCaptionedVideo(
     const outW = even(srcW * scale);
     const outH = even(srcH * scale);
 
-    // H.264 MP4 is what every social platform accepts. Where the browser can't encode it
-    // (some Linux builds), fall back to VP9 in WebM rather than mislabel a file.
-    const useAvc = await mb.canEncodeVideo('avc', { width: outW, height: outH });
-    const canVp9 = !useAvc && (await mb.canEncodeVideo('vp9', { width: outW, height: outH }));
+    const isTransparent = Boolean(options.transparent);
+
+    // H.264 MP4 is what every social platform accepts. When transparent overlay is requested,
+    // we use VP9 inside WebM to encode the 8-bit alpha channel.
+    const canVp9 = await mb.canEncodeVideo('vp9', { width: outW, height: outH });
+    const useAvc = !isTransparent && (await mb.canEncodeVideo('avc', { width: outW, height: outH }));
+
+    if (isTransparent && !canVp9) {
+      throw new ExportUnsupportedError(
+        'Transparent WebM VP9 encoding is not available via WebCodecs. Falling back to canvas recorder.',
+      );
+    }
     if (!useAvc && !canVp9) throw new ExportUnsupportedError('No video encoder available.');
 
-    // AAC is the safest audio codec inside an MP4. Use it when the browser can encode it; sources
-    // that are already AAC are copied across untouched.
-    const aacOk = useAvc && (await mb.canEncodeAudio('aac'));
+    // AAC is the safest audio codec inside an MP4; Opus is used for WebM transparent overlays
+    const aacOk = !isTransparent && useAvc && (await mb.canEncodeAudio('aac'));
+    const opusOk = isTransparent && (await mb.canEncodeAudio('opus'));
 
     const isStreaming = Boolean(options.fileStream);
     const target = isStreaming ? new mb.StreamTarget(options.fileStream!) : new mb.BufferTarget();
 
     const output = new mb.Output({
-      format: useAvc
-        ? new mb.Mp4OutputFormat({ fastStart: isStreaming ? false : 'in-memory' })
-        : new mb.WebMOutputFormat(),
+      format: isTransparent
+        ? new mb.WebMOutputFormat()
+        : useAvc
+          ? new mb.Mp4OutputFormat({ fastStart: isStreaming ? false : 'in-memory' })
+          : new mb.WebMOutputFormat(),
       target,
     });
 
@@ -156,20 +168,20 @@ export async function exportCaptionedVideo(
           ? mb.QUALITY_MEDIUM
           : mb.QUALITY_HIGH;
 
-    // One reusable canvas: source frame first, captions on top
+    // Reusable canvas: alpha enabled for transparent overlays
     const canvas = document.createElement('canvas');
     canvas.width = outW;
     canvas.height = outH;
-    const ctx = canvas.getContext('2d', { alpha: false });
+    const ctx = canvas.getContext('2d', { alpha: isTransparent });
     if (!ctx) throw new ExportUnsupportedError('Canvas is not available.');
 
     const conversion = await mb.Conversion.init({
       input,
       output,
       showWarnings: false,
-      audio: aacOk ? { codec: 'aac' } : undefined,
+      audio: aacOk ? { codec: 'aac' } : opusOk ? { codec: 'opus' } : undefined,
       video: {
-        codec: useAvc ? 'avc' : 'vp9',
+        codec: isTransparent ? 'vp9' : useAvc ? 'avc' : 'vp9',
         quality,
         width: outW,
         height: outH,
@@ -179,7 +191,11 @@ export async function exportCaptionedVideo(
             canvas.width = sample.displayWidth;
             canvas.height = sample.displayHeight;
           }
-          sample.draw(ctx, 0, 0);
+          if (isTransparent) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+          } else {
+            sample.draw(ctx, 0, 0);
+          }
           renderCaptions(ctx, canvas.width, canvas.height, sample.timestamp, segments, style);
           renderLowerThirds(
             ctx,
