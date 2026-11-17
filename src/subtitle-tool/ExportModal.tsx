@@ -6,13 +6,9 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
   AlertTriangle,
-  Folder,
   Film,
   Download,
   Edit2,
-  Check,
-  ChevronDown,
-  ChevronUp,
 } from 'lucide-react';
 import { useModalA11y } from './hooks/useModalA11y';
 import { toSRT, toVTT, downloadText, downloadBlob } from './utils/srt';
@@ -67,18 +63,9 @@ export default function ExportModal({
   // Export settings state
   const [exportMode, setExportMode] = useState<'composite' | 'transparent'>('composite');
   const [fileName, setFileName] = useState(`${baseName}`);
-  const [exportTo, setExportTo] = useState(`C:/Users/Downloads/${baseName}.mp4`);
   const [resolution, setResolution] = useState<'original' | '4k' | '1440' | '1080' | '720'>('1080');
-  const [bitrate, setBitrate] = useState<'recommended' | 'higher' | 'custom'>('recommended');
-  const [codec, setCodec] = useState<'h264' | 'hevc' | 'av1'>('h264');
   const [format, setFormat] = useState<'mp4' | 'mov' | 'webm'>('mp4');
   const [frameRate, setFrameRate] = useState<'30' | '60' | '24' | 'original'>('30');
-  const [removeWatermark, setRemoveWatermark] = useState(true);
-
-  // Section accordions
-  const [videoSectionOpen, setVideoSectionOpen] = useState(true);
-  const [audioSectionOpen, setAudioSectionOpen] = useState(false);
-  const [audioFormat, setAudioFormat] = useState<'mp3' | 'aac'>('mp3');
 
   // Processing state
   const [processing, setProcessing] = useState(false);
@@ -118,11 +105,6 @@ export default function ExportModal({
     };
     v.onerror = () => URL.revokeObjectURL(v.src);
   }, [videoFile]);
-
-  // Keep destination path synchronized when name or format changes
-  useEffect(() => {
-    setExportTo(`C:/Users/Downloads/${fileName || baseName}.${format}`);
-  }, [fileName, format, baseName]);
 
   // Render live video cover preview with styled captions and lower thirds
   useEffect(() => {
@@ -170,36 +152,6 @@ export default function ExportModal({
     setCoverTime((prev) => (prev + 2.0 >= maxDur ? 0.5 : prev + 2.0));
   };
 
-  const handleBrowseLocation = async () => {
-    if (typeof window !== 'undefined' && 'showSaveFilePicker' in window) {
-      try {
-        const picker = (
-          window as unknown as {
-            showSaveFilePicker: (opts: {
-              suggestedName: string;
-              types: { description: string; accept: Record<string, string[]> }[];
-            }) => Promise<{ name: string }>;
-          }
-        ).showSaveFilePicker({
-          suggestedName: `${fileName || baseName}.${format}`,
-          types: [
-            {
-              description: 'Video file',
-              accept: { [`video/${format}`]: [`.${format}`] },
-            },
-          ],
-        });
-        const handle = await picker;
-        if (handle?.name) {
-          setFileName(handle.name.replace(/\.[^.]+$/, ''));
-          setExportTo(`Selected: ${handle.name}`);
-        }
-      } catch {
-        // User cancelled picker
-      }
-    }
-  };
-
   // Browser engine capability detection
   const canExportVideo = useMemo(() => {
     if (typeof window === 'undefined') return true;
@@ -221,12 +173,11 @@ export default function ExportModal({
     return 0; // original
   }, [resolution]);
 
-  // Map bitrate selection to quality tier
+  // Quality tier: 4k/1440p uses max, otherwise high for crisp master fidelity
   const exportQuality: ExportQuality = useMemo(() => {
-    if (bitrate === 'higher') return 'max';
-    if (bitrate === 'custom') return 'standard';
+    if (resolution === '4k' || resolution === '1440') return 'max';
     return 'high';
-  }, [bitrate]);
+  }, [resolution]);
 
   // Pre-flight memory estimation
   const memoryEstimate = videoMeta
@@ -454,8 +405,7 @@ export default function ExportModal({
                 {(memoryEstimate.estimatedBytes / 1024 / 1024 / 1024).toFixed(1)} GB)
               </div>
               <p className="text-[11px] text-amber-200/80 mt-0.5">
-                We recommend selecting <strong>1080p</strong> and <strong>Recommended</strong> bit
-                rate for safe browser export.
+                We recommend selecting <strong>1080p</strong> or <strong>720p</strong> for safe browser export.
               </p>
             </div>
           </div>
@@ -484,17 +434,11 @@ export default function ExportModal({
           </div>
 
           {/* Right Column: Settings & Configuration */}
-          <div className="space-y-3.5 text-xs">
-            {/* Timeline Identifier */}
-            <div className="grid grid-cols-[130px_1fr] items-center">
-              <span className="text-smoke">Export timeline</span>
-              <span className="text-mist font-medium">Timeline 01</span>
-            </div>
-
+          <div className="space-y-4 text-xs">
             {/* Name Input */}
-            <div className="grid grid-cols-[130px_1fr] items-center">
+            <div className="grid grid-cols-[100px_1fr] items-center">
               <label htmlFor="export-name-input" className="text-smoke">
-                Name
+                File name
               </label>
               <input
                 id="export-name-input"
@@ -506,277 +450,125 @@ export default function ExportModal({
               />
             </div>
 
-            {/* Export To Destination */}
-            <div className="grid grid-cols-[130px_1fr] items-center">
-              <label htmlFor="export-to-input" className="text-smoke">
-                Export to
-              </label>
-              <div className="flex items-center gap-1.5">
-                <input
-                  id="export-to-input"
-                  type="text"
-                  value={exportTo}
-                  onChange={(e) => setExportTo(e.target.value)}
-                  className="flex-1 bg-[#2a2a2a] border border-white/10 rounded-md px-3 py-1.5 text-xs text-bone focus:outline-none focus:border-[#00b8a9] transition-colors truncate"
-                />
+            {/* Export Mode: Composite Video vs Transparent Alpha Overlay */}
+            <div className="grid grid-cols-[100px_1fr] items-center">
+              <span className="text-smoke">Export mode</span>
+              <div className="flex items-center gap-1.5 p-0.5 rounded-lg bg-[#242424] border border-white/5 w-fit">
                 <button
                   type="button"
-                  onClick={handleBrowseLocation}
-                  title="Browse export destination folder"
-                  className="p-1.5 rounded-md bg-[#2a2a2a] hover:bg-[#383838] border border-white/10 text-smoke hover:text-bone transition-colors cursor-pointer"
+                  onClick={() => {
+                    setExportMode('composite');
+                    if (format === 'webm') setFormat('mp4');
+                  }}
+                  className={`px-3 py-1.5 rounded-md text-[11px] font-medium transition-all cursor-pointer ${
+                    exportMode === 'composite'
+                      ? 'bg-[#00b8a9] text-black font-semibold shadow'
+                      : 'text-smoke hover:text-bone'
+                  }`}
                 >
-                  <Folder className="w-4 h-4 text-smoke" />
+                  Composite Video
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExportMode('transparent');
+                    setFormat('webm');
+                  }}
+                  className={`px-3 py-1.5 rounded-md text-[11px] font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                    exportMode === 'transparent'
+                      ? 'bg-[#00b8a9] text-black font-semibold shadow'
+                      : 'text-smoke hover:text-bone'
+                  }`}
+                >
+                  <span>Transparent Alpha</span>
+                  <span className="text-[9px] px-1 py-0.2 rounded bg-black/40 font-mono">
+                    V2
+                  </span>
                 </button>
               </div>
             </div>
 
-            <div className="border-t border-[#2e2e2e] my-3" />
+            {exportMode === 'transparent' && (
+              <div className="p-2.5 rounded-lg bg-[#00b8a9]/10 border border-[#00b8a9]/30 text-[11px] text-[#00e5d4] flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#00e5d4] shrink-0" />
+                <span>
+                  Exports 100% transparent video with alpha channel (WebM VP9). Drop onto Track V2 in
+                  Premiere Pro or DaVinci Resolve over your footage.
+                </span>
+              </div>
+            )}
 
-            {/* Collapsible Video Settings */}
-            <div className="space-y-3">
-              <button
-                type="button"
-                onClick={() => setVideoSectionOpen((prev) => !prev)}
-                className="flex items-center gap-2 text-xs font-semibold text-bone cursor-pointer w-full text-left"
+            {/* Resolution Dropdown */}
+            <div className="grid grid-cols-[100px_1fr] items-center">
+              <label htmlFor="export-res-select" className="text-smoke">
+                Resolution
+              </label>
+              <select
+                id="export-res-select"
+                value={resolution}
+                onChange={(e) =>
+                  setResolution(e.target.value as 'original' | '4k' | '1440' | '1080' | '720')
+                }
+                className="bg-[#2a2a2a] border border-white/10 rounded-md px-3 py-1.5 text-xs text-bone focus:outline-none focus:border-[#00b8a9] cursor-pointer"
               >
-                <div className="w-3.5 h-3.5 rounded-xs bg-[#00b8a9] flex items-center justify-center text-black">
-                  <Check className="w-3 h-3 stroke-[3]" />
-                </div>
-                <span>Video</span>
-                {videoSectionOpen ? (
-                  <ChevronUp className="w-3.5 h-3.5 text-smoke ml-auto" />
-                ) : (
-                  <ChevronDown className="w-3.5 h-3.5 text-smoke ml-auto" />
-                )}
-              </button>
-
-              {videoSectionOpen && (
-                <div className="space-y-2.5 pl-5">
-                  {/* Export Mode: Composite Video vs Transparent Alpha Overlay */}
-                  <div className="grid grid-cols-[115px_1fr] items-center">
-                    <span className="text-smoke">Export mode</span>
-                    <div className="flex items-center gap-1.5 p-0.5 rounded-lg bg-[#242424] border border-white/5 w-fit">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setExportMode('composite');
-                          if (format === 'webm') setFormat('mp4');
-                        }}
-                        className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all cursor-pointer ${
-                          exportMode === 'composite'
-                            ? 'bg-[#00b8a9] text-black font-semibold shadow'
-                            : 'text-smoke hover:text-bone'
-                        }`}
-                      >
-                        Composite Video
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setExportMode('transparent');
-                          setFormat('webm');
-                        }}
-                        className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all cursor-pointer flex items-center gap-1 ${
-                          exportMode === 'transparent'
-                            ? 'bg-[#00b8a9] text-black font-semibold shadow'
-                            : 'text-smoke hover:text-bone'
-                        }`}
-                      >
-                        <span>Transparent Alpha</span>
-                        <span className="text-[9px] px-1 py-0.2 rounded bg-black/40 font-mono">
-                          V2
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {exportMode === 'transparent' && (
-                    <div className="p-2 rounded-lg bg-[#00b8a9]/10 border border-[#00b8a9]/30 text-[11px] text-[#00e5d4] flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#00e5d4] shrink-0" />
-                      <span>
-                        Exports 100% transparent video with alpha channel (WebM VP9). Drop onto Track V2
-                        in Premiere Pro or DaVinci Resolve over your footage.
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Remove Watermark Toggle */}
-                  <div className="grid grid-cols-[115px_1fr] items-center">
-                    <span className="text-smoke">Remove watermark</span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={removeWatermark}
-                        onClick={() => setRemoveWatermark((prev) => !prev)}
-                        className={`w-9 h-5 rounded-full p-0.5 transition-colors cursor-pointer flex items-center ${
-                          removeWatermark ? 'bg-[#00b8a9]' : 'bg-[#383838]'
-                        }`}
-                      >
-                        <div
-                          className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                            removeWatermark ? 'translate-x-4' : 'translate-x-0'
-                          }`}
-                        />
-                      </button>
-                      <span className="text-[10px] text-smoke">No watermark</span>
-                    </div>
-                  </div>
-
-                  {/* Resolution Dropdown */}
-                  <div className="grid grid-cols-[115px_1fr] items-center">
-                    <label htmlFor="export-res-select" className="text-smoke">
-                      Resolution
-                    </label>
-                    <select
-                      id="export-res-select"
-                      value={resolution}
-                      onChange={(e) =>
-                        setResolution(e.target.value as 'original' | '4k' | '1440' | '1080' | '720')
-                      }
-                      className="bg-[#2a2a2a] border border-white/10 rounded-md px-3 py-1.5 text-xs text-bone focus:outline-none focus:border-[#00b8a9] cursor-pointer"
-                    >
-                      <option value="4k">4K (2160p UHD)</option>
-                      <option value="1440">2K / 1440p (QHD)</option>
-                      <option value="1080">1080p (Full HD)</option>
-                      <option value="720">720p (HD)</option>
-                      <option value="original">
-                        Original ({videoMeta ? `${videoMeta.width}x${videoMeta.height}` : 'Source'})
-                      </option>
-                    </select>
-                  </div>
-
-                  {/* Bitrate Dropdown */}
-                  <div className="grid grid-cols-[115px_1fr] items-center">
-                    <label htmlFor="export-bitrate-select" className="text-smoke">
-                      Bit rate
-                    </label>
-                    <select
-                      id="export-bitrate-select"
-                      value={bitrate}
-                      onChange={(e) =>
-                        setBitrate(e.target.value as 'recommended' | 'higher' | 'custom')
-                      }
-                      className="bg-[#2a2a2a] border border-white/10 rounded-md px-3 py-1.5 text-xs text-bone focus:outline-none focus:border-[#00b8a9] cursor-pointer"
-                    >
-                      <option value="recommended">Recommended (High Quality)</option>
-                      <option value="higher">Higher (Master Fidelity)</option>
-                      <option value="custom">Standard (Compact Size)</option>
-                    </select>
-                  </div>
-
-                  {/* Codec Dropdown */}
-                  <div className="grid grid-cols-[115px_1fr] items-center">
-                    <label htmlFor="export-codec-select" className="text-smoke">
-                      Codec
-                    </label>
-                    <select
-                      id="export-codec-select"
-                      value={codec}
-                      onChange={(e) => setCodec(e.target.value as 'h264' | 'hevc' | 'av1')}
-                      className="bg-[#2a2a2a] border border-white/10 rounded-md px-3 py-1.5 text-xs text-bone focus:outline-none focus:border-[#00b8a9] cursor-pointer"
-                    >
-                      <option value="h264">H.264</option>
-                      <option value="hevc">HEVC / H.265</option>
-                      <option value="av1">AV1</option>
-                    </select>
-                  </div>
-
-                  {/* Format Dropdown */}
-                  <div className="grid grid-cols-[115px_1fr] items-center">
-                    <label htmlFor="export-format-select" className="text-smoke">
-                      Format
-                    </label>
-                    <select
-                      id="export-format-select"
-                      value={format}
-                      onChange={(e) => setFormat(e.target.value as 'mp4' | 'mov' | 'webm')}
-                      className="bg-[#2a2a2a] border border-white/10 rounded-md px-3 py-1.5 text-xs text-bone focus:outline-none focus:border-[#00b8a9] cursor-pointer"
-                    >
-                      {exportMode === 'transparent' ? (
-                        <>
-                          <option value="webm">webm (VP9 with Alpha Channel)</option>
-                          <option value="mov">mov (QuickTime Alpha)</option>
-                        </>
-                      ) : (
-                        <>
-                          <option value="mp4">mp4</option>
-                          <option value="mov">mov</option>
-                          <option value="webm">webm</option>
-                        </>
-                      )}
-                    </select>
-                  </div>
-
-                  {/* Frame Rate Dropdown */}
-                  <div className="grid grid-cols-[115px_1fr] items-center">
-                    <label htmlFor="export-framerate-select" className="text-smoke">
-                      Frame rate
-                    </label>
-                    <select
-                      id="export-framerate-select"
-                      value={frameRate}
-                      onChange={(e) =>
-                        setFrameRate(e.target.value as '30' | '60' | '24' | 'original')
-                      }
-                      className="bg-[#2a2a2a] border border-white/10 rounded-md px-3 py-1.5 text-xs text-bone focus:outline-none focus:border-[#00b8a9] cursor-pointer"
-                    >
-                      <option value="30">30fps</option>
-                      <option value="60">60fps</option>
-                      <option value="24">24fps</option>
-                      <option value="original">Original</option>
-                    </select>
-                  </div>
-
-                  {/* Color Space Label */}
-                  <div className="grid grid-cols-[115px_1fr] items-center">
-                    <span className="text-smoke">Color space</span>
-                    <span className="text-mist">Rec. 709 SDR</span>
-                  </div>
-                </div>
-              )}
+                <option value="1080">1080p (Full HD)</option>
+                <option value="4k">4K (2160p UHD)</option>
+                <option value="1440">2K / 1440p (QHD)</option>
+                <option value="720">720p (HD)</option>
+                <option value="original">
+                  Original ({videoMeta ? `${videoMeta.width}x${videoMeta.height}` : 'Source'})
+                </option>
+              </select>
             </div>
 
-            {/* Collapsible Audio Settings */}
-            <div className="space-y-2.5 pt-1">
-              <button
-                type="button"
-                onClick={() => setAudioSectionOpen((prev) => !prev)}
-                className="flex items-center gap-2 text-xs font-semibold text-bone cursor-pointer w-full text-left"
+            {/* Format Dropdown */}
+            <div className="grid grid-cols-[100px_1fr] items-center">
+              <label htmlFor="export-format-select" className="text-smoke">
+                Format
+              </label>
+              <select
+                id="export-format-select"
+                value={format}
+                onChange={(e) => setFormat(e.target.value as 'mp4' | 'mov' | 'webm')}
+                className="bg-[#2a2a2a] border border-white/10 rounded-md px-3 py-1.5 text-xs text-bone focus:outline-none focus:border-[#00b8a9] cursor-pointer"
               >
-                <div className="w-3.5 h-3.5 rounded-xs bg-[#00b8a9] flex items-center justify-center text-black">
-                  <Check className="w-3 h-3 stroke-[3]" />
-                </div>
-                <span>Audio</span>
-                {audioSectionOpen ? (
-                  <ChevronUp className="w-3.5 h-3.5 text-smoke ml-auto" />
+                {exportMode === 'transparent' ? (
+                  <>
+                    <option value="webm">webm (VP9 with Alpha Channel)</option>
+                    <option value="mov">mov (QuickTime Alpha)</option>
+                  </>
                 ) : (
-                  <ChevronDown className="w-3.5 h-3.5 text-smoke ml-auto" />
+                  <>
+                    <option value="mp4">mp4</option>
+                    <option value="mov">mov</option>
+                    <option value="webm">webm</option>
+                  </>
                 )}
-              </button>
+              </select>
+            </div>
 
-              {audioSectionOpen && (
-                <div className="space-y-2 pl-5">
-                  <div className="grid grid-cols-[115px_1fr] items-center">
-                    <label htmlFor="export-audio-select" className="text-smoke">
-                      Format
-                    </label>
-                    <select
-                      id="export-audio-select"
-                      value={audioFormat}
-                      onChange={(e) => setAudioFormat(e.target.value as 'mp3' | 'aac')}
-                      className="bg-[#2a2a2a] border border-white/10 rounded-md px-3 py-1.5 text-xs text-bone focus:outline-none focus:border-[#00b8a9] cursor-pointer"
-                    >
-                      <option value="mp3">MP3</option>
-                      <option value="aac">AAC (Passthrough)</option>
-                    </select>
-                  </div>
-                </div>
-              )}
+            {/* Frame Rate Dropdown */}
+            <div className="grid grid-cols-[100px_1fr] items-center">
+              <label htmlFor="export-framerate-select" className="text-smoke">
+                Frame rate
+              </label>
+              <select
+                id="export-framerate-select"
+                value={frameRate}
+                onChange={(e) =>
+                  setFrameRate(e.target.value as '30' | '60' | '24' | 'original')
+                }
+                className="bg-[#2a2a2a] border border-white/10 rounded-md px-3 py-1.5 text-xs text-bone focus:outline-none focus:border-[#00b8a9] cursor-pointer"
+              >
+                <option value="30">30fps</option>
+                <option value="60">60fps</option>
+                <option value="24">24fps</option>
+                <option value="original">Original</option>
+              </select>
             </div>
 
             {/* NLE Timelines, Subtitles & Transcripts */}
-            <div className="pt-2 border-t border-[#2e2e2e]">
+            <div className="pt-3 border-t border-[#2e2e2e]">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-bone block">
                   NLE Timelines, Subtitles & Transcripts

@@ -236,6 +236,14 @@ describe('Professional NLE Timeline Export (Premiere Pro, DaVinci Resolve, Final
       expect(
         screen.getByRole('button', { name: /Export Transparent Video \(Alpha\)/i }),
       ).toBeDefined();
+
+      // Verify redundant elements requested to be removed are absent
+      expect(screen.queryByText(/Remove watermark/i)).toBeNull();
+      expect(screen.queryByText(/^Audio$/i)).toBeNull();
+      expect(screen.queryByText(/Export to/i)).toBeNull();
+      expect(screen.queryByText(/Timeline 01/i)).toBeNull();
+      expect(screen.queryByText(/Bit rate/i)).toBeNull();
+      expect(screen.queryByText(/Color space/i)).toBeNull();
     });
   });
 });
