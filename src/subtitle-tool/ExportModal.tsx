@@ -25,6 +25,7 @@ import {
 } from './utils/exportVideo';
 import { renderCaptions } from './engine/render';
 import { renderLowerThirds } from './engine/lowerThirds';
+import { renderOverlays, type VideoOverlaysConfig } from './engine/overlays';
 import type { Segment, CaptionStyle, LowerThirdSpec } from './types';
 
 interface ExportModalProps {
@@ -35,6 +36,7 @@ interface ExportModalProps {
   style: CaptionStyle;
   lowerThirds?: LowerThirdSpec[];
   photoCache?: Map<string, HTMLImageElement>;
+  overlaysConfig?: VideoOverlaysConfig;
   onBurnStart: () => void;
   onBurnProgress: (pct: number) => void;
   onBurnStatus?: (msg: string) => void;
@@ -51,6 +53,7 @@ export default function ExportModal({
   style,
   lowerThirds,
   photoCache,
+  overlaysConfig,
   onBurnStart,
   onBurnProgress,
   onBurnStatus,
@@ -142,10 +145,32 @@ export default function ExportModal({
       if (lowerThirds && photoCache) {
         renderLowerThirds(ctx, vw, vh, v.currentTime, lowerThirds, photoCache);
       }
+      if (overlaysConfig) {
+        renderOverlays(
+          ctx,
+          vw,
+          vh,
+          v.currentTime,
+          videoMeta?.duration || 10,
+          overlaysConfig,
+          segments,
+        );
+      }
       URL.revokeObjectURL(v.src);
     };
     v.onerror = () => URL.revokeObjectURL(v.src);
-  }, [videoFile, isOpen, coverTime, videoMeta, segments, style, lowerThirds, photoCache, exportMode]);
+  }, [
+    videoFile,
+    isOpen,
+    coverTime,
+    videoMeta,
+    segments,
+    style,
+    lowerThirds,
+    photoCache,
+    overlaysConfig,
+    exportMode,
+  ]);
 
   const handleNextCoverFrame = () => {
     const maxDur = videoMeta?.duration || 10;
@@ -296,6 +321,8 @@ export default function ExportModal({
             lowerThirds,
             photoCache,
             transparent: isTransparent,
+            overlaysConfig,
+            duration: videoMeta?.duration,
           },
           ({ pct, etaSec }) => {
             onBurnProgress(pct);
@@ -337,6 +364,7 @@ export default function ExportModal({
           lowerThirds,
           photoCache,
           isTransparent,
+          overlaysConfig,
         );
       }
 

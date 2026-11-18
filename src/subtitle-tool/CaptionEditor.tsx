@@ -11,6 +11,12 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckSquare, Trash2, Combine } from 'lucide-react';
 import { fixTimings } from './utils/alignWords';
+import {
+  rechunkSegments,
+  transformTextCase,
+  stripSmartPunctuation,
+  autoPairEmojis,
+} from './utils/captionPacing';
 import type {
   Segment,
   ScriptOutput,
@@ -471,6 +477,29 @@ function CaptionEditor({
     return 'Romanized';
   }, [scriptOutput, spokenLanguage]);
 
+  // Pacing, Casing & Emoji Handlers
+  const handlePacingChange = (density: '1-word' | '2-3-words' | 'sentence') => {
+    const updated = rechunkSegments(segments, density);
+    onSegmentsChange(updated);
+  };
+
+  const handleTransformCasing = (mode: 'upper' | 'title' | 'lower') => {
+    const updated = transformTextCase(segments, mode);
+    onSegmentsChange(updated);
+  };
+
+  const handleStripPunctuation = () => {
+    const updated = stripSmartPunctuation(segments);
+    onSegmentsChange(updated);
+  };
+
+  const handleAutoEmojis = () => {
+    const { segments: updated, matchedCount } = autoPairEmojis(segments);
+    if (matchedCount > 0) {
+      onSegmentsChange(updated);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-[#141413] border-r border-white/10 select-none">
       {/* Header matching ReplixCaptions */}
@@ -510,6 +539,74 @@ function CaptionEditor({
               ✕
             </button>
           )}
+        </div>
+
+        {/* Caption Pacing & Detailing Toolbar */}
+        <div className="mt-2.5 pt-2 border-t border-white/5 flex flex-wrap items-center gap-1.5 text-[11px]">
+          {/* Pacing Density Selector */}
+          <div className="flex items-center gap-0.5 bg-[#191918] p-0.5 rounded-lg border border-white/10">
+            <span className="text-[10px] text-smoke pl-1.5 pr-0.5 font-medium">Pacing:</span>
+            <button
+              type="button"
+              onClick={() => handlePacingChange('1-word')}
+              className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-smoke hover:text-amber-300 hover:bg-white/5 transition-colors cursor-pointer"
+              title="1 Word at a time (Ultra-kinetic TikTok & Reels style)"
+            >
+              1-Word
+            </button>
+            <button
+              type="button"
+              onClick={() => handlePacingChange('2-3-words')}
+              className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-smoke hover:text-amber-300 hover:bg-white/5 transition-colors cursor-pointer"
+              title="2 to 3 Words (Punchy dynamic phrase rhythm)"
+            >
+              2–3
+            </button>
+            <button
+              type="button"
+              onClick={() => handlePacingChange('sentence')}
+              className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-smoke hover:text-amber-300 hover:bg-white/5 transition-colors cursor-pointer"
+              title="Sentence Blocks (Narrative conversational rhythm)"
+            >
+              Sentence
+            </button>
+          </div>
+
+          {/* Casing & Punctuation Tools */}
+          <div className="flex items-center gap-1 ml-auto">
+            <button
+              type="button"
+              onClick={() => handleTransformCasing('upper')}
+              className="px-1.5 py-0.5 rounded bg-[#191918] hover:bg-white/10 border border-white/10 text-smoke hover:text-bone text-[10px] font-bold tracking-wider transition-colors cursor-pointer"
+              title="Transform all text to UPPERCASE"
+            >
+              CAPS
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTransformCasing('title')}
+              className="px-1.5 py-0.5 rounded bg-[#191918] hover:bg-white/10 border border-white/10 text-smoke hover:text-bone text-[10px] font-medium transition-colors cursor-pointer"
+              title="Transform all text to Title Case"
+            >
+              Aa
+            </button>
+            <button
+              type="button"
+              onClick={handleStripPunctuation}
+              className="px-1.5 py-0.5 rounded bg-[#191918] hover:bg-white/10 border border-white/10 text-smoke hover:text-bone text-[10px] font-mono transition-colors cursor-pointer"
+              title="Strip commas, periods & semicolons for clean kinetic punchiness"
+            >
+              No [.,]
+            </button>
+            <button
+              type="button"
+              onClick={handleAutoEmojis}
+              className="px-1.5 py-0.5 rounded bg-amber-400/15 hover:bg-amber-400/25 border border-amber-400/30 text-amber-300 text-[10px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+              title="Auto-pair viral trigger words with animated emojis"
+            >
+              <span>✨ Emojis</span>
+            </button>
+          </div>
         </div>
       </div>
 

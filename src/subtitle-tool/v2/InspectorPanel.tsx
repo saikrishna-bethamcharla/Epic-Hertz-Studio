@@ -28,12 +28,17 @@ import { checkReadability, getCPS, getWPM } from '../utils/readability';
 import { fixTimings } from '../utils/alignWords';
 import InspectorTypographySection from './inspector/InspectorTypographySection';
 import InspectorEffectsSection from './inspector/InspectorEffectsSection';
+import InspectorOverlaysSection from './inspector/InspectorOverlaysSection';
+import type { VideoOverlaysConfig } from '../engine/overlays';
+import { Sparkles } from 'lucide-react';
 
 interface InspectorPanelProps {
   scope: 'all' | 'caption' | 'words';
   onScopeChange: (scope: 'all' | 'caption' | 'words') => void;
   style: CaptionStyle;
   onStyleChange: (style: CaptionStyle) => void;
+  overlaysConfig?: VideoOverlaysConfig;
+  onOverlaysConfigChange?: (updated: VideoOverlaysConfig) => void;
   activeSegment: Segment | null;
   onUpdateActiveSegment: (override: Partial<Segment>) => void;
   onSegmentOverrideChange?: (segId: string, override: Partial<SegmentStyleOverride> | null) => void;
@@ -55,7 +60,7 @@ interface InspectorPanelProps {
   onClearAllOverrides?: () => void;
 }
 
-export type InspectorTab = 'text' | 'animation' | 'timing' | 'layout';
+export type InspectorTab = 'text' | 'animation' | 'timing' | 'layout' | 'overlays';
 export type TextSubTab = 'basic' | 'fill' | 'effects' | 'background';
 
 function InspectorPanel({
@@ -63,6 +68,8 @@ function InspectorPanel({
   onScopeChange,
   style,
   onStyleChange,
+  overlaysConfig,
+  onOverlaysConfigChange,
   activeSegment,
   onUpdateActiveSegment,
   onSegmentOverrideChange,
@@ -379,13 +386,14 @@ function InspectorPanel({
               )}
             </div>
 
-            {/* ── 4.2 Main Tabs: Text · Animation · Timing · Layout ── */}
-            <div className="grid grid-cols-4 gap-1 p-0.5 rounded-lg bg-[#181817] border border-white/5 text-[11px] font-bold">
+            {/* ── 4.2 Main Tabs: Text · Animation · Timing · Layout · Overlays ── */}
+            <div className="grid grid-cols-5 gap-1 p-0.5 rounded-lg bg-[#181817] border border-white/5 text-[11px] font-bold">
               {[
                 { id: 'text', label: 'Text', icon: Type },
                 { id: 'animation', label: 'Anim', icon: Zap },
                 { id: 'timing', label: 'Timing', icon: Clock },
                 { id: 'layout', label: 'Layout', icon: Layout },
+                { id: 'overlays', label: 'Overlays', icon: Sparkles },
               ].map((t) => {
                 const Icon = t.icon;
                 const isActive = tab === t.id;
@@ -804,6 +812,16 @@ function InspectorPanel({
                   Tip: You can also drag the caption block directly on the video player!
                 </p>
               </div>
+            )}
+
+            {/* ─────────────────────────────────────────────────────────────
+            TAB 5: OVERLAYS & ELEMENTS
+        ────────────────────────────────────────────────────────────── */}
+            {tab === 'overlays' && (
+              <InspectorOverlaysSection
+                overlaysConfig={overlaysConfig}
+                onChange={(updated) => onOverlaysConfigChange?.(updated)}
+              />
             )}
           </div>
 

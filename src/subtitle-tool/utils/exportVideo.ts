@@ -11,6 +11,7 @@
 import type { Segment, CaptionStyle, LowerThirdSpec } from '../types';
 import { renderCaptions } from '../engine/render';
 import { renderLowerThirds } from '../engine/lowerThirds';
+import { renderOverlays, type VideoOverlaysConfig } from '../engine/overlays';
 import { ensureFonts, ensureLowerThirdFonts } from '../engine/fonts';
 
 export type ExportQuality = 'standard' | 'high' | 'max';
@@ -25,6 +26,8 @@ export interface ExportOptions {
   photoCache?: Map<string, HTMLImageElement>;
   /** When true, renders transparent overlay video (WebM VP9 alpha) for NLE track V2 */
   transparent?: boolean;
+  overlaysConfig?: VideoOverlaysConfig;
+  duration?: number;
 }
 
 export interface ExportProgress {
@@ -175,6 +178,9 @@ export async function exportCaptionedVideo(
     const ctx = canvas.getContext('2d', { alpha: isTransparent });
     if (!ctx) throw new ExportUnsupportedError('Canvas is not available.');
 
+    const approxDuration =
+      options.duration ?? (segments.length > 0 ? segments[segments.length - 1].end : 10);
+
     const conversion = await mb.Conversion.init({
       input,
       output,
@@ -205,6 +211,17 @@ export async function exportCaptionedVideo(
             options.lowerThirds,
             options.photoCache,
           );
+          if (options.overlaysConfig) {
+            renderOverlays(
+              ctx,
+              canvas.width,
+              canvas.height,
+              sample.timestamp,
+              approxDuration,
+              options.overlaysConfig,
+              segments,
+            );
+          }
           return canvas;
         },
         processedWidth: outW,

@@ -11,7 +11,7 @@ export interface SegmentWordEditorProps {
   onSeek: (time: number) => void;
   onAutoDistribute: (seg: Segment) => void;
   onUpdateWord: (seg: Segment, wordIndex: number, patch: Partial<WordTimestamp>) => void;
-  onCycleWordColor: (seg: Segment, wordIndex: number) => void;
+  onCycleWordColor?: (seg: Segment, wordIndex: number) => void;
   onCycleWordEmphasis: (seg: Segment, wordIndex: number) => void;
   onNudgeWord: (seg: Segment, wordIndex: number, deltaStart: number, deltaEnd: number) => void;
 }
@@ -22,7 +22,7 @@ export function SegmentWordEditor({
   onSeek,
   onAutoDistribute,
   onUpdateWord,
-  onCycleWordColor,
+  onCycleWordColor: _onCycleWordColor,
   onCycleWordEmphasis,
   onNudgeWord,
 }: SegmentWordEditorProps) {
@@ -83,23 +83,41 @@ export function SegmentWordEditor({
                 className="bg-transparent text-bone font-medium text-[11px] w-14 focus:w-20 outline-none border-b border-transparent focus:border-amber-400 transition-all font-mono"
               />
 
-              {/* Custom Color Cycle Button */}
-              <button
-                type="button"
-                onClick={() => onCycleWordColor(segment, wIdx)}
-                aria-label={`Change color for word ${w.word}`}
-                className="w-3.5 h-3.5 rounded-full flex items-center justify-center p-0.5 transition-transform hover:scale-115 cursor-pointer"
-                title={`Highlight Color: ${w.highlightColor || 'Default'} (Click to cycle)`}
-              >
-                {w.highlightColor ? (
-                  <span
-                    className="w-2.5 h-2.5 rounded-full ring-1 ring-white/60"
-                    style={{ backgroundColor: w.highlightColor }}
+              {/* Quick 1-Click Highlight Color Palette */}
+              <div className="flex items-center gap-1 px-1 py-0.5 rounded-full bg-black/40 border border-white/5">
+                {[
+                  { color: '#FACC15', label: 'Gold' },
+                  { color: '#10B981', label: 'Emerald' },
+                  { color: '#06B6D4', label: 'Cyan' },
+                  { color: '#EC4899', label: 'Pink' },
+                  { color: '#F97316', label: 'Orange' },
+                ].map(({ color, label }) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() =>
+                      onUpdateWord(segment, wIdx, {
+                        highlightColor: w.highlightColor === color ? undefined : color,
+                      })
+                    }
+                    className={`w-2.5 h-2.5 rounded-full transition-transform hover:scale-130 cursor-pointer ${
+                      w.highlightColor === color ? 'ring-1.5 ring-white scale-125' : 'opacity-70 hover:opacity-100'
+                    }`}
+                    style={{ backgroundColor: color }}
+                    title={`${label} highlight (click to apply/remove)`}
                   />
-                ) : (
-                  <span className="w-2 h-2 rounded-full border border-white/30" />
+                ))}
+                {w.highlightColor && (
+                  <button
+                    type="button"
+                    onClick={() => onUpdateWord(segment, wIdx, { highlightColor: undefined })}
+                    className="text-[9px] text-smoke hover:text-white px-0.5 cursor-pointer leading-none"
+                    title="Reset to default color"
+                  >
+                    ✕
+                  </button>
                 )}
-              </button>
+              </div>
 
               {/* Custom Emphasis FX Cycle Button */}
               <button

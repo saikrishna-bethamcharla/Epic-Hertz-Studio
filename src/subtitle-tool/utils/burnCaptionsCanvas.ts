@@ -9,6 +9,7 @@
 import type { Segment, CaptionStyle, LowerThirdSpec } from '../types';
 import { renderLowerThirds } from '../engine/lowerThirds';
 import { renderCaptions } from '../engine/render';
+import { renderOverlays, type VideoOverlaysConfig } from '../engine/overlays';
 import { ensureFonts, ensureLowerThirdFonts } from '../engine/fonts';
 
 /**
@@ -24,6 +25,7 @@ export async function burnCaptionsCanvas(
   lowerThirds?: LowerThirdSpec[],
   photoCache?: Map<string, HTMLImageElement>,
   transparent: boolean = false,
+  overlaysConfig?: VideoOverlaysConfig,
 ): Promise<Blob> {
   if (signal?.aborted) {
     throw new DOMException('Export cancelled', 'AbortError');
@@ -221,6 +223,9 @@ export async function burnCaptionsCanvas(
         // 2. Captions: the exact renderer the live preview uses
         renderCaptions(ctx, width, height, video.currentTime, segments, style);
         renderLowerThirds(ctx, width, height, video.currentTime, lowerThirds, photoCache);
+        if (overlaysConfig) {
+          renderOverlays(ctx, width, height, video.currentTime, duration, overlaysConfig, segments);
+        }
 
         animId = requestAnimationFrame(renderLoop);
       };

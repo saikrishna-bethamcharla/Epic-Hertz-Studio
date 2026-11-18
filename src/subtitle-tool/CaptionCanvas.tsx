@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, type RefObject } from 'react';
 import type { CaptionStyle, Segment, SegmentStyleOverride, LowerThirdSpec, VideoFrameRequestCallback } from './types';
 import { renderLowerThirds } from './engine/lowerThirds';
 import { renderCaptions, findSegment } from './engine/render';
+import { renderOverlays, type VideoOverlaysConfig } from './engine/overlays';
 import { ensureFonts, ensureLowerThirdFonts, onFontsChange } from './engine/fonts';
 import {
   getLowerThirdBounds,
@@ -35,6 +36,8 @@ interface CaptionCanvasProps {
   onSelectSegment?: (id: string | null) => void;
   photoCache?: Map<string, HTMLImageElement>;
   visible?: boolean;
+  overlaysConfig?: VideoOverlaysConfig;
+  duration?: number;
 }
 
 interface Geometry {
@@ -188,6 +191,8 @@ export default function CaptionCanvas({
   onSelectSegment,
   photoCache,
   visible = true,
+  overlaysConfig,
+  duration,
 }: CaptionCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -205,6 +210,8 @@ export default function CaptionCanvas({
     onStyleChange,
     onSegmentOverrideChange,
     visible,
+    overlaysConfig,
+    duration,
   });
   live.current = {
     segments,
@@ -219,6 +226,8 @@ export default function CaptionCanvas({
     onStyleChange,
     onSegmentOverrideChange,
     visible,
+    overlaysConfig,
+    duration,
   };
 
   const geom = useRef<Geometry>({ cssW: 0, cssH: 0, left: 0, top: 0, dpr: 1 });
@@ -418,6 +427,20 @@ export default function CaptionCanvas({
 
       // 2. Render Lower Thirds / Callouts / YouTube / Social / MOGRT Graphics
       renderLowerThirds(ctx, canvas.width, canvas.height, t, effLowerThirds, cache);
+
+      // 3. Render High-Retention Overlays (Progress Bar, Headline Banner, Audio Visualizer)
+      if (live.current.overlaysConfig) {
+        const speechIntervals = effSegs.map((s) => ({ start: s.start, end: s.end }));
+        renderOverlays(
+          ctx,
+          canvas.width,
+          canvas.height,
+          t,
+          live.current.duration || timeStore.getDuration() || 30,
+          live.current.overlaysConfig,
+          speechIntervals,
+        );
+      }
 
       // 3. Selection & Drag Overlays for Lower Thirds
       if (effLowerThirds && effLowerThirds.length > 0) {

@@ -34,6 +34,7 @@ import TopBar from './v2/TopBar';
 import ResizeHandle from './v2/ResizeHandle';
 import LibraryPanel, { type LibraryTab } from './v2/LibraryPanel';
 import InspectorPanel from './v2/InspectorPanel';
+import { DEFAULT_OVERLAYS_CONFIG, type VideoOverlaysConfig } from './engine/overlays';
 import {
   getStoredLayout,
   saveStoredLayout,
@@ -108,6 +109,8 @@ export default function SubtitleTool({
   const [lowerThirds, setLowerThirds] = useState<LowerThirdSpec[]>([]);
   const [activeLowerThirdId, setActiveLowerThirdId] = useState<string | null>(null);
   const [photoCache, setPhotoCache] = useState<Map<string, HTMLImageElement>>(() => new Map());
+  const [overlaysConfig, setOverlaysConfig] =
+    useState<VideoOverlaysConfig>(DEFAULT_OVERLAYS_CONFIG);
 
   // Modular custom hooks (Phase 6.2)
   const {
@@ -795,6 +798,7 @@ export default function SubtitleTool({
             style={style}
             lowerThirds={lowerThirds}
             photoCache={photoCache}
+            overlaysConfig={overlaysConfig}
             signal={exportAbortRef.current?.signal}
             onBurnStart={() => {
               exportAbortRef.current = new AbortController();
@@ -1138,6 +1142,7 @@ export default function SubtitleTool({
                         onStyleChange={setStyle}
                         onSegmentOverrideChange={handleSegmentOverride}
                         lowerThirds={lowerThirds}
+                        overlaysConfig={overlaysConfig}
                         selectedLowerThirdId={activeLowerThirdId}
                         onSelectLowerThird={setActiveLowerThirdId}
                         onUpdateLowerThird={handleUpdateLowerThird}
@@ -1207,6 +1212,8 @@ export default function SubtitleTool({
                             onScopeChange={setScope}
                             style={style}
                             onStyleChange={setStyle}
+                            overlaysConfig={overlaysConfig}
+                            onOverlaysConfigChange={setOverlaysConfig}
                             activeSegment={
                               segments.find((s) => s.id === (selectedId ?? activeId)) || null
                             }
@@ -1317,6 +1324,7 @@ export default function SubtitleTool({
                       onStyleChange={setStyle}
                       onSegmentOverrideChange={handleSegmentOverride}
                       lowerThirds={lowerThirds}
+                      overlaysConfig={overlaysConfig}
                       selectedLowerThirdId={activeLowerThirdId}
                       onSelectLowerThird={setActiveLowerThirdId}
                       onUpdateLowerThird={handleUpdateLowerThird}
@@ -1424,6 +1432,8 @@ export default function SubtitleTool({
                           onScopeChange={setScope}
                           style={style}
                           onStyleChange={setStyle}
+                          overlaysConfig={overlaysConfig}
+                          onOverlaysConfigChange={setOverlaysConfig}
                           activeSegment={
                             segments.find((s) => s.id === (selectedId ?? activeId)) || null
                           }

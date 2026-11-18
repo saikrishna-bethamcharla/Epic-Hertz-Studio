@@ -40,6 +40,7 @@ import type {
 } from './types';
 import CaptionCanvas from './CaptionCanvas';
 import { formatTimecode } from './utils/formatTime';
+import type { VideoOverlaysConfig } from './engine/overlays';
 import React from 'react';
 import { timeStore } from './store/timeStore';
 
@@ -99,6 +100,7 @@ interface VideoPreviewProps {
   onToggleLeftCollapsed?: () => void;
   isRightCollapsed?: boolean;
   onToggleRightCollapsed?: () => void;
+  overlaysConfig?: VideoOverlaysConfig;
 }
 
 export interface VideoPreviewHandle {
@@ -131,6 +133,7 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       selectedSegmentId,
       onSelectSegment,
       photoCache,
+      overlaysConfig,
       hideCaptions = false,
       onToggleHideCaptions,
       isLeftCollapsed = false,
@@ -836,6 +839,8 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
             segments={segments}
             style={style}
             lowerThirds={lowerThirds}
+            overlaysConfig={overlaysConfig}
+            duration={duration}
             selectedLowerThirdId={selectedLowerThirdId}
             onSelectLowerThird={onSelectLowerThird}
             onUpdateLowerThird={onUpdateLowerThird}
