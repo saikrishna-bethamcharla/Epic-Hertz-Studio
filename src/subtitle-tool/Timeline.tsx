@@ -289,8 +289,15 @@ export const TimelinePlayhead = React.memo(function TimelinePlayhead({
         transform: `translate3d(${initialTime * zoom}px, 0, 0) translateX(-50%)`,
       }}
     >
-      {/* Playhead marker pin */}
-      <div className="w-3.5 h-3.5 bg-amber-400 rounded-sm rotate-45 -translate-y-1 mx-auto shadow-md" />
+      {/* Playhead marker pin with grab handle */}
+      <div
+        className="relative pointer-events-auto cursor-ew-resize group -translate-y-1.5 flex items-center justify-center"
+        title="Drag playhead"
+      >
+        <div className="w-3.5 h-3.5 bg-amber-400 rounded-xs rotate-45 shadow-[0_1px_4px_rgba(0,0,0,0.5)] group-hover:scale-125 group-active:scale-125 transition-transform" />
+        {/* Invisible enlarged hit target for easy grabbing */}
+        <div className="absolute -inset-3" />
+      </div>
       <div className="w-[1.5px] h-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)] mx-auto" />
     </div>
   );
@@ -365,6 +372,28 @@ function Timeline({
   const isDraggingPlayhead = useRef(false);
   const dragStateRef = useRef<DragState | null>(null);
 
+  // Safe duration calculation ensuring timeline span covers both video and caption limits
+  const maxSegEnd = segments.length > 0 ? Math.max(...segments.map((s) => s.end)) : 0;
+  const totalDuration = Math.max(duration || 0, maxSegEnd, 5);
+  const totalWidth = Math.max(totalDuration * zoom, 600);
+
+  // Playhead scrub & auto-scroll tracking refs
+  const autoScrollRafRef = useRef<number | null>(null);
+  const autoScrollVelocityRef = useRef<number>(0);
+  const lastClientXRef = useRef<number>(0);
+  const lastSeekTimeRef = useRef<number>(0);
+
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
+  const isSnappingEnabledRef = useRef(isSnappingEnabled);
+  isSnappingEnabledRef.current = isSnappingEnabled;
+  const segmentsRef = useRef(segments);
+  segmentsRef.current = segments;
+  const totalDurationRef = useRef(totalDuration);
+  totalDurationRef.current = totalDuration;
+  const onSeekRef = useRef(onSeek);
+  onSeekRef.current = onSeek;
+
   const handleTracksScroll = (e: React.UIEvent<HTMLDivElement>) => {
     if (leftSidebarRef.current) {
       leftSidebarRef.current.scrollTop = e.currentTarget.scrollTop;
@@ -412,11 +441,6 @@ function Timeline({
   const isUndoDisabled = onUndo ? !canUndo : localHistory.length === 0;
   const isRedoDisabled = onRedo ? !canRedo : localRedo.length === 0;
 
-  // Safe duration calculation ensuring timeline span covers both video and caption limits
-  const maxSegEnd = segments.length > 0 ? Math.max(...segments.map((s) => s.end)) : 0;
-  const totalDuration = Math.max(duration || 0, maxSegEnd, 5);
-  const totalWidth = Math.max(totalDuration * zoom, 600);
-
   // Memoized speech intervals for waveform generation (prevents redraws during text typing)
   const intervalsKey = segments.map((s) => `${s.start.toFixed(2)}-${s.end.toFixed(2)}`).join('|');
   const speechIntervals = useMemo(() => {
@@ -435,61 +459,186 @@ function Timeline({
     return segments.find((s) => t >= s.start && t <= s.end);
   }, [segments, selectedId, activeId, currentTime]);
 
+  // ── Auto-scroll Helpers for Scrubbing ──────────────────────────────────────
+  const stopAutoScroll = useCallback(() => {
+    if (autoScrollRafRef.current !== null) {
+      cancelAnimationFrame(autoScrollRafRef.current);
+      autoScrollRafRef.current = null;
+    }
+    autoScrollVelocityRef.current = 0;
+  }, []);
+
+  const computeSeekTimeFromClientX = useCallback(
+    (clientX: number, container: HTMLDivElement): number => {
+      const rect = container.getBoundingClientRect();
+      const currentScroll = container.scrollLeft;
+
+      // Keep playhead clamped within visible viewport bounds so it NEVER goes off-screen!
+      const clampedClientX = Math.max(rect.left + 6, Math.min(rect.right - 6, clientX));
+      const effectiveX = clampedClientX - rect.left + currentScroll;
+      let t = Math.max(0, Math.min(totalDurationRef.current, effectiveX / zoomRef.current));
+
+      if (isSnappingEnabledRef.current) {
+        const threshold = 8 / zoomRef.current;
+        const nearestEdge = segmentsRef.current
+          .flatMap((s) => [s.start, s.end])
+          .find((edge) => Math.abs(edge - t) < threshold);
+        if (nearestEdge !== undefined) t = nearestEdge;
+      }
+      return t;
+    },
+    [],
+  );
+
+  const startAutoScroll = useCallback(() => {
+    if (autoScrollRafRef.current !== null) return;
+
+    const step = () => {
+      if (!isDraggingPlayhead.current || !containerRef.current) {
+        stopAutoScroll();
+        return;
+      }
+
+      const velocity = autoScrollVelocityRef.current;
+      if (velocity !== 0) {
+        const container = containerRef.current;
+        const maxScroll = Math.max(0, container.scrollWidth - container.clientWidth);
+        const prevScroll = container.scrollLeft;
+        const nextScroll = Math.max(0, Math.min(maxScroll, prevScroll + velocity));
+
+        if (nextScroll !== prevScroll) {
+          container.scrollLeft = nextScroll;
+        }
+
+        // Recompute seek time with the new scroll position and current mouse position
+        const t = computeSeekTimeFromClientX(lastClientXRef.current, container);
+        lastSeekTimeRef.current = t;
+        timeStore.seek(t);
+        onSeekRef.current(t, false);
+      }
+
+      autoScrollRafRef.current = requestAnimationFrame(step);
+    };
+
+    autoScrollRafRef.current = requestAnimationFrame(step);
+  }, [computeSeekTimeFromClientX, stopAutoScroll]);
+
+  // Clean up auto-scroll animation frame on unmount
+  useEffect(() => {
+    return () => {
+      stopAutoScroll();
+    };
+  }, [stopAutoScroll]);
+
+  // ── Auto-follow Playhead during Playback ────────────────────────────────────
+  useEffect(() => {
+    return timeStore.subscribeTime(() => {
+      if (isDraggingPlayhead.current || !containerRef.current) return;
+      if (!timeStore.getIsPlaying()) return;
+
+      const container = containerRef.current;
+      const time = timeStore.getTime();
+      const playheadX = time * zoom;
+      const scrollLeft = container.scrollLeft;
+      const clientWidth = container.clientWidth;
+
+      // When playhead reaches the right 30px edge, scroll forward so playhead is at 20% from left
+      if (playheadX >= scrollLeft + clientWidth - 30) {
+        const targetScroll = Math.max(0, playheadX - clientWidth * 0.2);
+        container.scrollLeft = targetScroll;
+      } else if (playheadX < scrollLeft - 10) {
+        // When playhead loops or jumps behind the left edge
+        const targetScroll = Math.max(0, playheadX - clientWidth * 0.2);
+        container.scrollLeft = targetScroll;
+      }
+    });
+  }, [zoom]);
+
+  // ── Keep Playhead Centered on Zoom Change ──────────────────────────────────
+  const prevZoomRef = useRef(zoom);
+  useEffect(() => {
+    if (prevZoomRef.current !== zoom && containerRef.current) {
+      const container = containerRef.current;
+      const time = currentTime !== undefined ? currentTime : timeStore.getTime();
+      const playheadX = time * zoom;
+      const clientWidth = container.clientWidth;
+      container.scrollLeft = Math.max(0, playheadX - clientWidth / 2);
+    }
+    prevZoomRef.current = zoom;
+  }, [zoom, currentTime]);
+
+  // ── Ensure Selected Segment / Playhead is in View on Selection ─────────────
+  useEffect(() => {
+    if (isDraggingPlayhead.current || !containerRef.current) return;
+    const container = containerRef.current;
+    const time = currentTime !== undefined ? currentTime : timeStore.getTime();
+    const playheadX = time * zoom;
+    const scrollLeft = container.scrollLeft;
+    const clientWidth = container.clientWidth;
+
+    if (playheadX < scrollLeft || playheadX > scrollLeft + clientWidth - 30) {
+      container.scrollLeft = Math.max(0, playheadX - clientWidth * 0.25);
+    }
+  }, [selectedId, activeId, zoom, currentTime]);
+
   // ── Scrubbing / Seeking via Click & Drag on Timeline ──────────────────────
   const handleTimelineMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     // If clicking on segment controls, do not start playhead drag
     if ((e.target as HTMLElement).closest('.timeline-segment')) return;
 
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) return;
+    const container = containerRef.current;
+    if (!container) return;
+
     isDraggingPlayhead.current = true;
+    lastClientXRef.current = e.clientX;
 
-    const scrollLeft = containerRef.current?.scrollLeft || 0;
-    const clickX = e.clientX - rect.left + scrollLeft;
-    let seekTime = Math.max(0, Math.min(totalDuration, clickX / zoom));
+    const seekTime = computeSeekTimeFromClientX(e.clientX, container);
+    lastSeekTimeRef.current = seekTime;
 
-    // Snap playhead to segment edges if enabled
-    if (isSnappingEnabled) {
-      const threshold = 8 / zoom;
-      const nearestEdge = segments
-        .flatMap((s) => [s.start, s.end])
-        .find((t) => Math.abs(t - seekTime) < threshold);
-      if (nearestEdge !== undefined) seekTime = nearestEdge;
-    }
-
-    let lastSeekTime = seekTime;
     // Decouple UI: Instant 60 FPS playhead movement via timeStore translate3d
     timeStore.seek(seekTime);
     onSeek(seekTime, false);
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      if (!isDraggingPlayhead.current || !rect) return;
-      const curScroll = containerRef.current?.scrollLeft || 0;
-      const x = moveEvent.clientX - rect.left + curScroll;
-      let t = Math.max(0, Math.min(totalDuration, x / zoom));
+      if (!isDraggingPlayhead.current || !containerRef.current) return;
+      const c = containerRef.current;
+      const rect = c.getBoundingClientRect();
+      const clientX = moveEvent.clientX;
+      lastClientXRef.current = clientX;
 
-      if (isSnappingEnabled) {
-        const threshold = 8 / zoom;
-        const nearestEdge = segments
-          .flatMap((s) => [s.start, s.end])
-          .find((edge) => Math.abs(edge - t) < threshold);
-        if (nearestEdge !== undefined) t = nearestEdge;
+      // Auto-scroll detection: 45px inside container borders or outside
+      const EDGE_ZONE = 45;
+      let velocity = 0;
+
+      if (clientX > rect.right - EDGE_ZONE) {
+        const dist = clientX - (rect.right - EDGE_ZONE);
+        velocity = Math.min(35, Math.max(3, dist * 0.35));
+      } else if (clientX < rect.left + EDGE_ZONE) {
+        const dist = (rect.left + EDGE_ZONE) - clientX;
+        velocity = -Math.min(35, Math.max(3, dist * 0.35));
       }
 
-      lastSeekTime = t;
-      // Decouple UI: Move playhead immediately with zero decoder lag
+      autoScrollVelocityRef.current = velocity;
+      if (velocity !== 0) {
+        startAutoScroll();
+      }
+
+      const t = computeSeekTimeFromClientX(clientX, c);
+      lastSeekTimeRef.current = t;
       timeStore.seek(t);
-      // Throttled video seek request
       onSeek(t, false);
     };
 
     const handleMouseUp = () => {
       isDraggingPlayhead.current = false;
+      stopAutoScroll();
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
+
       // Final frame-accurate commit on release
-      timeStore.seek(lastSeekTime);
-      onSeek(lastSeekTime, true);
+      const finalTime = lastSeekTimeRef.current;
+      timeStore.seek(finalTime);
+      onSeekRef.current(finalTime, true);
     };
 
     window.addEventListener('mousemove', handleMouseMove);
