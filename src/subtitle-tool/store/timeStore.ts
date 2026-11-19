@@ -6,6 +6,7 @@
 
 import { useSyncExternalStore } from 'react';
 import type { Segment } from '../types';
+import { getCutIntervals } from '../utils/captionPacing';
 
 export class PlaybackTimeStore {
   private _currentTime: number = 0;
@@ -13,6 +14,7 @@ export class PlaybackTimeStore {
   private _isPlaying: boolean = false;
   private _playheadId: string | null = null;
   private _segments: Segment[] = [];
+  private _cutIntervals: { start: number; end: number }[] = [];
   private _currentSegment: Segment | null = null;
   private _syncOffset: number = 0;
   private _lastTickMs: number = 0;
@@ -84,8 +86,22 @@ export class PlaybackTimeStore {
   // ── Setters ───────────────────────────────────────────────────────────────
   setSegments(segments: Segment[]): void {
     this._segments = segments;
+    this._cutIntervals = getCutIntervals(segments);
     // Re-evaluate playheadId with new segments
     this._updatePlayheadId(this._currentTime);
+  }
+
+  getCutIntervals(): { start: number; end: number }[] {
+    return this._cutIntervals;
+  }
+
+  getCutIntervalAt(time: number): { start: number; end: number } | null {
+    for (const interval of this._cutIntervals) {
+      if (time >= interval.start && time < interval.end) {
+        return interval;
+      }
+    }
+    return null;
   }
 
   setSyncOffset(offset: number): void {

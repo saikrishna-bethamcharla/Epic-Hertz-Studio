@@ -349,3 +349,89 @@ export function autoPairEmojis(segments: Segment[]): { segments: Segment[]; matc
 
   return { segments: newSegments, matchedCount };
 }
+
+/**
+ * Gathers all cut intervals (from cut words or cut segments) into sorted, merged time intervals.
+ */
+export function getCutIntervals(segments: Segment[]): { start: number; end: number }[] {
+  const intervals: { start: number; end: number }[] = [];
+
+  for (const seg of segments) {
+    if (seg.isCut) {
+      intervals.push({ start: seg.start, end: seg.end });
+      continue;
+    }
+    if (seg.words && seg.words.length > 0) {
+      for (const w of seg.words) {
+        if (w.isCut) {
+          intervals.push({ start: w.start, end: w.end });
+        }
+      }
+    }
+  }
+
+  if (intervals.length === 0) return [];
+
+  // Sort by start time
+  intervals.sort((a, b) => a.start - b.start);
+
+  // Merge contiguous / overlapping intervals
+  const merged: { start: number; end: number }[] = [{ ...intervals[0] }];
+  for (let i = 1; i < intervals.length; i++) {
+    const prev = merged[merged.length - 1];
+    const curr = intervals[i];
+    if (curr.start <= prev.end + 0.04) {
+      prev.end = Math.max(prev.end, curr.end);
+    } else {
+      merged.push({ ...curr });
+    }
+  }
+
+  return merged;
+}
+
+/**
+ * Toggles a word's cut state (marking it to be sliced out from playback and export).
+ */
+export function toggleWordCut(segments: Segment[], segId: string, wordIdx: number): Segment[] {
+  return segments.map((seg) => {
+    if (seg.id !== segId || !seg.words || !seg.words[wordIdx]) return seg;
+    const newWords = seg.words.map((w, idx) =>
+      idx === wordIdx ? { ...w, isCut: !w.isCut } : w,
+    );
+    // If all words are cut, mark entire segment as cut
+    const allCut = newWords.every((w) => w.isCut);
+    return {
+      ...seg,
+      words: newWords,
+      isCut: allCut,
+    };
+  });
+}
+
+/**
+ * Detects gaps between consecutive words or segments that exceed thresholdSec (default: 0.6s).
+ * Returns the detected silent intervals.
+ */
+export function detectLongPauses(
+  segments: Segment[],
+  thresholdSec: number = 0.6,
+): { start: number; end: number; duration: number }[] {
+  const pauses: { start: number; end: number; duration: number }[] = [];
+
+  for (let i = 0; i < segments.length - 1; i++) {
+    const curr = segments[i];
+    const next = segments[i + 1];
+    const gap = next.start - curr.end;
+    if (gap >= thresholdSec) {
+      pauses.push({
+        start: +curr.end.toFixed(2),
+        end: +next.start.toFixed(2),
+        duration: +gap.toFixed(2),
+      });
+    }
+  }
+
+  return pauses;
+}
+

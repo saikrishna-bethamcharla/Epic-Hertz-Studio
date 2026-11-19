@@ -392,6 +392,35 @@ export const PRESETS: PresetDef[] = [
       },
     }),
   },
+  {
+    group: 'Kinetic',
+    blurb: 'Spotlight dim: Unspoken words dimmed to 30%, active word pops in bright gold',
+    style: makeStyle({
+      id: 'spotlight-dim',
+      name: 'Spotlight',
+      font: { family: 'montserrat', weight: 800, size: 0.082, textCase: 'upper' },
+      layout: { wordsPerPage: 3, widthPct: 0.88, y: 0.72 },
+      reveal: { mode: 'spoken', dimUnspoken: 0.3 },
+      highlight: { mode: 'color', color: '#FFD700', scale: 1.15 },
+      shadow: { x: 0, y: 0.04, blur: 0.1, color: 'rgba(0,0,0,0.6)' },
+      motion: { in: 'pop', inMs: 240, stagger: 35, ease: 'spring', bounce: 0.5 },
+    }),
+  },
+  {
+    group: 'Glow & colour',
+    blurb: 'Vibrant electric cyan neon with glowing outer halo',
+    style: makeStyle({
+      id: 'electric-neon',
+      name: 'Electric Neon',
+      font: { family: 'poppins', weight: 800, size: 0.086, textCase: 'upper' },
+      layout: { wordsPerPage: 3, widthPct: 0.88, y: 0.74 },
+      fill: '#FFFFFF',
+      stroke: { width: 0.04, color: '#00F2FE' },
+      glow: { color: '#00F2FE', blur: 0.35, strength: 0.9 },
+      highlight: { mode: 'color', color: '#00F2FE', scale: 1.12 },
+      motion: { in: 'pop', inMs: 250, stagger: 40, ease: 'spring', bounce: 0.5 },
+    }),
+  },
 ];
 
 export const DEFAULT_STYLE: CaptionStyle = PRESETS[0].style;

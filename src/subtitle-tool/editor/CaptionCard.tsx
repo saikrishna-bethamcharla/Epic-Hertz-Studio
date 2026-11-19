@@ -128,11 +128,13 @@ export const CaptionCard = React.memo(function CaptionCard({
           : undefined
       }
       className={`group relative rounded-xl p-3 border transition-colors duration-150 cursor-pointer ${
-        isActive
-          ? 'border-amber-400/80 bg-[#252420] shadow-md ring-1 ring-amber-400/40'
-          : isSelected
-            ? 'border-amber-400/40 bg-[#1e1e1b] ring-1 ring-amber-400/20'
-            : 'border-white/[0.08] bg-[#1a1a18] hover:border-white/20 hover:bg-[#20201d]'
+        seg.isCut
+          ? 'border-rose-500/40 bg-rose-950/15 opacity-75'
+          : isActive
+            ? 'border-amber-400/80 bg-[#252420] shadow-md ring-1 ring-amber-400/40'
+            : isSelected
+              ? 'border-amber-400/40 bg-[#1e1e1b] ring-1 ring-amber-400/20'
+              : 'border-white/[0.08] bg-[#1a1a18] hover:border-white/20 hover:bg-[#20201d]'
       }`}
     >
       <div className="flex items-start gap-2.5">
@@ -182,6 +184,16 @@ export const CaptionCard = React.memo(function CaptionCard({
           <Mic className="w-2.5 h-2.5" />
           <span>{speakerStyle ? getSpeakerShortCode(seg.speaker) : '+S'}</span>
         </button>
+
+        {/* Cut / Trim Indicator */}
+        {seg.isCut && (
+          <span
+            className="px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1 shrink-0"
+            title="This caption is cut from the video (skipped during playback & export)"
+          >
+            <span>✂️ CUT</span>
+          </span>
+        )}
 
         {/* Custom Position Indicator */}
         {(seg.styleOverride?.positionX !== undefined ||

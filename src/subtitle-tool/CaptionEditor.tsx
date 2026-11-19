@@ -9,7 +9,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckSquare, Trash2, Combine } from 'lucide-react';
+import { CheckSquare, Trash2, Combine, Scissors } from 'lucide-react';
 import { fixTimings } from './utils/alignWords';
 import {
   rechunkSegments,
@@ -500,6 +500,28 @@ function CaptionEditor({
     }
   };
 
+  const handleCleanPauses = () => {
+    let shiftAcc = 0;
+    const updated = segments.map((seg, idx) => {
+      if (idx === 0) return seg;
+      const prev = segments[idx - 1];
+      const gap = seg.start - prev.end;
+      if (gap > 0.6) {
+        const excess = +(gap - 0.2).toFixed(2);
+        shiftAcc += excess;
+      }
+      const newStart = Math.max(0, +(seg.start - shiftAcc).toFixed(2));
+      const newEnd = Math.max(newStart + 0.2, +(seg.end - shiftAcc).toFixed(2));
+      const newWords = seg.words?.map((w) => ({
+        ...w,
+        start: Math.max(0, +(w.start - shiftAcc).toFixed(2)),
+        end: Math.max(0, +(w.end - shiftAcc).toFixed(2)),
+      }));
+      return { ...seg, start: newStart, end: newEnd, words: newWords };
+    });
+    onSegmentsChange(updated);
+  };
+
   return (
     <div className="flex flex-col h-full bg-[#141413] border-r border-white/10 select-none">
       {/* Header matching ReplixCaptions */}
@@ -605,6 +627,15 @@ function CaptionEditor({
               title="Auto-pair viral trigger words with animated emojis"
             >
               <span>✨ Emojis</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleCleanPauses}
+              className="px-1.5 py-0.5 rounded bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 text-[10px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+              title="Detect and compact silence pauses > 0.6s for tighter pacing"
+            >
+              <Scissors className="w-2.5 h-2.5" />
+              <span>Clean Pauses</span>
             </button>
           </div>
         </div>

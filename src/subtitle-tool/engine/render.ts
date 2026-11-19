@@ -65,7 +65,7 @@ export function segmentWords(seg: Segment): WordTiming[] {
   const raw = seg.text.trim().split(/\s+/).filter(Boolean);
   let words: WordTiming[] = [];
   if (raw.length) {
-    const timed = seg.words;
+    const timed = seg.words ? seg.words.filter((w) => !w.isCut) : undefined;
     if (
       timed &&
       timed.length === raw.length &&
@@ -73,6 +73,14 @@ export function segmentWords(seg: Segment): WordTiming[] {
     ) {
       words = timed.map((w, i) => ({
         text: raw[i],
+        start: w.start,
+        end: Math.max(w.end, w.start + 0.06),
+        highlightColor: w.highlightColor,
+        emphasis: w.emphasis,
+      }));
+    } else if (timed && timed.length > 0) {
+      words = timed.map((w) => ({
+        text: w.word,
         start: w.start,
         end: Math.max(w.end, w.start + 0.06),
         highlightColor: w.highlightColor,
@@ -826,6 +834,7 @@ export function findSegment(segments: Segment[], t: number): Segment | undefined
   let hit: Segment | undefined;
   for (let i = 0; i < segments.length; i++) {
     const s = segments[i];
+    if (s.isCut) continue;
     if (t >= s.start && t <= s.end + 0.15 && (!hit || s.start >= hit.start)) hit = s;
   }
   return hit;

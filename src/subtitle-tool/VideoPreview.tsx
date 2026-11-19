@@ -389,11 +389,22 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       if (typeof video.requestVideoFrameCallback === 'function') {
         const onFrame: VideoFrameRequestCallback = (now, metadata) => {
           if (!isActive) return;
+          const v = videoRef.current;
+          const cut = timeStore.getCutIntervalAt(metadata.mediaTime);
+          if (cut && v && !v.paused) {
+            v.currentTime = cut.end + 0.02;
+            timeStore.setTime(cut.end + 0.02, true, now);
+            onTimeUpdate?.(cut.end + 0.02);
+            if (typeof v.requestVideoFrameCallback === 'function') {
+              rvfcId = v.requestVideoFrameCallback(onFrame);
+            }
+            return;
+          }
+
           // metadata.mediaTime provides sub-millisecond presentation accuracy
           timeStore.setTime(metadata.mediaTime, false, now);
           onTimeUpdate?.(metadata.mediaTime);
 
-          const v = videoRef.current;
           if (v && !v.paused && typeof v.requestVideoFrameCallback === 'function') {
             rvfcId = v.requestVideoFrameCallback(onFrame);
           }
@@ -403,8 +414,17 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
       } else {
         const tick = (now: number) => {
           if (!isActive) return;
-          if (videoRef.current && !videoRef.current.paused) {
-            const t = videoRef.current.currentTime;
+          const v = videoRef.current;
+          if (v && !v.paused) {
+            const t = v.currentTime;
+            const cut = timeStore.getCutIntervalAt(t);
+            if (cut) {
+              v.currentTime = cut.end + 0.02;
+              timeStore.setTime(cut.end + 0.02, true, now);
+              onTimeUpdate?.(cut.end + 0.02);
+              rafId = requestAnimationFrame(tick);
+              return;
+            }
             timeStore.setTime(t, false, now);
             onTimeUpdate?.(t);
           }

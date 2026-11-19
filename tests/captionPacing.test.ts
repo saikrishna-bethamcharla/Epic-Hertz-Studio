@@ -6,6 +6,9 @@ import {
   splitSegmentAtCursor,
   mergeAdjacentSegments,
   autoPairEmojis,
+  getCutIntervals,
+  toggleWordCut,
+  detectLongPauses,
 } from '../src/subtitle-tool/utils/captionPacing';
 import type { Segment } from '../src/subtitle-tool/types';
 
@@ -120,5 +123,58 @@ describe('Caption Pacing & Formatting Engine', () => {
     expect(matchedCount).toBeGreaterThanOrEqual(2);
     expect(result[0].text).toContain('💰');
     expect(result[0].text).toContain('📈');
+  });
+
+  it('toggles word cut and collects merged cut intervals accurately', () => {
+    const segs: Segment[] = [
+      {
+        id: 'seg-cut-test',
+        index: 1,
+        start: 0,
+        end: 4.0,
+        text: 'hello um world uh yeah',
+        words: [
+          { word: 'hello', start: 0, end: 0.5 },
+          { word: 'um', start: 0.5, end: 1.2 },
+          { word: 'world', start: 1.2, end: 2.0 },
+          { word: 'uh', start: 2.0, end: 2.8 },
+          { word: 'yeah', start: 2.8, end: 3.5 },
+        ],
+      },
+    ];
+
+    // Cut "um" (index 1) and "uh" (index 3)
+    let updated = toggleWordCut(segs, 'seg-cut-test', 1);
+    updated = toggleWordCut(updated, 'seg-cut-test', 3);
+
+    expect(updated[0].words?.[1].isCut).toBe(true);
+    expect(updated[0].words?.[3].isCut).toBe(true);
+    expect(updated[0].words?.[0].isCut).toBeFalsy();
+
+    const cuts = getCutIntervals(updated);
+    expect(cuts.length).toBe(2);
+    expect(cuts[0]).toEqual({ start: 0.5, end: 1.2 });
+    expect(cuts[1]).toEqual({ start: 2.0, end: 2.8 });
+
+    // Un-cut "um"
+    const restored = toggleWordCut(updated, 'seg-cut-test', 1);
+    expect(restored[0].words?.[1].isCut).toBe(false);
+    const cutsRestored = getCutIntervals(restored);
+    expect(cutsRestored.length).toBe(1);
+    expect(cutsRestored[0]).toEqual({ start: 2.0, end: 2.8 });
+  });
+
+  it('detects dead-air pauses between segments exceeding threshold', () => {
+    const pausedSegs: Segment[] = [
+      { id: 's1', index: 1, start: 1.0, end: 2.0, text: 'Hello' },
+      { id: 's2', index: 2, start: 3.2, end: 4.0, text: 'World' }, // gap of 1.2s (> 0.6s)
+      { id: 's3', index: 3, start: 4.2, end: 5.0, text: 'Again' }, // gap of 0.2s (< 0.6s)
+    ];
+
+    const pauses = detectLongPauses(pausedSegs, 0.6);
+    expect(pauses.length).toBe(1);
+    expect(pauses[0].start).toBe(2.0);
+    expect(pauses[0].end).toBe(3.2);
+    expect(pauses[0].duration).toBe(1.2);
   });
 });

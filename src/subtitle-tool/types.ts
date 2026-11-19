@@ -16,6 +16,7 @@ export interface WordTimestamp {
   end: number; // seconds
   highlightColor?: string; // custom highlight color override
   emphasis?: 'none' | 'pop' | 'shake' | 'glow' | 'underline';
+  isCut?: boolean; // When true, cuts word from timeline (skips in playback & export)
 }
 
 export interface SegmentStyleOverride {
@@ -43,6 +44,7 @@ export interface Segment {
   speaker?: string; // e.g. 'Speaker 1', 'Speaker 2', 'Guest', 'Host'
   words?: WordTimestamp[];
   styleOverride?: SegmentStyleOverride;
+  isCut?: boolean; // When true, entire segment is cut from playback & export
 }
 
 export type ScriptOutput = 'romanized' | 'native'; // e.g. 'Tanglish' vs 'తెలుగు లిపి'

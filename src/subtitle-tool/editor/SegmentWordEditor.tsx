@@ -2,7 +2,7 @@
 // Dedicated editor sub-component for sub-second word timing precision, color, and emphasis.
 
 import { motion } from 'framer-motion';
-import { Wand2, Play, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Wand2, Play, ChevronLeft, ChevronRight, Scissors } from 'lucide-react';
 import type { Segment, WordTimestamp } from '../types';
 
 export interface SegmentWordEditorProps {
@@ -55,13 +55,16 @@ export function SegmentWordEditor({
           const wDuration = +(w.end - w.start).toFixed(2);
           const hasCustomColor = !!w.highlightColor;
           const hasEmphasis = w.emphasis && w.emphasis !== 'none';
+          const isCut = !!w.isCut;
           return (
             <div
               key={wIdx}
-              className={`flex items-center gap-1 bg-[#151514] border rounded-lg px-2 py-1 text-xs transition-colors ${
-                hasCustomColor
-                  ? 'border-amber-400/50 bg-[#1c1b18]'
-                  : 'border-white/10 hover:border-amber-400/40'
+              className={`flex items-center gap-1 border rounded-lg px-2 py-1 text-xs transition-colors ${
+                isCut
+                  ? 'border-rose-500/40 bg-rose-950/20 opacity-70'
+                  : hasCustomColor
+                    ? 'border-amber-400/50 bg-[#1c1b18]'
+                    : 'border-white/10 bg-[#151514] hover:border-amber-400/40'
               }`}
             >
               {/* Word loop play button */}
@@ -80,8 +83,29 @@ export function SegmentWordEditor({
                 type="text"
                 value={w.word}
                 onChange={(e) => onUpdateWord(segment, wIdx, { word: e.target.value })}
-                className="bg-transparent text-bone font-medium text-[11px] w-14 focus:w-20 outline-none border-b border-transparent focus:border-amber-400 transition-all font-mono"
+                className={`bg-transparent font-medium text-[11px] w-14 focus:w-20 outline-none border-b border-transparent focus:border-amber-400 transition-all font-mono ${
+                  isCut ? 'line-through text-rose-300 opacity-60' : 'text-bone'
+                }`}
               />
+
+              {/* Cut / Trim Word Toggle (Descript / Duet style) */}
+              <button
+                type="button"
+                onClick={() => onUpdateWord(segment, wIdx, { isCut: !w.isCut })}
+                aria-label={w.isCut ? 'Restore cut word' : 'Cut word from video'}
+                title={
+                  w.isCut
+                    ? 'Word is cut from video. Click to restore'
+                    : 'Cut word from video (skips during playback & export)'
+                }
+                className={`p-1 rounded transition-all cursor-pointer ${
+                  w.isCut
+                    ? 'bg-rose-500/30 text-rose-300 border border-rose-500/50 hover:bg-rose-500/40'
+                    : 'text-smoke/40 hover:text-rose-400 hover:bg-white/5'
+                }`}
+              >
+                <Scissors className="w-2.5 h-2.5" />
+              </button>
 
               {/* Quick 1-Click Highlight Color Palette */}
               <div className="flex items-center gap-1 px-1 py-0.5 rounded-full bg-black/40 border border-white/5">
