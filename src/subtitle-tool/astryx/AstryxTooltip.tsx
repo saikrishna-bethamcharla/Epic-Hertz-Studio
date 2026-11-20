@@ -71,7 +71,7 @@ export interface AstryxBadgeProps {
 
 export function AstryxBadge({
   children,
-  variant = 'teal',
+  variant = 'gold',
   icon: Icon,
   className = '',
 }: AstryxBadgeProps) {

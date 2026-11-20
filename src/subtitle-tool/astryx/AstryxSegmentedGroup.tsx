@@ -56,7 +56,7 @@ export function AstryxSegmentedGroup<T extends string = string>({
             {isSelected && (
               <motion.div
                 layoutId={`astryx-seg-pill-${ariaLabel.replace(/\s+/g, '-')}`}
-                className="absolute inset-0 bg-[#00b8a9] rounded-md shadow-sm z-[-1]"
+                className="absolute inset-0 bg-amber-400 rounded-md shadow-sm z-[-1]"
                 transition={{ type: 'spring', stiffness: 450, damping: 32 }}
               />
             )}

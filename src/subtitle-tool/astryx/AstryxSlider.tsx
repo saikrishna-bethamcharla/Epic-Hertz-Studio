@@ -27,7 +27,7 @@ export function AstryxSlider({
   onChange,
   label,
   unit = '',
-  accentColor = '#00b8a9',
+  accentColor = '#fbbf24',
   showNudgeButtons = true,
   className = '',
   ariaLabel,

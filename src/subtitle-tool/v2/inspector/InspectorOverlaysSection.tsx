@@ -24,10 +24,10 @@ interface InspectorOverlaysSectionProps {
 }
 
 const PRESET_COLORS = [
+  { label: 'Gold', color: '#fbbf24' },
   { label: 'Teal', color: '#00b8a9' },
   { label: 'Pink', color: '#ff0055' },
   { label: 'Cyan', color: '#00f2fe' },
-  { label: 'Gold', color: '#ffd700' },
   { label: 'Emerald', color: '#10b981' },
   { label: 'White', color: '#ffffff' },
 ];
@@ -69,13 +69,12 @@ export default function InspectorOverlaysSection({
       <div className="p-3.5 rounded-xl bg-[#181817] border border-white/10 space-y-3.5 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Sliders className="w-3.5 h-3.5 text-[#00b8a9]" />
+            <Sliders className="w-3.5 h-3.5 text-amber-400" />
             <span className="font-semibold text-bone">Video Progress Bar</span>
           </div>
           <AstryxSwitch
             checked={pb.enabled}
             onChange={(checked) => updateProgressBar({ enabled: checked })}
-            accentColor="#00b8a9"
             ariaLabel="Toggle Video Progress Bar"
           />
         </div>
@@ -104,7 +103,6 @@ export default function InspectorOverlaysSection({
               max={20}
               step={1}
               unit="px"
-              accentColor="#00b8a9"
               onChange={(h) => updateProgressBar({ height: h })}
             />
 
@@ -135,7 +133,6 @@ export default function InspectorOverlaysSection({
               description="Renders a bright luminous cap at the leading edge"
               checked={pb.glow ?? true}
               onChange={(glow) => updateProgressBar({ glow })}
-              accentColor="#00b8a9"
             />
           </div>
         )}
@@ -258,8 +255,8 @@ export default function InspectorOverlaysSection({
         )}
       </div>
 
-      <div className="p-2.5 rounded-lg bg-[#00b8a9]/10 border border-[#00b8a9]/20 text-[11px] text-[#00e5d4] flex items-center gap-2">
-        <Sparkles className="w-3.5 h-3.5 shrink-0" />
+      <div className="p-2.5 rounded-lg bg-amber-400/10 border border-amber-400/20 text-[11px] text-amber-300 flex items-center gap-2">
+        <Sparkles className="w-3.5 h-3.5 shrink-0 text-amber-400" />
         <span>Overlays render dynamically during playback and bake into your master video exports!</span>
       </div>
     </div>

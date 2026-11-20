@@ -21,7 +21,7 @@ export function AstryxSwitch({
   label,
   description,
   disabled = false,
-  accentColor = '#00b8a9',
+  accentColor = '#fbbf24',
   size = 'sm',
   className = '',
   ariaLabel,
@@ -67,7 +67,7 @@ export function AstryxSwitch({
         disabled={disabled}
         onKeyDown={handleKeyDown}
         style={{ backgroundColor: checked ? accentColor : 'rgba(255, 255, 255, 0.15)' }}
-        className={`relative inline-flex items-center ${trackW} ${trackH} rounded-full transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#121211] focus-visible:ring-[#00b8a9] p-0.5 shrink-0`}
+        className={`relative inline-flex items-center ${trackW} ${trackH} rounded-full transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#121211] focus-visible:ring-amber-400 p-0.5 shrink-0`}
       >
         <motion.div
           animate={{ x: checked ? thumbTranslate : 0 }}

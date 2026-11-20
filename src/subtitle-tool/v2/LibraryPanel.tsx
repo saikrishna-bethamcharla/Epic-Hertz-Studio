@@ -728,17 +728,17 @@ function LibraryPanel({
             onClick={() => onTabChange('captions')}
             className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs transition-all cursor-pointer relative ${
               isCaptionsActive
-                ? 'bg-white/10 text-[#00d2c4] font-semibold shadow-xs'
+                ? 'bg-white/10 text-amber-300 font-semibold shadow-xs'
                 : 'text-[#8b8b8b] hover:text-white hover:bg-white/5 font-medium'
             }`}
             title="Captions (Timed speech segments & transcript editor)"
           >
             <Captions
-              className={`w-3.5 h-3.5 ${isCaptionsActive ? 'text-[#00d2c4]' : 'text-smoke'}`}
+              className={`w-3.5 h-3.5 ${isCaptionsActive ? 'text-amber-300' : 'text-smoke'}`}
             />
             <span>Captions</span>
             {isCaptionsActive && (
-              <span className="absolute -bottom-[9px] left-1.5 right-1.5 h-[2px] bg-[#00b8a9] rounded-full" />
+              <span className="absolute -bottom-[9px] left-1.5 right-1.5 h-[2px] bg-amber-400 rounded-full" />
             )}
           </button>
 
@@ -756,17 +756,17 @@ function LibraryPanel({
             }}
             className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs transition-all cursor-pointer relative ${
               isTemplatesActive
-                ? 'bg-white/10 text-[#00d2c4] font-semibold shadow-xs'
+                ? 'bg-white/10 text-amber-300 font-semibold shadow-xs'
                 : 'text-[#8b8b8b] hover:text-white hover:bg-white/5 font-medium'
             }`}
             title="Templates (Movie styles, Title cards, Lower thirds, Subtitle styles)"
           >
             <LayoutGrid
-              className={`w-3.5 h-3.5 ${isTemplatesActive ? 'text-[#00d2c4]' : 'text-smoke'}`}
+              className={`w-3.5 h-3.5 ${isTemplatesActive ? 'text-amber-300' : 'text-smoke'}`}
             />
             <span>Templates</span>
             {isTemplatesActive && (
-              <span className="absolute -bottom-[9px] left-1.5 right-1.5 h-[2px] bg-[#00b8a9] rounded-full" />
+              <span className="absolute -bottom-[9px] left-1.5 right-1.5 h-[2px] bg-amber-400 rounded-full" />
             )}
           </button>
 
@@ -785,15 +785,15 @@ function LibraryPanel({
             }}
             className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs transition-all cursor-pointer relative ${
               isTextActive
-                ? 'bg-white/10 text-[#00d2c4] font-semibold shadow-xs'
+                ? 'bg-white/10 text-amber-300 font-semibold shadow-xs'
                 : 'text-[#8b8b8b] hover:text-white hover:bg-white/5 font-medium'
             }`}
             title="Text (Add text overlays, Text effects, Brand / Yours)"
           >
-            <Type className={`w-3.5 h-3.5 ${isTextActive ? 'text-[#00d2c4]' : 'text-smoke'}`} />
+            <Type className={`w-3.5 h-3.5 ${isTextActive ? 'text-amber-300' : 'text-smoke'}`} />
             <span>Text</span>
             {isTextActive && (
-              <span className="absolute -bottom-[9px] left-1.5 right-1.5 h-[2px] bg-[#00b8a9] rounded-full" />
+              <span className="absolute -bottom-[9px] left-1.5 right-1.5 h-[2px] bg-amber-400 rounded-full" />
             )}
           </button>
         </nav>
@@ -851,7 +851,7 @@ function LibraryPanel({
                     <div className="flex items-center gap-2 min-w-0">
                       <Icon
                         className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-105 ${
-                          isActive ? 'text-[#00b8a9]' : 'text-smoke group-hover:text-bone'
+                          isActive ? 'text-amber-400' : 'text-smoke group-hover:text-bone'
                         }`}
                       />
                       <span className="text-[11px] leading-tight tracking-tight truncate">
@@ -862,7 +862,7 @@ function LibraryPanel({
                       <span
                         className={`text-[8.5px] px-1.5 py-0.2 rounded-full font-mono shrink-0 ${
                           isActive
-                            ? 'bg-[#00b8a9]/20 text-[#00d2c4] font-bold'
+                            ? 'bg-amber-400/20 text-amber-300 font-bold'
                             : 'bg-white/5 text-mist group-hover:text-smoke'
                         }`}
                       >
@@ -870,7 +870,7 @@ function LibraryPanel({
                       </span>
                     )}
                     {isActive && (
-                      <div className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-[#00b8a9] rounded-r-full" />
+                      <div className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-amber-400 rounded-r-full" />
                     )}
                   </button>
                 );
@@ -1087,12 +1087,12 @@ function LibraryPanel({
                     <button
                       type="button"
                       onClick={() => handleAddTextSegment('Default text')}
-                      className="group p-3.5 rounded-xl bg-[#181817] border border-white/10 hover:border-[#00b8a9] hover:bg-[#1e1e1e] flex flex-col items-center justify-center gap-2 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
+                      className="group p-3.5 rounded-xl bg-[#181817] border border-white/10 hover:border-amber-400 hover:bg-[#1e1e1d] flex flex-col items-center justify-center gap-2 transition-all hover:scale-102 cursor-pointer shadow-sm text-center"
                     >
-                      <div className="w-9 h-9 rounded-lg bg-[#00b8a9]/10 border border-[#00b8a9]/30 group-hover:bg-[#00b8a9]/20 group-hover:border-[#00b8a9] flex items-center justify-center transition-colors">
-                        <Plus className="w-5 h-5 text-[#00b8a9] group-hover:scale-110 transition-transform" />
+                      <div className="w-9 h-9 rounded-lg bg-amber-400/10 border border-amber-400/30 group-hover:bg-amber-400/20 group-hover:border-amber-400 flex items-center justify-center transition-colors">
+                        <Plus className="w-5 h-5 text-amber-400 group-hover:scale-110 transition-transform" />
                       </div>
-                      <span className="text-xs font-bold text-bone group-hover:text-[#00d2c4]">
+                      <span className="text-xs font-bold text-bone group-hover:text-amber-300">
                         Default text
                       </span>
                       <span className="text-[10px] text-smoke">Add at playhead</span>

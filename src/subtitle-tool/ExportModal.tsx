@@ -398,13 +398,13 @@ export default function ExportModal({
         aria-modal="true"
         aria-labelledby="export-modal-title"
         tabIndex={-1}
-        className="w-full max-w-4xl rounded-2xl bg-[#1e1e1e] border border-white/10 shadow-2xl p-5 md:p-6 flex flex-col text-bone max-h-[92vh]"
+        className="w-full max-w-4xl rounded-2xl bg-[#141413] border border-white/10 shadow-2xl p-5 md:p-6 flex flex-col text-bone max-h-[92vh]"
         initial={{ opacity: 0, scale: 0.96, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96, y: 10 }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-[#2e2e2e]">
+        <div className="flex items-center justify-between pb-3 border-b border-white/10">
           <h2 id="export-modal-title" className="text-sm font-semibold text-bone">
             Export-{fileName || baseName}
           </h2>
@@ -444,7 +444,7 @@ export default function ExportModal({
         <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-6 mt-4 overflow-y-auto pr-1 flex-1">
           {/* Left Column: Video & Cover Preview */}
           <div className="flex flex-col items-center">
-            <div className="w-full bg-[#121212] border border-[#2e2e2e] rounded-lg overflow-hidden flex flex-col justify-center items-center relative aspect-[9/16] shadow-inner">
+            <div className="w-full bg-[#0d0d0c] border border-white/10 rounded-lg overflow-hidden flex flex-col justify-center items-center relative aspect-[9/16] shadow-inner">
               <button
                 type="button"
                 onClick={handleNextCoverFrame}
@@ -475,7 +475,7 @@ export default function ExportModal({
                 value={fileName}
                 onChange={(e) => setFileName(e.target.value)}
                 placeholder="Video Name"
-                className="bg-[#2a2a2a] border border-white/10 rounded-md px-3 py-1.5 text-xs text-bone focus:outline-none focus:border-[#00b8a9] transition-colors"
+                className="bg-[#181817] border border-white/10 rounded-md px-3 py-1.5 text-xs text-bone focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-colors"
               />
             </div>
 
@@ -499,8 +499,8 @@ export default function ExportModal({
             </div>
 
             {exportMode === 'transparent' && (
-              <div className="p-2.5 rounded-lg bg-[#00b8a9]/10 border border-[#00b8a9]/30 text-[11px] text-[#00e5d4] flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#00e5d4] shrink-0" />
+              <div className="p-2.5 rounded-lg bg-amber-400/10 border border-amber-400/30 text-[11px] text-amber-300 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0 shadow-xs" />
                 <span>
                   Exports 100% transparent video with alpha channel (WebM VP9). Drop onto Track V2 in
                   Premiere Pro or DaVinci Resolve over your footage.
@@ -519,7 +519,7 @@ export default function ExportModal({
                 onChange={(e) =>
                   setResolution(e.target.value as 'original' | '4k' | '1440' | '1080' | '720')
                 }
-                className="bg-[#2a2a2a] border border-white/10 rounded-md px-3 py-1.5 text-xs text-bone focus:outline-none focus:border-[#00b8a9] cursor-pointer"
+                className="bg-[#181817] border border-white/10 rounded-md px-3 py-1.5 text-xs text-bone focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 cursor-pointer"
               >
                 <option value="1080">1080p (Full HD)</option>
                 <option value="4k">4K (2160p UHD)</option>
@@ -540,7 +540,7 @@ export default function ExportModal({
                 id="export-format-select"
                 value={format}
                 onChange={(e) => setFormat(e.target.value as 'mp4' | 'mov' | 'webm')}
-                className="bg-[#2a2a2a] border border-white/10 rounded-md px-3 py-1.5 text-xs text-bone focus:outline-none focus:border-[#00b8a9] cursor-pointer"
+                className="bg-[#181817] border border-white/10 rounded-md px-3 py-1.5 text-xs text-bone focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 cursor-pointer"
               >
                 {exportMode === 'transparent' ? (
                   <>
@@ -568,7 +568,7 @@ export default function ExportModal({
                 onChange={(e) =>
                   setFrameRate(e.target.value as '30' | '60' | '24' | 'original')
                 }
-                className="bg-[#2a2a2a] border border-white/10 rounded-md px-3 py-1.5 text-xs text-bone focus:outline-none focus:border-[#00b8a9] cursor-pointer"
+                className="bg-[#181817] border border-white/10 rounded-md px-3 py-1.5 text-xs text-bone focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 cursor-pointer"
               >
                 <option value="30">30fps</option>
                 <option value="60">60fps</option>
@@ -578,7 +578,7 @@ export default function ExportModal({
             </div>
 
             {/* NLE Timelines, Subtitles & Transcripts */}
-            <div className="pt-3 border-t border-[#2e2e2e]">
+            <div className="pt-3 border-t border-white/10">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-bone block">
                   NLE Timelines, Subtitles & Transcripts
@@ -602,13 +602,13 @@ export default function ExportModal({
                     onClick={() => handleDownloadSubtitle(fmt)}
                     className={`p-2 rounded-lg border text-center cursor-pointer transition-all group flex flex-col items-center justify-center relative ${
                       isFeatured
-                        ? 'border-[#00b8a9]/50 bg-[#00b8a9]/10 hover:border-[#00b8a9] hover:bg-[#00b8a9]/20'
-                        : 'border-white/10 bg-[#242424] hover:border-[#00b8a9] hover:bg-[#2a2a2a]'
+                        ? 'border-amber-400/50 bg-amber-400/10 hover:border-amber-400 hover:bg-amber-400/20'
+                        : 'border-white/10 bg-[#181817] hover:border-amber-400/50 hover:bg-[#20201d]'
                     }`}
                   >
-                    <div className="flex items-center gap-1 font-mono font-bold text-xs uppercase text-bone group-hover:text-[#00d2c4]">
+                    <div className="flex items-center gap-1 font-mono font-bold text-xs uppercase text-bone group-hover:text-amber-300">
                       <span>.{label}</span>
-                      <Download className="w-3 h-3 text-smoke group-hover:text-[#00d2c4] transition-colors" />
+                      <Download className="w-3 h-3 text-smoke group-hover:text-amber-300 transition-colors" />
                     </div>
                     <span className="text-[9px] text-smoke block mt-0.5 truncate max-w-full">
                       {desc}
@@ -621,7 +621,7 @@ export default function ExportModal({
         </div>
 
         {/* Footer: Telemetry & Actions */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 mt-4 border-t border-[#2e2e2e]">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 mt-4 border-t border-white/10">
           <div className="flex items-center gap-2 text-xs text-smoke font-mono">
             <Film className="w-4 h-4 text-smoke shrink-0" />
             <span>
@@ -634,7 +634,7 @@ export default function ExportModal({
               type="button"
               disabled={processing || !canExportVideo}
               onClick={handleExport}
-              className="px-6 py-2 rounded-md bg-[#00b8a9] hover:bg-[#00d2c4] disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 text-black font-semibold text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+              className="px-6 py-2 rounded-md bg-amber-400 hover:bg-amber-300 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 text-black font-semibold text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
             >
               <span>
                 {processing
@@ -647,7 +647,7 @@ export default function ExportModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2 rounded-md bg-[#2d2d2d] hover:bg-[#3d3d3d] text-bone text-xs font-medium transition-colors cursor-pointer"
+              className="px-5 py-2 rounded-md bg-[#20201e] hover:bg-[#2a2a26] border border-white/10 text-bone text-xs font-medium transition-colors cursor-pointer"
             >
               Cancel
             </button>

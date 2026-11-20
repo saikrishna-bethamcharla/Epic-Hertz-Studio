@@ -40,7 +40,7 @@ export const DEFAULT_OVERLAYS_CONFIG: VideoOverlaysConfig = {
     enabled: false,
     position: 'bottom',
     height: 8,
-    color: '#00b8a9',
+    color: '#fbbf24',
     trackColor: 'rgba(0, 0, 0, 0.4)',
     glow: true,
   },
@@ -54,7 +54,7 @@ export const DEFAULT_OVERLAYS_CONFIG: VideoOverlaysConfig = {
   audioVisualizer: {
     enabled: false,
     positionY: 0.88,
-    color: '#00b8a9',
+    color: '#fbbf24',
     barCount: 28,
   },
 };
@@ -91,13 +91,13 @@ export function renderOverlays(
     // Active progress fill
     const fillWidth = Math.max(0, W * progress);
     if (fillWidth > 0) {
-      ctx.fillStyle = pb.color || '#00b8a9';
+      ctx.fillStyle = pb.color || '#fbbf24';
       ctx.fillRect(0, y, fillWidth, barH);
 
       // Optional glowing leading edge / dot
       if (pb.glow) {
         ctx.fillStyle = '#ffffff';
-        ctx.shadowColor = pb.color || '#00b8a9';
+        ctx.shadowColor = pb.color || '#fbbf24';
         ctx.shadowBlur = 8 * scale;
         const headW = Math.max(4, Math.round(barH * 1.5));
         ctx.fillRect(Math.max(0, fillWidth - headW / 2), y, headW, barH);
@@ -169,7 +169,7 @@ export function renderOverlays(
     const startX = W / 2 - totalVisW / 2;
     const centerY = H * (av.positionY || 0.88);
 
-    ctx.fillStyle = av.color || '#00b8a9';
+    ctx.fillStyle = av.color || '#fbbf24';
 
     for (let i = 0; i < count; i++) {
       const bx = startX + i * (barW + gap);
