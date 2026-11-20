@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import type { CaptionStyle } from '../../types';
 import ColorPopover from '../ColorPopover';
+import { AstryxSegmentedGroup, AstryxSlider } from '../../astryx';
 
 export interface InspectorEffectsSectionProps {
   style: CaptionStyle;
@@ -27,30 +28,24 @@ export const InspectorEffectsSection: React.FC<InspectorEffectsSectionProps> = (
   if (subTab === 'fill') {
     return (
       <div className="space-y-3">
-        {/* Stroke (Outline) Width */}
+        {/* Stroke (Outline) Width (Astryx Precision Slider) */}
         <div className="grid grid-cols-[96px_1fr] items-center text-xs">
           <span className="text-mist font-medium">Outline Width</span>
-          <div className="flex items-center gap-2">
-            <input
-              type="range"
-              aria-label="Outline width"
-              min={0}
-              max={0.25}
-              step={0.01}
-              value={effectiveStyle.stroke.width}
-              onChange={(e) => {
-                const val = parseFloat(e.target.value);
-                onApplyStyleChange((s) => ({
-                  ...s,
-                  stroke: { ...s.stroke, width: val },
-                }));
-              }}
-              className="flex-1 accent-amber-400 cursor-pointer"
-            />
-            <span className="font-mono text-bone text-[11px] w-12 text-right">
-              {(effectiveStyle.stroke.width * 100).toFixed(0)}%
-            </span>
-          </div>
+          <AstryxSlider
+            value={Math.round(effectiveStyle.stroke.width * 100)}
+            onChange={(val) => {
+              onApplyStyleChange((s) => ({
+                ...s,
+                stroke: { ...s.stroke, width: val / 100 },
+              }));
+            }}
+            min={0}
+            max={25}
+            step={1}
+            precision={0}
+            unit="%"
+            ariaLabel="Outline width"
+          />
         </div>
 
         {/* Stroke Color */}
@@ -60,11 +55,11 @@ export const InspectorEffectsSection: React.FC<InspectorEffectsSectionProps> = (
             <button
               type="button"
               onClick={() => setActiveColorTarget(activeColorTarget === 'stroke' ? null : 'stroke')}
-              className="flex items-center gap-2 px-2 py-1 rounded-lg bg-[#181817] border border-white/10 hover:border-amber-400 text-xs text-bone cursor-pointer"
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[#181817] border border-white/10 hover:border-amber-400 text-xs text-bone cursor-pointer transition-colors"
             >
               <div
                 style={{ backgroundColor: effectiveStrokeColor }}
-                className="w-4 h-4 rounded-md border border-white/20"
+                className="w-4 h-4 rounded-md border border-white/20 shadow-xs"
               />
               <span className="font-mono text-[11px]">{effectiveStrokeColor}</span>
             </button>
@@ -90,56 +85,43 @@ export const InspectorEffectsSection: React.FC<InspectorEffectsSectionProps> = (
   if (subTab === 'effects') {
     return (
       <div className="space-y-3">
-        {/* Glow Strength */}
+        {/* Glow Strength (Astryx Precision Slider) */}
         <div className="grid grid-cols-[96px_1fr] items-center text-xs">
           <span className="text-mist font-medium">Glow Strength</span>
-          <div className="flex items-center gap-2">
-            <input
-              type="range"
-              aria-label="Glow strength"
-              min={0}
-              max={2}
-              step={0.1}
-              value={effectiveStyle.glow.strength}
-              onChange={(e) => {
-                const val = parseFloat(e.target.value);
-                onApplyStyleChange((s) => ({
-                  ...s,
-                  glow: { ...s.glow, strength: val },
-                }));
-              }}
-              className="flex-1 accent-amber-400 cursor-pointer"
-            />
-            <span className="font-mono text-bone text-[11px] w-12 text-right">
-              {effectiveStyle.glow.strength.toFixed(1)}
-            </span>
-          </div>
+          <AstryxSlider
+            value={effectiveStyle.glow.strength}
+            onChange={(val) => {
+              onApplyStyleChange((s) => ({
+                ...s,
+                glow: { ...s.glow, strength: val },
+              }));
+            }}
+            min={0}
+            max={2}
+            step={0.1}
+            precision={1}
+            ariaLabel="Glow strength"
+          />
         </div>
 
-        {/* 3D Extrude Depth */}
+        {/* 3D Extrude Depth (Astryx Precision Slider) */}
         <div className="grid grid-cols-[96px_1fr] items-center text-xs">
           <span className="text-mist font-medium">3D Depth</span>
-          <div className="flex items-center gap-2">
-            <input
-              type="range"
-              aria-label="3D extrusion depth"
-              min={0}
-              max={0.25}
-              step={0.01}
-              value={effectiveStyle.extrude.depth}
-              onChange={(e) => {
-                const val = parseFloat(e.target.value);
-                onApplyStyleChange((s) => ({
-                  ...s,
-                  extrude: { ...s.extrude, depth: val },
-                }));
-              }}
-              className="flex-1 accent-amber-400 cursor-pointer"
-            />
-            <span className="font-mono text-bone text-[11px] w-12 text-right">
-              {(effectiveStyle.extrude.depth * 100).toFixed(0)}%
-            </span>
-          </div>
+          <AstryxSlider
+            value={Math.round(effectiveStyle.extrude.depth * 100)}
+            onChange={(val) => {
+              onApplyStyleChange((s) => ({
+                ...s,
+                extrude: { ...s.extrude, depth: val / 100 },
+              }));
+            }}
+            min={0}
+            max={25}
+            step={1}
+            precision={0}
+            unit="%"
+            ariaLabel="3D extrusion depth"
+          />
         </div>
       </div>
     );
@@ -148,30 +130,25 @@ export const InspectorEffectsSection: React.FC<InspectorEffectsSectionProps> = (
   // subTab === 'background'
   return (
     <div className="space-y-3">
-      {/* Plate Mode */}
+      {/* Plate Mode (Astryx Segmented Control) */}
       <div className="grid grid-cols-[96px_1fr] items-center text-xs">
         <span className="text-mist font-medium">BG Mode</span>
-        <div className="flex items-center gap-1 bg-[#181817] p-0.5 rounded-lg border border-white/5">
-          {(['none', 'block', 'line'] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => {
-                onApplyStyleChange((s) => ({
-                  ...s,
-                  plate: { ...s.plate, mode: m },
-                }));
-              }}
-              className={`flex-1 py-1 rounded capitalize text-[10px] font-bold cursor-pointer ${
-                effectiveStyle.plate.mode === m
-                  ? 'bg-amber-400 text-black'
-                  : 'text-smoke hover:text-bone'
-              }`}
-            >
-              {m}
-            </button>
-          ))}
-        </div>
+        <AstryxSegmentedGroup
+          ariaLabel="Background Mode"
+          size="sm"
+          value={effectiveStyle.plate.mode}
+          onChange={(m) => {
+            onApplyStyleChange((s) => ({
+              ...s,
+              plate: { ...s.plate, mode: m },
+            }));
+          }}
+          options={[
+            { id: 'none', label: 'None' },
+            { id: 'block', label: 'Block' },
+            { id: 'line', label: 'Line' },
+          ]}
+        />
       </div>
     </div>
   );

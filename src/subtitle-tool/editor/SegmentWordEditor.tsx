@@ -57,8 +57,10 @@ export function SegmentWordEditor({
           const hasEmphasis = w.emphasis && w.emphasis !== 'none';
           const isCut = !!w.isCut;
           return (
-            <div
+            <motion.div
               key={wIdx}
+              whileHover={{ y: -1 }}
+              transition={{ duration: 0.1 }}
               className={`flex items-center gap-1 border rounded-lg px-2 py-1 text-xs transition-colors ${
                 isCut
                   ? 'border-rose-500/40 bg-rose-950/20 opacity-70'
@@ -180,7 +182,7 @@ export function SegmentWordEditor({
                   <ChevronRight className="w-2.5 h-2.5" />
                 </button>
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>

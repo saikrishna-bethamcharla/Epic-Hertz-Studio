@@ -25,6 +25,7 @@ import type { Segment, WordTimestamp, SegmentStyleOverride } from '../types';
 import { SegmentStyleDrawer } from './SegmentStyleDrawer';
 import { SegmentWordEditor } from './SegmentWordEditor';
 import { useIsSegmentActive } from '../store/timeStore';
+import { AstryxTooltip } from '../astryx';
 
 export interface CaptionCardProps {
   seg: Segment;
@@ -137,6 +138,14 @@ export const CaptionCard = React.memo(function CaptionCard({
               : 'border-white/[0.08] bg-[#1a1a18] hover:border-white/20 hover:bg-[#20201d]'
       }`}
     >
+      {/* NLE-style active playhead edge indicator */}
+      {isActive && (
+        <motion.div
+          layoutId="active-caption-edge"
+          className="absolute left-0 top-2 bottom-2 w-1 bg-amber-400 rounded-r shadow-[0_0_8px_rgba(251,191,36,0.6)] pointer-events-none"
+          transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+        />
+      )}
       <div className="flex items-start gap-2.5">
         {/* Select Checkbox (on hover or selected) */}
         <button
@@ -244,95 +253,99 @@ export const CaptionCard = React.memo(function CaptionCard({
         {/* Actions & Toggles: Style Override, Words, Add, Delete */}
         <div className="flex items-center gap-1 shrink-0 text-smoke opacity-70 group-hover:opacity-100 transition-opacity">
           {/* Style Override Drawer Trigger */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleStyleOverride(seg.id);
-            }}
-            aria-label={`Customize style for caption ${seg.index}`}
-            className={`p-1 rounded hover:bg-white/10 transition-colors relative ${
-              isStyleOverrideOpen ? 'text-amber-400 bg-white/10' : 'text-smoke hover:text-bone'
-            }`}
-            title="Custom caption style override (Position, scale, accent color)"
-          >
-            <Sliders className="w-3.5 h-3.5" />
-            {seg.styleOverride && (
-              <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-            )}
-          </button>
+          <AstryxTooltip content="Style Overrides">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleStyleOverride(seg.id);
+              }}
+              aria-label={`Customize style for caption ${seg.index}`}
+              className={`p-1 rounded hover:bg-white/10 transition-colors relative cursor-pointer ${
+                isStyleOverrideOpen ? 'text-amber-400 bg-white/10' : 'text-smoke hover:text-bone'
+              }`}
+            >
+              <Sliders className="w-3.5 h-3.5" />
+              {seg.styleOverride && (
+                <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              )}
+            </button>
+          </AstryxTooltip>
 
           {/* Word Timing Trigger */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleWordsExpanded(seg.id);
-            }}
-            aria-label={`Expand word timings for caption ${seg.index}`}
-            className={`p-1 rounded hover:bg-white/10 transition-colors ${
-              isWordsExpanded ? 'text-amber-400' : 'text-smoke hover:text-bone'
-            }`}
-            title="Word-level timing & emphasis editor"
-          >
-            {isWordsExpanded ? (
-              <ChevronDown className="w-3.5 h-3.5" />
-            ) : (
-              <ChevronRight className="w-3.5 h-3.5" />
-            )}
-          </button>
+          <AstryxTooltip content={isWordsExpanded ? 'Hide Word Timings' : 'Edit Word Timings'}>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleWordsExpanded(seg.id);
+              }}
+              aria-label={`Expand word timings for caption ${seg.index}`}
+              className={`p-1 rounded hover:bg-white/10 transition-colors cursor-pointer ${
+                isWordsExpanded ? 'text-amber-400' : 'text-smoke hover:text-bone'
+              }`}
+            >
+              {isWordsExpanded ? (
+                <ChevronDown className="w-3.5 h-3.5" />
+              ) : (
+                <ChevronRight className="w-3.5 h-3.5" />
+              )}
+            </button>
+          </AstryxTooltip>
 
           {/* Add Segment After */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddAfter(seg.id);
-            }}
-            aria-label={`Add caption after segment ${seg.index}`}
-            className="p-1 hover:text-amber-300 rounded hover:bg-white/10 transition-colors"
-            title="Add segment after (+)"
-          >
-            <svg
-              className="w-3.5 h-3.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <AstryxTooltip content="Add Caption After">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddAfter(seg.id);
+              }}
+              aria-label={`Add caption after segment ${seg.index}`}
+              className="p-1 hover:text-amber-300 rounded hover:bg-white/10 transition-colors cursor-pointer"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-          </button>
+              <svg
+                className="w-3.5 h-3.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+            </button>
+          </AstryxTooltip>
 
           {/* Delete Segment */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDeleteSegment(seg.id);
-            }}
-            aria-label={`Delete caption ${seg.index}`}
-            className="p-1 hover:text-crimson-2 rounded hover:bg-crimson/10 transition-colors"
-            title="Delete segment"
-          >
-            <svg
-              className="w-3.5 h-3.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <AstryxTooltip content="Delete Caption" shortcut="Del">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteSegment(seg.id);
+              }}
+              aria-label={`Delete caption ${seg.index}`}
+              className="p-1 hover:text-crimson-2 rounded hover:bg-crimson/10 transition-colors cursor-pointer"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-              />
-            </svg>
-          </button>
+              <svg
+                className="w-3.5 h-3.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
+              </svg>
+            </button>
+          </AstryxTooltip>
         </div>
       </div>
 

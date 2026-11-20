@@ -15,6 +15,7 @@ import {
 import type { Segment } from '../types';
 import { formatTimecode } from '../utils/formatTime';
 import { timeStore } from '../store/timeStore';
+import { AstryxTooltip } from '../astryx';
 
 export const TimelineTimeDisplay = React.memo(function TimelineTimeDisplay({
   totalDuration,
@@ -162,7 +163,7 @@ export const TimelineToolbar: React.FC<TimelineToolbarProps> = ({
         {/* Center: Editing tools (+ Text, Split, Merge, Delete, Snap, Ripple, Undo/Redo, Dictionary) */}
         <div className="flex items-center gap-1 bg-[#1a1a18] p-1 rounded-xl border border-white/10">
           {/* Add Text */}
-          <div className="relative group/tip flex items-center">
+          <AstryxTooltip content="Add Text" position="bottom">
             <button
               onClick={onAddText}
               aria-label="Add text caption at playhead"
@@ -170,17 +171,11 @@ export const TimelineToolbar: React.FC<TimelineToolbarProps> = ({
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
             </button>
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
-              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap">
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
-                <span>Add Text</span>
-              </div>
-            </div>
-          </div>
+          </AstryxTooltip>
 
           {/* Add Lower Third */}
           {onAddLowerThird && (
-            <div className="relative group/tip flex items-center">
+            <AstryxTooltip content="Add Lower Third" position="bottom">
               <button
                 onClick={onAddLowerThird}
                 aria-label="Add lower third overlay at playhead"
@@ -190,17 +185,11 @@ export const TimelineToolbar: React.FC<TimelineToolbarProps> = ({
                 <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                 <span>Lower Third</span>
               </button>
-              <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
-                <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap">
-                  <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
-                  <span>Add Lower Third</span>
-                </div>
-              </div>
-            </div>
+            </AstryxTooltip>
           )}
 
           {/* Split */}
-          <div className="relative group/tip flex items-center">
+          <AstryxTooltip content="Split Caption" shortcut="S" position="bottom">
             <button
               onClick={onSplit}
               disabled={!currentSeg}
@@ -209,19 +198,10 @@ export const TimelineToolbar: React.FC<TimelineToolbarProps> = ({
             >
               <Scissors className="w-3.5 h-3.5 text-mist" />
             </button>
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
-              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
-                <span>Split</span>
-                <kbd className="px-1 py-0.2 rounded bg-white/10 text-[9px] text-smoke font-mono font-semibold">
-                  S
-                </kbd>
-              </div>
-            </div>
-          </div>
+          </AstryxTooltip>
 
           {/* Merge */}
-          <div className="relative group/tip flex items-center">
+          <AstryxTooltip content="Merge with Next" position="bottom">
             <button
               onClick={onMerge}
               disabled={!currentSeg}
@@ -230,16 +210,14 @@ export const TimelineToolbar: React.FC<TimelineToolbarProps> = ({
             >
               <Combine className="w-3.5 h-3.5 text-mist" />
             </button>
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
-              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap">
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
-                <span>Merge</span>
-              </div>
-            </div>
-          </div>
+          </AstryxTooltip>
 
           {/* Delete */}
-          <div className="relative group/tip flex items-center">
+          <AstryxTooltip
+            content={activeLowerThirdId ? 'Delete Lower Third' : 'Delete Caption'}
+            shortcut="Del"
+            position="bottom"
+          >
             <button
               onClick={onDelete}
               disabled={!currentSeg && !activeLowerThirdId}
@@ -252,21 +230,15 @@ export const TimelineToolbar: React.FC<TimelineToolbarProps> = ({
             >
               <Trash2 className="w-3.5 h-3.5 text-crimson-2" />
             </button>
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
-              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
-                <span>{activeLowerThirdId ? 'Delete Lower Third' : 'Delete'}</span>
-                <kbd className="px-1 py-0.2 rounded bg-white/10 text-[9px] text-smoke font-mono font-semibold">
-                  Del
-                </kbd>
-              </div>
-            </div>
-          </div>
+          </AstryxTooltip>
 
           <div className="h-4 w-px bg-white/15 mx-0.5" />
 
           {/* Magnetic Snapping Toggle */}
-          <div className="relative group/tip flex items-center">
+          <AstryxTooltip
+            content={`Snap: ${isSnappingEnabled ? 'ON' : 'OFF'}`}
+            position="bottom"
+          >
             <button
               onClick={onToggleSnapping}
               aria-label={`Toggle magnetic snapping (${isSnappingEnabled ? 'ON' : 'OFF'})`}
@@ -278,21 +250,13 @@ export const TimelineToolbar: React.FC<TimelineToolbarProps> = ({
             >
               <Magnet className="w-3.5 h-3.5" />
             </button>
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
-              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
-                <span>Snap</span>
-                <span
-                  className={`text-[9px] font-bold ${isSnappingEnabled ? 'text-amber-400' : 'text-smoke'}`}
-                >
-                  {isSnappingEnabled ? 'ON' : 'OFF'}
-                </span>
-              </div>
-            </div>
-          </div>
+          </AstryxTooltip>
 
           {/* Ripple Editing Mode Toggle */}
-          <div className="relative group/tip flex items-center">
+          <AstryxTooltip
+            content={`Ripple: ${isRippleEnabled ? 'ON' : 'OFF'}`}
+            position="bottom"
+          >
             <button
               onClick={onToggleRipple}
               aria-label={`Toggle ripple editing (${isRippleEnabled ? 'ON' : 'OFF'})`}
@@ -304,23 +268,12 @@ export const TimelineToolbar: React.FC<TimelineToolbarProps> = ({
             >
               <Link2 className="w-3.5 h-3.5" />
             </button>
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
-              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
-                <span>Ripple</span>
-                <span
-                  className={`text-[9px] font-bold ${isRippleEnabled ? 'text-amber-400' : 'text-smoke'}`}
-                >
-                  {isRippleEnabled ? 'ON' : 'OFF'}
-                </span>
-              </div>
-            </div>
-          </div>
+          </AstryxTooltip>
 
           <div className="h-4 w-px bg-white/15 mx-0.5" />
 
           {/* Undo */}
-          <div className="relative group/tip flex items-center">
+          <AstryxTooltip content="Undo" shortcut="Ctrl+Z" position="bottom">
             <button
               onClick={onUndo}
               disabled={isUndoDisabled}
@@ -329,19 +282,10 @@ export const TimelineToolbar: React.FC<TimelineToolbarProps> = ({
             >
               <Undo2 className="w-3.5 h-3.5" />
             </button>
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
-              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
-                <span>Undo</span>
-                <kbd className="px-1 py-0.2 rounded bg-white/10 text-[9px] text-smoke font-mono font-semibold">
-                  Ctrl+Z
-                </kbd>
-              </div>
-            </div>
-          </div>
+          </AstryxTooltip>
 
           {/* Redo */}
-          <div className="relative group/tip flex items-center">
+          <AstryxTooltip content="Redo" shortcut="Ctrl+Y" position="bottom">
             <button
               onClick={onRedo}
               disabled={isRedoDisabled}
@@ -350,21 +294,12 @@ export const TimelineToolbar: React.FC<TimelineToolbarProps> = ({
             >
               <Redo2 className="w-3.5 h-3.5" />
             </button>
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
-              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
-                <span>Redo</span>
-                <kbd className="px-1 py-0.2 rounded bg-white/10 text-[9px] text-smoke font-mono font-semibold">
-                  Ctrl+Y
-                </kbd>
-              </div>
-            </div>
-          </div>
+          </AstryxTooltip>
 
           <div className="h-4 w-px bg-white/15 mx-0.5" />
 
           {/* Find & Replace Dictionary */}
-          <div className="relative group/tip flex items-center">
+          <AstryxTooltip content="Dictionary (Find & Replace)" position="bottom">
             <button
               onClick={() => setShowDictionary(!showDictionary)}
               aria-label="Find and replace dialogue in all captions"
@@ -372,17 +307,11 @@ export const TimelineToolbar: React.FC<TimelineToolbarProps> = ({
             >
               <BookOpen className="w-3.5 h-3.5 text-amber-400" />
             </button>
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
-              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap">
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
-                <span>Dictionary</span>
-              </div>
-            </div>
-          </div>
+          </AstryxTooltip>
 
           {/* Auto Align Audio Onsets */}
           {onAutoAlignTimings && (
-            <div className="relative group/tip flex items-center">
+            <AstryxTooltip content="Auto-Align Word Timings" position="bottom">
               <button
                 onClick={onAutoAlignTimings}
                 aria-label="Auto-align word timings with voice onsets"
@@ -390,13 +319,7 @@ export const TimelineToolbar: React.FC<TimelineToolbarProps> = ({
               >
                 <Wand2 className="w-3.5 h-3.5 text-amber-400" />
               </button>
-              <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
-                <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap">
-                  <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
-                  <span>Auto-Align Audio</span>
-                </div>
-              </div>
-            </div>
+            </AstryxTooltip>
           )}
         </div>
 

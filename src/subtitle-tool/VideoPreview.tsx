@@ -43,6 +43,7 @@ import { formatTimecode } from './utils/formatTime';
 import type { VideoOverlaysConfig } from './engine/overlays';
 import React from 'react';
 import { timeStore } from './store/timeStore';
+import { AstryxTooltip } from './astryx';
 
 const PreviewTimeDisplay = React.memo(function PreviewTimeDisplay({
   duration,
@@ -933,74 +934,79 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
         {/* Player Transport Bar (48px) */}
         <div className="flex items-center gap-2 mt-2 px-3 py-1.5 bg-[#1b1b19]/90 backdrop-blur-md rounded-2xl border border-white/10 shadow-lg text-bone text-xs">
           {/* Shuttle -1s (J) */}
-          <button
-            type="button"
-            onClick={() => {
-              const cur = timeStore.getTime();
-              seekTo(Math.max(0, cur - 1.0));
-            }}
-            className="p-1 rounded text-smoke hover:text-amber-300 hover:bg-white/10 transition-colors"
-            title="Rewind 1s (J)"
-          >
-            <SkipBack className="w-3.5 h-3.5" />
-          </button>
+          <AstryxTooltip content="Rewind 1s" shortcut="J">
+            <button
+              type="button"
+              onClick={() => {
+                const cur = timeStore.getTime();
+                seekTo(Math.max(0, cur - 1.0));
+              }}
+              className="p-1 rounded text-smoke hover:text-amber-300 hover:bg-white/10 transition-colors cursor-pointer"
+            >
+              <SkipBack className="w-3.5 h-3.5" />
+            </button>
+          </AstryxTooltip>
 
           {/* Frame Step Backward */}
-          <button
-            type="button"
-            onClick={() => {
-              const cur = timeStore.getTime();
-              seekTo(Math.max(0, cur - 1 / 30));
-            }}
-            className="p-1 rounded text-smoke hover:text-amber-300 hover:bg-white/10 transition-colors"
-            title="Step 1 frame backward (←)"
-          >
-            <span className="font-mono text-[10px] font-bold">◄</span>
-          </button>
+          <AstryxTooltip content="Step 1 frame back" shortcut="←">
+            <button
+              type="button"
+              onClick={() => {
+                const cur = timeStore.getTime();
+                seekTo(Math.max(0, cur - 1 / 30));
+              }}
+              className="p-1 rounded text-smoke hover:text-amber-300 hover:bg-white/10 transition-colors cursor-pointer"
+            >
+              <span className="font-mono text-[10px] font-bold">◄</span>
+            </button>
+          </AstryxTooltip>
 
           {/* Play / Pause */}
-          <button
-            onClick={togglePlay}
-            aria-label={isPlaying ? 'Pause playback' : 'Start playback'}
-            className="p-2 rounded-full bg-amber-400 hover:bg-amber-300 text-black shadow-xs transition-colors"
-            title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
-          >
-            {isPlaying ? (
-              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-              </svg>
-            ) : (
-              <svg className="w-3.5 h-3.5 translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            )}
-          </button>
+          <AstryxTooltip content={isPlaying ? 'Pause' : 'Play'} shortcut="Space">
+            <button
+              onClick={togglePlay}
+              aria-label={isPlaying ? 'Pause playback' : 'Start playback'}
+              className="p-2 rounded-full bg-amber-400 hover:bg-amber-300 text-black shadow-xs transition-colors cursor-pointer"
+            >
+              {isPlaying ? (
+                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                </svg>
+              ) : (
+                <svg className="w-3.5 h-3.5 translate-x-0.5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              )}
+            </button>
+          </AstryxTooltip>
 
           {/* Frame Step Forward */}
-          <button
-            type="button"
-            onClick={() => {
-              const cur = timeStore.getTime();
-              seekTo(Math.min(duration, cur + 1 / 30));
-            }}
-            className="p-1 rounded text-smoke hover:text-amber-300 hover:bg-white/10 transition-colors"
-            title="Step 1 frame forward (→)"
-          >
-            <span className="font-mono text-[10px] font-bold">►</span>
-          </button>
+          <AstryxTooltip content="Step 1 frame forward" shortcut="→">
+            <button
+              type="button"
+              onClick={() => {
+                const cur = timeStore.getTime();
+                seekTo(Math.min(duration, cur + 1 / 30));
+              }}
+              className="p-1 rounded text-smoke hover:text-amber-300 hover:bg-white/10 transition-colors cursor-pointer"
+            >
+              <span className="font-mono text-[10px] font-bold">►</span>
+            </button>
+          </AstryxTooltip>
 
           {/* Shuttle +1s (L) */}
-          <button
-            type="button"
-            onClick={() => {
-              const cur = timeStore.getTime();
-              seekTo(Math.min(duration, cur + 1.0));
-            }}
-            className="p-1 rounded text-smoke hover:text-amber-300 hover:bg-white/10 transition-colors"
-            title="Forward 1s (L)"
-          >
-            <SkipForward className="w-3.5 h-3.5" />
-          </button>
+          <AstryxTooltip content="Forward 1s" shortcut="L">
+            <button
+              type="button"
+              onClick={() => {
+                const cur = timeStore.getTime();
+                seekTo(Math.min(duration, cur + 1.0));
+              }}
+              className="p-1 rounded text-smoke hover:text-amber-300 hover:bg-white/10 transition-colors cursor-pointer"
+            >
+              <SkipForward className="w-3.5 h-3.5" />
+            </button>
+          </AstryxTooltip>
 
           <div className="h-4 w-px bg-white/10 mx-1" />
 
@@ -1011,38 +1017,39 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
 
           {/* Volume */}
           <div className="flex items-center gap-1.5">
-            <button
-              onClick={toggleMute}
-              aria-label={isMuted || volume === 0 ? 'Unmute video audio' : 'Mute video audio'}
-              title={isMuted || volume === 0 ? 'Unmute' : 'Mute'}
-              className="p-1 hover:text-amber-300 transition-colors text-smoke"
-            >
-              {isMuted || volume === 0 ? (
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"
-                  />
-                </svg>
-              ) : (
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
-                  />
-                </svg>
-              )}
-            </button>
+            <AstryxTooltip content={isMuted || volume === 0 ? 'Unmute' : 'Mute'} shortcut="M">
+              <button
+                onClick={toggleMute}
+                aria-label={isMuted || volume === 0 ? 'Unmute video audio' : 'Mute video audio'}
+                className="p-1 hover:text-amber-300 transition-colors text-smoke cursor-pointer"
+              >
+                {isMuted || volume === 0 ? (
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"
+                    />
+                  </svg>
+                ) : (
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+                    />
+                  </svg>
+                )}
+              </button>
+            </AstryxTooltip>
             <input
               type="range"
               min={0}
@@ -1056,14 +1063,15 @@ const VideoPreview = forwardRef<VideoPreviewHandle, VideoPreviewProps>(
           </div>
 
           {/* Speed badge */}
-          <button
-            onClick={cyclePlaybackRate}
-            aria-label={`Playback speed: ${playbackRate}x`}
-            className="px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 font-mono text-[10px] font-bold text-amber-200 transition-colors"
-            title="Playback Speed"
-          >
-            {playbackRate}x
-          </button>
+          <AstryxTooltip content="Playback Speed (Click to cycle)">
+            <button
+              onClick={cyclePlaybackRate}
+              aria-label={`Playback speed: ${playbackRate}x`}
+              className="px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 font-mono text-[10px] font-bold text-amber-200 transition-colors cursor-pointer"
+            >
+              {playbackRate}x
+            </button>
+          </AstryxTooltip>
         </div>
       </div>
     );

@@ -1,5 +1,6 @@
 // ─── Workspace TopBar — Epic Hertz Studio v2 ──────────────────────────────────
 import { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import {
   ArrowLeft,
   Undo2,
@@ -13,6 +14,7 @@ import {
   FileVideo,
   FolderOpen,
 } from 'lucide-react';
+import { AstryxTooltip } from '../astryx';
 
 interface TopBarProps {
   projectName: string;
@@ -77,7 +79,7 @@ export default function TopBar({
       <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         {/* Back to Home Button */}
         {onGoHome && (
-          <div className="relative group/tip flex items-center shrink-0">
+          <AstryxTooltip content="Back to Home" position="bottom">
             <button
               type="button"
               onClick={onGoHome}
@@ -88,13 +90,7 @@ export default function TopBar({
               <ArrowLeft className="w-3.5 h-3.5 text-zinc-400 group-hover:text-amber-400 group-hover:-translate-x-0.5 transition-transform" />
               <span className="hidden sm:inline font-medium">Home</span>
             </button>
-            <div className="absolute top-full mt-2 left-0 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
-              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap">
-                <div className="absolute -top-1 left-3 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
-                <span>Back to Home</span>
-              </div>
-            </div>
-          </div>
+          </AstryxTooltip>
         )}
 
         {/* Brand Logo & Studio title (Clickable to Go Home) */}
@@ -129,7 +125,7 @@ export default function TopBar({
         {/* Project Name Editor & Project Manager Button */}
         <div className="flex items-center min-w-0 gap-1">
           {onOpenProjects && (
-            <div className="relative group/tip flex items-center shrink-0">
+            <AstryxTooltip content="Manage Projects" position="bottom">
               <button
                 type="button"
                 onClick={onOpenProjects}
@@ -138,13 +134,7 @@ export default function TopBar({
               >
                 <FolderOpen className="w-3.5 h-3.5" />
               </button>
-              <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
-                <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap">
-                  <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
-                  <span>Projects</span>
-                </div>
-              </div>
-            </div>
+            </AstryxTooltip>
           )}
 
           {isEditingName ? (
@@ -168,7 +158,7 @@ export default function TopBar({
               <button
                 type="button"
                 onClick={commitName}
-                className="p-1 rounded text-amber-400 hover:bg-white/10"
+                className="p-1 rounded text-amber-400 hover:bg-white/10 cursor-pointer"
                 title="Save name"
               >
                 <Check className="w-3.5 h-3.5" />
@@ -178,7 +168,7 @@ export default function TopBar({
             <button
               type="button"
               onClick={() => setIsEditingName(true)}
-              className="group flex items-center gap-1.5 text-xs font-semibold text-bone hover:text-amber-300 px-2 py-1 rounded-md hover:bg-white/5 transition-colors max-w-[140px] sm:max-w-[240px] md:max-w-[300px] truncate"
+              className="group flex items-center gap-1.5 text-xs font-semibold text-bone hover:text-amber-300 px-2 py-1 rounded-md hover:bg-white/5 transition-colors max-w-[140px] sm:max-w-[240px] md:max-w-[300px] truncate cursor-pointer"
               title="Click to rename project"
             >
               <span className="truncate">{projectName || 'Untitled Video'}</span>
@@ -191,55 +181,57 @@ export default function TopBar({
 
         {/* History Undo / Redo */}
         <div className="flex items-center gap-0.5 bg-[#1b1b1a] rounded-lg p-0.5 border border-white/5 shrink-0">
-          <button
-            type="button"
-            onClick={onUndo}
-            disabled={!canUndo}
-            className={`p-1.5 rounded-md transition-colors ${
-              canUndo
-                ? 'text-mist hover:text-bone hover:bg-white/10 active:scale-95'
-                : 'text-smoke/30 cursor-not-allowed'
-            }`}
-            title="Undo (Ctrl+Z)"
-            aria-label="Undo last change"
-          >
-            <Undo2 className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={onRedo}
-            disabled={!canRedo}
-            className={`p-1.5 rounded-md transition-colors ${
-              canRedo
-                ? 'text-mist hover:text-bone hover:bg-white/10 active:scale-95'
-                : 'text-smoke/30 cursor-not-allowed'
-            }`}
-            title="Redo (Ctrl+Shift+Z)"
-            aria-label="Redo last undone change"
-          >
-            <Redo2 className="w-3.5 h-3.5" />
-          </button>
+          <AstryxTooltip content="Undo" shortcut="Ctrl+Z" position="bottom">
+            <button
+              type="button"
+              onClick={onUndo}
+              disabled={!canUndo}
+              className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                canUndo
+                  ? 'text-mist hover:text-bone hover:bg-white/10 active:scale-95'
+                  : 'text-smoke/30 cursor-not-allowed'
+              }`}
+              aria-label="Undo last change"
+            >
+              <Undo2 className="w-3.5 h-3.5" />
+            </button>
+          </AstryxTooltip>
+          <AstryxTooltip content="Redo" shortcut="Ctrl+Shift+Z" position="bottom">
+            <button
+              type="button"
+              onClick={onRedo}
+              disabled={!canRedo}
+              className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                canRedo
+                  ? 'text-mist hover:text-bone hover:bg-white/10 active:scale-95'
+                  : 'text-smoke/30 cursor-not-allowed'
+              }`}
+              aria-label="Redo last undone change"
+            >
+              <Redo2 className="w-3.5 h-3.5" />
+            </button>
+          </AstryxTooltip>
         </div>
 
-        {/* Autosave Status Indicator */}
+        {/* Autosave Status Indicator with smooth micro-badge */}
         <div className="hidden lg:flex items-center gap-1.5 text-[11px] text-smoke font-mono shrink-0 pl-1">
           {saveStatus === 'saving' ? (
-            <>
+            <span className="flex items-center gap-1 text-amber-300">
               <Loader2 className="w-3 h-3 animate-spin text-amber-400" />
               <span>Saving…</span>
-            </>
+            </span>
           ) : saveStatus === 'error' ? (
-            <span className="text-rose-400">Error saving</span>
+            <span className="text-rose-400 font-semibold">Error saving</span>
           ) : formattedSaveTime ? (
-            <>
+            <span className="flex items-center gap-1.5 text-emerald-400/90">
               <CheckCircle2 className="w-3 h-3 text-emerald-400" />
               <span>Saved {formattedSaveTime}</span>
-            </>
+            </span>
           ) : (
-            <>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            <span className="flex items-center gap-1.5 text-smoke">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-xs" />
               <span>Saved</span>
-            </>
+            </span>
           )}
         </div>
       </div>
@@ -247,7 +239,7 @@ export default function TopBar({
       {/* ── Right Side: Top Strip Options (New Video, Shortcuts, Export) ── */}
       <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         {onNewVideo && (
-          <div className="relative group/tip flex items-center">
+          <AstryxTooltip content="New Video" position="bottom">
             <button
               type="button"
               onClick={onNewVideo}
@@ -256,16 +248,10 @@ export default function TopBar({
             >
               <FileVideo className="w-4 h-4 text-mist group-hover/tip:text-bone transition-colors" />
             </button>
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
-              <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap">
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
-                <span>New Video</span>
-              </div>
-            </div>
-          </div>
+          </AstryxTooltip>
         )}
 
-        <div className="relative group/tip flex items-center">
+        <AstryxTooltip content="Shortcuts" shortcut="?" position="bottom">
           <button
             type="button"
             onClick={onOpenShortcuts}
@@ -274,25 +260,18 @@ export default function TopBar({
           >
             <Keyboard className="w-4 h-4 text-amber-400" />
           </button>
-          <div className="absolute top-full mt-2 right-0 pointer-events-none opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
-            <div className="relative bg-[#181816] border border-white/15 px-2.5 py-1 rounded-md text-[11px] text-bone font-medium shadow-xl whitespace-nowrap flex items-center gap-1.5">
-              <div className="absolute -top-1 right-3 w-2 h-2 bg-[#181816] border-t border-l border-white/15 rotate-45" />
-              <span>Shortcuts</span>
-              <kbd className="px-1 py-0.2 rounded bg-white/10 text-[9px] text-smoke font-mono font-semibold">
-                ?
-              </kbd>
-            </div>
-          </div>
-        </div>
+        </AstryxTooltip>
 
-        <button
+        <motion.button
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
           type="button"
           onClick={onOpenExport}
-          className="px-3.5 sm:px-4 py-1.5 rounded-full bg-amber-400 hover:bg-amber-300 text-black font-semibold text-xs tracking-wide shadow-md active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+          className="px-3.5 sm:px-4 py-1.5 rounded-full bg-amber-400 hover:bg-amber-300 text-black font-semibold text-xs tracking-wide shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
         >
           <span>Export</span>
           <ChevronDown className="w-3.5 h-3.5" />
-        </button>
+        </motion.button>
       </div>
     </header>
   );

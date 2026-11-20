@@ -9,6 +9,7 @@ export interface AstryxTooltipProps {
   children: React.ReactNode;
   position?: 'top' | 'bottom' | 'left' | 'right';
   delay?: number;
+  shortcut?: string;
   className?: string;
 }
 
@@ -16,6 +17,7 @@ export function AstryxTooltip({
   content,
   children,
   position = 'top',
+  shortcut,
   className = '',
 }: AstryxTooltipProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -45,9 +47,14 @@ export function AstryxTooltip({
             exit={{ opacity: 0, scale: 0.94 }}
             transition={{ duration: 0.12 }}
             role="tooltip"
-            className={`absolute ${posClasses} z-50 px-2 py-1 rounded-md bg-[#1f1f1d] text-bone border border-white/15 text-[10px] font-medium shadow-xl pointer-events-none whitespace-nowrap`}
+            className={`absolute ${posClasses} z-50 flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#1f1f1d] text-bone border border-white/15 text-[10px] font-medium shadow-xl pointer-events-none whitespace-nowrap`}
           >
-            {content}
+            <span>{content}</span>
+            {shortcut && (
+              <kbd className="px-1 py-0.5 rounded bg-white/10 text-[9px] text-smoke font-mono font-semibold">
+                {shortcut}
+              </kbd>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

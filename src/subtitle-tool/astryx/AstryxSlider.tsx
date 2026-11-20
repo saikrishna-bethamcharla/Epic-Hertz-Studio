@@ -8,6 +8,7 @@ export interface AstryxSliderProps {
   min: number;
   max: number;
   step?: number;
+  precision?: number;
   onChange: (value: number) => void;
   label?: string;
   unit?: string;
@@ -22,6 +23,7 @@ export function AstryxSlider({
   min,
   max,
   step = 1,
+  precision,
   onChange,
   label,
   unit = '',
@@ -35,8 +37,10 @@ export function AstryxSlider({
 
   const pct = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
 
+  const displayValue = precision !== undefined ? value.toFixed(precision) : value;
+
   const handleNudge = (delta: number) => {
-    const next = Math.max(min, Math.min(max, +(value + delta).toFixed(2)));
+    const next = Math.max(min, Math.min(max, +(value + delta).toFixed(precision !== undefined ? precision : 2)));
     onChange(next);
   };
 
@@ -46,7 +50,7 @@ export function AstryxSlider({
         <div className="flex items-center justify-between text-xs">
           <span className="text-smoke font-medium">{label}</span>
           <span className="font-mono text-bone text-[11px] font-semibold">
-            {value}
+            {displayValue}
             {unit}
           </span>
         </div>
@@ -109,7 +113,7 @@ export function AstryxSlider({
               style={{ left: `${pct}%` }}
               className="absolute -top-7 -translate-x-1/2 px-1.5 py-0.5 rounded bg-black/90 text-white font-mono text-[9px] font-bold border border-white/20 pointer-events-none shadow-lg whitespace-nowrap z-20"
             >
-              {value}
+              {displayValue}
               {unit}
             </div>
           )}
