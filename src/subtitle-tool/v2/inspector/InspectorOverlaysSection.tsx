@@ -12,6 +12,11 @@ import {
   DEFAULT_OVERLAYS_CONFIG,
 } from '../../engine/overlays';
 import { Sparkles, Sliders, Type, Activity } from 'lucide-react';
+import {
+  AstryxSwitch,
+  AstryxSlider,
+  AstryxSegmentedGroup,
+} from '../../astryx';
 
 interface InspectorOverlaysSectionProps {
   overlaysConfig?: VideoOverlaysConfig;
@@ -61,64 +66,47 @@ export default function InspectorOverlaysSection({
   return (
     <div className="space-y-4 text-xs">
       {/* ── 1. Video Progress Bar ── */}
-      <div className="p-3 rounded-xl bg-[#181817] border border-white/5 space-y-3">
+      <div className="p-3.5 rounded-xl bg-[#181817] border border-white/10 space-y-3.5 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sliders className="w-3.5 h-3.5 text-[#00b8a9]" />
             <span className="font-semibold text-bone">Video Progress Bar</span>
           </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={pb.enabled}
-              onChange={(e) => updateProgressBar({ enabled: e.target.checked })}
-              className="sr-only peer"
-            />
-            <div className="w-8 h-4 bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#00b8a9]" />
-          </label>
+          <AstryxSwitch
+            checked={pb.enabled}
+            onChange={(checked) => updateProgressBar({ enabled: checked })}
+            accentColor="#00b8a9"
+            ariaLabel="Toggle Video Progress Bar"
+          />
         </div>
 
         {pb.enabled && (
-          <div className="space-y-3 pt-2 border-t border-white/5">
+          <div className="space-y-3 pt-2.5 border-t border-white/5">
             {/* Position: Bottom / Top */}
             <div className="grid grid-cols-[80px_1fr] items-center">
               <span className="text-smoke">Position</span>
-              <div className="flex items-center gap-1.5 bg-[#121211] p-0.5 rounded-lg border border-white/5">
-                {(['bottom', 'top'] as const).map((pos) => (
-                  <button
-                    key={pos}
-                    type="button"
-                    onClick={() => updateProgressBar({ position: pos })}
-                    className={`flex-1 py-1 rounded text-[11px] capitalize font-medium transition-all cursor-pointer ${
-                      pb.position === pos
-                        ? 'bg-[#00b8a9] text-black font-bold shadow-xs'
-                        : 'text-smoke hover:text-bone'
-                    }`}
-                  >
-                    {pos}
-                  </button>
-                ))}
-              </div>
+              <AstryxSegmentedGroup
+                options={[
+                  { id: 'bottom', label: 'Bottom' },
+                  { id: 'top', label: 'Top' },
+                ]}
+                value={pb.position}
+                onChange={(pos) => updateProgressBar({ position: pos })}
+                ariaLabel="Progress bar position"
+              />
             </div>
 
             {/* Bar Height */}
-            <div className="grid grid-cols-[80px_1fr] items-center">
-              <span className="text-smoke">Height</span>
-              <div className="flex items-center gap-2">
-                <input
-                  type="range"
-                  min={3}
-                  max={20}
-                  step={1}
-                  value={pb.height}
-                  onChange={(e) => updateProgressBar({ height: Number(e.target.value) })}
-                  className="flex-1 accent-[#00b8a9] cursor-pointer"
-                />
-                <span className="font-mono text-smoke text-[11px] w-8 text-right">
-                  {pb.height}px
-                </span>
-              </div>
-            </div>
+            <AstryxSlider
+              label="Bar Height"
+              value={pb.height}
+              min={3}
+              max={20}
+              step={1}
+              unit="px"
+              accentColor="#00b8a9"
+              onChange={(h) => updateProgressBar({ height: h })}
+            />
 
             {/* Color Presets */}
             <div className="grid grid-cols-[80px_1fr] items-center">
@@ -142,39 +130,34 @@ export default function InspectorOverlaysSection({
             </div>
 
             {/* Glowing Cap Toggle */}
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="text-smoke">Glowing progress head</span>
-              <input
-                type="checkbox"
-                checked={pb.glow ?? true}
-                onChange={(e) => updateProgressBar({ glow: e.target.checked })}
-                className="accent-[#00b8a9] cursor-pointer"
-              />
-            </div>
+            <AstryxSwitch
+              label="Glowing Progress Head"
+              description="Renders a bright luminous cap at the leading edge"
+              checked={pb.glow ?? true}
+              onChange={(glow) => updateProgressBar({ glow })}
+              accentColor="#00b8a9"
+            />
           </div>
         )}
       </div>
 
       {/* ── 2. Sticky Headline / Topic Banner ── */}
-      <div className="p-3 rounded-xl bg-[#181817] border border-white/5 space-y-3">
+      <div className="p-3.5 rounded-xl bg-[#181817] border border-white/10 space-y-3.5 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Type className="w-3.5 h-3.5 text-[#ffd700]" />
             <span className="font-semibold text-bone">Topic Headline Banner</span>
           </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={hb.enabled}
-              onChange={(e) => updateHeadline({ enabled: e.target.checked })}
-              className="sr-only peer"
-            />
-            <div className="w-8 h-4 bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#ffd700]" />
-          </label>
+          <AstryxSwitch
+            checked={hb.enabled}
+            onChange={(checked) => updateHeadline({ enabled: checked })}
+            accentColor="#ffd700"
+            ariaLabel="Toggle Topic Headline Banner"
+          />
         </div>
 
         {hb.enabled && (
-          <div className="space-y-3 pt-2 border-t border-white/5">
+          <div className="space-y-3 pt-2.5 border-t border-white/5">
             <div>
               <label className="text-[11px] text-smoke block mb-1">Banner Title</label>
               <input
@@ -187,23 +170,16 @@ export default function InspectorOverlaysSection({
             </div>
 
             {/* Vertical Position */}
-            <div className="grid grid-cols-[80px_1fr] items-center">
-              <span className="text-smoke">Position Y</span>
-              <div className="flex items-center gap-2">
-                <input
-                  type="range"
-                  min={0.03}
-                  max={0.25}
-                  step={0.01}
-                  value={hb.positionY}
-                  onChange={(e) => updateHeadline({ positionY: Number(e.target.value) })}
-                  className="flex-1 accent-[#ffd700] cursor-pointer"
-                />
-                <span className="font-mono text-smoke text-[11px] w-8 text-right">
-                  {Math.round(hb.positionY * 100)}%
-                </span>
-              </div>
-            </div>
+            <AstryxSlider
+              label="Vertical Position (Y)"
+              value={Math.round(hb.positionY * 100)}
+              min={3}
+              max={25}
+              step={1}
+              unit="%"
+              accentColor="#ffd700"
+              onChange={(v) => updateHeadline({ positionY: v / 100 })}
+            />
 
             {/* Text Color Presets */}
             <div className="grid grid-cols-[80px_1fr] items-center">
@@ -230,25 +206,22 @@ export default function InspectorOverlaysSection({
       </div>
 
       {/* ── 3. Speech Audio Waveform Visualizer ── */}
-      <div className="p-3 rounded-xl bg-[#181817] border border-white/5 space-y-3">
+      <div className="p-3.5 rounded-xl bg-[#181817] border border-white/10 space-y-3.5 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Activity className="w-3.5 h-3.5 text-[#00f2fe]" />
             <span className="font-semibold text-bone">Speech Waveform Spectrum</span>
           </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={av.enabled}
-              onChange={(e) => updateVisualizer({ enabled: e.target.checked })}
-              className="sr-only peer"
-            />
-            <div className="w-8 h-4 bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#00f2fe]" />
-          </label>
+          <AstryxSwitch
+            checked={av.enabled}
+            onChange={(checked) => updateVisualizer({ enabled: checked })}
+            accentColor="#00f2fe"
+            ariaLabel="Toggle Speech Waveform Spectrum"
+          />
         </div>
 
         {av.enabled && (
-          <div className="space-y-3 pt-2 border-t border-white/5">
+          <div className="space-y-3 pt-2.5 border-t border-white/5">
             {/* Color Presets */}
             <div className="grid grid-cols-[80px_1fr] items-center">
               <span className="text-smoke">Color</span>
@@ -271,23 +244,16 @@ export default function InspectorOverlaysSection({
             </div>
 
             {/* Vertical Position */}
-            <div className="grid grid-cols-[80px_1fr] items-center">
-              <span className="text-smoke">Position Y</span>
-              <div className="flex items-center gap-2">
-                <input
-                  type="range"
-                  min={0.1}
-                  max={0.95}
-                  step={0.02}
-                  value={av.positionY}
-                  onChange={(e) => updateVisualizer({ positionY: Number(e.target.value) })}
-                  className="flex-1 accent-[#00f2fe] cursor-pointer"
-                />
-                <span className="font-mono text-smoke text-[11px] w-8 text-right">
-                  {Math.round(av.positionY * 100)}%
-                </span>
-              </div>
-            </div>
+            <AstryxSlider
+              label="Vertical Position (Y)"
+              value={Math.round(av.positionY * 100)}
+              min={10}
+              max={95}
+              step={2}
+              unit="%"
+              accentColor="#00f2fe"
+              onChange={(v) => updateVisualizer({ positionY: v / 100 })}
+            />
           </div>
         )}
       </div>

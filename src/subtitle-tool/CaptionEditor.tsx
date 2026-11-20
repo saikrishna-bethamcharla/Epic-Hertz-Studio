@@ -26,6 +26,7 @@ import type {
 } from './types';
 import { CaptionCard } from './editor/CaptionCard';
 import { timeStore } from './store/timeStore';
+import { AstryxSegmentedGroup, AstryxTooltip } from './astryx';
 
 export interface CaptionEditorProps {
   segments: Segment[];
@@ -50,6 +51,8 @@ function CaptionEditor({
   onSelectSegment,
 }: CaptionEditorProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPacing, setCurrentPacing] =
+    useState<'1-word' | '2-3-words' | 'sentence'>('2-3-words');
   const [expandedWordIds, setExpandedWordIds] = useState<Set<string>>(new Set());
   const [styleOverrideSegIds, setStyleOverrideSegIds] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -563,80 +566,79 @@ function CaptionEditor({
           )}
         </div>
 
-        {/* Caption Pacing & Detailing Toolbar */}
-        <div className="mt-2.5 pt-2 border-t border-white/5 flex flex-wrap items-center gap-1.5 text-[11px]">
+        {/* Caption Pacing & Detailing Toolbar (Astryx Design Pattern) */}
+        <div className="mt-2.5 pt-2 border-t border-white/5 flex flex-wrap items-center justify-between gap-2 text-[11px]">
           {/* Pacing Density Selector */}
-          <div className="flex items-center gap-0.5 bg-[#191918] p-0.5 rounded-lg border border-white/10">
-            <span className="text-[10px] text-smoke pl-1.5 pr-0.5 font-medium">Pacing:</span>
-            <button
-              type="button"
-              onClick={() => handlePacingChange('1-word')}
-              className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-smoke hover:text-amber-300 hover:bg-white/5 transition-colors cursor-pointer"
-              title="1 Word at a time (Ultra-kinetic TikTok & Reels style)"
-            >
-              1-Word
-            </button>
-            <button
-              type="button"
-              onClick={() => handlePacingChange('2-3-words')}
-              className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-smoke hover:text-amber-300 hover:bg-white/5 transition-colors cursor-pointer"
-              title="2 to 3 Words (Punchy dynamic phrase rhythm)"
-            >
-              2–3
-            </button>
-            <button
-              type="button"
-              onClick={() => handlePacingChange('sentence')}
-              className="px-1.5 py-0.5 rounded text-[10px] font-semibold text-smoke hover:text-amber-300 hover:bg-white/5 transition-colors cursor-pointer"
-              title="Sentence Blocks (Narrative conversational rhythm)"
-            >
-              Sentence
-            </button>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-smoke font-medium">Pacing:</span>
+            <AstryxSegmentedGroup<'1-word' | '2-3-words' | 'sentence'>
+              options={[
+                { id: '1-word', label: '1-Word', title: '1 Word at a time (TikTok / Reels kinetic)' },
+                { id: '2-3-words', label: '2–3', title: '2 to 3 Words (Punchy dynamic phrase)' },
+                { id: 'sentence', label: 'Sentence', title: 'Sentence Blocks (Conversational narrative)' },
+              ]}
+              value={currentPacing}
+              onChange={(val) => {
+                setCurrentPacing(val);
+                handlePacingChange(val);
+              }}
+              size="sm"
+              ariaLabel="Caption pacing density"
+            />
           </div>
 
-          {/* Casing & Punctuation Tools */}
-          <div className="flex items-center gap-1 ml-auto">
-            <button
-              type="button"
-              onClick={() => handleTransformCasing('upper')}
-              className="px-1.5 py-0.5 rounded bg-[#191918] hover:bg-white/10 border border-white/10 text-smoke hover:text-bone text-[10px] font-bold tracking-wider transition-colors cursor-pointer"
-              title="Transform all text to UPPERCASE"
-            >
-              CAPS
-            </button>
-            <button
-              type="button"
-              onClick={() => handleTransformCasing('title')}
-              className="px-1.5 py-0.5 rounded bg-[#191918] hover:bg-white/10 border border-white/10 text-smoke hover:text-bone text-[10px] font-medium transition-colors cursor-pointer"
-              title="Transform all text to Title Case"
-            >
-              Aa
-            </button>
-            <button
-              type="button"
-              onClick={handleStripPunctuation}
-              className="px-1.5 py-0.5 rounded bg-[#191918] hover:bg-white/10 border border-white/10 text-smoke hover:text-bone text-[10px] font-mono transition-colors cursor-pointer"
-              title="Strip commas, periods & semicolons for clean kinetic punchiness"
-            >
-              No [.,]
-            </button>
-            <button
-              type="button"
-              onClick={handleAutoEmojis}
-              className="px-1.5 py-0.5 rounded bg-amber-400/15 hover:bg-amber-400/25 border border-amber-400/30 text-amber-300 text-[10px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
-              title="Auto-pair viral trigger words with animated emojis"
-            >
-              <span>✨ Emojis</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleCleanPauses}
-              className="px-1.5 py-0.5 rounded bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 text-[10px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
-              title="Detect and compact silence pauses > 0.6s for tighter pacing"
-            >
-              <Scissors className="w-2.5 h-2.5" />
-              <span>Clean Pauses</span>
-            </button>
+          {/* Casing, Punctuation & Polish Tools */}
+          <div className="flex items-center gap-1">
+            <AstryxTooltip content="Transform all dialogue to UPPERCASE">
+              <button
+                type="button"
+                onClick={() => handleTransformCasing('upper')}
+                className="px-2 py-1 rounded bg-[#191918] hover:bg-white/10 border border-white/10 text-smoke hover:text-bone text-[10px] font-bold tracking-wider transition-colors cursor-pointer"
+              >
+                CAPS
+              </button>
+            </AstryxTooltip>
+
+            <AstryxTooltip content="Transform dialogue to Title Case">
+              <button
+                type="button"
+                onClick={() => handleTransformCasing('title')}
+                className="px-2 py-1 rounded bg-[#191918] hover:bg-white/10 border border-white/10 text-smoke hover:text-bone text-[10px] font-medium transition-colors cursor-pointer"
+              >
+                Aa
+              </button>
+            </AstryxTooltip>
+
+            <AstryxTooltip content="Strip trailing punctuation [.,] while preserving inner apostrophes">
+              <button
+                type="button"
+                onClick={handleStripPunctuation}
+                className="px-2 py-1 rounded bg-[#191918] hover:bg-white/10 border border-white/10 text-smoke hover:text-bone text-[10px] font-mono transition-colors cursor-pointer"
+              >
+                No [.,]
+              </button>
+            </AstryxTooltip>
+
+            <AstryxTooltip content="Auto-pair viral trigger keywords (money, fire, rocket) with animated emojis">
+              <button
+                type="button"
+                onClick={handleAutoEmojis}
+                className="px-2 py-1 rounded bg-amber-400/15 hover:bg-amber-400/25 border border-amber-400/30 text-amber-300 text-[10px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+              >
+                <span>✨ Emojis</span>
+              </button>
+            </AstryxTooltip>
+
+            <AstryxTooltip content="Auto-detect & compact silence pauses > 0.6s to 0.2s for tighter viral pacing">
+              <button
+                type="button"
+                onClick={handleCleanPauses}
+                className="px-2 py-1 rounded bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 text-[10px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+              >
+                <Scissors className="w-2.5 h-2.5" />
+                <span>Clean Pauses</span>
+              </button>
+            </AstryxTooltip>
           </div>
         </div>
       </div>

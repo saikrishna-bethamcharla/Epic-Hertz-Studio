@@ -221,7 +221,7 @@ describe('Professional NLE Timeline Export (Premiere Pro, DaVinci Resolve, Final
 
       // Verify mode selector defaults to Composite Video
       expect(screen.getByText('Composite Video')).toBeDefined();
-      const transparentBtn = screen.getByRole('button', { name: /Transparent Alpha/i });
+      const transparentBtn = screen.getByRole('radio', { name: /Transparent Alpha/i });
       expect(transparentBtn).toBeDefined();
 
       // Click "Transparent Alpha" mode

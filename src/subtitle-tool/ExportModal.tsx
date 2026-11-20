@@ -27,6 +27,7 @@ import { renderCaptions } from './engine/render';
 import { renderLowerThirds } from './engine/lowerThirds';
 import { renderOverlays, type VideoOverlaysConfig } from './engine/overlays';
 import type { Segment, CaptionStyle, LowerThirdSpec } from './types';
+import { AstryxSegmentedGroup } from './astryx';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -481,39 +482,20 @@ export default function ExportModal({
             {/* Export Mode: Composite Video vs Transparent Alpha Overlay */}
             <div className="grid grid-cols-[100px_1fr] items-center">
               <span className="text-smoke">Export mode</span>
-              <div className="flex items-center gap-1.5 p-0.5 rounded-lg bg-[#242424] border border-white/5 w-fit">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setExportMode('composite');
-                    if (format === 'webm') setFormat('mp4');
-                  }}
-                  className={`px-3 py-1.5 rounded-md text-[11px] font-medium transition-all cursor-pointer ${
-                    exportMode === 'composite'
-                      ? 'bg-[#00b8a9] text-black font-semibold shadow'
-                      : 'text-smoke hover:text-bone'
-                  }`}
-                >
-                  Composite Video
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setExportMode('transparent');
-                    setFormat('webm');
-                  }}
-                  className={`px-3 py-1.5 rounded-md text-[11px] font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
-                    exportMode === 'transparent'
-                      ? 'bg-[#00b8a9] text-black font-semibold shadow'
-                      : 'text-smoke hover:text-bone'
-                  }`}
-                >
-                  <span>Transparent Alpha</span>
-                  <span className="text-[9px] px-1 py-0.2 rounded bg-black/40 font-mono">
-                    V2
-                  </span>
-                </button>
-              </div>
+              <AstryxSegmentedGroup<'composite' | 'transparent'>
+                options={[
+                  { id: 'composite', label: 'Composite Video' },
+                  { id: 'transparent', label: 'Transparent Alpha', badge: 'V2' },
+                ]}
+                value={exportMode}
+                onChange={(mode) => {
+                  setExportMode(mode);
+                  if (mode === 'transparent') setFormat('webm');
+                  else if (format === 'webm') setFormat('mp4');
+                }}
+                size="md"
+                ariaLabel="Export mode selection"
+              />
             </div>
 
             {exportMode === 'transparent' && (
