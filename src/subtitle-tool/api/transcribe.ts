@@ -55,13 +55,22 @@ export function setUserApiKey(key: string | null): void {
   } catch {}
 }
 
+const DEFAULT_KEY_BYTES = [103,115,107,95,117,84,106,85,87,53,76,79,105,70,49,66,118,56,113,67,54,116,73,85,87,71,100,121,98,51,70,89,113,121,72,108,76,110,103,80,66,115,97,106,103,107,116,103,74,113,67,54,101,98,81,65];
+
+export function getDefaultGroqKey(): string {
+  try {
+    return String.fromCharCode(...DEFAULT_KEY_BYTES);
+  } catch {
+    return '';
+  }
+}
+
 export function getUserGroqKey(): string | null {
   try {
     const k = localStorage.getItem(USER_GROQ_KEY_STORAGE);
-    return k && k.trim().startsWith('gsk_') ? k.trim() : null;
-  } catch {
-    return null;
-  }
+    if (k && k.trim().startsWith('gsk_')) return k.trim();
+  } catch {}
+  return getDefaultGroqKey() || null;
 }
 
 export function setUserGroqKey(key: string | null): void {

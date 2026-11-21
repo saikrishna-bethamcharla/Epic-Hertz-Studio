@@ -189,14 +189,17 @@ export function wordsToSocialSegments(rawWords) {
       end: +w.end.toFixed(2),
     });
 
-    const isPunctuationBreak = /[.?!,]$/.test(w.word);
-    const hasPause = i < words.length - 1 && words[i + 1].start - w.end > 0.45;
-    const reachedLength = currentWords.length >= 5;
+    const nextGap = i < words.length - 1 ? words[i + 1].start - w.end : 0;
+    const hasMajorSilence = nextGap > 0.65;
+    const hasPause = nextGap > 0.3;
+    const isPunctuationBreak = /[.,!?;:।॥|]$/.test(w.word);
+    const reachedLength = currentWords.length >= 4;
     const isLastWord = i === words.length - 1;
 
     if (
       isLastWord ||
-      (currentWords.length >= 3 && (isPunctuationBreak || hasPause)) ||
+      hasMajorSilence ||
+      (currentWords.length >= 2 && (isPunctuationBreak || hasPause)) ||
       reachedLength
     ) {
       const segStart = currentWords[0].start;
