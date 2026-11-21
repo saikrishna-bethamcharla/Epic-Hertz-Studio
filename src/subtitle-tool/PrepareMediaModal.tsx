@@ -387,8 +387,8 @@ export default function PrepareMediaModal({
                   <span>
                     {engine === 'groq'
                       ? userGroqKey
-                        ? 'Groq Whisper Key'
-                        : 'Add Groq Key (Required for Whisper)'
+                        ? 'Custom Groq Key'
+                        : 'Use custom Groq key (Optional)'
                       : userGeminiKey
                         ? 'Custom Gemini Key'
                         : 'Use custom Gemini key (Optional)'}
@@ -400,10 +400,8 @@ export default function PrepareMediaModal({
                   <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded font-mono">
                     Active
                   </span>
-                ) : engine === 'gemini' ? (
-                  <span className="text-[10px] text-smoke font-mono">Shared Server Key</span>
                 ) : (
-                  <span className="text-[10px] text-amber-400 font-mono">Free Key Needed</span>
+                  <span className="text-[10px] text-smoke font-mono">Shared Server Key</span>
                 )}
               </div>
 
@@ -412,7 +410,7 @@ export default function PrepareMediaModal({
                   <p className="text-[10px] text-smoke leading-relaxed">
                     {engine === 'groq' ? (
                       <>
-                        Get a completely free, high-limit key in 30 seconds at{' '}
+                        Shared server key powers Whisper Large-v3 automatically. You can optionally add your own personal Groq key from{' '}
                         <a
                           href="https://console.groq.com/keys"
                           target="_blank"
@@ -420,8 +418,8 @@ export default function PrepareMediaModal({
                           className="text-amber-300 hover:underline inline-flex items-center gap-0.5"
                         >
                           console.groq.com
-                        </a>
-                        . Sub-second Whisper Large-v3 with flawless timestamps.
+                        </a>{' '}
+                        to bypass shared limits.
                       </>
                     ) : (
                       'Your Gemini key bypasses shared studio rate limits. Keys are stored strictly in your browser.'

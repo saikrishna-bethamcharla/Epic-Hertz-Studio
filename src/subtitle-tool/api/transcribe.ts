@@ -98,7 +98,7 @@ export function getUserEngine(): TranscriptionEngine {
     const e = localStorage.getItem(USER_ENGINE_STORAGE) as TranscriptionEngine | null;
     if (e === 'groq' || e === 'openai' || e === 'gemini') return e;
   } catch {}
-  return 'gemini';
+  return 'groq';
 }
 
 export function setUserEngine(engine: TranscriptionEngine): void {
