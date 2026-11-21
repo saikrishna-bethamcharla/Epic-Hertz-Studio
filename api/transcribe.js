@@ -380,7 +380,8 @@ VERBATIM ACCURACY (CRITICAL):
 - Transcribe 100% of spoken words verbatim. Do NOT skip, summarize, or extrapolate words.
 - Do NOT omit small or unstressed words (e.g. "the", "a", "is", "in", "to", "lo", "ki", "ko").
 - Preserve natural punctuation and capitalization.
-- EXHAUSTIVE AUDIO COVERAGE: Listen to the ENTIRE audio from 0:00 to the end. Transcribe EVERY spoken line, chant, recitation, sloka, and sentence. NEVER output only the first sentence and stop.
+- EXHAUSTIVE AUDIO COVERAGE: Listen to the ENTIRE audio from 0:00 to the end. Transcribe EVERY spoken line, chant, recitation, sloka, mantra, and dialogue. NEVER output only the first sentence and stop.
+- SANSKRIT SLOKAS & QUOTATIONS: If the audio recites Bhagavad Gita, Vedic, or Sanskrit slokas/verses alongside Telugu or Hindi commentary (e.g. "సంజయ ఉవాచ..."), YOU MUST TRANSCRIBE THE ENTIRE SLOKA IN FULL AS WELL! Do not stop after the intro phrase. Transcribe every verse line-by-line.
 
 TIMING & SEGMENTATION RULES:
 - Group dialogue into natural, cohesive spoken phrases (3 to 6 words each, roughly 1.0 to 2.5 seconds).
