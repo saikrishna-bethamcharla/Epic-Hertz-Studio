@@ -175,7 +175,7 @@ export function refineTimingsWithMetrics(
 
     const numWords = seg.words.length;
     // Pass 1: Find best acoustic onset hop for each word
-    const rawHops: number[] = [];
+    const onsets: number[] = [];
     for (let i = 0; i < numWords; i++) {
       const w = seg.words[i];
       const targetHop = Math.round((w.start * sampleRate) / hopSize);
@@ -196,42 +196,37 @@ export function refineTimingsWithMetrics(
           }
         }
       }
-      rawHops.push(bestHop);
+      onsets.push((bestHop * hopSize) / sampleRate);
     }
 
-    // Pass 2: Enforce monotonicity & prevent duration blowouts from pushing subsequent words
-    const refinedWords: WordTimestamp[] = [];
-    let prevEnd = Math.max(0, seg.start - searchWindowSec);
+    // Pass 2: Ensure onsets are strictly non-decreasing with at least minWordDuration spacing.
+    // Words are anchored to their own acoustic onset and never pushed by previous words' bloated durations.
+    for (let i = 1; i < numWords; i++) {
+      if (onsets[i] < onsets[i - 1] + minWordDuration) {
+        onsets[i] = onsets[i - 1] + minWordDuration;
+      }
+    }
 
+    // Pass 3: Construct tight word boundaries. Word i ends when Word i+1 begins.
+    const refinedWords: WordTimestamp[] = [];
     for (let i = 0; i < numWords; i++) {
       const w = seg.words[i];
-      let refinedStart = (rawHops[i] * hopSize) / sampleRate;
-
-      // Word 0 can snap earlier than seg.start; subsequent words cannot precede previous word
-      if (i > 0 && refinedStart < prevEnd) {
-        refinedStart = prevEnd;
-      }
-
-      // Word duration: maintain estimated duration, bounded by minWordDuration and next word's onset
+      const start = onsets[i];
       const origDur = Math.max(minWordDuration, w.end - w.start);
-      let refinedEnd = refinedStart + origDur;
 
+      let end: number;
       if (i < numWords - 1) {
-        const nextRawOnset = (rawHops[i + 1] * hopSize) / sampleRate;
-        const maxEndBeforeNext = Math.max(refinedStart + minWordDuration, nextRawOnset - 0.01);
-        if (refinedEnd > maxEndBeforeNext && maxEndBeforeNext > refinedStart) {
-          refinedEnd = maxEndBeforeNext;
+        const nextStart = onsets[i + 1];
+        end = Math.min(start + origDur, nextStart - 0.01);
+        if (end < start + minWordDuration) {
+          end = start + minWordDuration;
         }
+      } else {
+        end = start + origDur;
       }
 
-      if (refinedEnd < refinedStart + minWordDuration) {
-        refinedEnd = refinedStart + minWordDuration;
-      }
-
-      prevEnd = refinedEnd;
-
-      const roundedStart = +refinedStart.toFixed(2);
-      const roundedEnd = +refinedEnd.toFixed(2);
+      const roundedStart = +start.toFixed(2);
+      const roundedEnd = +end.toFixed(2);
       const lagSec = +(w.start - roundedStart).toFixed(3);
 
       details.push({

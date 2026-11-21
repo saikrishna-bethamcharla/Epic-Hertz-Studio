@@ -68,13 +68,12 @@ export function useTranscription({
           const res = await refineSegmentsFromAudioWithMetrics(audioBlob, segs);
           finalSegs = res.segments;
           if (res.metrics.sampleCount > 0) {
+            const leadOffset = res.metrics.measuredSyncOffset || -0.08;
             console.info(
-              `[useTranscription] Acoustic analysis: aligned ${res.metrics.sampleCount} words (median onset lag = ${(res.metrics.medianLagSec * 1000).toFixed(0)}ms). Playback locked at 1:1 acoustic sync (syncOffset = 0.0s).`,
+              `[useTranscription] Acoustic analysis: aligned ${res.metrics.sampleCount} words (median onset lag = ${(res.metrics.medianLagSec * 1000).toFixed(0)}ms). Calibrating speech lead syncOffset = ${leadOffset}s.`,
             );
-            // Word timestamps have been snapped to physical acoustic onsets in the audio.
-            // Playback syncOffset is set to 0.0s for 1:1 lockstep sync.
             if (onMeasuredSyncOffset) {
-              onMeasuredSyncOffset(0.0);
+              onMeasuredSyncOffset(leadOffset);
             }
           } else {
             // Apply standard default speech calibration offset (-80ms) for unaligned words
