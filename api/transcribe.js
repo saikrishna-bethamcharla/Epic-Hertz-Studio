@@ -15,7 +15,7 @@
 //   GEMINI_MODELS             optional, comma-separated model fallback order
 
 import { GoogleGenAI } from '@google/genai';
-import { parseSegmentsFromResponse } from './_lib/parse.js';
+import { parseSegmentsFromResponse, wordsToSocialSegments } from './_lib/parse.js';
 
 export const config = {
   api: { bodyParser: false },
@@ -49,10 +49,10 @@ const ALLOWED_ORIGINS = (
 
 // Current production Gemini models supporting audio input & structured output.
 const DEFAULT_MODELS = [
-  'gemini-2.5-flash',
-  'gemini-2.5-flash-lite',
   'gemini-2.0-flash',
+  'gemini-2.5-flash',
   'gemini-1.5-flash',
+  'gemini-2.5-flash-lite',
 ];
 const CANDIDATE_MODELS = process.env.GEMINI_MODELS
   ? process.env.GEMINI_MODELS.split(',')
@@ -241,7 +241,7 @@ function applyCors(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader(
     'Access-Control-Allow-Headers',
-    'Content-Type, x-spoken-language, x-script-output, x-gemini-api-key',
+    'Content-Type, x-spoken-language, x-script-output, x-gemini-api-key, x-groq-api-key, x-openai-api-key',
   );
   res.setHeader('Access-Control-Expose-Headers', 'Retry-After');
   res.setHeader('Cross-Origin-Resource-Policy', 'same-site');
@@ -299,35 +299,79 @@ async function getAudio(req) {
   return { buffer: raw, mimeType };
 }
 
+// ─── High-Accuracy Whisper Transcription Engine (Groq / OpenAI) ────────────
+
+async function transcribeWithWhisper({ buffer, mimeType, apiKey, provider = 'groq', language }) {
+  const endpoint =
+    provider === 'groq'
+      ? 'https://api.groq.com/openai/v1/audio/transcriptions'
+      : 'https://api.openai.com/v1/audio/transcriptions';
+  const model = provider === 'groq' ? 'whisper-large-v3' : 'whisper-1';
+
+  const formData = new FormData();
+  formData.append('file', new Blob([buffer], { type: mimeType || 'audio/wav' }), 'audio.wav');
+  formData.append('model', model);
+  formData.append('response_format', 'verbose_json');
+  formData.append('timestamp_granularities[]', 'word');
+  if (language && language !== 'auto') {
+    formData.append('language', language);
+  }
+
+  const res = await withTimeout(
+    fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: formData,
+    }),
+    48000,
+  );
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`${provider} Whisper error (${res.status}): ${errText}`);
+  }
+
+  const data = await res.json();
+  const rawWords = data.words || [];
+  return wordsToSocialSegments(rawWords);
+}
+
 // ─── Prompt ─────────────────────────────────────────────────────────────────
 
 function buildPrompt(langName, isRomanized, isAutoDetect = false) {
   const languageDirective = isAutoDetect
-    ? `Language: Auto-detect the spoken language (e.g. English, Telugu, Hindi, Tamil). Transcribe speech faithfully in whatever language is spoken.`
+    ? `Language: Auto-detect the primary spoken dialogue language (e.g. English, Telugu, Hindi, Tamil).`
     : `Language: Spoken in ${langName}.`;
 
   const scriptDirective = isRomanized
-    ? `CRITICAL SCRIPT INSTRUCTION:
+    ? `CRITICAL SCRIPT & TRANSLITERATION INSTRUCTIONS:
 - If the spoken audio is English: Output standard English words with proper spelling and capitalization.
-- If the spoken audio is an Indian language (e.g. Telugu, Hindi, Tamil): Transcribe into natural colloquial Romanized script (e.g. Tanglish: "Prathi frame lo oka katha.", Hinglish: "Aapka swagat hai") using the Latin/English alphabet only.
-- Do NOT output native Telugu/Devanagari/Tamil characters when Romanized is requested.`
-    : `CRITICAL SCRIPT INSTRUCTION:
-- Transcribe the spoken audio strictly in its authentic NATIVE SCRIPT (e.g., Telugu script 'తెలుగు లిపి', Hindi Devanagari 'हिन्दी', Tamil 'தமிழ்').
+- If the spoken audio is an Indian language (e.g. Telugu, Hindi, Tamil): Transcribe into natural, colloquial Romanized script (e.g. Tanglish: "Prathi frame lo oka katha.", Hinglish: "Aapka swagat hai") using standard Latin/English alphabet letters.
+- Never output native Indic characters (Devanagari, Telugu, Tamil) when Romanized is requested.`
+    : `CRITICAL SCRIPT INSTRUCTIONS:
+- Transcribe speech strictly in its authentic NATIVE SCRIPT (e.g., Telugu script 'తెలుగు లిపి', Hindi Devanagari 'हिन्दी', Tamil 'தமிழ்').
 - Preserve correct native spelling, conjuncts, and punctuation.`;
 
   const ex = (roman, native) => (isRomanized ? roman : native);
 
-  return `Analyze this audio carefully and generate accurate timestamped dialogue subtitles.
+  return `You are a high-precision speech-to-text subtitling engine. Analyze this audio with extreme acoustic accuracy.
 ${languageDirective}
 ${scriptDirective}
 
-TIMING RULES:
-- "start" is when the speaker begins vocalizing that phrase/word; "end" is when vocalization ceases.
-- All times are in SECONDS from the start of this audio clip, as decimal numbers (e.g. 1.35). Never use MM:SS.
-- The timestamps must strictly match the acoustic speech in the audio. Do not drift or invent time offsets.
-- Break speech into short, energetic segments (2 to 4 words, about 1.0 to 2.2 seconds each).
-- For EVERY segment provide a "words" array with start and end times for each word.
-- Timestamps must be non-decreasing and must not overlap.
+VERBATIM ACCURACY (CRITICAL):
+- Transcribe 100% of spoken words verbatim. Do NOT skip, summarize, or extrapolate words.
+- Do NOT omit small or unstressed words (e.g. "the", "a", "is", "in", "to", "lo", "ki", "ko").
+- Preserve natural punctuation and capitalization.
+
+TIMING & SEGMENTATION RULES:
+- Group dialogue into natural, cohesive spoken phrases (3 to 6 words each, roughly 1.0 to 2.5 seconds).
+- Break segments cleanly at natural pause points, commas, question marks, or sentence closures.
+- Every segment MUST provide a "words" array with start and end times for each word.
+- "start" is the exact second vocalization begins; "end" is when vocalization ceases.
+- All times are decimal numbers in SECONDS from the start of this audio clip (e.g. 1.35).
+- Timestamps must be strictly non-decreasing and non-overlapping.
 - If there is no speech, return [].
 
 Return ONLY a JSON array with this exact structure:
@@ -475,6 +519,40 @@ export default async function handler(req, res) {
       : LANGUAGE_LABELS.auto;
     const isRomanized = scriptOutput !== 'native';
 
+    // 1. Check for dedicated Whisper ASR provider (Groq Whisper-large-v3 or OpenAI Whisper)
+    const rawGroqKey = req.headers['x-groq-api-key'] || process.env.GROQ_API_KEY;
+    const rawOpenAiKey = req.headers['x-openai-api-key'] || process.env.OPENAI_API_KEY;
+    const groqKey =
+      typeof rawGroqKey === 'string' && rawGroqKey.startsWith('gsk_') ? rawGroqKey.trim() : null;
+    const openAiKey =
+      typeof rawOpenAiKey === 'string' && rawOpenAiKey.startsWith('sk-') ? rawOpenAiKey.trim() : null;
+
+    if (groqKey || openAiKey) {
+      const provider = groqKey ? 'groq' : 'openai';
+      const key = groqKey || openAiKey;
+      const whisperLang = spokenLanguage === 'auto' ? undefined : spokenLanguage;
+      try {
+        console.info(`[transcribe] Transcribing audio chunk via ${provider} Whisper-large-v3...`);
+        const whisperSegments = await transcribeWithWhisper({
+          buffer,
+          mimeType,
+          apiKey: key,
+          provider,
+          language: whisperLang,
+        });
+        if (whisperSegments && whisperSegments.length > 0) {
+          res.status(200).json({ segments: whisperSegments, model: `${provider}-whisper-large-v3` });
+          return;
+        }
+      } catch (whisperErr) {
+        console.warn(
+          `[transcribe] ${provider} Whisper failed, falling back to Gemini:`,
+          whisperErr?.message || whisperErr,
+        );
+      }
+    }
+
+    // 2. Multimodal LLM (Gemini 2.0 / 2.5 Flash) transcription
     const client = new GoogleGenAI({ apiKey });
     const prompt = buildPrompt(langName, isRomanized, isAutoDetect);
 

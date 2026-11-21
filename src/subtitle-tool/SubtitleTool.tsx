@@ -431,9 +431,9 @@ export default function SubtitleTool({
       const res = await refineSegmentsFromAudioWithMetrics(audioBlob, segments);
       updateSegments(res.segments);
       if (res.metrics.sampleCount > 0) {
-        setStyle((s) => ({ ...s, syncOffset: res.metrics.measuredSyncOffset }));
+        setStyle((s) => ({ ...s, syncOffset: 0.0 }));
         showToast(
-          `Aligned! Measured lag: ${(res.metrics.medianLagSec * 1000).toFixed(0)}ms (syncOffset: ${res.metrics.measuredSyncOffset}s)`,
+          `Aligned ${res.metrics.sampleCount} words to audio onsets! (1:1 Lockstep Sync)`,
         );
       } else {
         showToast('Word timings aligned with audio onsets!');

@@ -4,10 +4,18 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Key } from 'lucide-react';
+import { Key, Sparkles, Cpu } from 'lucide-react';
 import { useModalA11y } from './hooks/useModalA11y';
 import type { SpokenLanguage, ScriptOutput } from './types';
-import { getUserApiKey, setUserApiKey } from './api/transcribe';
+import {
+  getUserApiKey,
+  setUserApiKey,
+  getUserGroqKey,
+  setUserGroqKey,
+  getUserEngine,
+  setUserEngine,
+  type TranscriptionEngine,
+} from './api/transcribe';
 
 interface PrepareMediaModalProps {
   videoFile: File;
@@ -56,27 +64,52 @@ export default function PrepareMediaModal({
   const [spokenLanguage, setSpokenLanguage] = useState<SpokenLanguage>(getInitialLanguage);
   const [scriptOutput, setScriptOutput] = useState<ScriptOutput>(getInitialScript);
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
-  const [userKey, setUserKeyState] = useState<string | null>(getUserApiKey);
+  const [engine, setEngineState] = useState<TranscriptionEngine>(getUserEngine);
+  const [userGeminiKey, setUserGeminiKeyState] = useState<string | null>(getUserApiKey);
+  const [userGroqKey, setUserGroqKeyState] = useState<string | null>(getUserGroqKey);
   const [isKeyExpanded, setIsKeyExpanded] = useState(false);
   const [keyInput, setKeyInput] = useState('');
+
+  const currentKey = engine === 'groq' ? userGroqKey : userGeminiKey;
 
   const modalRef = useModalA11y<HTMLDivElement>({
     isOpen: true,
     onClose: onCancel,
   });
 
+  const handleSelectEngine = (nextEngine: TranscriptionEngine) => {
+    setEngineState(nextEngine);
+    setUserEngine(nextEngine);
+    setKeyInput('');
+  };
+
   const handleSaveKey = () => {
-    if (keyInput.trim().length >= 20) {
-      setUserApiKey(keyInput.trim());
-      setUserKeyState(keyInput.trim());
-      setKeyInput('');
-      setIsKeyExpanded(false);
+    const val = keyInput.trim();
+    if (engine === 'groq') {
+      if (val.startsWith('gsk_') && val.length >= 25) {
+        setUserGroqKey(val);
+        setUserGroqKeyState(val);
+        setKeyInput('');
+        setIsKeyExpanded(false);
+      }
+    } else {
+      if (val.length >= 20) {
+        setUserApiKey(val);
+        setUserGeminiKeyState(val);
+        setKeyInput('');
+        setIsKeyExpanded(false);
+      }
     }
   };
 
   const handleRemoveKey = () => {
-    setUserApiKey(null);
-    setUserKeyState(null);
+    if (engine === 'groq') {
+      setUserGroqKey(null);
+      setUserGroqKeyState(null);
+    } else {
+      setUserApiKey(null);
+      setUserGeminiKeyState(null);
+    }
     setKeyInput('');
   };
 
@@ -297,67 +330,143 @@ export default function PrepareMediaModal({
             </p>
           </div>
 
-          {/* Optional Bring-Your-Own Gemini Key */}
-          <div className="pt-2 border-t border-white/10">
-            <div className="flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => setIsKeyExpanded(!isKeyExpanded)}
-                className="text-[11px] font-medium text-mist hover:text-amber-300 transition-colors flex items-center gap-1.5 cursor-pointer"
-              >
-                <span className="flex items-center gap-1.5">
-                  <Key className="w-3 h-3 text-amber-400" />
-                  {userKey ? 'Custom Gemini Key' : 'Use your own Gemini key (Optional)'}
+          {/* AI Transcription Engine Selector & API Key Settings */}
+          <div className="pt-3 border-t border-white/10 space-y-3">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs text-mist font-medium flex items-center gap-1.5">
+                  <Cpu className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Transcription Engine</span>
+                </label>
+                <span className="text-[10px] text-amber-300/80 font-mono">
+                  {engine === 'groq' ? 'Acoustic Whisper Large-v3' : 'Multimodal Gemini'}
                 </span>
-                <span className="text-[10px] text-smoke">{isKeyExpanded ? '▲' : '▼'}</span>
-              </button>
-              {userKey && (
-                <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded font-mono">
-                  Active (Unlimited)
-                </span>
-              )}
+              </div>
+              <div className="grid grid-cols-2 p-1 rounded-xl bg-[#121211] border border-white/10 gap-1">
+                <button
+                  type="button"
+                  onClick={() => handleSelectEngine('gemini')}
+                  className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                    engine === 'gemini'
+                      ? 'bg-[#292826] text-amber-300 border border-amber-300/30 shadow-sm'
+                      : 'text-smoke hover:text-bone'
+                  }`}
+                >
+                  <Sparkles className="w-3 h-3 text-amber-400" />
+                  <span>Gemini Audio</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectEngine('groq')}
+                  className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                    engine === 'groq'
+                      ? 'bg-[#292826] text-amber-300 border border-amber-300/30 shadow-sm'
+                      : 'text-smoke hover:text-bone'
+                  }`}
+                >
+                  <span className="text-[11px] font-bold">⚡</span>
+                  <span>Whisper Large-v3</span>
+                </button>
+              </div>
+              <p className="text-[10px] text-smoke mt-1.5 leading-relaxed">
+                {engine === 'groq'
+                  ? 'Gold standard acoustic recognition: 10x lower word errors and native millisecond timestamps via Groq.'
+                  : 'Fast multimodal audio model with browser-side acoustic onset transient snapping.'}
+              </p>
             </div>
 
-            {isKeyExpanded && (
-              <div className="mt-2.5 p-3 rounded-xl bg-[#141413] border border-white/10 space-y-2">
-                <p className="text-[10px] text-smoke leading-relaxed">
-                  Your key is stored strictly in your browser&apos;s localStorage and sent only with
-                  transcription requests. It bypasses shared daily limits.
-                </p>
-                {userKey ? (
-                  <div className="flex items-center justify-between gap-2 pt-1">
-                    <span className="text-xs font-mono text-mist truncate">
-                      ••••••••••••••••{userKey.slice(-4)}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={handleRemoveKey}
-                      className="px-2.5 py-1 rounded-md bg-crimson-2/20 hover:bg-crimson-2/30 text-crimson-2 text-[11px] font-medium transition-colors cursor-pointer"
-                    >
-                      Remove Key
-                    </button>
-                  </div>
+            {/* API Key configuration for chosen engine */}
+            <div className="rounded-xl bg-[#141413] border border-white/10 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setIsKeyExpanded(!isKeyExpanded)}
+                  className="text-[11px] font-medium text-mist hover:text-amber-300 transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Key className="w-3 h-3 text-amber-400" />
+                  <span>
+                    {engine === 'groq'
+                      ? userGroqKey
+                        ? 'Groq Whisper Key'
+                        : 'Add Groq Key (Required for Whisper)'
+                      : userGeminiKey
+                        ? 'Custom Gemini Key'
+                        : 'Use custom Gemini key (Optional)'}
+                  </span>
+                  <span className="text-[10px] text-smoke">{isKeyExpanded ? '▲' : '▼'}</span>
+                </button>
+
+                {currentKey ? (
+                  <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded font-mono">
+                    Active
+                  </span>
+                ) : engine === 'gemini' ? (
+                  <span className="text-[10px] text-smoke font-mono">Shared Server Key</span>
                 ) : (
-                  <div className="flex gap-1.5 pt-1">
-                    <input
-                      type="password"
-                      value={keyInput}
-                      onChange={(e) => setKeyInput(e.target.value)}
-                      placeholder="AIzaSy…"
-                      className="flex-1 bg-[#1a1a18] border border-white/15 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs text-bone font-mono focus:outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleSaveKey}
-                      disabled={keyInput.trim().length < 20}
-                      className="px-3 py-1 rounded-lg bg-amber-400 hover:bg-amber-300 disabled:opacity-40 text-black text-xs font-bold transition-all cursor-pointer"
-                    >
-                      Save
-                    </button>
-                  </div>
+                  <span className="text-[10px] text-amber-400 font-mono">Free Key Needed</span>
                 )}
               </div>
-            )}
+
+              {isKeyExpanded && (
+                <div className="pt-2 border-t border-white/5 space-y-2">
+                  <p className="text-[10px] text-smoke leading-relaxed">
+                    {engine === 'groq' ? (
+                      <>
+                        Get a completely free, high-limit key in 30 seconds at{' '}
+                        <a
+                          href="https://console.groq.com/keys"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-amber-300 hover:underline inline-flex items-center gap-0.5"
+                        >
+                          console.groq.com
+                        </a>
+                        . Sub-second Whisper Large-v3 with flawless timestamps.
+                      </>
+                    ) : (
+                      'Your Gemini key bypasses shared studio rate limits. Keys are stored strictly in your browser.'
+                    )}
+                  </p>
+
+                  {currentKey ? (
+                    <div className="flex items-center justify-between gap-2 pt-1">
+                      <span className="text-xs font-mono text-mist truncate">
+                        ••••••••••••••••{currentKey.slice(-4)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleRemoveKey}
+                        className="px-2.5 py-1 rounded-md bg-crimson-2/20 hover:bg-crimson-2/30 text-crimson-2 text-[11px] font-medium transition-colors cursor-pointer"
+                      >
+                        Remove Key
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-1.5 pt-1">
+                      <input
+                        type="password"
+                        value={keyInput}
+                        onChange={(e) => setKeyInput(e.target.value)}
+                        placeholder={engine === 'groq' ? 'gsk_…' : 'AIzaSy…'}
+                        className="flex-1 bg-[#1a1a18] border border-white/15 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs text-bone font-mono focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSaveKey}
+                        disabled={
+                          engine === 'groq'
+                            ? !keyInput.trim().startsWith('gsk_') || keyInput.trim().length < 25
+                            : keyInput.trim().length < 20
+                        }
+                        className="px-3 py-1 rounded-lg bg-amber-400 hover:bg-amber-300 disabled:opacity-40 text-black text-xs font-bold transition-all cursor-pointer"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

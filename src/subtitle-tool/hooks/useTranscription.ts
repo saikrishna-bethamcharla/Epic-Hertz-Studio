@@ -69,13 +69,15 @@ export function useTranscription({
           finalSegs = res.segments;
           if (res.metrics.sampleCount > 0) {
             console.info(
-              `[useTranscription] Acoustic analysis: measured median lag = ${res.metrics.medianLagSec}s, applying per-video syncOffset = ${res.metrics.measuredSyncOffset}s`,
+              `[useTranscription] Acoustic analysis: aligned ${res.metrics.sampleCount} words (median onset lag = ${(res.metrics.medianLagSec * 1000).toFixed(0)}ms). Playback locked at 1:1 acoustic sync (syncOffset = 0.0s).`,
             );
+            // Word timestamps have been snapped to physical acoustic onsets in the audio.
+            // Playback syncOffset is set to 0.0s for 1:1 lockstep sync.
             if (onMeasuredSyncOffset) {
-              onMeasuredSyncOffset(res.metrics.measuredSyncOffset);
+              onMeasuredSyncOffset(0.0);
             }
           } else {
-            // Apply standard default speech calibration offset (-80ms)
+            // Apply standard default speech calibration offset (-80ms) for unaligned words
             onMeasuredSyncOffset?.(-0.08);
           }
         } catch (alignErr) {

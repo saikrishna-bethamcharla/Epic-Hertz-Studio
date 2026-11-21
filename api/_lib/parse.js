@@ -143,3 +143,59 @@ export function parseSegmentsFromResponse(rawText) {
 
   return [];
 }
+
+/**
+ * Converts a raw list of word timestamps (such as from Whisper API)
+ * into short, energetic social media segments (3 to 6 words each).
+ */
+export function wordsToSocialSegments(rawWords) {
+  if (!Array.isArray(rawWords) || rawWords.length === 0) return [];
+  const words = rawWords
+    .map((w) => ({
+      word: String(w?.word ?? w?.text ?? '').trim(),
+      start: parseTime(w?.start ?? w?.start_time ?? 0),
+      end: parseTime(w?.end ?? w?.end_time ?? 0),
+    }))
+    .filter((w) => w.word.length > 0);
+
+  if (words.length === 0) return [];
+
+  const segments = [];
+  let currentWords = [];
+  const stamp = Date.now();
+
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i];
+    currentWords.push({
+      word: w.word,
+      start: +w.start.toFixed(2),
+      end: +w.end.toFixed(2),
+    });
+
+    const isPunctuationBreak = /[.?!,]$/.test(w.word);
+    const hasPause = i < words.length - 1 && words[i + 1].start - w.end > 0.45;
+    const reachedLength = currentWords.length >= 5;
+    const isLastWord = i === words.length - 1;
+
+    if (
+      isLastWord ||
+      (currentWords.length >= 3 && (isPunctuationBreak || hasPause)) ||
+      reachedLength
+    ) {
+      const segStart = currentWords[0].start;
+      const segEnd = currentWords[currentWords.length - 1].end;
+      const segText = currentWords.map((cw) => cw.word).join(' ');
+      segments.push({
+        id: `seg-${segments.length + 1}-${stamp}`,
+        index: segments.length + 1,
+        start: +segStart.toFixed(2),
+        end: +Math.max(segStart + 0.4, segEnd).toFixed(2),
+        text: segText,
+        words: [...currentWords],
+      });
+      currentWords = [];
+    }
+  }
+
+  return segments;
+}

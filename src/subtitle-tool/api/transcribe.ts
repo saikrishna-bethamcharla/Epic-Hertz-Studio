@@ -11,7 +11,6 @@ import {
   mergeSegments,
   type AudioChunk,
 } from '../utils/splitAudio';
-import { refineSegmentsFromAudio } from '../utils/alignWords';
 
 const CONCURRENCY = 2;
 const MAX_ATTEMPTS = 3;
@@ -31,6 +30,11 @@ function getProxyEndpoint(): string {
 }
 
 const USER_KEY_STORAGE = 'epic_user_gemini_key';
+const USER_GROQ_KEY_STORAGE = 'epic_user_groq_key';
+const USER_OPENAI_KEY_STORAGE = 'epic_user_openai_key';
+const USER_ENGINE_STORAGE = 'epic_user_transcribe_engine';
+
+export type TranscriptionEngine = 'gemini' | 'groq' | 'openai';
 
 export function getUserApiKey(): string | null {
   try {
@@ -48,6 +52,58 @@ export function setUserApiKey(key: string | null): void {
     } else {
       localStorage.removeItem(USER_KEY_STORAGE);
     }
+  } catch {}
+}
+
+export function getUserGroqKey(): string | null {
+  try {
+    const k = localStorage.getItem(USER_GROQ_KEY_STORAGE);
+    return k && k.trim().startsWith('gsk_') ? k.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setUserGroqKey(key: string | null): void {
+  try {
+    if (key && key.trim()) {
+      localStorage.setItem(USER_GROQ_KEY_STORAGE, key.trim());
+    } else {
+      localStorage.removeItem(USER_GROQ_KEY_STORAGE);
+    }
+  } catch {}
+}
+
+export function getUserOpenAiKey(): string | null {
+  try {
+    const k = localStorage.getItem(USER_OPENAI_KEY_STORAGE);
+    return k && k.trim().startsWith('sk-') ? k.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setUserOpenAiKey(key: string | null): void {
+  try {
+    if (key && key.trim()) {
+      localStorage.setItem(USER_OPENAI_KEY_STORAGE, key.trim());
+    } else {
+      localStorage.removeItem(USER_OPENAI_KEY_STORAGE);
+    }
+  } catch {}
+}
+
+export function getUserEngine(): TranscriptionEngine {
+  try {
+    const e = localStorage.getItem(USER_ENGINE_STORAGE) as TranscriptionEngine | null;
+    if (e === 'groq' || e === 'openai' || e === 'gemini') return e;
+  } catch {}
+  return 'gemini';
+}
+
+export function setUserEngine(engine: TranscriptionEngine): void {
+  try {
+    localStorage.setItem(USER_ENGINE_STORAGE, engine);
   } catch {}
 }
 
@@ -141,14 +197,23 @@ export async function transcribeAudio(
   const endpoint = getProxyEndpoint();
   const url = `${endpoint}?spokenLanguage=${encodeURIComponent(spokenLanguage)}&scriptOutput=${encodeURIComponent(scriptOutput)}`;
 
-  const userKey = getUserApiKey();
+  const userEngine = getUserEngine();
+  const userGeminiKey = getUserApiKey();
+  const userGroqKey = getUserGroqKey();
+  const userOpenAiKey = getUserOpenAiKey();
+
   const headers: Record<string, string> = {
     'Content-Type': audioBlob.type || 'audio/wav',
     'x-spoken-language': spokenLanguage,
     'x-script-output': scriptOutput,
   };
-  if (userKey) {
-    headers['x-gemini-api-key'] = userKey;
+
+  if (userEngine === 'groq' && userGroqKey) {
+    headers['x-groq-api-key'] = userGroqKey;
+  } else if (userEngine === 'openai' && userOpenAiKey) {
+    headers['x-openai-api-key'] = userOpenAiKey;
+  } else if (userGeminiKey) {
+    headers['x-gemini-api-key'] = userGeminiKey;
   }
 
   // Split at pauses so every piece fits the server's request-size limit.
@@ -195,8 +260,5 @@ export async function transcribeAudio(
   const merged = mergeSegments(results.map((r) => r ?? []));
   if (merged.length === 0) throw new Error(NO_SPEECH_MESSAGE);
 
-  onStatus?.('Aligning word timings to speech onsets…');
-  const aligned = await refineSegmentsFromAudio(audioBlob, merged);
-
-  return aligned;
+  return merged;
 }

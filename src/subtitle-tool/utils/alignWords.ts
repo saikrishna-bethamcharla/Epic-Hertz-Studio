@@ -173,10 +173,10 @@ export function refineTimingsWithMetrics(
   const refinedSegments = segments.map((seg) => {
     if (!seg.words || seg.words.length === 0) return seg;
 
-    let prevEnd = seg.start;
-    const refinedWords: WordTimestamp[] = [];
-
-    for (let i = 0; i < seg.words.length; i++) {
+    const numWords = seg.words.length;
+    // Pass 1: Find best acoustic onset hop for each word
+    const rawHops: number[] = [];
+    for (let i = 0; i < numWords; i++) {
       const w = seg.words[i];
       const targetHop = Math.round((w.start * sampleRate) / hopSize);
       const startHop = Math.max(0, targetHop - searchHops);
@@ -196,17 +196,34 @@ export function refineTimingsWithMetrics(
           }
         }
       }
+      rawHops.push(bestHop);
+    }
 
-      let refinedStart = (bestHop * hopSize) / sampleRate;
+    // Pass 2: Enforce monotonicity & prevent duration blowouts from pushing subsequent words
+    const refinedWords: WordTimestamp[] = [];
+    let prevEnd = Math.max(0, seg.start - searchWindowSec);
 
-      // Maintain strict monotonicity: cannot start before previous word ends
-      if (refinedStart < prevEnd) {
+    for (let i = 0; i < numWords; i++) {
+      const w = seg.words[i];
+      let refinedStart = (rawHops[i] * hopSize) / sampleRate;
+
+      // Word 0 can snap earlier than seg.start; subsequent words cannot precede previous word
+      if (i > 0 && refinedStart < prevEnd) {
         refinedStart = prevEnd;
       }
 
-      // Word duration: maintain estimated duration, shifted with onset, bounded by minWordDuration
+      // Word duration: maintain estimated duration, bounded by minWordDuration and next word's onset
       const origDur = Math.max(minWordDuration, w.end - w.start);
       let refinedEnd = refinedStart + origDur;
+
+      if (i < numWords - 1) {
+        const nextRawOnset = (rawHops[i + 1] * hopSize) / sampleRate;
+        const maxEndBeforeNext = Math.max(refinedStart + minWordDuration, nextRawOnset - 0.01);
+        if (refinedEnd > maxEndBeforeNext && maxEndBeforeNext > refinedStart) {
+          refinedEnd = maxEndBeforeNext;
+        }
+      }
+
       if (refinedEnd < refinedStart + minWordDuration) {
         refinedEnd = refinedStart + minWordDuration;
       }
