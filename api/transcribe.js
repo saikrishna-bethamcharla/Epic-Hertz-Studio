@@ -15,7 +15,7 @@
 //   GEMINI_MODELS             optional, comma-separated model fallback order
 
 import { GoogleGenAI } from '@google/genai';
-import { parseSegmentsFromResponse, wordsToSocialSegments } from './_lib/parse.js';
+import { parseSegmentsFromResponse, wordsToSocialSegments, normalizeSegments } from './_lib/parse.js';
 
 export const config = {
   api: { bodyParser: false },
@@ -313,6 +313,7 @@ async function transcribeWithWhisper({ buffer, mimeType, apiKey, provider = 'gro
   formData.append('model', model);
   formData.append('response_format', 'verbose_json');
   formData.append('timestamp_granularities[]', 'word');
+  formData.append('timestamp_granularities[]', 'segment');
   if (language && language !== 'auto') {
     formData.append('language', language);
   }
@@ -334,8 +335,23 @@ async function transcribeWithWhisper({ buffer, mimeType, apiKey, provider = 'gro
   }
 
   const data = await res.json();
-  const rawWords = data.words || [];
-  return wordsToSocialSegments(rawWords);
+  let rawWords = data.words;
+  if (!Array.isArray(rawWords) || rawWords.length === 0) {
+    if (Array.isArray(data.segments)) {
+      rawWords = data.segments.flatMap((s) => s.words || []);
+    }
+  }
+
+  if (Array.isArray(rawWords) && rawWords.length > 0) {
+    const segs = wordsToSocialSegments(rawWords);
+    if (segs.length > 0) return segs;
+  }
+
+  if (Array.isArray(data.segments) && data.segments.length > 0) {
+    return normalizeSegments(data.segments);
+  }
+
+  return [];
 }
 
 // ─── Prompt ─────────────────────────────────────────────────────────────────
@@ -364,9 +380,11 @@ VERBATIM ACCURACY (CRITICAL):
 - Transcribe 100% of spoken words verbatim. Do NOT skip, summarize, or extrapolate words.
 - Do NOT omit small or unstressed words (e.g. "the", "a", "is", "in", "to", "lo", "ki", "ko").
 - Preserve natural punctuation and capitalization.
+- EXHAUSTIVE AUDIO COVERAGE: Listen to the ENTIRE audio from 0:00 to the end. Transcribe EVERY spoken line, chant, recitation, sloka, and sentence. NEVER output only the first sentence and stop.
 
 TIMING & SEGMENTATION RULES:
 - Group dialogue into natural, cohesive spoken phrases (3 to 6 words each, roughly 1.0 to 2.5 seconds).
+- NEVER output a single segment that lasts longer than 4.5 seconds. Break continuous speech into sequential phrases.
 - Break segments cleanly at natural pause points, commas, question marks, or sentence closures.
 - Every segment MUST provide a "words" array with start and end times for each word.
 - "start" is the exact second vocalization begins; "end" is when vocalization ceases.

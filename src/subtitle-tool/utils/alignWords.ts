@@ -212,7 +212,7 @@ export function refineTimingsWithMetrics(
     for (let i = 0; i < numWords; i++) {
       const w = seg.words[i];
       const start = onsets[i];
-      const origDur = Math.max(minWordDuration, w.end - w.start);
+      const origDur = Math.min(2.5, Math.max(minWordDuration, w.end - w.start));
 
       let end: number;
       if (i < numWords - 1) {

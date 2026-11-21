@@ -28,7 +28,9 @@ function normalizeWords(rawWords) {
       let start = parseTime(w?.start ?? w?.start_time ?? 0);
       let end = parseTime(w?.end ?? w?.end_time ?? 0);
       if (start < prevEnd) start = prevEnd; // keep words monotonic
-      if (end <= start) end = start + 0.1;
+      // Enforce realistic word duration (min 0.08s, max 3.0s)
+      const dur = Math.min(3.0, Math.max(0.08, end - start));
+      end = start + dur;
       prevEnd = end;
       return { word, start, end };
     })
@@ -36,7 +38,7 @@ function normalizeWords(rawWords) {
   return words.length > 0 ? words : undefined;
 }
 
-function normalizeSegments(list) {
+export function normalizeSegments(list) {
   const stamp = Date.now();
   const segs = list
     .map((item) => {
@@ -44,12 +46,24 @@ function normalizeSegments(list) {
       const words = normalizeWords(item?.words);
       let start = parseTime(item?.start_time ?? item?.start ?? item?.startTime ?? 0);
       let end = parseTime(item?.end_time ?? item?.end ?? item?.endTime ?? 0);
+
+      const wordCount = text.split(/\s+/).filter(Boolean).length;
+      // Sanity cap: humans speak ~2.5 words/sec. A caption should never linger for 30s.
+      const maxPlausibleDuration = Math.max(1.8, Math.min(7.0, wordCount * 1.5 + 0.8));
+
       if (words && words.length > 0) {
         // If word-level timings are provided, anchor segment start and end to them
         start = words[0].start;
         end = Math.max(start + 0.35, words[words.length - 1].end);
       }
-      if (end <= start) end = start + 0.8;
+
+      if (end <= start) {
+        end = start + Math.min(maxPlausibleDuration, 2.5);
+      } else if (end - start > maxPlausibleDuration) {
+        // Model hallucinated an excessively long duration (e.g. 31s for 4 words)
+        end = start + maxPlausibleDuration;
+      }
+
       return { start, end, text, words };
     })
     .filter((s) => s.text.length > 0)
@@ -151,11 +165,14 @@ export function parseSegmentsFromResponse(rawText) {
 export function wordsToSocialSegments(rawWords) {
   if (!Array.isArray(rawWords) || rawWords.length === 0) return [];
   const words = rawWords
-    .map((w) => ({
-      word: String(w?.word ?? w?.text ?? '').trim(),
-      start: parseTime(w?.start ?? w?.start_time ?? 0),
-      end: parseTime(w?.end ?? w?.end_time ?? 0),
-    }))
+    .map((w) => {
+      const word = String(w?.word ?? w?.text ?? '').trim();
+      let start = parseTime(w?.start ?? w?.start_time ?? 0);
+      let end = parseTime(w?.end ?? w?.end_time ?? 0);
+      const dur = Math.min(2.5, Math.max(0.08, end - start));
+      end = start + dur;
+      return { word, start, end };
+    })
     .filter((w) => w.word.length > 0);
 
   if (words.length === 0) return [];
