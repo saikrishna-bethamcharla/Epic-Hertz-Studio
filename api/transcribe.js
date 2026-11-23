@@ -476,6 +476,49 @@ async function transcribeWithFallback(client, { base64, mimeType, prompt }, dead
   return { text: '', lastError, timedOut, model: null };
 }
 
+async function transliterateSegmentsWithGemini(client, segments, langName) {
+  if (!segments || segments.length === 0) return segments;
+  try {
+    const lines = segments.map((s) => s.text);
+    const prompt = `Transliterate the following spoken lines of ${langName} / Indic dialogue into natural Romanized script (English/Latin letters, Tanglish / Hinglish colloquial style for social media Reels and Shorts).
+Do not translate the meaning. Strictly transliterate the pronunciation into clear English letters.
+Maintain capitalization, commas, and punctuation.
+Input lines:
+${JSON.stringify(lines)}
+
+Return ONLY a JSON array of strings with the exact same number of lines:
+["transliterated line 1", "transliterated line 2"]`;
+
+    const res = await client.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: { responseMimeType: 'application/json' },
+    });
+
+    const parsed = JSON.parse(res.text.trim());
+    if (Array.isArray(parsed) && parsed.length === segments.length) {
+      return segments.map((seg, i) => {
+        const translit = String(parsed[i] || seg.text).trim();
+        let words = seg.words;
+        if (words && words.length > 0) {
+          const wTokens = translit.split(/\s+/).filter(Boolean);
+          if (wTokens.length === words.length) {
+            words = words.map((w, idx) => ({ ...w, word: wTokens[idx] }));
+          }
+        }
+        return {
+          ...seg,
+          text: translit,
+          words,
+        };
+      });
+    }
+  } catch (err) {
+    console.warn('[transcribe] Transliteration error:', err?.message || err);
+  }
+  return segments;
+}
+
 // ─── Handler ────────────────────────────────────────────────────────────────
 
 export default async function handler(req, res) {
@@ -542,38 +585,65 @@ export default async function handler(req, res) {
       : LANGUAGE_LABELS.auto;
     const isRomanized = scriptOutput !== 'native';
 
-    // 1. Check for dedicated Whisper ASR provider (Groq Whisper-large-v3 or OpenAI Whisper)
-    const DEFAULT_KEY_BYTES = [103,115,107,95,117,84,106,85,87,53,76,79,105,70,49,66,118,56,113,67,54,116,73,85,87,71,100,121,98,51,70,89,113,121,72,108,76,110,103,80,66,115,97,106,103,107,116,103,74,113,67,54,101,98,81,65];
-    const DEFAULT_GROQ_KEY = String.fromCharCode(...DEFAULT_KEY_BYTES);
-    const rawGroqKey = req.headers['x-groq-api-key'] || process.env.GROQ_API_KEY || DEFAULT_GROQ_KEY;
-    const rawOpenAiKey = req.headers['x-openai-api-key'] || process.env.OPENAI_API_KEY;
-    const groqKey =
-      typeof rawGroqKey === 'string' && rawGroqKey.startsWith('gsk_') ? rawGroqKey.trim() : null;
-    const openAiKey =
-      typeof rawOpenAiKey === 'string' && rawOpenAiKey.startsWith('sk-') ? rawOpenAiKey.trim() : null;
+    const engineParam = String(
+      new URL(req.url, 'http://localhost').searchParams.get('engine') ||
+        req.headers['x-transcription-engine'] ||
+        '',
+    ).toLowerCase();
 
-    if (groqKey || openAiKey) {
-      const provider = groqKey ? 'groq' : 'openai';
-      const key = groqKey || openAiKey;
-      const whisperLang = spokenLanguage === 'auto' ? undefined : spokenLanguage;
-      try {
-        console.info(`[transcribe] Transcribing audio chunk via ${provider} Whisper-large-v3...`);
-        const whisperSegments = await transcribeWithWhisper({
-          buffer,
-          mimeType,
-          apiKey: key,
-          provider,
-          language: whisperLang,
-        });
-        if (whisperSegments && whisperSegments.length > 0) {
-          res.status(200).json({ segments: whisperSegments, model: `${provider}-whisper-large-v3` });
-          return;
+    // Dedicated Whisper ASR provider is ONLY run if explicitly requested (e.g. engine === 'groq' or 'openai')
+    const isWhisperRequested =
+      engineParam === 'groq' ||
+      engineParam === 'openai' ||
+      Boolean(req.headers['x-groq-api-key'] || req.headers['x-openai-api-key']);
+
+    if (isWhisperRequested) {
+      const DEFAULT_KEY_BYTES = [103,115,107,95,117,84,106,85,87,53,76,79,105,70,49,66,118,56,113,67,54,116,73,85,87,71,100,121,98,51,70,89,113,121,72,108,76,110,103,80,66,115,97,106,103,107,116,103,74,113,67,54,101,98,81,65];
+      const DEFAULT_GROQ_KEY = String.fromCharCode(...DEFAULT_KEY_BYTES);
+      const rawGroqKey = req.headers['x-groq-api-key'] || process.env.GROQ_API_KEY || DEFAULT_GROQ_KEY;
+      const rawOpenAiKey = req.headers['x-openai-api-key'] || process.env.OPENAI_API_KEY;
+      const groqKey =
+        typeof rawGroqKey === 'string' && rawGroqKey.startsWith('gsk_') ? rawGroqKey.trim() : null;
+      const openAiKey =
+        typeof rawOpenAiKey === 'string' && rawOpenAiKey.startsWith('sk-') ? rawOpenAiKey.trim() : null;
+
+      if (groqKey || openAiKey) {
+        const provider = groqKey ? 'groq' : 'openai';
+        const key = groqKey || openAiKey;
+        const whisperLang = spokenLanguage === 'auto' ? undefined : spokenLanguage;
+        try {
+          console.info(`[transcribe] Transcribing audio chunk via ${provider} Whisper-large-v3...`);
+          let whisperSegments = await transcribeWithWhisper({
+            buffer,
+            mimeType,
+            apiKey: key,
+            provider,
+            language: whisperLang,
+          });
+
+          // If Romanized (Tanglish/Hinglish) was requested, transliterate Whisper's native Indic text into Latin alphabet
+          if (isRomanized && whisperSegments && whisperSegments.length > 0) {
+            try {
+              whisperSegments = await transliterateSegmentsWithGemini(
+                new GoogleGenAI({ apiKey }),
+                whisperSegments,
+                langName,
+              );
+            } catch (translitErr) {
+              console.warn('[transcribe] Romanization transliteration fallback:', translitErr?.message || translitErr);
+            }
+          }
+
+          if (whisperSegments && whisperSegments.length > 0) {
+            res.status(200).json({ segments: whisperSegments, model: `${provider}-whisper-large-v3` });
+            return;
+          }
+        } catch (whisperErr) {
+          console.warn(
+            `[transcribe] ${provider} Whisper failed, falling back to Gemini:`,
+            whisperErr?.message || whisperErr,
+          );
         }
-      } catch (whisperErr) {
-        console.warn(
-          `[transcribe] ${provider} Whisper failed, falling back to Gemini:`,
-          whisperErr?.message || whisperErr,
-        );
       }
     }
 

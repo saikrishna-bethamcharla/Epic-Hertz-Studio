@@ -105,9 +105,9 @@ export function setUserOpenAiKey(key: string | null): void {
 export function getUserEngine(): TranscriptionEngine {
   try {
     const e = localStorage.getItem(USER_ENGINE_STORAGE) as TranscriptionEngine | null;
-    if (e === 'groq' || e === 'openai' || e === 'gemini') return e;
+    if (e === 'gemini' || e === 'groq' || e === 'openai') return e;
   } catch {}
-  return 'groq';
+  return 'gemini';
 }
 
 export function setUserEngine(engine: TranscriptionEngine): void {
@@ -203,10 +203,10 @@ export async function transcribeAudio(
 
   onStatus?.('Connecting to Studio Cloud AI…');
 
-  const endpoint = getProxyEndpoint();
-  const url = `${endpoint}?spokenLanguage=${encodeURIComponent(spokenLanguage)}&scriptOutput=${encodeURIComponent(scriptOutput)}`;
-
   const userEngine = getUserEngine();
+  const endpoint = getProxyEndpoint();
+  const url = `${endpoint}?spokenLanguage=${encodeURIComponent(spokenLanguage)}&scriptOutput=${encodeURIComponent(scriptOutput)}&engine=${encodeURIComponent(userEngine)}`;
+
   const userGeminiKey = getUserApiKey();
   const userGroqKey = getUserGroqKey();
   const userOpenAiKey = getUserOpenAiKey();
@@ -215,6 +215,7 @@ export async function transcribeAudio(
     'Content-Type': audioBlob.type || 'audio/wav',
     'x-spoken-language': spokenLanguage,
     'x-script-output': scriptOutput,
+    'x-transcription-engine': userEngine,
   };
 
   if (userEngine === 'groq' && userGroqKey) {
